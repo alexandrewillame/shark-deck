@@ -1,0 +1,1071 @@
+/* keyboard map — `--kb-u` (px per 1 key-unit) and `--kb-gap` are set inline
+ * by KeyboardMap.tsx; in `fit` mode a ResizeObserver scales `--kb-u` to the
+ * container width instead of this 34px default, so the board is centred and
+ * uses the whole available pane width rather than floating at a fixed size. */
+.kbmap-wrap {
+  width: 100%;
+}
+.kbmap {
+  /* Fallbacks only — KeyboardMap.tsx sets all six inline, derived from the
+     one unit size, so a board at any scale is the same board. A 1u key is
+     square: `--kb-u` minus the gutter, both ways. */
+  --kb-u: 34px;
+  --kb-gap: 4.42px;
+  --kb-vgap: 4.42px;
+  --kb-h: 29.58px;
+  --kb-radius: 6px;
+  --kb-font: 10px;
+  --kb-pad: 12px;
+  --kb-bd: 1px;
+  position: relative;
+  background: var(--bg-1);
+  padding: var(--kb-pad);
+  border-radius: var(--radius);
+  border: var(--kb-bd) solid var(--line);
+  /* Width and height come from KeyboardMap's inline style, in key-units plus
+     this padding and border: the rows inside are absolutely positioned, so
+     they contribute nothing to an auto size. */
+  margin: 0 auto;
+  overflow-x: auto;
+  max-width: 100%;
+}
+/* A board reduced to its keys — no gutter, no border, no board colour. The
+ * SIZE half of this is KeyboardMap's `bare` prop, which zeroes the two custom
+ * properties the inline width/height are computed from; this is only the
+ * paint. */
+.kbmap-bare {
+  background: none;
+  border-color: transparent;
+}
+
+/* Rows are placed by their own `y`, not stacked in document order — a vendor
+ * layout spaces the F-row 1.2u from the number row, and flowing them lost
+ * that. Width comes from KeyboardMap's inline style (every row spans the same
+ * key-unit range so columns line up down the board); this is just the
+ * positioning context for `.kbkey` children placed by their real `x`. */
+.kbrow {
+  position: absolute;
+  /* The gutter, applied. See the row's inline `top` for why an absolutely
+     positioned row cannot get it from the board's own padding. */
+  left: var(--kb-pad);
+  height: var(--kb-h);
+}
+/* A keycap is a physical object: an opaque neutral cap with a lighter top
+ * bevel, sitting on the dark board. It must read as unremarkable, so that a
+ * tab painting one (per-key lighting, a remap, a group colour) is the thing
+ * that carries meaning. */
+.kbkey {
+  position: absolute;
+  top: 0;
+  height: var(--kb-h);
+  /* The fallback is load-bearing, not decoration. All six `--kb-*` are
+     declared on `.kbmap`, so a keycap rendered OUTSIDE a board — the chip in
+     the Actuation and Remap panel headings — inherits none of them, and a
+     bare `var(--kb-radius)` resolved to nothing: the cap came out square while
+     the identical key on the board beside it was rounded. */
+  border-radius: var(--kb-radius, 6px);
+  border: 1px solid transparent;
+  border-top-color: var(--kbkey-edge);
+  background: var(--kbkey-bg);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  display: grid;
+  place-items: center;
+  font-size: var(--kb-font);
+  color: var(--kbkey-text);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+/* Hover is one key among eighty on the primary control of three tabs, so it
+   has to stand out rather than nudge: the cap rises, brightens and takes an
+   accent ring. A 1px lift was the whole effect before, and it read as nothing
+   ("it doesn't feel like we are highlighting a specific key").
+
+   Interactive boards only. A keycap chip in a heading is not a control, and
+   the Global lighting preview is a picture — neither reacts to the pointer.
+   Lit boards have their own rule below: a lit key must never be transformed
+   or filtered (see `.kbmap-lit .kbkey`).
+
+   `filter`, not a background swap, because a key painted inline (a group
+   colour, a remap tint) ignores the stylesheet's background — the old hover
+   colour "never did anything on a painted key". */
+.kbmap:not(.kbmap-static):not(.kbmap-lit) .kbkey {
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    filter var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.kbmap:not(.kbmap-static):not(.kbmap-lit) .kbkey:hover {
+  z-index: 2;
+  transform: translateY(-2px);
+  filter: brightness(1.18);
+  box-shadow:
+    0 0 0 2px rgba(var(--accent-rgb), 0.9),
+    0 6px 14px -4px rgb(0 0 0 / 0.55);
+}
+/* look-only board (global keyboard-lighting preview): reads as a picture,
+   not a grid of buttons */
+.kbmap-static .kbkey {
+  cursor: default;
+}
+/* ---- a board whose LEDs are on -------------------------------------------
+ *
+ * `.kbmap-lit` is a picture of a backlit keyboard, not a diagram with
+ * coloured cells. The cap is opaque plastic in FRONT of the diode, so a lit
+ * key is a legend shining through, a bright edge where light escapes the gap
+ * to the plate, a pool of colour on the plate around it — and a face that
+ * only takes a tint. A flat `background-color` is none of those: it is a
+ * paint bucket, and it made a white key and a white LED the same object.
+ *
+ * Every length is in `--kb-u`, so the board at u=5 (a saved-layout thumbnail)
+ * is the same picture, smaller. It also means a 6.25u spacebar gets a ONE-unit
+ * spill rather than a six-unit one, which is right: the layout has one LED
+ * per key and it is centred on the switch.
+ *
+ * Colours come from `litCap()` in colorUtil.ts, as five custom properties set
+ * inline per key — ONE set, not one per theme; see `.kbmap-lit` below. The
+ * drive (how hard the diode is run) is already folded into their alphas
+ * there, so every percentage here stays a constant. */
+.kbmap-lit {
+  /* The plate the caps are mounted on — dark anodised here, pale in light
+   * mode. It is the ONE thing on this board that follows the theme, and it
+   * can because a plate is not a light source: it reflects the room. The
+   * keycaps and every layer `litCap` computes are the same in both, which is
+   * what keeps a white LED white and a blue one blue whichever theme you are
+   * in.
+   *
+   * Every other board (Keys, Actuation, Remap) is unaffected and still
+   * follows `--bg-1`. */
+  background: var(--kbmap-lit-bg);
+  /* Every halo below is `z-index: -1`, so it lands on the plate under EVERY
+     cap instead of under the ones later in the DOM and over the ones before —
+     which on a fully lit board reads as each key smearing light leftwards.
+     Nothing in the chain up from a key is a stacking context, so without this
+     the halos escape past the board's own background and paint nowhere. */
+  isolation: isolate;
+}
+/* An object ON the page, rather than a panel drawn on it.
+ *
+ * A soft shadow and a neutral edge, so the board reads as a physical thing
+ * lying on the pane — which is what tells you the keycaps are objects and the
+ * colour is light falling on them. The edge is `--kbmap-lit-edge`, not
+ * `--line`: a blue frame round a white key is half of why it read yellow.
+ * Bare boards (thumbnails) opt out: they have no plate to cast one. */
+.kbmap-lit:not(.kbmap-bare) {
+  border-color: var(--kbmap-lit-edge);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.14),
+    0 10px 24px -14px rgb(0 0 0 / 0.4);
+}
+/* Keep every key's label readable whatever colour the effect paints under it.
+ * Scoped to `.kbmap-lit` — a board an EFFECT is painting — not to every
+ * non-interactive board: the Actuation Test board is non-interactive and shows
+ * ordinary keycaps, and it was picking up white, shadowed labels while the
+ * Keys and Switches boards beside it had dark ones on a light cap.
+ *
+ * The dark cap is what makes that legal on the interactive per-key board too:
+ * white labels on `--kbkey-bg` would be the very bug above. */
+/* A keycap on a lit board is the same moulded object whether or not a diode is
+   behind it — only the LIGHT differs. So the PHYSICAL half of the cap lives
+   here, on every key: the same top highlight, the same falloff toward the
+   front edge, the same drop shadow. `.is-lit` below then adds light to a cap,
+   rather than being the only rule that draws one.
+
+   Without this, the two panes that share this board looked like different
+   components. The global preview lights every key, so every key was moulded;
+   the per-key editor lights only what you have painted, so the rest were flat
+   rectangles sitting next to glowing caps. */
+.kbmap-lit .kbkey {
+  background-color: var(--kbkey-unlit);
+  background-image: var(--kbkey-mould);
+  border-top-color: var(--kbkey-unlit-edge);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.4),
+    inset 0 0 0 1px rgb(255 255 255 / 0.04);
+  /* Its own token, not `--text`: the cap is dark in BOTH themes now, and
+     `--text` is near-black in the light one — which would have been a dark
+     legend on a dark cap the moment the board stopped following the theme. */
+  color: var(--kbkey-unlit-text);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+/* Hover on the per-key editor. `top`, not `transform`, and no filter,
+   opacity or z-index: any of those makes the key its own stacking context,
+   which traps the `z-index: -1` halo behind the cap's own background — the
+   glow would go out on the key you are pointing at. An OUTLINE for the ring,
+   because this key's box-shadow is the light escaping round the cap.
+
+   No `background-color` here: this selector outranks `.kbmap-lit
+   .kbkey.is-lit` below, so it would paint every lit key grey under the
+   pointer. Only an unlit cap brightens. The Global preview (`.kbmap-static`)
+   gets none of it. */
+.kbmap-lit:not(.kbmap-static) .kbkey:hover {
+  top: -2px;
+  outline: 2px solid rgba(var(--accent-rgb), 0.95);
+  outline-offset: 2px;
+}
+.kbmap-lit:not(.kbmap-static) .kbkey:not(.is-lit):hover {
+  background-color: var(--kbkey-unlit-hover);
+}
+/**
+ * A cap with a diode behind it: a translucent cap lit in the diode's colour,
+ * a bright EDGE where light escapes the gap to the plate, and a POOL of colour
+ * on the plate around the key.
+ *
+ * The face carries the colour (`litCap`). It used to be an opaque grey cap
+ * that only took a tint, which looked like a photograph and could not show a
+ * colour — white came out grey, yellow olive, and side by side they were "too
+ * similar". The moulding, the spill from the north edge and the drop shadow
+ * below still make it a keycap rather than a flat tile.
+ */
+.kbmap-lit .kbkey.is-lit {
+  /* Printed on the lit face: dark on a light colour, light on a dark one
+     (`litCap`). */
+  color: var(--led-legend);
+  text-shadow: var(--led-legend-shadow, none);
+  /* `background-color` and `background-image`, never the shorthand: the colour
+     is the half that interpolates, and this board repaints ~20 times a second
+     (useEffectPhase), so it is the half that carries the tween. */
+  background-color: var(--led-cap);
+  background-image:
+    /* Light spilling onto the face from the north edge, where the diode is.
+       Concentrated at the very top and gone by a third of the way down — it is
+       a spill, not a wash, and it stays clear of the centred legend. */
+    radial-gradient(
+      ellipse 130% 62% at 50% -16%,
+      var(--led-rim) 0%,
+      color-mix(in srgb, var(--led-rim) 35%, transparent) 42%,
+      transparent 72%
+    ),
+    /* ...over the same moulding every cap on this board has. */ var(--kbkey-mould);
+  border-top-color: var(--led-rim);
+  box-shadow:
+    /* the cap's own drop shadow, as on any key */
+    0 1px 2px rgba(0, 0, 0, 0.45),
+    /* THE GAP: a hairline of light escaping between cap and plate. The single
+       detail that reads as "lit from underneath" rather than "painted". */
+    0 0 0 1px var(--led-rim),
+    /* and the same light caught on the inside of the cap's skirt */ inset 0
+      calc(var(--kb-u) * 0.05) calc(var(--kb-u) * 0.11) -2px var(--led-rim);
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+/* The halo on the plate.
+ *
+ * A pseudo-element, not a child: this repaints for every key on every frame of
+ * the effect preview, and 79 more React nodes to reconcile buys nothing. It is
+ * absolutely positioned for the reason every overlay in a key is — the key is
+ * a centring grid, and an in-flow pseudo becomes a grid item that shoves the
+ * legend off centre.
+ *
+ * Its own box is EXACTLY the cap's, and everything it draws is `box-shadow`,
+ * which is ink overflow and never scrollable overflow. That is what keeps the
+ * board's `overflow-x: auto` from growing a bar around a glow: an
+ * `inset: -12px` box would hand its whole margin box to the scrollable area,
+ * and there is only ~10px of gutter under the last row before that becomes a
+ * scrollbar. */
+.kbmap-lit .kbkey.is-lit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  /* Biased upward, because the diode is north of the switch: the pool is
+     brightest above the cap and trails below it. */
+  box-shadow:
+    0 calc(var(--kb-u) * -0.03) calc(var(--kb-u) * 0.2) calc(var(--kb-u) * 0.03) var(--led-glow),
+    0 0 calc(var(--kb-u) * 0.55) calc(var(--kb-u) * 0.09)
+      color-mix(in srgb, var(--led-glow) 62%, transparent),
+    0 calc(var(--kb-u) * 0.05) calc(var(--kb-u) * 1.1) calc(var(--kb-u) * 0.15)
+      color-mix(in srgb, var(--led-glow) 34%, transparent);
+}
+/**
+ * A BARE board is a diagram, not a photograph.
+ *
+ * `PresetBoard`'s thumbnails run at 5-14px per key with no legends, where a
+ * cap that is only TINTED by its LED would make every preset the same grey.
+ * There the key IS the colour, which is what a swatch is for.
+ */
+.kbmap-lit.kbmap-bare .kbkey.is-lit {
+  background-color: var(--led);
+  background-image: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+.kbmap-lit.kbmap-bare .kbkey.is-lit::before {
+  box-shadow: none;
+}
+
+/* ---- imperfect LEDs (per-key lighting preview) ---------------------------
+ * Real diodes are never perfectly steady: each one drifts a little brighter
+ * and dimmer on its own. Each lit key gets its own period and phase (inline
+ * `--kf-dur` / `--kf-delay`, from KeyboardMap's flickerTiming), so no two
+ * pulse together. Subtle on purpose — the halo dips by at most ~14% and the
+ * face by a ~7% veil.
+ *
+ * Opacity only, on the pseudo-elements: the compositor animates it without a
+ * repaint, and the key itself must not get an opacity or a filter — that
+ * would make it a stacking context and trap the z-index:-1 halo behind the cap
+ * (see the transform note above `.kbmap-lit .kbkey`). Kept AFTER the base
+ * `::before` rule, which KeyboardMap.test.tsx reads by first match. */
+.kbmap-lit.kbmap-flicker .kbkey.is-lit::before {
+  animation: kbkey-flicker-halo var(--kf-dur, 5s) ease-in-out var(--kf-delay, 0s) infinite;
+}
+.kbmap-lit.kbmap-flicker .kbkey.is-lit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  /* Neutral black: dims the face without adding a hue. */
+  background: #000;
+  opacity: 0;
+  animation: kbkey-flicker-veil var(--kf-dur, 5s) ease-in-out var(--kf-delay, 0s) infinite;
+}
+@keyframes kbkey-flicker-halo {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  13% {
+    opacity: 0.86;
+  }
+  21% {
+    opacity: 0.97;
+  }
+  46% {
+    opacity: 0.9;
+  }
+  60% {
+    opacity: 1;
+  }
+  79% {
+    opacity: 0.93;
+  }
+}
+@keyframes kbkey-flicker-veil {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  13% {
+    opacity: 0.07;
+  }
+  21% {
+    opacity: 0.015;
+  }
+  46% {
+    opacity: 0.05;
+  }
+  60% {
+    opacity: 0;
+  }
+  79% {
+    opacity: 0.035;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kbmap-lit.kbmap-flicker .kbkey.is-lit::before,
+  .kbmap-lit.kbmap-flicker .kbkey.is-lit::after {
+    animation: none;
+  }
+}
+.kbkey.sel {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.65),
+    0 0 0 4px rgb(0 0 0 / 0.35);
+}
+/* A selected key stays white-ringed under the pointer: the lit hover's accent
+   outline would otherwise replace the one mark that says "selected". */
+.kbmap .kbkey.sel:hover {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+.kbkey-label {
+  pointer-events: none;
+}
+.kbkey-cap {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  display: flex;
+  gap: 2px;
+  pointer-events: none;
+}
+.kbkey-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+/* A panel kept mounted so it does not appear and vanish under the board, but
+ * not yet actionable — it is waiting on a selection. Pointer-events off so a
+ * dimmed control cannot be clicked; the panel still explains itself in text. */
+.panel-inert {
+  opacity: 0.45;
+  pointer-events: none;
+  filter: saturate(0.6);
+}
+/* Whole-board actuation/release/dead-zone overlay (Actuation tab) — a thin
+ * vertical track pinned to the key's left edge: a fill for actuation depth,
+ * ticks for release point / live travel, and top/bottom bands for the dead
+ * zones. See KeyboardMap.tsx's `gauge` prop. */
+.kbkey-gauge {
+  position: absolute;
+  left: 2px;
+  top: 3px;
+  bottom: 3px;
+  width: 4px;
+  border-radius: 2px;
+  /* An OPAQUE dark gutter, not a tint of the accent.
+   *
+   * The key body under this is the user's own group colour, and the marks on
+   * top are `--accent` and `--violet`. Pick red for a group under the red or
+   * crimson palette and the live-position tick was a red line on a red key:
+   * the reported bug. A translucent track could not help - it took on
+   * whatever was beneath it.
+   *
+   * So the readout gets its own background and stops depending on the key at
+   * all. The colour is a literal and not a `--bg-*` token on purpose: those
+   * are palette-dependent (grey-brown's surfaces are warm) and invert in
+   * light mode, so a token would put the problem back one level down. Same
+   * reasoning as MARK_RT / MARK_MODE in MagneticSection.tsx. */
+  background: rgba(8, 10, 14, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+/* Anchored to the TOP, like the ticks and bands above — KeyboardMap.tsx's
+ * `KeyGauge` contract is "0..100 positions from the TOP of the gauge track",
+ * and travel is measured downward from the top of the stroke. This was
+ * `bottom: 0`, which mirrored the fill against the very ticks it is meant to
+ * be read with: a 1.5 mm actuation (37.5%) painted the BOTTOM 37.5% of the
+ * track while its release tick sat 32.5% down from the top. */
+.kbkey-gauge-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  background: rgba(var(--accent-rgb), 0.55);
+  border-radius: 2px;
+}
+/* Colour comes inline from `KeyGauge.ticks[].color`. The dark halo is what
+ * keeps a 1.5px line legible wherever it lands on the gutter above - including
+ * on top of the fill, where an accent tick over an accent fill would otherwise
+ * vanish at exactly the moment the two coincide. Same device as `.kbkey.sel`,
+ * which rings its white outline in black for the same reason. */
+.kbkey-gauge-tick {
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  height: 1.5px;
+  border-radius: 1px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.85);
+}
+.kbkey-gauge-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  opacity: 0.5;
+}
+/* The second legend on a keycap: what the key is bound to, under the label
+ * the cap is printed with. On the Fn layer that is every bound key, not only
+ * the changed ones, so the default tone is a muted version of the CAP's own
+ * text — informational. `--accent` read as "something happened here", which
+ * on a board where two thirds of the keys carry one was noise. */
+.kbkey-bind {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 8px;
+  color: color-mix(in srgb, var(--kbkey-text) 58%, transparent);
+  pointer-events: none;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Hover target for a key's own tooltip (KeyboardMap's `tip`).
+   A full-key layer, deliberately NOT inside `.kbkey-cap`: that box is a small
+   `pointer-events: none` corner, so anything drawn through `cap` can never be
+   hovered — which is why the remap pane's "reserved key" explanation never
+   opened. Transparent and above the label, below nothing. */
+.kbkey-hit {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+/* The tooltip's own wrapper, taken out of flow.
+   `.kbkey` is a centring grid, so an in-flow wrapper became a second grid
+   item and pushed the key's label out of the middle. Absolute here (the hit
+   layer inside it already resolves against `.kbkey`) keeps the cap centred
+   and the hover area over the whole key. */
+.kbkey > .tt-wrap {
+  position: absolute;
+  inset: 0;
+}
+/* The binding label on a key that IS remapped. The key body is painted with
+   the accent to make it findable, so an accent-coloured label on top of it is
+   invisible — inherit the key's own contrast-picked colour instead. */
+.kbkey-bind-remapped {
+  color: currentColor;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+/* ---- switch-model picker (Actuation -> Switches) ------------------
+ * A row of chips, one per model the board offers, each carrying the vendor's
+ * own colour for that switch — the same colour the board is painted in, so
+ * the choice and its effect are the same object. A <select> could not do
+ * that, and with only six choices a list costs no more room than the closed
+ * dropdown did. */
+.switch-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.switch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.switch-chip:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--bg-3);
+}
+.switch-chip.sel {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.switch-chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.switch-chip-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  border: 1px solid rgb(0 0 0 / 0.25);
+  flex: none;
+}
+
+/* A row of controls sitting directly above a board — selection buttons and
+ * the hint that says a board can be multi-selected at all, which is the part
+ * that is not discoverable by looking. */
+.kb-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---- the board as the tab's anchor -------------------------------
+ * Actuation has three sub-views (Keys / Test / Switches) and each had its own
+ * preamble above the board — a subtitle here, a warning pill and a toolbar
+ * there — so the keyboard sat at a different height in each one and appeared
+ * to jump as you switched. It is the one thing all three views are ABOUT, so
+ * it should be the thing that does not move.
+ *
+ * Done with flex `order` rather than by reordering the JSX: the three sections
+ * are large and their preamble is interleaved with state that belongs where it
+ * is. The panel heading stays first, the board comes second, everything else
+ * follows in source order.
+ */
+.panel-board-first {
+  display: flex;
+  flex-direction: column;
+}
+.panel-board-first > h4 {
+  order: -2;
+}
+.panel-board-first > .kbmap-wrap,
+.panel-board-first > .art-keyboard-anchor,
+.panel-board-first > .kb-with-rail {
+  order: -1;
+  margin-bottom: 12px;
+}
+
+/* Actuation > Test: "Actuated: A + D", on the board panel's heading line.
+ * Holds a pill's height even when empty, so the heading — and the board
+ * under it — does not move as keys go down and come back up. */
+.act-test-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 21px;
+}
+
+/* The legend entry for a key with nothing bound to it — an unpainted keycap,
+ * drawn as the keycap actually looks rather than as a colour, because that is
+ * the thing it stands for. */
+.kb-legend-swatch-plain {
+  background: var(--kbkey-bg);
+  border: 1px solid var(--kbkey-edge);
+}
+
+/* ---- Actuation: two columns under the board ----------------------
+ * The Keys view was one stack — board, saved layouts, key groups, the key
+ * stage, trigger response — about three screens of pane, so reading what a key
+ * was set to meant scrolling away from the key you had selected. The board
+ * stays full width above this (it is the tab's anchor); everything else pairs
+ * up beside it.
+ *
+ * `minmax(0, …)` on both tracks: without it a grid column is min-content-sized
+ * by default and the board inside the stage refuses to shrink, which pushes
+ * the whole pane wider than its container instead of wrapping. */
+.act-cols {
+  display: block;
+}
+/* The panels inside a column already carry their own bottom margin, so the
+   column itself only has to stop the last one adding a trailing gap. */
+.act-col > :last-child {
+  margin-bottom: 0;
+}
+
+/* The second per-key marker differs in SHAPE as well as colour. Two small
+ * dots a few degrees apart on the colour wheel is not a distinction anyone can
+ * make on a 30px keycap — and under the grey-brown palette the two tokens they
+ * used to use were both yellow. */
+.kbkey-dot.is-square,
+.kb-legend-dot.is-square {
+  border-radius: 2px;
+}
+
+/* The board toolbar's status slot.
+ *
+ * Reserved, not sized to its text: the count inside changes length as keys are
+ * selected, and in a wrapping flex row that is enough to push the buttons onto
+ * a second line and move all of them. Nothing in a toolbar should move because
+ * a number beside it got longer. */
+.kb-status {
+  flex: none;
+  width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Test keys is on: the one state on this tab that changes what the keyboard
+   does, so it says so in the accent rather than as a hint. */
+.kb-status.is-testing {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* What is being dragged, following the cursor.
+ *
+ * The gesture used to be a cursor change and nothing else — on a 79-key board
+ * "which key did I pick up" is the only question, and the answer was nowhere on
+ * screen. Shaped like a keycap because that is what it is. */
+/**
+ * The key in flight: a miniature of the cap itself, in its own colour.
+ *
+ * It used to be a text chip in the default keycap grey, which says which key
+ * you have hold of and nothing about what letting go will do — and what letting
+ * go does is give the key underneath THESE settings, which is exactly what the
+ * colour stands for. So the ghost carries the group colour (set inline by
+ * `showGhost`, since it is per-drag) and is shaped like the cap it came from.
+ */
+.kdrag-ghost {
+  position: fixed;
+  z-index: 300;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 7px;
+  border-radius: 5px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--kbkey-text);
+  background: var(--kbkey-bg);
+  border: 1px solid var(--kbkey-edge);
+  /* The same lit top edge a real cap has (see .kbkey), so it reads as a keycap
+     and not as a coloured label. */
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    0 8px 18px -5px rgb(0 0 0 / 0.6);
+  transform: rotate(-4deg);
+}
+.kdrag-ghost-label {
+  overflow: hidden;
+  max-width: 76px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* How many more keys are coming along. Its own pill so it reads as a count
+   rather than as part of the key's name. */
+.kdrag-ghost-more {
+  padding: 1px 4px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  background: rgb(0 0 0 / 0.28);
+}
+
+/* ---- remap: the assign panel ------------------------------------
+ * The heading names the selected key by DRAWING it — the same cap, the same
+ * colour, as the board above — instead of describing it in prose beside a
+ * board where it is already visible. */
+.remap-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.remap-title-any {
+  color: var(--text-mut);
+  font-weight: 400;
+}
+/* A keycap out of the grid: same paint and shape as `.kbkey`, but sized to sit
+   in a line of text rather than positioned on a board.
+   It overrides every `--kb-*`-derived size it needs (height, font), and takes
+   the radius from `.kbkey`'s fallback above — proportionally the same cap,
+   smaller. */
+.kbkey.kbkey-chip {
+  position: static;
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  padding: 0 6px;
+  font-size: var(--fs-sm);
+  vertical-align: middle;
+}
+.kbkey.kbkey-chip.is-small {
+  min-width: 22px;
+  height: 22px;
+  font-size: var(--fs-xs);
+}
+.kbkey.kbkey-chip .kbkey-label {
+  position: static;
+  font-size: inherit;
+}
+/* A glyph two keys share (the shifts), with the side it stands for. */
+.kbkey-sided {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.kbkey-side {
+  font-size: 0.78em;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+/* What the picker is currently spelling out, plus the control that sends it. */
+.remap-staged {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.remap-staged-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+}
+.remap-staged-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.remap-plus {
+  color: var(--text-mut);
+  font-size: var(--fs-xs);
+}
+
+/* "Press a key to pick it" — above a picker that listens to the keyboard. */
+.key-picker-listen {
+  margin: 0 0 10px;
+  font-size: var(--fs-sm);
+}
+/* The picker grid. Uniform squares, because they stand for keys — a row of
+   buttons each sized to its own label read as a list of words. */
+.remap-picker {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+/* Rounded like the caps on the board above — these stand for the same objects,
+   and a square-cornered grid beside a rounded one reads as a different kind of
+   control. The radius is `.kbkey`'s, scaled to this size. */
+.remap-picker .remap-key {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 6px;
+  justify-content: center;
+}
+/* Part of what this key sends. Since the picker is seeded from the current
+   binding, the same highlight answers "what is bound here" and "what am I
+   choosing" — one state, both questions. */
+.remap-picker .remap-key.on {
+  background: var(--kbkey-remap);
+  border-color: var(--kbkey-remap);
+  color: var(--kbkey-remap-text);
+}
+.remap-picker .remap-key:disabled {
+  opacity: 0.4;
+}
+/* The picker's rows are stacked (`.row-stack`, panes.css): the group's name
+   on its own line, the keys wrapping under it. `Row` nests its label one div
+   down, so the stylesheet's own label margin does not reach it; the gap is
+   put under the name here instead. */
+.row-stack > .row-ctl > .remap-picker {
+  margin-top: 6px;
+}
+
+/* ---- key modes (tabs/keyboard/KeyModePanels.tsx) ------------------------ */
+/* A snap-tap key's pair number on the board — the two keys of a pair carry
+   the same number — and the legend's sample of it. "!" marks half a pair. */
+.kbkey-pair {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 11px;
+  height: 11px;
+  padding: 0 2px;
+  border-radius: 3px;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  color: #1a1408;
+}
+.kbkey-pair.is-half {
+  outline: 1px solid #1a1408;
+  outline-offset: -2px;
+}
+.kbkey-pair.is-legend {
+  margin-right: 2px;
+}
+/* The chosen mode's own settings, under the Mode and Rapid Trigger rows. */
+.mode-panel {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--line);
+}
+.mode-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+/* A slot not filled yet: mod-tap's tap while what the key types is read. */
+.mode-pick-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 22px;
+  border: 1px dashed var(--accent-dim);
+  border-radius: 5px;
+  color: var(--accent);
+  font-weight: 700;
+}
+.exp-tag {
+  font-size: var(--fs-2xs);
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.exp-tag-wrap {
+  display: inline-flex;
+}
+.key-chooser {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+}
+.key-chooser-none {
+  color: var(--text-mut);
+}
+/* The Remap tab's picker, in a centred dialog on the app's modal pattern
+   (`.modal-scrim` / `.modal`, dialogs.css). Wide enough for the Letters row
+   to wrap onto two or three lines; the picker's rows are stacked, so nothing
+   in it is wider than the dialog and it only ever scrolls down. */
+.modal.key-chooser-panel {
+  width: min(600px, 92vw);
+  max-height: min(80vh, 640px);
+  overflow: hidden auto;
+  padding: 12px 16px;
+}
+.key-chooser-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+/* Outweighs `.modal h4` (dialogs.css), whose margin is for a dialog with
+   body text under its title; here the head row is the spacing. */
+.key-chooser-panel .key-chooser-head h4 {
+  margin: 0;
+}
+/* DKS: four actions down, four points of the stroke across — the stroke
+   itself drawn above the columns, so "Press · Bottom · Lift · Release" reads
+   as one press and release. Every cell is a menu (ListboxSelect): a tap is a
+   dot and the word, a hold one element across the points it covers, an empty
+   point a muted dash. One radius for all three: the words say what a cell
+   is, not its corners. */
+.dks-grid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 8px;
+  align-items: center;
+  margin: 6px 0;
+}
+.dks-grid-corner,
+.dks-grid-action {
+  display: inline-flex;
+  padding-right: 6px;
+}
+/* The four columns every row shares — headers and cells alike, so they line
+   up without being in one grid. */
+.dks-track {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(44px, 1fr));
+  gap: 3px;
+  align-items: stretch;
+  min-width: 0;
+}
+.dks-diagram {
+  grid-column: 2 / -1;
+  display: block;
+  width: 100%;
+  height: 48px;
+  overflow: visible;
+}
+.dks-diagram-stroke {
+  fill: none;
+  stroke: var(--text-dim);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.dks-diagram-point {
+  stroke: var(--accent-dim);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.dks-diagram-label {
+  fill: var(--text-mut);
+  font-size: 9px;
+}
+.dks-diagram-arrow {
+  fill: none;
+  stroke: var(--text-dim);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dks-diagram-dot {
+  fill: var(--accent);
+}
+.dks-grid-point {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  font-size: var(--fs-xs);
+  line-height: 1.2;
+  color: var(--text-dim);
+}
+.dks-grid-caption {
+  font-size: var(--fs-2xs);
+  color: var(--text-mut);
+}
+.dks-slot {
+  display: flex;
+  min-width: 0;
+}
+/* A cell is a ListboxSelect cut down to the column: no minimum width, the
+   row's height, the grid's radius, and its face centred. */
+.listbox-select.dks-cell {
+  position: relative;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: var(--fs-xs);
+}
+.dks-cell .listbox-select-value {
+  flex: 0 1 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.dks-cell .listbox-select-caret {
+  width: 9px;
+  height: 9px;
+}
+.dks-cell.is-empty {
+  color: var(--text-mut);
+}
+.dks-cell.is-tap {
+  border-color: var(--accent-dim);
+}
+.dks-cell.is-hold {
+  background: rgba(var(--accent-rgb), 0.22);
+  border-color: var(--accent-dim);
+}
+/* The tap the byte allows at the very point a hold ends: a dot at the end. */
+.dks-cell.is-hold.has-tap-end {
+  padding-right: 16px;
+}
+.dks-cell.is-hold.has-tap-end::after {
+  content: '';
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.dks-dot {
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.kb-legend.dks-legend {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.dks-legend-bar {
+  display: inline-block;
+  width: 16px;
+  height: 8px;
+  border-radius: 3px;
+  background: rgba(var(--accent-rgb), 0.22);
+  border: 1px solid var(--accent-dim);
+}
+.dks-legend-none {
+  color: var(--text-mut);
+}

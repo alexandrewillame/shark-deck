@@ -1,0 +1,57 @@
+/* ---- language menu ----------------------------------------------- */
+.lang-menu {
+  position: relative;
+}
+/* Portaled to document.body at position:fixed (see usePortalPosition.ts) so
+ * it can't be clipped/covered by an ancestor's overflow or trapped inside a
+ * stacking context (`.topbar`'s backdrop-filter creates one) — left/top come
+ * from JS, not this stylesheet. max-height is a true overflow safety net
+ * for a very short window, not a routine scrollbar: 10 locales at ~30px each
+ * fit well under it. */
+.lang-menu-list {
+  position: fixed;
+  z-index: 200;
+  min-width: 160px;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+  box-shadow: 0 16px 40px -16px rgba(0, 0, 0, 0.5);
+  animation: menuIn var(--dur-fast) var(--ease-out);
+}
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.lang-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: var(--fs-md);
+  color: var(--text-dim);
+}
+.lang-menu-item:hover {
+  background: var(--bg-3);
+  color: var(--text);
+}
+.lang-menu-item.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
+}

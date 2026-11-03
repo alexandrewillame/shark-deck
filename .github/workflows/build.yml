@@ -1,0 +1,121 @@
+name: Build
+
+# Windows / macOS / Linux matrix — each OS can only build its own installers
+# (electron-builder needs a real Mac to produce a signed-enough .dmg, and
+# `npm run dist` here is only ad-hoc signed anyway; deb/rpm need Linux
+# packaging tools). On a `v*` tag it also drafts a GitHub Release with every
+# installer attached; nothing is public until someone presses Publish on it.
+#
+# Deliberately NOT on pull_request: three full electron-builder runs is
+# 10-20 minutes of CI to reject a change that ci.yml catches in a couple of
+# minutes. Packaging still runs on every push to main, so a change that
+# breaks one platform's build is caught well before a tag.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+# Read-only by default; only the release job below asks for more.
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: app
+
+jobs:
+  # The test gate (ci.yml, on all three OSes). Packaging waits for it: two
+  # independent workflows on the same push let a tag publish installers from
+  # a commit whose tests were red.
+  gate:
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: gate
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+    # A packaging run takes ~5-10 minutes; without a limit a hung one would
+    # hold a runner for GitHub's default of six hours.
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Node 24 — see ci.yml.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      # rpmbuild + fakeroot for electron-builder's `rpm` target (`deb` only
+      # needs fakeroot, covered by the same install). No -dev headers: nothing
+      # native is compiled at packaging time (`npmRebuild: false` in
+      # electron-builder.yml — node-hid ships N-API prebuilds).
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y rpm fakeroot
+
+      - run: npm ci
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: npm run dist
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: npm run dist:mac
+
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: npm run dist:linux
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sharkdeck-${{ matrix.os }}
+          # dist/ is one level up from app/ (the working-directory), and
+          # organize-dist.mjs is what sorts electron-builder's raw output
+          # into installer/ + portable/ + app/ here.
+          path: |
+            dist/installer/**
+            dist/portable/**
+          if-no-files-found: error
+          # Every push to main builds all three; two weeks is enough to try
+          # one. A tag's builds are kept for the release.
+          retention-days: ${{ startsWith(github.ref, 'refs/tags/') && 90 || 14 }}
+
+  # On a `v*` tag: a DRAFT release with the installers attached. The draft is
+  # only visible to maintainers until it is published by hand on the
+  # Releases page, so a bad build never reaches anyone. The tag should match
+  # app/package.json's version (v0.1.0 for 0.1.0), which names the files.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    # No checkout here, so there is no app/ to run in.
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      # electron-builder's update metadata (.blockmap, latest*.yml) is left
+      # out: the app has no network access, so nothing would ever read it.
+      - name: Draft the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          find artifacts -type f ! -name '*.blockmap' ! -name '*.yml' -print0 |
+            xargs -0 gh release create "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY" --draft --generate-notes \
+              --title "Shark Deck $GITHUB_REF_NAME"

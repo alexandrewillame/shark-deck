@@ -1,0 +1,196 @@
+appId: org.sharkdeck.app
+productName: SharkDeck
+copyright: SharkDeck contributors — GPL-3.0-or-later
+
+directories:
+  output: release
+  # No separate buildResources dir — the installer/uninstaller/exe icon is the
+  # same app/assets/logo.ico used at runtime (see win.icon + nsis.* below).
+  # macOS/Linux icons are generated from assets/logo.png (1248x1248) by
+  # electron-builder itself (see mac.icon / linux.icon below).
+
+# electron-vite emits the three processes here; everything else the runtime
+# needs (node-hid + its loader) comes from node_modules.
+files:
+  - out/**
+  - package.json
+  # App/tray icon and device art are read at runtime via app.getAppPath().
+  - assets/**
+  - '!assets/**/*.md'
+  - '!**/*.map'
+  - '!**/{.eslintrc,.prettierrc,tsconfig.json,electron.vite.config.ts}'
+  # A local `npm run rebuild` (or electron-builder's own install-app-deps)
+  # leaves an Electron-ABI-specific build/ next to node-hid's real,
+  # ABI-stable N-API prebuilds — and pkg-prebuilds/bindings.js tries that
+  # local build FIRST. Shipped as-is, a Windows-built binary there would be
+  # `require()`d on macOS/Linux and crash the app on launch. Excluding it
+  # also drops ~5.8MB of build debris (.iobj/.ipdb/.lib/.vcxproj) that has no
+  # reason to ship at all. See docs/platform-support.md.
+  - '!node_modules/node-hid/build/**'
+  # C/C++ sources — only the prebuilt .node binaries under prebuilds/ are
+  # ever loaded at runtime.
+  - '!node_modules/node-hid/hidapi/**'
+
+# No native rebuild at packaging time. What ships is node-hid's ABI-stable
+# N-API prebuild (below) — the locally built build/ is excluded above — so
+# electron-builder's @electron/rebuild step only recompiled a binary nobody
+# loads. node-hid uses pkg-prebuilds, which @electron/rebuild does not
+# recognise as prebuilt, so that step was a full node-gyp build of hidapi:
+# MSVC on Windows, and on Linux a hard failure without libudev-dev and
+# libusb-1.0-0-dev — which a stock CI runner, or a user's machine, lacks.
+npmRebuild: false
+
+# node-hid ships an ABI-stable N-API prebuild (.node) per platform+arch under
+# prebuilds/. It must live outside the asar so the OS loader can dlopen it.
+# Each platform's own `files` override below (win/mac/linux) additionally
+# prunes the *other* platforms' prebuilds so a Windows build doesn't also
+# carry macOS/Linux binaries it will never load.
+asar: true
+asarUnpack:
+  - '**/*.node'
+  - node_modules/node-hid/**
+
+# Ad-hoc-signs the macOS .app after packing — see the script's own doc
+# comment for why (no Developer ID here; an unsigned arm64 build won't even
+# launch). No-ops for every other platform/target.
+afterPack: scripts/adhoc-sign-mac.mjs
+
+win:
+  icon: assets/logo.ico
+  target:
+    - target: nsis # installer
+      arch: [x64]
+    - target: portable # single self-contained .exe, no install
+      arch: [x64]
+  files:
+    - '!node_modules/node-hid/prebuilds/{HID-darwin-x64,HID-darwin-arm64,HID-linux-x64,HID-linux-arm64,HID-linux-arm,HID-linux-x64-musl,HID_hidraw-linux-x64,HID_hidraw-linux-arm64,HID_hidraw-linux-arm,HID_hidraw-linux-x64-musl}/**'
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: SharkDeck
+  artifactName: ${productName}-Setup-${version}.${ext}
+  # one logo everywhere — installer, uninstaller, header, and the running app
+  installerIcon: assets/logo.ico
+  uninstallerIcon: assets/logo.ico
+  installerHeaderIcon: assets/logo.ico
+
+portable:
+  artifactName: ${productName}-${version}-portable.${ext}
+
+# --- macOS -----------------------------------------------------------------
+# No Apple Developer ID here, so no real code signing and no notarization —
+# see scripts/adhoc-sign-mac.mjs and docs/platform-support.md for what that
+# means for a user (Gatekeeper's "unidentified developer" prompt; the docs
+# cover the `xattr -dr com.apple.quarantine` workaround). To sign for real,
+# set `identity` to a Developer ID name, delete the afterPack hook above, and
+# add a `notarize` block once a certificate exists.
+mac:
+  icon: assets/logo.png
+  category: public.app-category.utilities
+  darkModeSupport: true
+  identity: null
+  target:
+    - { target: dmg, arch: [arm64, x64] }
+    - { target: zip, arch: [arm64, x64] }
+  files:
+    - '!node_modules/node-hid/prebuilds/{HID-win32-x64,HID-win32-ia32,HID-win32-arm64,HID-linux-x64,HID-linux-arm64,HID-linux-arm,HID-linux-x64-musl,HID_hidraw-linux-x64,HID_hidraw-linux-arm64,HID_hidraw-linux-arm,HID_hidraw-linux-x64-musl}/**'
+
+dmg:
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+# --- Linux -------------------------------------------------------------
+# hidraw (node-hid's Linux backend) needs a udev rule to grant a normal user
+# access to Attack Shark / Compx devices — see assets/linux/60-sharkdeck.rules.
+# deb/rpm install it automatically (after-install.sh below); AppImage has no
+# install step to hook, so it ships the rule + a manual installer script via
+# extraResources instead (see scripts/linux/install-udev-rules.sh).
+linux:
+  # A set at the sizes the hicolor icon theme defines (logo.png rendered at
+  # 16-512 px). Given logo.png itself, electron-builder installed it as
+  # hicolor/1254x1254, a size no theme lists, so no menu, dock or app grid
+  # could find the `sharkdeck` icon and they all showed a generic one.
+  icon: build/icons
+  category: Utility
+  maintainer: SharkDeck contributors
+  synopsis: Configurator for Attack Shark keyboards and mice
+  desktop:
+    entry:
+      # The menu entry's name — the brand is two words (the product name,
+      # SharkDeck, is what the settings folder and the files are named by).
+      Name: Shark Deck
+      # Must equal the window's WM_CLASS / Wayland app id for the dock to
+      # group the running window with its launcher. Electron takes those from
+      # the app name, which is package.json's `name` — lowercase `sharkdeck`
+      # (the product name is not written into the packaged package.json) —
+      # so `SharkDeck` here never matched.
+      StartupWMClass: sharkdeck
+  # Run under XWayland in a Wayland session. Electron 38 runs as a native
+  # Wayland client there by default, and Wayland lets no window place itself,
+  # stay above a fullscreen game or let clicks through — the switch card then
+  # landed mid-screen, took focus and sat in the taskbar, and a drag from the
+  # topbar's buttons moved nothing. Chromium reads this switch before any app
+  # code runs, so it goes on the launcher's command line (the .desktop entry,
+  # the AppImage's own entry), not in main. Harmless on an X11 session.
+  # It replaces the AppImage entry's default `--no-sandbox`, which is fine:
+  # AppRun adds that itself where the machine allows no user namespaces.
+  executableArgs: ['--ozone-platform=x11']
+  target: [AppImage, deb, rpm]
+  extraResources:
+    - from: assets/linux/60-sharkdeck.rules
+      to: udev/60-sharkdeck.rules
+    - from: scripts/linux/install-udev-rules.sh
+      to: udev/install-udev-rules.sh
+  files:
+    - '!node_modules/node-hid/prebuilds/{HID-win32-x64,HID-win32-ia32,HID-win32-arm64,HID-darwin-x64,HID-darwin-arm64}/**'
+
+# `depends` replaces electron-builder's default list rather than adding to it,
+# so both lists below restate that default (FpmTarget.getDefaultDepends,
+# electron-builder 26) and add two libraries it leaves out:
+# - libusb 1.0: node-hid's Linux binding links libusb-1.0.so.0, its hidraw
+#   build included. Without it node-hid does not load and no device is ever
+#   found. Most desktops have it; a minimal install does not.
+# - ALSA: Electron itself will not start without libasound.so.2. Every
+#   desktop has it; WSL or a container does not.
+deb:
+  afterInstall: scripts/linux/after-install.sh
+  afterRemove: scripts/linux/after-remove.sh
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libuuid1
+    - libsecret-1-0
+    - libasound2
+    - libusb-1.0-0
+
+rpm:
+  afterInstall: scripts/linux/after-install.sh
+  afterRemove: scripts/linux/after-remove.sh
+  # electron-builder's rpm target needs `rpmbuild` and `fakeroot` on PATH —
+  # see .github/workflows/build.yml for the Ubuntu runner packages that
+  # provide them; there is no rpm equivalent readily available on Windows/mac
+  # hosts, so this target only builds on a Linux host or CI.
+  depends:
+    - gtk3
+    - libnotify
+    - nss
+    - libXScrnSaver
+    - (libXtst or libXtst6)
+    - xdg-utils
+    - at-spi2-core
+    - (libuuid or libuuid1)
+    # By library rather than package: the package names differ between
+    # Fedora, RHEL and openSUSE (libusb1 / libusbx / libusb-1_0-0).
+    - libasound.so.2()(64bit)
+    - libusb-1.0.so.0()(64bit)
+
+# No auto-update server; keep the build fully offline.
+publish: null

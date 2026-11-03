@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shark Deck — Error</title>
+    <style>
+      :root {
+        --bg: #0a0c10;
+        --bg-2: #161c26;
+        --line: #263041;
+        --text: #e8edf4;
+        --text-dim: #9aa7ba;
+        --red: #ff5c6c;
+        --cyan: #3df8e8;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f5f7fb;
+          --bg-2: #eef1f6;
+          --line: #d2d9e4;
+          --text: #1a2230;
+          --text-dim: #4a5568;
+          --red: #d13d4b;
+          --cyan: #0bb6a8;
+        }
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 13px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+      }
+      h1 {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--red);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      p.sub {
+        color: var(--text-dim);
+        font-size: 12px;
+      }
+      textarea {
+        flex: 1;
+        width: 100%;
+        resize: none;
+        background: var(--bg-2);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-family: 'Cascadia Mono', ui-monospace, 'Consolas', monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: pre;
+        overflow: auto;
+        user-select: text;
+      }
+      textarea:focus {
+        outline: 1px solid var(--cyan);
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      button {
+        font: inherit;
+        color: var(--text);
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 7px 14px;
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: var(--cyan);
+      }
+      button.primary {
+        border-color: var(--cyan);
+        color: var(--cyan);
+      }
+      .spacer {
+        flex: 1;
+      }
+      #copied {
+        color: var(--cyan);
+        font-size: 12px;
+        align-self: center;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      #copied.show {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="heading">Shark Deck hit an error</h1>
+    <p id="sub" class="sub">
+      The full report is below and was also saved to a log file. Select it and copy, or use
+      <strong>Copy report</strong>. Paste it into a bug report.
+    </p>
+    <textarea id="report" readonly spellcheck="false" wrap="off">Loading crash report…</textarea>
+    <div class="row">
+      <button id="copy" class="primary">Copy report</button>
+      <button id="logs">Open log folder</button>
+      <span id="copied">Copied</span>
+      <span class="spacer"></span>
+      <button id="restart">Restart Shark Deck</button>
+      <button id="quit">Quit</button>
+    </div>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const api = window.crash || {};
+      const ta = $('report');
+
+      // The words above are the English fallback; main sends them in the app's
+      // language (crashStrings in main/crash.ts). Set as text, never as HTML.
+      let loadFailed = 'Could not load the crash report: {error}';
+      function applyStrings(s) {
+        document.documentElement.lang = s.lang || 'en';
+        document.title = s.title;
+        $('heading').textContent = s.heading;
+        // One sentence, the button's name in bold wherever the translation has it.
+        const [before, after = ''] = s.sub.split('{copy}');
+        const strong = document.createElement('strong');
+        strong.textContent = s.copy;
+        $('sub').replaceChildren(before, strong, after);
+        ta.value = s.loading;
+        $('copy').textContent = s.copy;
+        $('logs').textContent = s.logs;
+        $('copied').textContent = s.copied;
+        $('restart').textContent = s.restart;
+        $('quit').textContent = s.quit;
+        loadFailed = s.loadFailed;
+      }
+
+      (async () => {
+        try {
+          if (api.getStrings) applyStrings(await api.getStrings());
+        } catch {
+          /* keep the English already on the page */
+        }
+        try {
+          const text = await api.getReport();
+          if (text) ta.value = text;
+        } catch (e) {
+          ta.value = loadFailed.replace('{error}', (e && e.message) || '');
+        }
+      })();
+
+      $('copy').addEventListener('click', async () => {
+        try {
+          await api.copy(ta.value);
+        } catch {
+          ta.focus();
+          ta.select();
+          document.execCommand('copy');
+        }
+        const c = $('copied');
+        c.classList.add('show');
+        setTimeout(() => c.classList.remove('show'), 1200);
+      });
+      $('logs').addEventListener('click', () => api.openLogs && api.openLogs());
+      $('restart').addEventListener('click', () => api.restart && api.restart());
+      $('quit').addEventListener('click', () => api.quit && api.quit());
+    </script>
+  </body>
+</html>

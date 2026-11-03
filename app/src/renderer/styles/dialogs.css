@@ -1,0 +1,415 @@
+/* ---- modal / in-app prompt ----------------------------------- */
+.modal-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  z-index: 200;
+  animation: fadeIn 0.12s ease-out;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+.modal {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  width: min(420px, 90vw);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+  animation: modalIn var(--dur-med) var(--ease-spring);
+}
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.modal h4 {
+  font-size: var(--fs-lg);
+  margin-bottom: 12px;
+}
+/* ConfirmDialog's optional body text — PromptDialog has no <p>, so this only
+   ever applies there. */
+.modal p {
+  font-size: var(--fs-md);
+  color: var(--text-dim);
+  margin: -4px 0 14px;
+}
+.modal input[type='text'] {
+  width: 100%;
+}
+.modal-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal-input-suffixed {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+/* Only when a fixed suffix (e.g. ".exe") is present does the wrapper grow its
+ * own box — the input becomes borderless/transparent inside it so the two
+ * read as one field with a non-editable tail, matching InlineRename's suffix
+ * mode. Without a suffix the native input's own chrome (above) is unchanged. */
+.modal-input-suffixed.has-suffix {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding-right: 9px;
+}
+/* The wrapper carries the focus affordance instead of the input's own
+ * `:focus-visible` ring (suppressed below) — that ring is an *outset*
+ * outline, and this input is deliberately borderless inside the wrapper's
+ * own box, so the outline drew a second, tighter rectangle just inside it
+ * (reads as a stray box around the text, especially under a red/crimson
+ * accent palette). One rectangle, on the field's own border, instead. */
+.modal-input-suffixed.has-suffix:focus-within {
+  border-color: var(--accent);
+}
+.modal-input-suffixed.has-suffix input[type='text'] {
+  /* No `flex: 1` — that used to make the input fill the whole box regardless
+     of how much was typed, which pinned the suffix to the box's far edge
+     instead of right after the text. `field-sizing: content` grows the
+     input to fit what's typed natively instead. */
+  field-sizing: content;
+  width: auto;
+  min-width: 3ch;
+  max-width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+.modal-input-suffixed.has-suffix input[type='text']:focus-visible {
+  outline: none;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ---- the profile comparator (components/ProfileCompare.tsx) ---------------
+ *
+ * A wider `.modal`: the base width is sized for a prompt with one field, and
+ * this is a two-column diff with a per-key breakdown under each row.
+ *
+ * ONE table, everything on the same grid — the setting name and the two
+ * profiles, plus (keyboards) a per-key copy column between them. Detail rows
+ * are ordinary rows of that table rather than a nested one, because a nested
+ * table computes its own column widths and will not line up with the header
+ * it sits beneath. The bulk-copy buttons are the same table's footer, for the
+ * same reason. */
+.modal-wide {
+  --cmp-c1: 32%;
+  width: min(760px, 94vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+}
+/* Which two profiles. Pinned above the scrollport, because every row below is
+   relative to it — scrolling away from "compared with what" is what made the
+   first version's copy arrows guesswork. */
+.cmp-pair {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+/* Wider than a bare slot name: each option also carries how far that profile
+   is from the one selected opposite ("Gaming — 11/79 keys differ"). */
+.cmp-pick {
+  max-width: 260px;
+}
+/* All three of these are `<p>` inside `.modal`, so they inherit
+   `.modal p { margin: -4px 0 14px }` — a negative top margin written for
+   ConfirmDialog's one-line body. Here it pulled the notes UP over the last row
+   of the scrolling table. Two classes, so these win on specificity, and the
+   margin is stated rather than inherited. */
+.modal-wide .cmp-summary {
+  flex: none;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  margin: 0 0 6px;
+}
+.modal-wide .cmp-reading {
+  font-size: var(--fs-md);
+  color: var(--text-dim);
+  margin: 0;
+  padding: 18px 0;
+}
+/* The dialog, not the page, scrolls: the pair selector and the actions stay
+   put while a long diff moves under them. `flex: 1 1 auto` + `min-height: 0`
+   is what bounds it; without the explicit basis the content sizes first and
+   the notes below overlap the last row. A 27-of-79-keys diff shows it. */
+.cmp-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.cmp-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: var(--fs-sm);
+}
+.cmp-c-setting {
+  width: var(--cmp-c1);
+}
+.cmp-table th,
+.cmp-table td {
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.cmp-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--line);
+  color: var(--text-dim);
+  font-weight: 500;
+}
+/* The rule goes on the SETTING row, not on every row: a setting and its own
+   detail rows are one block, so a line between them would cut the block up. */
+.cmp-row > th,
+.cmp-row > td {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.cmp-table tbody th {
+  font-weight: 500;
+}
+/* The disclosure. A whole-label button, because a 9px caret is not a target. */
+.cmp-disclose {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.cmp-disclose:hover {
+  color: var(--accent);
+}
+.cmp-caret {
+  display: inline-flex;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.cmp-caret.is-open {
+  transform: rotate(90deg);
+}
+.cmp-nodisclose {
+  padding-left: 16px; /* line up with the disclosed rows' labels */
+}
+.cmp-v {
+  font-variant-numeric: tabular-nums;
+}
+.cmp-headline {
+  color: var(--text-dim);
+}
+/* A per-key line. Indented under its setting and quieter than it, so the two
+   read as heading and body rather than as two settings. */
+.cmp-detail > th {
+  padding-left: 24px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+/* The key is an object on the board; the setting is a property of it. Told
+   apart by weight and colour, so a column of "D Actuation / D Top dead zone"
+   scans as one key with two properties rather than as two labels. */
+.cmp-key {
+  color: var(--text);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.cmp-sub {
+  /* Lighter as well as dimmer. `.cmp-table tbody th` sets 500 on the whole
+     cell, so without this the two parts differed only in colour and the
+     distinction leaned entirely on one channel. */
+  color: var(--text-mut);
+  font-weight: 400;
+}
+.cmp-detail > th,
+.cmp-detail > td {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+/* The stripe and the copy gutter's band: a tint of the TEXT colour, so it
+   is lighter on a dark page and darker on a light one. It was white at 3%,
+   which vanished on the light theme's white table — and with it the striping
+   that groups a key's rows, and the gutter. */
+.cmp-table {
+  --cmp-band: color-mix(in srgb, var(--text) 4%, transparent);
+}
+.cmp-detail:nth-of-type(even) {
+  background: var(--cmp-band);
+}
+.cmp-detail-val {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+}
+/* A fixed slot for the value, so the "(default)" note after it lands on the
+   same vertical line down the column. Without it the note tracks the width of
+   the value beside it — "off" and "2.50 mm" are different widths, so the notes
+   stepped left and right down the table. `ch` is the digit width, and the
+   numbers are tabular, so this holds whatever the values are. */
+.cmp-num {
+  display: inline-block;
+  min-width: 8ch;
+}
+.cmp-chip {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.4);
+}
+/* "still the factory value" — which side was deliberately changed is half of
+   what a diff is for, and two numbers alone do not say. Quiet, because it is
+   an annotation on the value and not the value. */
+.cmp-default {
+  flex: none;
+  color: var(--text-mut);
+  font-size: var(--fs-2xs);
+}
+/* Whole-profile copy: the button under a column copies INTO that column and
+   names it, its arrow pointing outward at it — the same sides as the per-key
+   arrows in the gutter.
+
+   It is the table's own footer rather than a grid imitating the columns. The
+   imitation drifted: the table sits inside the scrollport, so a scrollbar
+   narrowed it and not the grid, and the grid's gaps never matched the cells'
+   padding. Sticky, mirroring the header, so it stays in reach on a long diff.
+   Left-aligned like every value above it — `.btn` centres its label. */
+.cmp-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--bg-1);
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.cmp-bulk-row .btn {
+  justify-content: flex-start;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Keyboards: one block of rows per key, named once, with nothing to open. */
+.cmp-flat .cmp-detail > th {
+  padding-left: 8px;
+}
+.cmp-keyblock > tr:first-child > * {
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+/* Striped per KEY, not per row — the rows of one key are one thing. */
+.cmp-flat .cmp-detail:nth-of-type(even) {
+  background: none;
+}
+.cmp-flat .cmp-keyblock:nth-of-type(even) {
+  background: var(--cmp-band);
+}
+/* The key's name after its first row: kept for a screen reader, so every row
+   still reads "W Release", but not drawn again. */
+.cmp-key-repeat {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+/* The per-key copy: the left-pointing copy (on the left) takes this key into
+   the left profile, the right-pointing one (on the right) into the right
+   profile. One cell spanning the key's rows, centred on them.
+
+   A gutter of its own between the two profiles, banded and ruled top to
+   bottom (header and footer too), with the buttons centred in it. Unmarked,
+   it read as the start of the right-hand column: the values are left-aligned,
+   so the space a column does not use sits at its right, and the buttons
+   looked pushed against the second profile. The `td.` selectors outrank
+   `.cmp-table td`, which left-aligns every other cell — and had been
+   left-aligning these too. */
+.cmp-c-copy {
+  width: 80px;
+}
+.cmp-table td.cmp-copy,
+.cmp-table th.cmp-copy-head {
+  text-align: center;
+  background-color: var(--cmp-band);
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+.cmp-table td.cmp-copy {
+  vertical-align: middle;
+  white-space: nowrap;
+  padding: 2px 6px;
+}
+.cmp-copy .btn-icon {
+  display: inline-grid;
+}
+.cmp-copy .btn-icon + .btn-icon {
+  margin-left: 2px;
+}
+/* The header end of the gutter is STICKY, and a sticky cell has to be
+   opaque: with only the band, the copy buttons of rows scrolled underneath
+   showed through. The same band, mixed onto the pane colour. The footer's
+   cell under the gutter is the footer, not the gutter — there is nothing
+   left to copy between the two "Copy all" buttons — so it takes the
+   footer's own surface (`.cmp-table tfoot td`), with no band or sides. */
+.cmp-table th.cmp-copy-head {
+  background-color: color-mix(in srgb, var(--text) 4%, var(--bg-1));
+}
+/* The two profiles MIRROR each other round the gutter: each column centred,
+   so the copy arrows sit midway between the two sets of values. Left-aligned,
+   each column's unused width collected on its right — between profile A's
+   values and the gutter — and the arrows read as part of profile B ("the copy
+   column is still to the right"). Classes, not `td.cmp-copy + td`: the copy
+   cell spans a key's rows, so rows 2+ of a block have no copy cell to follow,
+   and they were padded differently from the first. */
+.cmp-table.has-copy :is(th, td):is(.cmp-a, .cmp-b) {
+  text-align: center;
+}
+/* One width of value box down a column, so centred boxes still start on the
+   same line and the "(default)" notes after them still line up. */
+.has-copy .cmp-detail-val {
+  min-width: 17ch;
+  justify-content: flex-start;
+  text-align: left;
+}
+.has-copy .cmp-bulk-row .btn {
+  justify-content: center;
+}
+.modal-wide .cmp-same,
+.modal-wide .cmp-error {
+  /* Never squeezed by the scrolling table above — these are short, and losing
+     them is worse than one fewer visible row. */
+  flex: none;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  margin: 12px 0 0;
+}
+.modal-wide .cmp-error {
+  color: var(--red);
+}

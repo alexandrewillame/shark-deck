@@ -1,0 +1,180 @@
+/* ---- auto-switch on/off group --------------------------------
+ * The pill itself (.autoswitch-toggle) is the whole on/off control — it
+ * reads "ON"/"OFF" rather than pairing a separate switch next to a
+ * navigation icon. The nav-to-screen icon sits after it, inside the same
+ * bordered group. */
+.autoswitch-group {
+  display: inline-flex;
+  align-items: stretch;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.autoswitch-group.on {
+  border-color: var(--accent-dim);
+}
+/* Auto-switch is on but held off because a device config tab is open — see
+ * SwitcherState.suspended. Deliberately amber (the app's existing "caution"
+ * colour) rather than the accent colour `.on` uses, so it reads as distinct
+ * from both a plain ON and a plain OFF at a glance. */
+/* Paused is RED, not amber.
+   Amber reads as "something is a bit off"; paused means auto-switch is
+   running but deliberately not acting, which is a state the user has to
+   notice and clear. Red is the only token this control did not already use,
+   which is also what makes it register. */
+.autoswitch-group.paused {
+  border-color: color-mix(in srgb, var(--red) 55%, transparent);
+}
+.autoswitch-group.paused .autoswitch-toggle {
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 14%, transparent);
+}
+.autoswitch-group.paused .topbar-btn {
+  background: color-mix(in srgb, var(--amber) 10%, transparent);
+  color: var(--amber);
+  border-left-color: color-mix(in srgb, var(--amber) 45%, transparent);
+}
+.autoswitch-group.paused .topbar-btn:hover {
+  background: color-mix(in srgb, var(--amber) 18%, transparent);
+  border-left-color: color-mix(in srgb, var(--amber) 45%, transparent);
+}
+.autoswitch-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.autoswitch-toggle:hover {
+  background: var(--bg-3);
+}
+.autoswitch-group.on .autoswitch-toggle {
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+.autoswitch-group .topbar-btn {
+  padding: 6px 8px;
+  /* Match the group's own right corners instead of relying only on its
+   * `overflow: hidden` to clip a square button — a square box inside a
+   * rounded one reads as a stray flat notch at the two right corners even
+   * once clipped, especially once the global `.topbar-btn:hover` border
+   * below gets involved. */
+  border-radius: 0 9px 9px 0;
+  border-left: 1px solid var(--line);
+  /* plain grey while auto-switch is OFF — no accent wash. It only picks up
+     the accent once auto-switch is actually running (`.on` below). */
+  background: transparent;
+  color: var(--text-dim);
+}
+.autoswitch-group .topbar-btn:hover {
+  background: var(--bg-3);
+  /* The group itself already shows the "hovered/on" state via its own
+   * border (see `.autoswitch-group.on`) — without this, the global
+   * `.topbar-btn:hover` rule paints a square 1px border on all four sides of
+   * this button, which pokes past the group's rounded right corners. Only
+   * the left divider (kept, below) should ever show. */
+  border-top-color: transparent;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: var(--line);
+}
+.autoswitch-group.on .topbar-btn {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+  border-left-color: var(--accent-dim);
+}
+.autoswitch-group.on .topbar-btn:hover {
+  background: rgba(var(--accent-rgb), 0.18);
+  border-left-color: var(--accent-dim);
+}
+/* the bolt icon itself, coloured/glowing while auto-switch is running */
+.icon-live {
+  color: var(--accent);
+  filter: drop-shadow(0 0 4px rgba(var(--accent-rgb), 0.55));
+}
+/* same, but while running-and-paused (see .autoswitch-group.paused above) */
+.icon-paused {
+  color: var(--red);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--red) 55%, transparent));
+}
+
+/* Writing a mode to the hardware. A burst of feature-report writes, during
+   which the board stops answering its own input endpoint — the keyboard
+   stalls for a moment. Pulsing the pill is what tells the user that stall is
+   work in progress rather than a fault. */
+.autoswitch-group.applying {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.autoswitch-group.applying .autoswitch-toggle {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.icon-applying {
+  color: var(--accent);
+  animation: as-applying-pulse 900ms ease-in-out infinite;
+}
+@keyframes as-applying-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .icon-applying {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* The live mode, beside the toggle. Two lines at small size rather than one
+   long string: the mode name is what you scan for and the executable is the
+   supporting detail, so they should not compete on the same baseline. Capped
+   and elided because an executable name can be arbitrarily long and this
+   sits in a fixed-height topbar. */
+/* The live mode, inside the toggle button rather than beside it, so it shares
+   the button's tooltip, hover and click. A separator rule keeps it legible as
+   a distinct piece of information without making it a distinct control. */
+.autoswitch-mode {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 1px;
+  margin-left: 8px;
+  padding-left: 8px;
+  max-width: 150px;
+  border-left: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  line-height: 1.15;
+  overflow: hidden;
+}
+/* `currentColor`, not a fixed token: the whole button turns red when paused
+   and accent-tinted while applying, and the mode has to come with it. */
+.autoswitch-mode-name {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: currentColor;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.autoswitch-mode-exe {
+  font-size: var(--fs-2xs);
+  color: currentColor;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}

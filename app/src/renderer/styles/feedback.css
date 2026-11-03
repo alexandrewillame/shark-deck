@@ -1,0 +1,133 @@
+/* ---- error boundary (a tab's render threw) ------------------- */
+.error-boundary {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.error-boundary-card {
+  max-width: 480px;
+  background: var(--bg-1);
+  border: 1px solid color-mix(in srgb, var(--red) 35%, transparent);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.error-boundary-card h3 {
+  color: var(--red);
+  font-size: var(--fs-xl);
+  margin-bottom: 8px;
+}
+.error-boundary-card .hint {
+  margin-bottom: 12px;
+}
+.error-boundary-card pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  margin-bottom: 14px;
+  max-height: 160px;
+  overflow: auto;
+}
+
+/* ---- "couldn't read from device" state -----------------------
+ * A short in-panel note now — no button of its own (see ReadFailed in
+ * tabs/common.tsx); the single "Re-read" for the whole menu lives in the
+ * banner below. */
+/* ---- loading affordance (tabs/common.tsx `Loading`) ----------------- */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px;
+  color: var(--text-mut);
+  font-size: var(--fs-md);
+}
+.loading-inline {
+  padding: 8px 0;
+  justify-content: flex-start;
+}
+.spinner {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--accent-rgb), 0.25);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.readfail {
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--text-mut);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+/* One aggregate "couldn't read" banner for the whole device-config menu —
+ * see DeviceConfig.tsx / useReadFailureRegistry. Same shape as the existing
+ * offline banner it sits next to. */
+.readfail-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+}
+.readfail-banner .btn {
+  flex: none;
+}
+
+/* ---- "the device is being written to" block ------------------------------
+ * Covers the device config menu only (see BusyOverlay in tabs/common.tsx) —
+ * never the title bar or the tab strip, so a write that never returns cannot
+ * leave someone in a window they cannot leave.
+ */
+.busy-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg-1) 72%, transparent);
+  backdrop-filter: blur(1.5px);
+  animation: fadeIn 0.12s ease-out;
+  /* It IS the block: everything under it must be unreachable by pointer. */
+  cursor: progress;
+}
+.busy-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-1);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+}
+.busy-label {
+  font-size: var(--fs-md);
+  color: var(--text);
+}
+.busy-sub {
+  font-size: var(--fs-sm);
+  color: var(--text-mut);
+  margin-top: 2px;
+}

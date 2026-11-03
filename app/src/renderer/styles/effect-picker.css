@@ -1,0 +1,104 @@
+/* ---- lighting effect picker ----------------------------------------------
+ * A tile per effect instead of a text <select>. Names like "Mountain Wave" or
+ * "Snow Trace" carry almost no meaning on their own, so each tile animates its
+ * own effect family (see PREVIEW_FAMILY in LightingTab.tsx).
+ */
+.effect-grid {
+  display: grid;
+  /* 96px when the tile was an abstract 6x3 swatch. A tile now draws the whole
+     79-key board, and at 96px that is under two pixels a key — the thing the
+     tile exists to show, too small to see. */
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+/* Each tile is wrapped in a Tooltip, so the GRID ITEM is `.tt-wrap`
+ * (`display: inline-flex`) and the button inside it is a flex item with the
+ * default `flex: 0 1 auto` — i.e. as wide as its own label and no wider.
+ * "Off" therefore rendered at a third the width of "Spectrum Cycle", and
+ * since the swatch's height comes from `aspect-ratio` on that width, at a
+ * third the height too; every narrower tile then picked up dead space at the
+ * bottom when the grid row stretched to the tallest one. Exactly the trap
+ * segmented.css documents at the top of its own file. */
+.effect-grid > .tt-wrap {
+  align-items: stretch;
+}
+.effect-grid .effect-tile {
+  flex: 1;
+  min-width: 0;
+}
+.effect-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 5px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  line-height: 1.25;
+}
+.effect-tile:hover {
+  border-color: var(--text-mut);
+}
+.effect-tile.on {
+  border-color: var(--accent);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+/* The animated swatch: the device's OWN board, drawn to a canvas.
+ * `EffectThumb` sets the aspect ratio from the layout, so every tile is the
+ * same shape and the grid rows stay even. */
+.effect-thumb {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 3px;
+  /* The plate, behind the transparent canvas — the same token the big preview
+     board uses, so a thumbnail and the board it stands for are lying on the
+     same piece of metal and both follow the theme. */
+  background: var(--kbmap-lit-bg);
+}
+/* Two lines' worth of room, always.
+   The swatch above is a fixed aspect ratio, so tiles only ever differed in
+   height because a longer name wrapped to two lines and a shorter one did
+   not — and CSS grid sizes each ROW independently, so that difference showed
+   up as a ragged grid. Reserving the second line makes every tile identical
+   without truncating anything. */
+.effect-tile-label {
+  padding: 0 1px;
+  min-height: calc(2 * 1.25em);
+  display: flex;
+  align-items: center;
+}
+/* Motion here is decoration, not state — the label already says which effect
+   it is, so stopping it costs nothing. */
+@media (prefers-reduced-motion: reduce) {
+  /* The phase is already frozen (`useEffectPhase` bails under this query), so
+     the tile holds one frame. Dimming it says the motion is deliberately off
+     rather than broken. */
+  .effect-thumb {
+    opacity: 0.75;
+  }
+}
+
+/* A DevNote (see tabs/common.tsx): protocol-confidence copy that only exists in
+ * unpackaged builds. Marked so it is obvious at a glance which text a shipped
+ * build will not show — otherwise it is easy to write one of these and assume
+ * users are reading it. */
+.dev-note {
+  border-left: 2px solid var(--violet);
+  padding-left: 8px;
+  opacity: 0.85;
+}
+
+/* A reserved Fn slot is painted red via KeyboardMap's `accent`; this is just
+ * the invisible hit target that carries its tooltip, since the explanation has
+ * to be reachable and the key body itself has no hover affordance. */
+.kbkey-lockhit {
+  position: absolute;
+  inset: 0;
+}

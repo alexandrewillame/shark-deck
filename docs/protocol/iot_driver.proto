@@ -1,0 +1,50 @@
+syntax = "proto3";
+// AUTO-EXTRACTED from Attack Shark Driver v4 dist/js. Regenerate: npm run extract:kb
+// The renderer talks to iot_driver_v215.exe over gRPC-web at http://127.0.0.1:3814.
+// Only the shape is recovered here; iot_driver appends the checksum named by
+// CheckSumType and performs the HID I/O.
+package driver;
+
+enum CheckSumType {
+  Bit7 = 0;
+  Bit8 = 1;
+  None = 2;
+}
+
+enum DangleDevType {
+  DangleDevTypeNone = 0;
+  Keyboard = 1;
+  Mouse = 2;
+}
+
+message SendMsg {
+  string devicePath = 1;
+  bytes  msg = 2;            // frame WITHOUT the trailing checksum byte
+  CheckSumType checkSumType = 3;
+  DangleDevType dangleDevType = 4;
+}
+message ReadMsg { string devicePath = 1; bool is24 = 2; string path = 3; }
+
+service DriverGrpc {
+  rpc watchDevList(SendMsg) returns (stream ResSend);
+  rpc watchVender(SendMsg) returns (stream ResSend);
+  rpc watchSystemInfo(SendMsg) returns (stream ResSend);
+  rpc sendMsg(SendMsg) returns (ResSend);
+  rpc readMsg(SendMsg) returns (ResSend);
+  rpc sendRawFeature(SendMsg) returns (ResSend);
+  rpc readRawFeature(SendMsg) returns (ResSend);
+  rpc setLightType(SendMsg) returns (ResSend);
+  rpc upgradeOTAGATT(SendMsg) returns (stream ResSend);
+  rpc muteMicrophone(SendMsg) returns (ResSend);
+  rpc toggleMicrophoneMute(SendMsg) returns (ResSend);
+  rpc getMicrophoneMute(SendMsg) returns (ResSend);
+  rpc changeWirelessLoopStatus(SendMsg) returns (ResSend);
+  rpc insertDb(SendMsg) returns (ResSend);
+  rpc deleteItemFromDb(SendMsg) returns (ResSend);
+  rpc getItemFromDb(SendMsg) returns (ResSend);
+  rpc getAllKeysFromDb(SendMsg) returns (ResSend);
+  rpc getAllValuesFromDb(SendMsg) returns (ResSend);
+  rpc cleanDev(SendMsg) returns (ResSend);
+  rpc getVersion(SendMsg) returns (ResSend);
+  rpc getWeather(SendMsg) returns (ResSend);
+}

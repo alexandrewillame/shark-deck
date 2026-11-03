@@ -1,0 +1,731 @@
+/* ---- saved-layout previews ------------------------------------------------ */
+/* The row thumbnail. `.preset-board` is the same KeyboardMap at a smaller
+ * --kb-u, so the thumbnail and the hover preview can never disagree. */
+.preset-thumb {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg-1);
+}
+.preset-board .kbmap {
+  /* The gutter and border are dropped by KeyboardMap's `bare` prop, not here:
+     the board's width and height are inline and computed FROM them, so zeroing
+     only the painted properties left the box still reserving 12px of gutter
+     and 1px of border on every side — a thumbnail adrift in 26px of empty
+     space, which is the reported "preview smaller than the box it is
+     allocated to". */
+  /* `.kbmap`'s own `overflow-x: auto` is for a real board in a real pane. In
+     a thumbnail or a tooltip there is nothing to scroll with, so a board that
+     overflows is simply a board with its right-hand side missing. */
+  overflow: visible;
+  max-width: none;
+}
+/* Radius, height, gap and font all scale with `--kb-u` in keyboard-map.css
+   now, so the only thing left to say here is that a thumbnail has no key
+   outlines. Labels are dropped via KeyboardMap's own `showLabels`. */
+.preset-board .kbkey {
+  border-color: transparent;
+}
+
+/* ---- keyboard lighting: the board and its tool column ----------------------
+ * See LightStage.tsx. One grid for BOTH the Global and Per-Key panes: the
+ * board's track and a fixed tool track, reserved even when empty, so the
+ * keyboard sits in the same box on both and does not move between them.
+ * `minmax(0, 1fr)` gives the board the definite width KeyboardMap's `fit`
+ * sizes its keys from. */
+.light-stage-box {
+  container: light-stage / inline-size;
+  margin-bottom: 8px;
+}
+.light-stage {
+  --light-tool: 34px;
+  /* the tool, plus the column's padding and border */
+  --light-tools-w: calc(var(--light-tool) + 12px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--light-tools-w);
+  column-gap: 10px;
+  align-items: start;
+}
+.light-stage.no-tools {
+  grid-template-columns: minmax(0, 1fr);
+}
+.light-stage > .art-keyboard-anchor {
+  min-width: 0;
+  margin-bottom: 0;
+}
+/* The tools act ON keys, so they sit against the board. */
+.light-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: var(--light-tools-w);
+  box-sizing: border-box;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-1);
+}
+/* Every tool the same square — the brush chip included. Descendant, not
+   child: each one is wrapped in a Tooltip's span. */
+.light-tools .light-tool {
+  width: var(--light-tool);
+  height: var(--light-tool);
+  padding: 0;
+  justify-content: center;
+}
+.light-tools-sep {
+  align-self: stretch;
+  height: 1px;
+  margin: 1px 3px;
+  background: var(--line);
+}
+/* Narrow: tools under the board, in BOTH panes alike, so the two still match. */
+@container light-stage (max-width: 520px) {
+  .light-stage {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
+  .light-tools {
+    flex-direction: row;
+    width: auto;
+    justify-self: center;
+  }
+  .light-tools-sep {
+    width: 1px;
+    height: auto;
+    margin: 3px 1px;
+  }
+}
+/* The brush: the colour itself, filling the chip. */
+.cpf-tool-swatch {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.35);
+}
+/* The box tool armed, or Shift/Ctrl held while painting. */
+.kbmap-boxing .kbmap,
+.kbmap-boxing .kbkey {
+  cursor: cell;
+}
+
+/* ---- per-key lighting: the Board row --------------------------------------
+ * Clear all, Fill all, then the device's Read / Apply / Cancel: everything
+ * that acts on the whole board, on one line, wrapping on a narrow pane. */
+.perkey-board-row > div:last-child {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  row-gap: 6px;
+}
+.perkey-board-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--line);
+}
+
+/* ---- saved layouts: the name field and Save, on the title line ------------ */
+.saved-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.saved-save input {
+  width: 150px;
+  padding: 4px 8px;
+  font-size: var(--fs-sm);
+}
+
+/* ---- marquee selection ---------------------------------------------------- */
+/* A rubber-band box drawn over the board while dragging from its background.
+ * The host needs a positioning context; the box itself must never eat pointer
+ * events or it would swallow the pointerup that ends its own drag. */
+.kbmap-marquee-host {
+  position: relative;
+}
+.kbmap-marquee {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  background: rgba(var(--accent-rgb), 0.14);
+}
+
+/* ---- keyboard legends -----------------------------------------------------
+ *
+ * The board and the switch diagram both mark things in colour — a violet dot
+ * for rapid trigger, an amber dot for an advanced mode, an accent tint for
+ * live depth, dashed lines for the dead zones — and none of it was explained
+ * anywhere on the tab. These are those keys.
+ */
+.kb-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 18px;
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+}
+.kb-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* The board-wide reset (Remap's and Actuation's "Reset all") at the right end
+ * of the legend row. The auto margin goes on whichever box is the row's flex
+ * item: the button itself, or the Tooltip's wrapper around it. */
+.kb-legend > .kb-legend-end,
+.kb-legend > .tt-wrap:has(> .kb-legend-end) {
+  margin-left: auto;
+}
+.kb-legend .kb-legend-end {
+  font-size: var(--fs-sm);
+}
+.kb-legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.kb-legend-swatch {
+  width: 14px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+}
+/* A miniature of the per-key gauge: fill, tick, and the two dead-zone bands.
+ * The unpainted stops are the same opaque literal the real gutter uses
+ * (keyboard-map.css, .kbkey-gauge) rather than `--bg-3`, so the legend keeps
+ * looking like the thing it is explaining under every palette. */
+.kb-legend-gauge {
+  position: relative;
+  width: 6px;
+  height: 14px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to bottom,
+    var(--text-mut) 0 2px,
+    rgba(var(--accent-rgb), 0.55) 2px 8px,
+    var(--violet) 8px 9px,
+    rgba(8, 10, 14, 0.82) 9px 12px,
+    var(--text-mut) 12px 14px
+  );
+  border: 1px solid var(--line);
+}
+
+/* ---- guided switch calibration -------------------------------------------
+ * A modal on purpose: the whole point of this mode is that every keystroke is
+ * swallowed, so the rest of the UI must not look interactive while it runs.
+ */
+/* The same surface, corners, shadow and entrance as every other dialog
+   (`.modal`) — it was a grey, rounder, heavier box of its own, grey in the
+   light theme where every other dialog is white. Wider, for the board. */
+.calib-panel {
+  width: min(680px, 92vw);
+  max-height: 88vh;
+  overflow: auto;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+  animation: modalIn var(--dur-med) var(--ease-spring);
+}
+.calib-panel h3 {
+  margin: 0 0 10px;
+  font-size: var(--fs-lg);
+}
+.calib-panel .hint {
+  margin: 0 0 10px;
+}
+.calib-board {
+  margin: 14px 0;
+  pointer-events: none;
+}
+.calib-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* ---- Actuation key groups -------------------------------------------------
+ *
+ * One row per group: colour chip (also the "add keys to this one" toggle),
+ * inline-renameable name, key count, the colour choices, delete. The row is
+ * also a drop target for a key dragged off the board, so it needs enough
+ * height to be an easy target. */
+.kg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* The whole row selects the group — it is one thing, so it is one target. */
+.kg-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--bg-2);
+  cursor: pointer;
+}
+.kg-row:hover {
+  background: var(--bg-3);
+}
+.kg-row.in-selection {
+  background: var(--bg-3);
+  box-shadow: inset 2px 0 0 var(--text-dim);
+}
+.kg-row.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-2));
+}
+.kg-row.active.in-selection {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+/* The colour IS the button that changes it. There is no separate picker
+   control on the row any more: eight swatches, permanently, on every row, to
+   serve a change made once. */
+.kg-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border: 1px solid rgb(0 0 0 / 0.3);
+  display: block;
+  flex: none;
+  padding: 0;
+  cursor: pointer;
+}
+.kg-swatch:hover {
+  outline: 2px solid var(--text-dim);
+  outline-offset: 1px;
+}
+/* The base group's swatch: a plain key, like the keys it stands for — and not
+   a button, since the base has no colour to choose. */
+.kg-swatch.kg-swatch-base {
+  background: var(--kbkey-bg);
+  border: 1px dashed var(--text-mut);
+  cursor: default;
+}
+.kg-swatch.kg-swatch-base:hover {
+  outline: none;
+}
+/* Name and count on one line — "Group #1 — 64 keys" — rather than a name on
+   the left and a count pushed to the far edge with the row between them. */
+.kg-label {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  min-width: 0;
+  flex: 1;
+}
+.kg-name {
+  min-width: 0;
+}
+.kg-count {
+  white-space: nowrap;
+}
+/* A body-level portal, positioned by useAnchoredPosition. */
+/* Ten columns across (nine hues and a slate), three strengths down — the same colour in each column,
+   lighter as it goes. Rows are real elements, so the grid reads the same in the
+   DOM as it does on screen. */
+.kg-colors {
+  position: fixed;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-1);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
+}
+.kg-color-row {
+  display: flex;
+  gap: 4px;
+}
+.kg-color {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  /* Full strength, always. These ARE the colours — dimming them to 55% meant
+     the swatch you picked was never the colour you got. */
+  opacity: 1;
+}
+.kg-color:hover:not(:disabled) {
+  border-color: var(--text);
+  transform: scale(1.12);
+}
+/* The one this group already has. */
+.kg-color.on {
+  border-color: var(--text);
+  box-shadow:
+    0 0 0 2px var(--bg-1),
+    0 0 0 3px var(--text);
+}
+/**
+ * Spoken for by another group.
+ *
+ * Shown rather than omitted — a colour you cannot see does not say "in use",
+ * it says the list got shorter. Struck through and faded so it reads as
+ * unavailable at swatch size, where a border alone would not, and not pickable
+ * because two groups sharing a colour makes the board's key painting
+ * ambiguous, which is the only job the colour has. */
+.kg-color.taken {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.kg-color.taken::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 1px),
+    var(--bg-1) calc(50% - 1px),
+    var(--bg-1) calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+.kg-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---- key-group rail, beside the board ---------------------------
+ * Narrow and plain: it sits next to a 79-key layout, so anything it spends on
+ * chrome it takes from the thing it is annotating. No header, no key count, no
+ * per-row buttons except the colour. */
+.kb-with-rail {
+  --kg-rail-w: 128px;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  /* The rail's column, reserved. The rail itself is taken out of flow below,
+     so the row's height is the BOARD's height and nothing else's. */
+  padding-right: calc(var(--kg-rail-w) + 12px);
+}
+.kb-with-rail > .art-keyboard-anchor,
+.kb-with-rail > .kbmap-wrap {
+  flex: 1;
+  min-width: 0;
+}
+/**
+ * Out of flow, and exactly as tall as the board.
+ *
+ * As a flex item it set the row's height like any other, so a board with a
+ * dozen groups grew a rail taller than the keyboard and pushed everything
+ * below it down the page — `max-height: 100%` resolves against a height the
+ * rail was itself deciding, so it never capped anything. Absolute against the
+ * padding box pins it to the board's top and bottom instead, which is a
+ * definite height, which is what `overflow-y` needs to mean anything.
+ */
+.kg-rail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--kg-rail-w);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Room for the bar, always, so a row's text is not half-hidden under it the
+     moment a thirteenth group appears. */
+  scrollbar-gutter: stable;
+}
+/* Visible enough to find on a 128px rail — the app's default bar is nearly
+   invisible against .bg-2, which is how a scrollable list came to look like a
+   list that simply ended. */
+.kg-rail::-webkit-scrollbar {
+  width: 10px;
+}
+.kg-rail::-webkit-scrollbar-track {
+  background: transparent;
+}
+.kg-rail::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 5px;
+}
+.kg-rail::-webkit-scrollbar-thumb:hover {
+  background: var(--text-mut);
+  background-clip: padding-box;
+}
+.kg-rail .kg-row {
+  gap: 7px;
+  padding: 3px 6px;
+  font-size: var(--fs-sm);
+}
+.kg-rail .kg-swatch {
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+}
+.kg-rail .kg-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The pencil only appears on the row you are pointing at — on a rail this
+   narrow a permanent icon per row is a column of its own. */
+.kg-rail .inline-rename {
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.kg-rail .kg-row:hover .inline-rename,
+.kg-rail .kg-row:focus-within .inline-rename {
+  opacity: 1;
+}
+/* Zero-size anchor for the colour popover — see ColorPopover. */
+.kg-anchor {
+  position: absolute;
+  left: 6px;
+  bottom: 0;
+  width: 0;
+  height: 0;
+}
+/* No `--kg-rail-w` override here: the width is set inline from the longest
+   group name (see railWidth in MagneticSection), and an inline style beats a
+   stylesheet rule, so a value written here could never take effect. */
+@media (max-width: 1100px) {
+  .kg-rail .kg-row {
+    padding: 2px 5px;
+  }
+}
+
+/* ---- dragging a key ---------------------------------------------
+ * While a key is in flight, everything that is not a valid drop target dims,
+ * so the gesture says what it can land on. Without it the board looks exactly
+ * as it always does and there is nothing to show the drag is live. */
+[data-kdrag] .panel {
+  opacity: 0.35;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+[data-kdrag] .panel:has(.kbmap),
+[data-kdrag] .panel:has(.kg-rail) {
+  opacity: 1;
+}
+[data-kdrag] * {
+  cursor: grabbing !important;
+}
+/* The target under the pointer. */
+.kdrag-over.kbkey {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.kdrag-over.kg-row {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg-2));
+}
+
+/* A rail-shaped hole where the Test view has no rail.
+ *
+ * The board is the Actuation tab's anchor and must sit in exactly the same box
+ * in every sub-view. The Keys view shares its row with the group rail, so
+ * without this the Test view's board was 180px wider and jumped sideways on
+ * every switch between them. */
+.kg-rail-ghost {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ---- the colour picker (components/ColorPickerField.tsx) ------------------
+ *
+ * Replaces `<input type="color">`. The native control could be given a border
+ * and a radius and still opened the Windows colour dialog on click, which is
+ * the part that actually read as foreign — so the whole thing is ours now,
+ * built from the same tokens as every other control: `--bg-3` fields, 7px on
+ * a control, 6px on small chrome, 4px on a swatch. */
+.cpf-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 5px 2px 2px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-3);
+  color: var(--text-mut);
+  cursor: pointer;
+}
+.cpf-trigger:hover:not(:disabled) {
+  border-color: var(--text-mut);
+  color: var(--text);
+}
+.cpf-trigger:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.cpf-trigger-swatch {
+  width: 30px;
+  height: 20px;
+  border-radius: 4px;
+  /* An inset hairline, not a border: a border would sit outside the colour
+     and make a white swatch look like an empty box. */
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.35);
+}
+/* Positioned by useAnchoredPosition into document.body — see the component
+ * for why it cannot live in place. Hidden until the first measurement lands,
+ * so it never flashes at the top-left corner. */
+.cpf-popover {
+  position: fixed;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 248px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.65);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.cpf-popover.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* Saturation left-to-right over value top-to-bottom, both on the pure hue.
+ * `--cpf-hue` is set inline by the component. */
+.cpf-area {
+  position: relative;
+  height: 118px;
+  border-radius: 7px;
+  cursor: crosshair;
+  touch-action: none;
+  background:
+    linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, var(--cpf-hue));
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.3);
+}
+.cpf-hue {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  cursor: ew-resize;
+  touch-action: none;
+  background: linear-gradient(
+    to right,
+    #f00 0%,
+    #ff0 17%,
+    #0f0 33%,
+    #0ff 50%,
+    #00f 67%,
+    #f0f 83%,
+    #f00 100%
+  );
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.3);
+}
+/* One handle for both tracks. White ring over a black ring, so it stays
+ * visible on every colour underneath — the same device `.kbkey.sel` uses. */
+.cpf-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 3px rgb(0 0 0 / 0.55);
+}
+.cpf-dot-hue {
+  top: 50%;
+  background: transparent;
+}
+.cpf-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Hex and the three channels share one line: hex is what gets copied around,
+   a channel is what the LED actually takes. */
+.cpf-rgb {
+  display: flex;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.cpf-chan {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  font-size: var(--fs-2xs);
+  color: var(--text-mut);
+}
+.cpf-chan input {
+  min-height: 0;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 2px 4px 5px;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+/* The spinners would take a third of a 40px field. The arrow keys still
+   step the value, which is the affordance worth keeping. */
+.cpf-chan input::-webkit-outer-spin-button,
+.cpf-chan input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.cpf-hex {
+  width: 74px;
+  flex: 0 0 auto;
+  /* The same stack as `.mono` (base.css), for the same reason. */
+  font-family:
+    'JetBrains Mono', 'Cascadia Mono', Consolas, 'SF Mono', Menlo, 'DejaVu Sans Mono',
+    'Liberation Mono', 'Noto Sans Mono', monospace;
+  font-size: var(--fs-sm);
+  text-transform: lowercase;
+}
+/* A grid, not a wrapping strip: a column is one hue and a row is one level,
+   so the same colour is always in the same place. A `flex-wrap` row put the
+   break wherever the width happened to fall and the columns meant nothing. */
+.cpf-swatches {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.cpf-swatch-row {
+  display: grid;
+  /* One column per swatch, taken from the row itself — so a row of a
+     different length still fills the popover rather than leaving a ragged
+     edge, and no count is written down anywhere but the palette. */
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+.cpf-sw {
+  height: 18px;
+  min-width: 0;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  padding: 0;
+  cursor: pointer;
+}
+.cpf-sw.on {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
