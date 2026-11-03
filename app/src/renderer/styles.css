@@ -1,0 +1,74 @@
+/*
+ * Stylesheet entry point. The rules live in ./styles/, split by area; this
+ * file is only the ordered manifest.
+ *
+ * CASCADE ORDER IS LOAD-BEARING. Vite inlines each @import in place, so
+ * reordering these lines silently changes which rule wins. Several selectors
+ * are deliberately declared in more than one area (.config-content in both
+ * config-shell and tab-panes, .spinner in both tab-panes and feedback,
+ * .macro-lib and .macro-step twice within macros) and rely on this order.
+ *
+ * tokens.css must stay first: everything else reads its custom properties.
+ *
+ * Verify a change here with `npm run build` and check the emitted
+ * out/renderer/assets/index-*.css filename. It is a content hash, so an
+ * unchanged name proves the bundled CSS is byte-identical.
+ */
+
+/* Colour tokens: :root defaults, 11 accent palettes, light-mode surfaces */
+@import './styles/tokens.css';
+/* Reset, theme cross-fade, RTL, focus rings, scrollbars */
+@import './styles/base.css';
+/* App shell: topbar, brand wordmark, nav, main column */
+@import './styles/layout.css';
+/* The topbar auto-switch on/off group */
+@import './styles/auto-switch-toggle.css';
+/* Open-device tab strip */
+@import './styles/tabstrip.css';
+/* Language picker menu */
+@import './styles/language-menu.css';
+/* First-run welcome screen */
+@import './styles/welcome.css';
+/* Home grid of device cards */
+@import './styles/device-grid.css';
+/* Tooltip bubbles and their media */
+@import './styles/tooltip.css';
+/* Device-config frame and the collapsible tab rail */
+@import './styles/config-shell.css';
+/* Panes, PaneHeader, rows, buttons, sliders, inline rename */
+@import './styles/panes.css';
+/* Buttons tab table and the numbered photo picker */
+@import './styles/buttons-tab.css';
+/* Segmented controls and toggles */
+@import './styles/segmented.css';
+/* Keyboard map board, keys, legends, overlays */
+@import './styles/keyboard-map.css';
+/* The one travelling device photo and its anchors */
+@import './styles/device-art.css';
+/* Auto-Switch screen: modes table, games/apps lists */
+@import './styles/auto-switch.css';
+/* Custom frameless titlebar buttons */
+@import './styles/window-controls.css';
+/* Per-tab pane scaffolding */
+@import './styles/tab-panes.css';
+/* Modal prompts and confirmations */
+@import './styles/dialogs.css';
+/* Error boundary, read-failure state, loading spinner */
+@import './styles/feedback.css';
+/* DPI multi-handle track */
+@import './styles/dpi-track.css';
+/* Graphical button picker */
+@import './styles/button-picker.css';
+/* Mouse LED panes */
+@import './styles/mouse-led.css';
+/* Macro library rail, editor, recorder, step list, key picker */
+@import './styles/macros.css';
+/* Appearance swatches and the device colour picker */
+@import './styles/appearance.css';
+/* Per-key lighting clusters, tool rail, marquee, calibration */
+@import './styles/per-key-lighting.css';
+/* Lighting effect picker */
+@import './styles/effect-picker.css';
+/* App background layer and the frosted surfaces over it — LAST: every rule
+   in it overrides a surface above, and only while a background is on */
+@import './styles/background.css';

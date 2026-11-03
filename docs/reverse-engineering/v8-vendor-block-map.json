@@ -1,0 +1,377 @@
+{
+ "source": "session-v8-2026-08-13.jsonl",
+ "note": "Every (offset,len) the vendor ATTACK SHARK MOUSE HUB requested via 08 08 (read config block) during the 2026-08-13 profile-switch capture. Each was requested 4x, once per profile switch (Profile 1..4), and the SAME offsets recur for every profile - no per-slot stride. Offsets are BIG-ENDIAN in the frame (byte3 hi, byte4 lo). len is never > 10 (one 17-byte report has 10 free payload bytes).",
+ "regions": {
+  "A_profile_block": {
+   "range": "0x0000-0x00d8",
+   "desc": "per-profile onboard config; DPI/poll/sensor/LOD/sleep/buttons/DPI-LED live here"
+  },
+  "B_fixed_records": {
+   "range": "0x0100-0x031f",
+   "stride": "0x20",
+   "desc": "16 fixed 0x20 records; RX/receiver region (driver RX.BASE=0x0300) is the tail of this"
+  },
+  "C_slot_pairs": {
+   "range": "0x0480-0x19af",
+   "stride": "0x180",
+   "desc": "16 slots of 0x180 bytes; each sampled at base and base+0x1f - likely macro storage (feature currently unimplemented)"
+  }
+ },
+ "reads": [
+  {
+   "offset": 0,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 10,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 20,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 30,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 40,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 50,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 60,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 70,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 76,
+   "len": 8,
+   "count": 4
+  },
+  {
+   "offset": 80,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 90,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 100,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 110,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 120,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 130,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 140,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 150,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 160,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 170,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 180,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 190,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 200,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 210,
+   "len": 6,
+   "count": 4
+  },
+  {
+   "offset": 256,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 288,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 320,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 352,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 384,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 416,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 448,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 480,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 512,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 544,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 576,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 608,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 640,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 672,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 704,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 736,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 768,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 799,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 1152,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 1183,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 1536,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 1567,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 1920,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 1951,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 2304,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 2335,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 2688,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 2719,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 3072,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 3103,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 3456,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 3487,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 3840,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 3871,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 4224,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 4255,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 4608,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 4639,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 4992,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 5023,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 5376,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 5407,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 5760,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 5791,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 6144,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 6175,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 6528,
+   "len": 10,
+   "count": 4
+  },
+  {
+   "offset": 6559,
+   "len": 10,
+   "count": 4
+  }
+ ]
+}

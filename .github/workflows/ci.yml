@@ -1,0 +1,89 @@
+name: CI
+
+# The fast gate. Runs on every push and PR, in a couple of minutes — and is
+# called by build.yml, so nothing is packaged from a commit it rejects.
+#
+# On all three OSes: the app ships for Windows, macOS and Linux, and was only
+# ever run on Windows, so this is where the macOS/Linux branches of the code
+# get exercised on the OS they are for. The OS-independent checks (format,
+# typecheck, the file map) run once, on Linux.
+#
+# Packaging lives in build.yml and does not run on PRs: three full
+# electron-builder runs per PR was ~10-20 min of CI for a change that a
+# typecheck and a test run would have rejected in seconds.
+#
+# Pushes to main and `v*` tags get this gate through build.yml (which calls
+# it before packaging), so they are not listed here too — each event runs the
+# gate once. (A push listing only branches never fires for a tag.)
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_call:
+
+# Read-only token: the gate only checks out and runs tests.
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: app
+
+jobs:
+  gate:
+    name: gate (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # `npm run test:changed` (vitest --changed origin/main) needs history
+          # to diff against. Cheap here, and it makes the option available.
+          fetch-depth: 0
+
+      # Node 24: jsdom (the ui tier) needs >= 22.22, and Node 20 is past its
+      # end of life. Matches package.json `engines` and the README.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      # --ignore-scripts skips electron's ~100 MB binary download AND node-hid's
+      # node-gyp build. Neither is needed to run the suite, and this was
+      # verified empirically rather than assumed: the whole suite passes with
+      # the electron binary and node-hid's built binding both removed. Every
+      # test that reaches electron or node-hid supplies a vi.mock factory, and
+      # vi.mock only resolves a module, never loads it -- while node-hid ships
+      # prebuilds in its tarball anyway, so nothing needs libudev-dev here.
+      - run: npm ci --ignore-scripts
+
+      # Split into named steps rather than one `npm run check` so a red run
+      # says which gate failed without opening the log. Cheapest first.
+      - name: format
+        if: runner.os == 'Linux'
+        run: npm run format:check
+
+      - name: contract (CLAUDE.md invariants)
+        run: npm run test:contract
+
+      - name: unit
+        run: npm run test:unit
+
+      - name: typecheck
+        if: runner.os == 'Linux'
+        run: npm run typecheck
+
+      - name: ui
+        run: npm run test:ui
+
+      # docs/MAP.md is generated from the source tree; a stale one is worse
+      # than none, since it is meant to be read INSTEAD of opening files.
+      - name: file map is current
+        if: runner.os == 'Linux'
+        run: npm run map:check

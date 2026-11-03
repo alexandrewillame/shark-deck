@@ -1,0 +1,220 @@
+/* ---- appearance swatches --------------------------------- */
+.pal-swatches {
+  display: flex;
+  gap: 10px;
+}
+.pal-swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 2px solid var(--line);
+  cursor: pointer;
+}
+.pal-swatch.active {
+  border-color: var(--text);
+  box-shadow: var(--glow);
+}
+
+/* ---- device colour/edition picker -------------------------
+ * A home-grid card's colour choice, at the card's own bottom-right corner
+ * (not inside the art box, so it never competes with the device photo, and
+ * stays clear of the status/battery/profile info hugging the left edge).
+ * The trigger is a fixed palette glyph — never tinted by the device's own
+ * colour, so it can't be mistaken for "this is the current colour". Hovering
+ * it pops the swatch list in a `document.body` portal above the trigger (see
+ * usePortalPosition.ts) — each swatch's own name is a normal Tooltip, shown
+ * only while that one swatch is hovered, and hovering a swatch also
+ * live-previews its photo on the card art (see DeviceGrid.tsx's
+ * `previewVariant` / ColorPicker's `onPreview`) without committing anything
+ * until it's clicked. */
+.color-picker {
+  display: flex;
+  align-items: center;
+}
+/* Sits at the end of the info row (.meta), pushed flush right by
+   margin-left: auto, so information reads left-to-right and the action
+   (colour choice) is the one thing on the right — same row, not a separate
+   one below. */
+.card .meta .color-picker {
+  margin-left: auto;
+}
+.color-picker-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-mut);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.color-picker-trigger:hover,
+.color-picker:hover .color-picker-trigger {
+  color: var(--text);
+  background: var(--bg-3);
+}
+/* Portalled popover, positioned by useAnchoredPosition — same fade-in idiom
+   as Tooltip's own bubble. */
+.color-picker-popover {
+  position: fixed;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--glow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.color-picker-popover.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.color-picker-swatch-btn {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  opacity: 0.55;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+.color-picker-swatch-btn:hover {
+  transform: scale(1.15);
+  opacity: 0.85;
+}
+/* The current choice reads by being fully opaque and slightly larger, not by
+ * a ring drawn around the swatch. */
+.color-picker-swatch-btn.active {
+  opacity: 1;
+  transform: scale(1.08);
+}
+.color-picker-swatch-btn.active:hover {
+  transform: scale(1.2);
+}
+
+/* ---- the topbar Appearance popover ---------------------------------------
+ * Same shape as `.lang-menu-list` (language-menu.css): portaled, fixed, and
+ * above the topbar's own backdrop-filter stacking context. Wider than the
+ * language list because it holds a 14-swatch grid, a segmented control and
+ * the background tiles rather than a column of text. */
+.appearance-panel {
+  position: fixed;
+  z-index: 200;
+  width: 268px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  animation: menuIn 120ms ease;
+}
+.appearance-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.appearance-label {
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+}
+/* Fourteen palettes, seven to a row: a grid of square cells sized to the
+   panel, since seven 30px swatches do not fit its width. */
+.appearance-panel .pal-swatches {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.appearance-panel .pal-swatch {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+/* The background tiles: each a still of the effect in the current palette
+   (background/renderer.ts `thumbnail`), five to a row. */
+.bg-swatches {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+.bg-swatch {
+  aspect-ratio: 3 / 2;
+  padding: 0;
+  border: 2px solid var(--line);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--bg);
+  cursor: pointer;
+}
+.bg-swatch:hover {
+  border-color: var(--text-mut);
+}
+.bg-swatch.active {
+  border-color: var(--text);
+  box-shadow: var(--glow);
+}
+.bg-swatch img,
+.bg-swatch > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* "None" is the plain theme: the page with `.app`'s own two glows. */
+.bg-swatch-none {
+  background:
+    radial-gradient(120% 90% at 85% 0%, rgba(var(--violet-rgb), 0.22), transparent 60%),
+    radial-gradient(110% 90% at 0% 110%, rgba(var(--accent-rgb), 0.18), transparent 55%), var(--bg);
+}
+/* A tile with no still (no WebGL): the palette, at least. */
+.bg-swatch-plain {
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.45), rgba(var(--violet-rgb), 0.45));
+}
+.bg-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.bg-options.is-off {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.bg-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+}
+.bg-option-wide > :last-child {
+  flex: 1;
+  min-width: 0;
+}
+.bg-option-wide input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .appearance-panel {
+    animation: none;
+  }
+}

@@ -1,0 +1,226 @@
+/* ---- config screen -------------------------------------------- */
+.config {
+  position: relative;
+  display: grid;
+  /* minmax(0, 1fr), not a bare 1fr — a bare 1fr track's automatic minimum
+     size is its content's width, so a wide mono table or long string in the
+     active tab used to be able to force this whole grid (and .content along
+     with it) wider than the window, showing a horizontal scrollbar. */
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 20px;
+  height: 100%;
+  transition: grid-template-columns var(--dur-med) var(--ease-out);
+}
+.config.rail-collapsed {
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+/* Ambient accent wash bleeding in from the rail side — the same idea as
+ * `.app`'s top-right radial glow, echoed here as the left edge of a device
+ * page (the side the rail/nav sits on). `.tabrail` and `.config-content` are
+ * grid items, so `z-index` applies to them without needing their own
+ * `position` — that's what keeps real content painted above this. */
+.config::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.07), transparent 360px);
+}
+/* No `[dir='rtl']` variant any more — the document is always `dir="ltr"`
+   (see state/i18n.tsx), so the rail always sits on the same side regardless
+   of locale and this gradient never needs to flip with it. */
+.tabrail,
+.config-content {
+  z-index: 1;
+}
+/* `position: sticky` + `align-self: start` stop the grid from stretching
+ * this column to the full (possibly-scrolled) height of `.content` — that
+ * stretch is what used to push the Basic/Advanced footer below the fold on
+ * a tall capability list. Only `.tabrail-nav` scrolls internally; the
+ * collapse button and the mode footer stay pinned. */
+.tabrail {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: calc(100vh - var(--topbar-h) - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-right: 1px solid var(--line);
+  padding-right: 12px;
+  overflow: hidden;
+}
+/* Matches .tabrail-nav button's own metrics exactly (padding/gap/radius/
+ * width) so it reads as one more item in the list rather than a smaller,
+ * differently-aligned control once the rail collapses to icons. */
+.tabrail-collapse {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  margin-top: 4px;
+  border-radius: 8px;
+  color: var(--text-mut);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.tabrail-collapse:hover {
+  background: var(--bg-2);
+  color: var(--text);
+}
+.tabrail-collapse svg {
+  flex: none;
+  transition: transform var(--dur-med) var(--ease-out);
+}
+.config.rail-collapsed .tabrail-collapse svg {
+  transform: rotate(180deg);
+}
+.tabrail-nav {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+/* Slides between rail items instead of the inset box-shadow snapping on/off
+ * — position/height set inline in DeviceConfig.tsx from the active button's
+ * measured rect (relative to .tabrail-nav, which scrolls with it). */
+.tabrail-indicator {
+  position: absolute;
+  left: 0;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  pointer-events: none;
+  transition:
+    top var(--dur-med) var(--ease-out),
+    height var(--dur-med) var(--ease-out);
+}
+/* the tooltip wrapper around each rail button, including the pinned collapse
+ * button below the nav list (see DeviceConfig.tsx), is an inline span by
+ * default, which collapses the button's own flex sizing inside this column
+ * layout. */
+.tabrail-nav .tt-wrap,
+.tabrail > .tt-wrap {
+  display: block;
+  width: 100%;
+}
+.tabrail-nav button {
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-size: var(--fs-md);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition:
+    background 0.1s,
+    color 0.1s;
+}
+.tabrail-nav button:hover {
+  background: var(--bg-2);
+  color: var(--text);
+}
+.tabrail-nav button.active {
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.14), transparent);
+  color: var(--accent);
+  /* the left rail mark is now the shared, sliding .tabrail-indicator */
+}
+.tabrail-nav button svg {
+  flex: none;
+  opacity: 0.8;
+}
+.tabrail-nav button.active svg {
+  opacity: 1;
+}
+.rail-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 140px;
+  opacity: 1;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    max-width var(--dur-med) var(--ease-out);
+}
+.config.rail-collapsed .rail-label {
+  opacity: 0;
+  max-width: 0;
+}
+.tabrail-foot {
+  flex: none;
+  margin-top: auto;
+  padding: 12px 8px 4px;
+  overflow: hidden;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    max-height var(--dur-med) var(--ease-out),
+    padding var(--dur-med) var(--ease-out);
+}
+.config.rail-collapsed .tabrail-foot {
+  opacity: 0;
+  max-height: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+/* device dropped offline mid-session: banner + every control in the active
+ * tab disabled via the wrapping <fieldset>. */
+.offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--red) 35%, transparent);
+  background: color-mix(in srgb, var(--red) 8%, transparent);
+  color: var(--red);
+  font-size: var(--fs-md);
+}
+.offline-lock {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.offline-lock:disabled {
+  opacity: 0.55;
+}
+.offline-lock:disabled * {
+  cursor: not-allowed;
+}
+.tabrail .group-label {
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-mut);
+  padding: 12px 12px 4px;
+}
+
+/* No `overflow` here on purpose, even though this scrolls in practice —
+ * `.pane` never has a height of its own to actually constrain against (its
+ * parent, whichever it is, doesn't stretch it), so this box always grows to
+ * its full content height and the *real* scroll container is whichever
+ * ancestor does have a bounded height: `.content` for a standalone screen
+ * (Settings, Auto-Switch), `.tabpane-in` for a device-config tab (see
+ * DeviceConfig.tsx). A stray `overflow-y: auto` here used to formally make
+ * `.pane` itself a second, inner scroll container per spec (even though it
+ * never actually needed to scroll) — and that's exactly what a `position:
+ * sticky` descendant (`.hero-art-col` below) binds to: the nearest ancestor
+ * that *declares* a scroll mechanism, not necessarily the one that's
+ * actually scrolling. Bound to the wrong, non-scrolling ancestor, the hero
+ * photo just sat at its normal flow position and scrolled away with
+ * everything else instead of tracking the real scrollport. */
+.pane {
+  padding-right: 6px;
+}

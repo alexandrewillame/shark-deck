@@ -1,0 +1,408 @@
+/* ---- DPI Setting: multi-handle track --------------------------
+ * Several native <input type=range> stacked on the same visual track, one
+ * per enabled stage. Each input is pointer-events:none except its own
+ * ::-webkit-slider-thumb (re-enabled) — the standard way to get
+ * independently-draggable handles out of the native, accessible control
+ * without a custom-drag-math implementation.
+ *
+ * The thumb is a slim vertical *tick* in the stage's own colour (not a dot),
+ * with the stage's ID number in a label layer above/below it — odd IDs above,
+ * even below — so two ticks landing close together stay individually
+ * readable. Dragging or focusing a tick raises it above its neighbours. */
+.dpi-slider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dpi-track-end {
+  flex: none;
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+}
+/* Marks a track end as a scaled cut (the auto-zoom window), not the
+ * device's real min/max — see sections.tsx's DpiSection. Lives inside
+ * `.dpi-track-line` itself, positioned in that box's own coordinate space —
+ * but `.dpi-track-bar` (the element it needs to look like a continuation of)
+ * is inset 7px from that same box via its own `left/right: 7px`, so `100%`
+ * here would land at the *box's* edge, 7px short of the *bar's* actual edge.
+ * `calc(100% - 7px)` corrects for that inset directly, so the dash's own
+ * edge sits flush against the bar's, no gap. (A plain `100%` also put this
+ * right up against `.dpi-track-end`'s number across the flex gap — this fix
+ * pulls it back off that too, since it now stops 7px earlier.) */
+.dpi-track-bar-ext {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background-image: repeating-linear-gradient(to right, var(--text-mut) 0 3px, transparent 3px 6px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.dpi-track-bar-ext-start {
+  right: calc(100% - 7px);
+}
+.dpi-track-bar-ext-end {
+  left: calc(100% - 7px);
+}
+/* Live DPI readout while actively dragging a stage (tick, connector, or its
+ * own ID label — see DpiSection's `draggingIndex`) — sits well above the
+ * track (`.dpi-tick-connector[data-side='up']` starts at top:14px, still
+ * *inside* the 70px track box, so this clears it regardless of which side
+ * the dragged stage's own label happens to be on) and tracks the same `left`
+ * formula the tick/label/connector already use, so it stays centred over
+ * whichever one is actually moving. */
+.dpi-drag-tooltip {
+  position: absolute;
+  top: -12px;
+  transform: translate(-50%, -100%);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  box-shadow: var(--glow);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+.dpi-track-line {
+  position: relative;
+  flex: 1;
+  /* Tall enough for a label row above + a connector + the tick + a
+     connector + a label row below, with real breathing room between the
+     tick and its label instead of them crowding each other. */
+  height: 70px;
+  /* The *nominal* thumb width used for travel math — matches
+     `.dpi-tick-visual`'s own hit-area (14px), not its 4px visible mark. A
+     native range thumb's centre travels from thumbWidth/2 to
+     width-thumbWidth/2 (inset by half its own width at each end); since the
+     native `<input>`'s own thumb no longer takes pointer input at all (see
+     `input.dpi-track-handle` below) and the *visible* tick is what the
+     mouse actually drags, this is kept equal to that visible hit-area's
+     width so the label/tick/connector positioning formula still lines up
+     with where a drag can actually start. */
+  --dpi-thumb: 14px;
+  /* No cursor rule here on purpose — most of this box's height is empty
+     space around the actual tick, which isn't draggable. Setting ew-resize
+     on the whole box made it look draggable everywhere in that space, not
+     just on the tick, its connector, or its ID label, which are the only
+     things that actually are. Each of those sets its own cursor directly
+     instead. */
+  /* Guarantees this box's own stacking context, so the tick thumbs and the
+     bar below are only ever compared against *each other* — never against
+     anything from an ancestor context — regardless of what does or doesn't
+     already establish one further up the tree. */
+  isolation: isolate;
+}
+.dpi-track-bar {
+  position: absolute;
+  top: 50%;
+  left: 7px;
+  right: 7px;
+  height: 4px;
+  transform: translateY(-50%);
+  background: var(--bg-3);
+  border-radius: 999px;
+  pointer-events: none;
+  /* Behind the tick thumbs (z-index: 1, further down) — see this element's
+     own comment at its JSX call site (sections.tsx) for why it's a real
+     element and not `::before` any more. */
+  z-index: 0;
+}
+/* `input.dpi-track-handle` (not just `.dpi-track-handle`) so these beat the
+   global `input[type='range']` rule on specificity — a lone class loses to
+   element+attribute, which is what left the handle stuck at height:4px and
+   the thumb a default dot.
+   Keyboard-only — `pointer-events: none` on the whole input, including its
+   thumb: it never itself responds to the mouse any more (see this element's
+   own comment at its JSX call site in sections.tsx for why), only to Tab
+   focus + arrow keys. `pointer-events` doesn't affect keyboard focus or
+   event dispatch to an already-focused element, so this doesn't cost any
+   accessibility — only mouse hit-testing, which `.dpi-tick-visual` and
+   `.dpi-tick-connector` now handle themselves. */
+input.dpi-track-handle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  /* override the global `input[type='range'] { width: 180px }` (same
+     specificity, defined earlier) — without this each handle input is only
+     180px wide, pinned to the left third of the track, so the thumbs travel
+     a third of the distance the ID labels do (the "text and slider move at
+     different speeds" bug) */
+  width: auto;
+  /* fill the whole line box so the thumb sits on the centred rail, not
+     pinned to a 4px strip at the top (the old two-lines bug) */
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: none;
+}
+input.dpi-track-handle:focus-visible {
+  outline: none;
+}
+input.dpi-track-handle::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 100%;
+  border: none;
+}
+input.dpi-track-handle::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  opacity: 0;
+}
+.dpi-tick-visual {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  /* A generous hit-area (matches the connector's own 14px) — not the 4px
+     visible tick's own width. Two earlier attempts tried to widen the
+     *native* thumb's own hit-area for the same reason and both left
+     hovering unreliable specifically around the track's vertical centre
+     (where the bar sits), which pointed at some quirk in how a native
+     `<input type=range>` hit-tests its thumb rather than a sizing problem —
+     this ordinary `<div>` doesn't have that quirk. */
+  width: 14px;
+  height: 28px;
+  pointer-events: auto;
+  cursor: ew-resize;
+  /* Above the bar (`.dpi-track-bar`, z-index: 0) and the (invisible, inert)
+     native input underneath it — an ordinary element, so this ordering is
+     unambiguous. */
+  z-index: 2;
+}
+.dpi-tick-visual.is-active {
+  z-index: 5;
+}
+/* The actual visible mark — a fixed-size hit-area (above) with this,
+   smaller, drawn inside it so it can grow on `.is-active` without changing
+   what area responds to the mouse. */
+.dpi-tick-visual::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  border-radius: 2px;
+  background: var(--handle-color, var(--accent));
+  border: 1px solid var(--bg-1);
+  box-shadow: 0 0 0 1px var(--line);
+  transition:
+    height var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.dpi-tick-visual.is-active::before {
+  height: 28px;
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 10px -2px var(--handle-color, var(--accent));
+}
+/* Which stage is actually applied to the mouse right now — a small dot
+ * below the tick, independent of `::before` (the hover/drag highlight
+ * above) so the two states never fight over the same box-shadow. */
+.dpi-tick-visual.is-selected::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background: var(--handle-color, var(--accent));
+  box-shadow: 0 0 0 1.5px var(--bg-1);
+}
+.dpi-tick-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* Each label is a real button now (click it to type an exact DPI — see
+ * EditableNumber) so it re-enables pointer events over its parent's
+ * pointer-events:none, which exists so the labels never steal drag from the
+ * range-input track underneath them. */
+.dpi-tick-label {
+  position: absolute;
+  pointer-events: auto;
+  /* Overrides the global `button { cursor: pointer }` — same ew-resize as
+     the track/tick it's paired with (see `.dpi-track-line`), since clicking
+     either opens the identical editor. */
+  cursor: ew-resize;
+  transform: translateX(-50%);
+  font-size: var(--fs-2xs);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: var(--bg-1);
+  color: var(--text-dim);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--handle-color, var(--line)) 55%, transparent);
+}
+.dpi-tick-label[data-side='up'] {
+  top: 0;
+}
+.dpi-tick-label[data-side='down'] {
+  bottom: 0;
+}
+/* The tie between a tick and its now-further-away label — see this
+ * element's own comment at its JSX call site (sections.tsx). The box itself
+ * is a generous hit-area (14px wide, matching the native thumb's own
+ * widened one — see `input.dpi-track-handle::-webkit-slider-thumb`), with
+ * the thin line actually drawn via `::before`, centred within it, so the
+ * hoverable/draggable area is much bigger than what's visible — same idea
+ * as the native thumb underneath the visual tick.
+ * Positions are approximate fixed offsets against `.dpi-track-line`'s own
+ * 70px height and the visual tick's 22px resting height, not computed from
+ * either at runtime — close enough for a connecting line that only needs
+ * to visually reach between the two, not align to the pixel. */
+.dpi-tick-connector {
+  position: absolute;
+  width: 14px;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  cursor: ew-resize;
+  z-index: 1;
+}
+.dpi-tick-connector::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-50%);
+  background: var(--handle-color, var(--line));
+  opacity: 0.45;
+}
+.dpi-tick-connector[data-side='up'] {
+  top: 14px;
+  height: 10px;
+}
+.dpi-tick-connector[data-side='down'] {
+  top: 46px;
+  height: 10px;
+}
+.dpi-tick-connector.is-active::before {
+  opacity: 0.9;
+}
+.dpi-tick-label.is-active {
+  z-index: 5;
+  color: var(--text);
+  background: var(--bg-2);
+  font-weight: 600;
+  box-shadow:
+    inset 0 0 0 1px var(--handle-color, var(--accent)),
+    0 0 10px -3px var(--handle-color, var(--accent));
+}
+/* Persistent (not hover-dependent) marker for the stage currently applied
+ * to the mouse — stays visible when `.is-active`'s hover styling isn't. */
+.dpi-tick-label.is-selected {
+  box-shadow: inset 0 0 0 1px var(--handle-color, var(--accent));
+}
+/* the matching row in the list below the track lights up on hover */
+.row.dpi-row-active {
+  background: rgba(var(--accent-rgb), 0.06);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.25);
+}
+/* ...and the row for the stage actually applied to the mouse is marked
+ * whether or not it's being hovered — a filled radio dot (`.dpi-stage-pick`)
+ * plus a tinted left edge, distinct from the hover highlight above. */
+.dpi-stage-list .row {
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  padding-left: 8px;
+}
+.row.row-selected {
+  border-left-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.04);
+}
+.dpi-stage-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dpi-stage-pick-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-mut);
+  box-sizing: border-box;
+  flex: none;
+}
+.dpi-stage-pick-dot.is-selected {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.dpi-add {
+  flex: none;
+}
+
+/* mouse angle-mode: illustration + a slider aligned to the crosshair zero.
+ * The enable/disable Row lives above this (see sections.tsx) — this is just
+ * the slider + illustration detail, wrapped in a <fieldset> that disables
+ * together with the Row's toggle. */
+.angle-mode {
+  margin: 10px 0 4px;
+  text-align: center;
+}
+/* No border/padding of its own beyond the bottom rule — a fieldset only for
+   the native disabled-cascade, not for a visible box. Dims (rather than
+   hides) while off, same idiom as `.offline-lock` elsewhere. The row above
+   it (Mouse angle mode's own toggle) has its usual separator suppressed
+   (`.row.no-border`) so this is the one dashed line between the whole
+   angle-mode group and the next setting (Ripple control), not a line
+   sitting between the toggle and its own diagram. */
+.angle-mode-fieldset {
+  display: block;
+  border: none;
+  padding: 0 0 8px;
+  margin: 0;
+  border-bottom: 1px dashed var(--line);
+}
+.angle-mode-fieldset:disabled .angle-mode {
+  opacity: 0.5;
+}
+/* Exactly the illustration's own rendered width (AngleIllustration is drawn
+   at width="160") so the slider below — full width of this box — travels
+   with its midpoint (0°) landing exactly on the illustration's crosshair,
+   whose vertical line sits at viewBox x=60 of 120, i.e. dead centre. */
+.angle-mode-stage {
+  width: 160px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+/* The typable degree readout on its own row, right-aligned above the track
+   — not sharing a flex row with the slider, which would eat into the width
+   the slider needs to stay centred on the crosshair (see `.angle-mode-stage`
+   above). */
+.angle-mode-value-row {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+.angle-mode-value {
+  color: var(--accent);
+  font-size: var(--fs-sm);
+}
+/* full width of its row so the track's centre (0°) still sits under the
+   illustration's vertical crosshair line below it */
+input.angle-mode-slider {
+  width: 100%;
+}
+.dpi-stage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}

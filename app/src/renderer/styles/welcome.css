@@ -1,0 +1,89 @@
+/* ---- welcome ------------------------------------------------------- */
+.welcome {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.welcome .inner {
+  max-width: 520px;
+}
+.welcome h1 {
+  font-size: var(--fs-display);
+  margin: 22px 0 8px;
+}
+.welcome p {
+  color: var(--text-dim);
+  margin-bottom: 18px;
+}
+.receiver-anim {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
+  filter: drop-shadow(0 0 26px rgba(var(--accent-rgb), 0.35));
+}
+.receiver-anim .pulse {
+  transform-origin: center;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.15);
+  }
+}
+.scanning {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-mut);
+  font-size: var(--fs-sm);
+  margin-top: 14px;
+}
+.dot-scan {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: blink 1s steps(2) infinite;
+}
+.scan-diag {
+  margin-top: 18px;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--text-mut);
+  /* inherits text-align: center from .welcome, matching the copy above it */
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--bg-1);
+}
+.scan-diag.warn {
+  color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 30%, transparent);
+}
+.scan-diag.err {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 30%, transparent);
+}
+.scan-diag ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.scan-diag li {
+  margin-top: 4px;
+}
+.scan-diag-sub {
+  margin-top: 6px;
+  color: var(--text-mut);
+}
+@keyframes blink {
+  50% {
+    opacity: 0.2;
+  }
+}

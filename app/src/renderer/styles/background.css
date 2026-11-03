@@ -1,0 +1,153 @@
+/* ---- app background ----------------------------------------------------
+ * The layer `background/BackgroundLayer.tsx` mounts as the first child of
+ * `.app`, and the frosted surfaces that let it show through.
+ *
+ * Imported LAST (styles.css): every rule below overrides a surface defined
+ * earlier, and only while a background is on — `data-bg` is on <html> only
+ * then (state/theme.ts), so with none chosen not one of these applies and the
+ * app is exactly the plain theme. */
+
+/* One fixed canvas under everything in `.app`. `.app` is its own stacking
+   context (layout.css), so `z-index: -1` paints above `.app`'s background —
+   which stays the fallback wherever WebGL is unavailable — and below every
+   child of it. The canvas fades in once its first frame is drawn. */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.bg-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.6s var(--ease-out);
+}
+.bg-canvas.is-ready {
+  opacity: 1;
+}
+
+/* ---- frosted surfaces ---------------------------------------------------
+ * The big containers turn to frosted glass: the pane colour at `--glass-a`
+ * over a blur of whatever is behind. Only TOP-LEVEL surfaces blur — a nested
+ * one would re-blur the glass it sits on for nothing, and blur is the cost
+ * here: it is redone on every frame the background draws. Nested surfaces
+ * take the translucency alone.
+ *
+ * What stays opaque, deliberately: every keyboard board (the per-key lighting
+ * board is a photograph of a keyboard; the others are the functional editing
+ * surface), inputs, menus, popovers, tooltips, dialogs and toasts — anything
+ * read in a hurry or floating over other content. */
+:root[data-bg] {
+  --glass-a: 72%;
+  --glass-head-a: 84%;
+  --glass-blur: blur(12px) saturate(1.2);
+}
+:root[data-bg][data-mode='light'] {
+  --glass-a: 80%;
+  --glass-head-a: 90%;
+}
+:root[data-bg] :is(.panel, .macro-lib, .macro-edit, .scan-diag) {
+  background-color: color-mix(in srgb, var(--bg-1) var(--glass-a), transparent);
+  backdrop-filter: var(--glass-blur);
+}
+:root[data-bg] .card {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-2) var(--glass-a), transparent),
+    color-mix(in srgb, var(--bg-1) var(--glass-a), transparent)
+  );
+  backdrop-filter: var(--glass-blur);
+}
+:root[data-bg] .card:hover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-3) var(--glass-a), transparent),
+    color-mix(in srgb, var(--bg-2) var(--glass-a), transparent)
+  );
+}
+:root[data-bg] .card.offline:hover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-2) var(--glass-a), transparent),
+    color-mix(in srgb, var(--bg-1) var(--glass-a), transparent)
+  );
+}
+/* The tab rail was transparent over the page's own colour; over a moving
+   background its labels need a surface under them. */
+:root[data-bg] .tabrail {
+  background-color: color-mix(in srgb, var(--bg-1) 55%, transparent);
+  backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius);
+}
+:root[data-bg] :is(.light-tools, .as-trigger-row) {
+  background-color: color-mix(in srgb, var(--bg-1) var(--glass-a), transparent);
+}
+/* The sticky sub-tab bars painted the page colour to hide what scrolls under
+   them, which over a background is a solid stripe. Glass too, a little more
+   opaque so the content passing beneath stays a blur. Their fade-out edge
+   (a `var(--bg)` gradient) becomes a soft shadow. */
+:root[data-bg] :is(.pane-head:has(.title-tabs), .pane > .title-tabs) {
+  background: color-mix(in srgb, var(--bg) var(--glass-head-a), transparent);
+  backdrop-filter: var(--glass-blur);
+}
+:root[data-bg] :is(.pane-head:has(.title-tabs), .pane > .title-tabs)::after {
+  background: linear-gradient(rgb(0 0 0 / 0.16), transparent);
+}
+:root[data-bg][data-mode='light'] :is(.pane-head:has(.title-tabs), .pane > .title-tabs)::after {
+  background: linear-gradient(rgb(0 0 0 / 0.06), transparent);
+}
+/* The device page's accent wash is the background's job now. */
+:root[data-bg] .config::before {
+  display: none;
+}
+
+/* Tab switches fade in on `opacity`, and an ancestor below full opacity cuts
+   off what `backdrop-filter` can see: every frosted panel in the incoming tab
+   would show its flat colour until the fade ended, then snap to glass. With a
+   background on, the same entrance is a slide alone. */
+:root[data-bg] .content > .view {
+  animation-name: tabInGlass;
+}
+:root[data-bg] .tabpane-in {
+  animation-name: tabPaneInGlass;
+}
+@keyframes tabInGlass {
+  from {
+    transform: translateY(8px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes tabPaneInGlass {
+  from {
+    transform: translateY(6px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Text set straight on the page rather than on a surface — headings, the
+   welcome copy, a pane's hint — keeps a faint shadow so a bright patch of the
+   background cannot wash it out. */
+:root[data-bg]:not([data-mode='light']) :is(.welcome, .devicegrid-wrap, .pane-head) {
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.55);
+}
+:root[data-bg][data-mode='light'] :is(.welcome, .devicegrid-wrap, .pane-head) {
+  text-shadow: 0 1px 2px rgb(255 255 255 / 0.7);
+}
+
+/* "Reduce transparency" (Windows: Settings > Accessibility > Visual effects >
+   Transparency effects) is honoured: the background stays, the panels in
+   front of it go back to solid. */
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-bg] {
+    --glass-a: 100%;
+    --glass-head-a: 100%;
+    --glass-blur: none;
+  }
+}

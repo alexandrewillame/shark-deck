@@ -1,0 +1,556 @@
+/* Centers a full-width settings-style pane (Settings, Auto-Switch) inside the
+ * content column instead of leaving it flush against the rail/edge. Inner
+ * text stays left-aligned — only the block itself is centered. */
+.pane-centered {
+  margin-inline: auto;
+  width: 100%;
+}
+.pane h2 {
+  font-size: var(--fs-2xl);
+  margin-bottom: 4px;
+}
+.pane .sub {
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  margin-bottom: 18px;
+}
+/* Title + an inline right-slotted control on one line — see PaneHeader in
+ * components/common.tsx (Lighting's zone switcher, Keys' Base/Fn selector). */
+.pane-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.pane-head h2 {
+  margin-bottom: 0;
+}
+/* The description used to be a paragraph under the title (`.pane .sub`, with
+   18px under it); it is an info dot on the title now, so the header itself
+   keeps the gap the paragraph used to make. A TitleTabs header has its own
+   (below), from the rail. */
+.pane-head:not(:has(.title-tabs)) {
+  margin-bottom: 16px;
+}
+.pane-head h2.has-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+/* On a tab rail the dot sits with the tabs, on the same baseline as their
+   labels — the buttons carry 7px of bottom padding above the rail. */
+.title-tabs .title-tabs-info {
+  align-self: center;
+  margin: 0 4px 5px;
+}
+.title-tabs.level-2 .title-tabs-info {
+  margin-bottom: 3px;
+}
+/* A heading that cannot carry the dot itself gets it beside it. The Tooltip's
+   wrapper is the flex item, so that is what is centred. */
+.pane-head > .tt-wrap:has(> .pane-head-info) {
+  align-self: center;
+}
+/* A TitleTabs heading keeps its own bottom margin — the rail it draws has to
+   clear the pane text under it, and `.pane h2` / `.pane-head h2` would
+   otherwise win on specificity and squash it. Both forms: inside a PaneHeader,
+   and straight in a HeroPane, which has no `.pane-head` wrapper. */
+.pane-head .title-tabs,
+.pane > .title-tabs {
+  margin-bottom: 14px;
+}
+/* Tabs are boxes, not a line of text: align the right-slotted control to their
+   bottom edge instead of to a baseline that sits above the rail. */
+.pane-head:has(.title-tabs) {
+  align-items: flex-end;
+}
+
+/**
+ * A sub-view selector stays put while the pane scrolls, like the profile bar
+ * above it.
+ *
+ * The profile bar never needed this — it is rendered OUTSIDE the scrollport
+ * (see DeviceConfig) — but Base/Fn, Keys/Test and the lighting zones are the
+ * pane's own heading, so they scrolled away with it. Two screens down the
+ * Actuation tab there was no way to tell which sub-view you were in, or to
+ * leave it, without scrolling back up.
+ *
+ * Sticky binds to the nearest ancestor that DECLARES a scroll mechanism, which
+ * here is `.tabpane-in` — `.pane` deliberately declares none, and the long
+ * comment on it in config-shell.css is about exactly this trap.
+ *
+ * The background is the page's own, and it bleeds over `.pane`'s right padding
+ * so content scrolling underneath does not show down the side of the bar.
+ */
+.pane-head:has(.title-tabs),
+.pane > .title-tabs {
+  position: sticky;
+  /* A level-2 rail stacks UNDER the header above it rather than on top of it.
+     `--pane-head-h` is published by PaneHeader (measured, because the header
+     is one line with a plain title and two with a tab rail); it is unset when
+     there is no header at all, e.g. a HeroPane, and the fallback is then the
+     correct answer. Both bars used to be `top: 0`, so the lower one simply
+     covered the upper one and the Lighting tab lost its zone selector on
+     scroll. */
+  top: var(--pane-head-h, 0px);
+  z-index: 3;
+  background: var(--bg);
+  /* Right only: that is where `.pane`'s own padding is, and content scrolling
+     under would otherwise show down that 6px strip. Bleeding left as well put
+     the bar over the gutter between the rail and the content, where it painted
+     a notch out of the pane's accent wash. */
+  margin-right: -6px;
+  padding-right: 6px;
+  padding-top: 6px;
+}
+/* The rail under the tabs is the bar's own edge, so nothing else is needed to
+   separate it from what slides beneath — but a hair of shadow says the content
+   is going under rather than ending there. */
+.pane-head:has(.title-tabs) {
+  top: 0;
+  /* Above the level-2 rail that slides up to meet it. */
+  z-index: 4;
+}
+.pane-head:has(.title-tabs)::after,
+.pane > .title-tabs::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 8px;
+  pointer-events: none;
+  background: linear-gradient(var(--bg), transparent);
+}
+/* Still supported for a control that genuinely belongs beside the title and
+ * is not a sub-view selector — those are `TitleTabs` now, and live IN the
+ * heading rather than at the opposite end of it. */
+.pane-head .seg {
+  margin-left: auto;
+  align-self: center;
+}
+
+/* A pane heading that is also its sub-view selector (TitleTabs). The active
+ * option reads exactly like the plain `.pane h2` it replaces; the others are
+ * the same size and weight but dimmed, so the heading does not turn into a
+ * row of buttons — it stays a title that happens to have alternatives. */
+/*
+ * Drawn as an actual tab strip, sharing `.tabstrip-tab`'s shape: a rail along
+ * the bottom, tabs sitting on it with rounded top corners, the active one
+ * carrying the accent underline that covers the rail.
+ *
+ * Before this it was words separated by a "·" with a 2px underline under the
+ * active one, which said "these are alternatives" but never "you are inside a
+ * section that has sub-sections" — nothing enclosed them and nothing connected
+ * them to the pane below, so a sub-view read as a heading that happened to
+ * have other words next to it.
+ */
+.title-tabs {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 2px;
+  position: relative;
+  margin-bottom: 14px;
+  padding-bottom: 0;
+}
+/* The rail. Full-bleed under every tab, so the active tab's own accent border
+   reads as a piece of the rail lighting up rather than a floating dash. */
+.title-tabs::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: var(--line);
+}
+.title-tabs button {
+  position: relative;
+  z-index: 1;
+  font: inherit;
+  padding: 2px 12px 7px;
+  border: 0;
+  background: none;
+  color: var(--text-mut);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  border-radius: 8px 8px 0 0;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.title-tabs button:hover {
+  color: var(--text-dim);
+  background: var(--bg-2);
+}
+.title-tabs button.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  cursor: default;
+}
+/* The separator dot belongs to the old word-list form — tabs abut. */
+.title-tabs .title-tabs-sep {
+  display: none;
+}
+/* A second-level TitleTabs — a sub-view of a sub-view (keyboard Lighting's
+ * Global / Per-key inside the Effects zone). Smaller than the pane heading so
+ * the nesting is visible at a glance rather than reading as two peer rows. */
+.pane .title-tabs.level-2 {
+  font-size: var(--fs-lg);
+  margin-top: 6px;
+  margin-bottom: 10px;
+}
+.pane .title-tabs.level-2 button {
+  padding: 1px 10px 5px;
+}
+.title-tabs-sep {
+  color: var(--text-mut);
+  opacity: 0.5;
+  font-weight: 400;
+}
+
+.panel {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.panel h4 {
+  font-size: var(--fs-md);
+  margin-bottom: 12px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Panel-wide controls, on the heading's line rather than a row of their own.
+   `margin-left: auto` rather than `justify-content: space-between` on the h4:
+   the title and its info tip have to stay together at the left, and
+   space-between would push them apart the moment a tip is present. */
+.panel-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  /* The heading is 13px; its buttons should not inherit that as their own
+     size and come out bigger than every other control in the panel. */
+  font-size: var(--fs-sm);
+  font-weight: 400;
+}
+/* Between two kinds of action in one heading — e.g. Remap's "writes at once"
+   (Reset, Disable) and "acts on the staged pick" (Apply, Cancel). */
+.panel-actions-sep {
+  align-self: stretch;
+  width: 1px;
+  margin: 2px 2px;
+  background: var(--line);
+}
+.panel h4 {
+  /* Room for the actions to sit against the right edge without the title
+     wrapping under them on a narrow pane. */
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+.panel-tip {
+  display: inline-flex;
+  color: var(--text-mut);
+  cursor: help;
+}
+.panel-tip:hover {
+  color: var(--accent);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.row:last-child {
+  border-bottom: none;
+}
+/* The control side of a row keeps its size; the label and hint beside it are
+   what wrap. Shrinkable, it was the control that gave way: beside a long hint
+   "Lift-off distance" squeezed its segments until every "mm" dropped onto a
+   line of its own. */
+.row-ctl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+/* A row whose control is too wide to sit in the right-hand slot — a grid, a
+   board, anything that wants the pane's full width. `.row` is
+   `space-between`, which pins its control to the right edge and, for a grid
+   sized with `auto-fill`, leaves it no definite width to resolve tracks
+   against; the label then sits alone on the far left with a dead gap between.
+   Stacked, the label is a heading and the control gets the whole line. */
+.row.row-stack {
+  display: block;
+}
+.row.row-stack > .label {
+  margin-bottom: 8px;
+}
+
+/* Opt out of the row's own separator — for a row whose "next line" is a
+   visually-attached detail block rather than the next setting (e.g. Mouse
+   angle mode's toggle, immediately followed by its own slider/diagram). */
+.row.no-border {
+  border-bottom: none;
+}
+.row .label {
+  font-size: var(--fs-md);
+}
+.row .hint {
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+}
+/* A row whose label is a sentence about its control rather than a name for
+   it — the panel heading above already names it. */
+.row .row-desc {
+  display: block;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+/* controls */
+.btn {
+  /* inline-flex, so a button whose label is preceded by an <Icon> centres the
+     two on one baseline with a real gap, instead of the glyph sitting on the
+     text baseline with a bare space between. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--ctl-h);
+  padding: 3px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-3);
+  color: var(--text);
+  font-size: var(--fs-md);
+  transition:
+    border-color 0.1s,
+    background 0.1s;
+}
+.btn:hover {
+  border-color: var(--accent-dim);
+}
+.btn.primary {
+  background: linear-gradient(90deg, var(--accent), var(--accent-dim));
+  color: var(--on-accent);
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+/* An on/off toggle that lives in a row of other controls: same metrics in both
+   states, so nothing beside it moves when it is switched. */
+.btn.is-on {
+  background: var(--bg-3);
+  border-color: var(--accent);
+  color: var(--text);
+}
+.btn.danger {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 35%, transparent);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+/* A `.btn` holding nothing but a glyph: a square, as tall as any other
+   control in the row. The base `.btn` padding is sized for a word, so an icon
+   in one came out as a wide letterbox with the glyph swimming in it. */
+.btn.icon-only {
+  width: var(--ctl-h);
+  padding: 0;
+  line-height: 1;
+}
+.btn.icon-only svg {
+  display: block;
+}
+
+/* icon-only variant — a plain glyph button, no border box, for actions that
+ * shouldn't compete visually with real buttons (a table row's delete icon,
+ * the process picker's remove). */
+.btn-icon {
+  display: grid;
+  place-items: center;
+  /* 26px when the glyphs inside were 12-13px. They are now ~30% larger (see
+     iconPx in components/icons.tsx), which left no breathing room at all. */
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-mut);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.btn-icon:hover {
+  background: var(--bg-3);
+  color: var(--text);
+}
+.btn-icon.danger:hover {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
+}
+
+/* A Slider's value readout — an `EditableNumber` trigger (see
+ * components/common.tsx), so it carries the same dashed-underline "click this
+ * number to type it" affordance the Actuation tab's travel values do.
+ *
+ * The fixed column width sits on the wrapper, not on the trigger: the dashed
+ * underline has to hug the digits, and on a 56px right-aligned trigger it
+ * would stretch the whole column and read as an empty text field.
+ *
+ * The accent colour the readout has always had is kept here rather than
+ * inline, so the base `.editable-number-trigger:hover` rule still has
+ * something to change — it sets `color: var(--accent)`, which is a no-op on
+ * text that is already accent, so the underline carries the hover instead. */
+.slider-value {
+  display: inline-block;
+  /* Wide enough for the longest value any slider shows — "100%" — without
+     the column reflowing as the number grows. It was 56px, which fitted the
+     digits but left the trigger's own padding nowhere to go, so a 3-digit
+     value read as cramped against the track. */
+  min-width: 64px;
+  text-align: right;
+  white-space: nowrap;
+}
+.slider-value .editable-number-trigger {
+  color: var(--accent);
+  border-bottom-color: var(--text-mut);
+}
+.slider-value .editable-number-trigger:hover {
+  border-bottom-color: var(--accent);
+}
+
+/* A name shown as plain text with a discreet edit affordance — see
+ * InlineRename in components/common.tsx. The pencil has no button chrome of
+ * its own (no square background) until hovered, and editing rewrites the
+ * name in place rather than opening a separate box. */
+.inline-rename {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.inline-rename-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The name itself is now the click-to-rename target (no separate pencil —
+ * see InlineRename's read-mode branch) — an in-flow button styled like
+ * plain text at rest, with the same "click a value to edit it" underline
+ * affordance `.editable-number-trigger` already uses elsewhere. */
+.inline-rename-trigger {
+  display: inline-block;
+  max-width: 100%;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid transparent;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.inline-rename-trigger:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.inline-rename-btn {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 4px;
+  color: var(--text-mut);
+  opacity: 0.5;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.inline-rename-btn:hover {
+  opacity: 1;
+  color: var(--accent);
+  background: var(--bg-3);
+}
+.inline-rename-input {
+  /* Sized to the text it replaces, not to a control. */
+  min-height: 0;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--accent);
+  padding: 0;
+  /* Grows to fit the typed text natively — no JS measurement, no sizer
+     span, no circular containing-block math to get wrong. This is what
+     lets a fixed suffix (e.g. ".exe") hug the end of what's typed instead
+     of sitting pinned to a wide flex box's far edge, and is also what
+     keeps the box wide enough to read the *whole* name while typing it
+     instead of just the tail end. `ch`-based min/max keep an empty field
+     from collapsing to nothing and a pathologically long name from taking
+     over the row. */
+  field-sizing: content;
+  min-width: 3ch;
+  max-width: 40ch;
+}
+/* The global `:focus-visible` ring (below) is an *outset* outline — on this
+ * borderless input it doubled up with the accent underline above as a
+ * second, tighter rectangle sitting just inside it (readable as a stray box
+ * around the text, especially under a red/crimson accent palette). The
+ * underline already marks focus here, so suppress the ring rather than
+ * stack two focus indicators. */
+.inline-rename-input:focus-visible {
+  outline: none;
+}
+/* Suffix mode (see InlineRename's `suffix` prop) — the input and its greyed,
+ * fixed suffix (e.g. ".exe") share one underline so they read as one field. */
+.inline-rename-edit {
+  display: inline-flex;
+  align-items: baseline;
+  border-bottom: 1px solid var(--accent);
+}
+.inline-rename-edit .inline-rename-input {
+  border-bottom: none;
+}
+.inline-rename-suffix {
+  color: var(--text-mut);
+  white-space: nowrap;
+}
+/* Text-in-flow rename (a table/list row — see InlineRename's `editing`
+ * branch): the read-mode text + pencil stay in the DOM, hidden, so the
+ * row/cell keeps reserving exactly the width it had at rest; the real editor
+ * floats on top of that reserved box and is free to grow past its right edge
+ * without shifting any neighbour. */
+.inline-rename-editor-float {
+  position: absolute;
+  /* `top`/`left` only — not `inset: 0`. `inset: 0` sets *both* `left` and
+     `right`, which forces this box's width to stretch to exactly fill the
+     gap between them (i.e. clamp to the tiny hidden placeholder's width)
+     instead of sizing to its own content. Anchoring only the top-left
+     corner leaves width auto (shrink to the `field-sizing: content` input's
+     own natural width), so the editor can grow rightward past the reserved
+     space — the point of floating it in the first place. */
+  top: 0;
+  left: 0;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  z-index: 1;
+}
+/* Portalled variant that exactly covers the element it renames (see
+ * InlineRename's `overlayRef`) — dressed to look like the dropdown itself is
+ * being typed into, not a separate inline field. */
+.inline-rename-overlay {
+  z-index: 60;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  box-shadow: var(--glow);
+  padding: 0 10px;
+}

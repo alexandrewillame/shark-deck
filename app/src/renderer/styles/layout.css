@@ -1,0 +1,193 @@
+/* ---- layout --------------------------------------------------------- */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  /* Its own stacking context, so the background layer's `z-index: -1` lands
+     above this element's background and below everything in it (see
+     background.css). */
+  isolation: isolate;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(var(--violet-rgb), 0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(var(--accent-rgb), 0.06), transparent 55%),
+    var(--bg);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--topbar-h);
+  padding: 8px 12px 8px 16px;
+  border-bottom: 1px solid var(--line);
+  -webkit-app-region: drag;
+  background: color-mix(in srgb, var(--bg-1) 82%, transparent);
+  backdrop-filter: blur(8px);
+}
+/* macOS draws native traffic lights over the window's top-left corner (see
+   main/index.ts's trafficLightPosition) — clear space for them instead of
+   letting BrandHome sit underneath. */
+.platform-mac .topbar {
+  padding-left: 78px;
+}
+/* Brand + "back to home" merged into one bordered control (App.tsx's
+ * BrandHome) — both already navigate home, so they read as a single button
+ * rather than two adjacent ones. The wordmark is a blank (alpha-only) PNG
+ * recoloured live via `mask-image` so it still tracks the active palette,
+ * the way the old gradient-text-clip brand used to. */
+.brand-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.brand-group:hover {
+  background: var(--bg-2);
+}
+/* away from Home: same visible contour the old standalone .home-btn used,
+ * so the control still reads as clickable at a glance. */
+.brand-group.away {
+  background: var(--bg-2);
+  border-color: var(--line);
+}
+.brand-group.away:hover {
+  border-color: var(--accent-dim);
+}
+.brand-word {
+  display: block;
+  flex: none;
+  height: 20px;
+  aspect-ratio: 2645 / 520;
+  background: linear-gradient(90deg, var(--accent), var(--violet));
+  -webkit-mask: url('../../../assets/brand/wordmark.png') left center / contain no-repeat;
+  mask: url('../../../assets/brand/wordmark.png') left center / contain no-repeat;
+}
+.brand-home {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  padding-left: 10px;
+  border-left: 1px solid var(--line);
+}
+.brand-group:hover .brand-home {
+  color: var(--text);
+}
+.topbar button {
+  -webkit-app-region: no-drag;
+}
+/*
+ * Topbar icon buttons (appearance, language, settings, the auto-switch
+ * chevron) run the FULL height of the bar, and their highlight fills the
+ * whole button.
+ *
+ * They used to be `padding: 7px` pills floating in a 48px bar, so roughly
+ * half the visible bar height either side of them was dead space that looked
+ * clickable and was not — and the hover wash sat inside a box smaller than
+ * the thing being hovered. The window controls on the far right already
+ * solved this (`.winctl`: `align-self: stretch` plus negative margins that
+ * cancel `.topbar`'s padding); this is the same recipe, minus the inset pill,
+ * because here the highlight is meant to cover the button rather than sit
+ * inside it.
+ */
+/*
+ * Every selector here is prefixed with `.topbar` on purpose.
+ *
+ * These buttons carry `class="btn topbar-btn icon-only"`, and `.btn` in
+ * panes.css gives them `background: var(--bg-3)`, `border: 1px solid
+ * var(--line)` and `border-radius: 8px`. A bare `.topbar-btn` has the SAME
+ * specificity as `.btn`, and styles.css imports layout.css BEFORE panes.css —
+ * so every "reset" written here lost, and each icon sat in a visible rounded
+ * box it was never meant to have. (Making the button full-height without
+ * fixing that just made the boxes taller.) `.topbar .topbar-btn` is 0,2,0 and
+ * actually wins.
+ */
+.topbar .topbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: stretch;
+  /* No chrome at rest: the icon IS the button. The 1px border stays for
+     layout, transparent, so hovering does not shift anything by a pixel. */
+  padding: 0 12px;
+  background: transparent;
+  border-color: transparent;
+  /* Softly rounded, not square. A full-height square block was the one
+     hard-cornered shape in a UI whose buttons, tabs, cards and panels are all
+     rounded, so the bar read as belonging to a different app. The margin is
+     what keeps the highlight off the bar's own top and bottom edges while the
+     BUTTON still fills them, so the hit area is unchanged. */
+  border-radius: 0;
+  box-shadow: none;
+  flex: none;
+  /* The visible highlight is the ::before below, not this box — the same
+     recipe the window controls use, and the reason it has to be: a topbar
+     button is sometimes a direct flex child of .topbar and sometimes sits
+     two wrappers deep inside a menu, so anything that sizes the highlight
+     with margins lands at a different height depending on which. */
+  position: relative;
+}
+.topbar .topbar-btn.icon-only {
+  /* The bar's own buttons are full-height strips, not the square `.btn`. */
+  width: auto;
+  padding: 0 10px;
+}
+/*
+ * Hover is a softly-rounded block, inset from the bar's top and bottom edges
+ * but filling the button's full width. Same shape the window controls to its
+ * right use — they differ only in how bright the wash is.
+ */
+.topbar .topbar-btn::before {
+  content: '';
+  position: absolute;
+  /* Inset top and bottom so the rounded highlight is a shape sitting IN the
+     bar rather than a block wedged against its edges — the button itself
+     still runs the bar's full height, so the hit area is unchanged. */
+  inset: 4px 0;
+  border-radius: 8px;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+/* Keep the icon above its own highlight. */
+.topbar .topbar-btn > * {
+  position: relative;
+}
+.topbar .topbar-btn:hover {
+  background: transparent;
+  border-color: transparent;
+}
+.topbar .topbar-btn:hover::before {
+  /* One surface step ABOVE the window controls' plain `--bg-3` — see
+     window-controls.css. The app's own controls are the ones worth noticing;
+     minimise/maximise are chrome and stay fainter. */
+  background: color-mix(in srgb, var(--text) 12%, var(--bg-3));
+}
+/*
+ * The topbar's flex item is frequently NOT the button. `Tooltip` wraps its
+ * child in `span.tt-wrap`, and the language and appearance menus each add
+ * their own positioned wrapper on top of that. The negative margin has to go
+ * on whichever of those is the direct flex child, NOT on the button:
+ * `align-self: stretch` sizes an item to the container's content box MINUS its
+ * margins, so a negative margin is what makes it taller than the content box.
+ * Put the margin on the button and it keeps its 34px height and merely
+ * overflows — which is what the first attempt at this did.
+ */
+.topbar > .tt-wrap,
+.topbar > .lang-menu,
+.topbar > .appearance-menu {
+  display: inline-flex;
+  align-self: stretch;
+  /* cancel .topbar's 8px top/bottom padding */
+  margin-block: -8px;
+}
+.topbar .lang-menu > .tt-wrap,
+.topbar .appearance-menu > .tt-wrap {
+  display: inline-flex;
+  align-self: stretch;
+}

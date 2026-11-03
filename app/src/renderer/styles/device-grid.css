@@ -1,0 +1,443 @@
+/* ---- device grid ------------------------------------------------- */
+/* Centre the cards both ways: the flex-wrap row is centred horizontally, and
+ * the wrapper centres it vertically when the content is shorter than the view. */
+.devicegrid-wrap {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+.devicegrid-wrap > .grid {
+  margin-top: 10px;
+}
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+  /* 3 x 425 + 2 x 20 — the cap has to track the card width or the row wraps
+     to 2 even on a window wide enough for 3. */
+  max-width: 1345px;
+}
+.grid > .card {
+  /* Fluid rather than a fixed 340px: grows to fill the row up to `max-width`,
+     and shrinks to keep 3 across before it wraps. `min-width` is the point at
+     which wrapping to 2 is preferable to squashing further. */
+  flex: 1 1 380px;
+  max-width: 425px;
+  min-width: 320px;
+  /* `backwards`, not `both` — `both` keeps the `to` keyframe's `transform`
+     applied forever after the entrance finishes, which outranks the plain
+     `.card:hover { transform: translateY(-2px) }` rule below (an animation's
+     own end state beats a later, non-animation declaration regardless of
+     source order) and silently killed the hover lift. `backwards` only
+     needs to hold the `from` state before the delay starts. */
+  animation: cardIn var(--dur-med) var(--ease-out) backwards;
+}
+/* Disabled for good once the one legitimate entrance has played (see
+   DeviceGrid.tsx's `entered`) — a CSS `animation` (unlike a transition)
+   restarts from scratch every time an element goes from `display:none` back
+   to displayed, and Home is never unmounted between tab switches, only
+   hidden that way. Without this the replay's mid-flight `transform` was
+   what the travelling art overlay measured as its landing target on every
+   return to Home, a few pixels off from the card's actual resting position. */
+.grid.entered > .card {
+  animation: none;
+}
+/* staggered entrance — each card a beat behind the last, capped so a big grid
+ * doesn't keep animating for seconds after it's visible */
+.grid > .card:nth-child(1) {
+  animation-delay: 0ms;
+}
+.grid > .card:nth-child(2) {
+  animation-delay: 40ms;
+}
+.grid > .card:nth-child(3) {
+  animation-delay: 80ms;
+}
+.grid > .card:nth-child(4) {
+  animation-delay: 120ms;
+}
+.grid > .card:nth-child(5) {
+  animation-delay: 160ms;
+}
+.grid > .card:nth-child(6) {
+  animation-delay: 200ms;
+}
+.grid > .card:nth-child(n + 7) {
+  animation-delay: 240ms;
+}
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+  /* No `overflow: hidden` on the whole card: what needs clipping clips
+     itself — this `::before` wash inherits the radius, and the art band
+     rounds and clips its own top (see `.card .art` further down). */
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Purely decorative hover sheen — must never intercept clicks/hovers on the
+   * card's own content (the colour picker, tooltips, etc. all sit "under" it
+   * in paint order since they're static flex children and this is the first
+   * positioned descendant). Without this it silently ate every pointer event
+   * at rest, even at opacity:0. */
+  pointer-events: none;
+  /* A full-bleed accent wash, not a corner sheen. The old value
+     (`linear-gradient(120deg, transparent 40%, rgba(accent, 0.06))`) was
+     transparent across the first 40% of the card and peaked at 0.06 alpha, so
+     in practice nothing about the card body changed on hover — only the
+     border and the artwork's drop-shadow silhouette lit up, which read as
+     "only the contours highlight". */
+  background: linear-gradient(
+    135deg,
+    rgba(var(--accent-rgb), 0.14),
+    rgba(var(--accent-rgb), 0.07) 55%,
+    rgba(var(--violet-rgb), 0.1)
+  );
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-dim);
+  box-shadow: var(--glow);
+  /* Lift the card's own surface too, so the whole face responds rather than
+     just its outline. */
+  background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+}
+.card:hover::before {
+  opacity: 1;
+}
+/* On hover the device comes forward inside its frame: a slow, small zoom
+ * under a soft spotlight, with a shadow that deepens beneath it.
+ *
+ * It used to lift 6px and grow 6% on a springy ease, past the top of the art
+ * band — breaking the frame on purpose, which read as the picture slipping
+ * out of its frame ("it is moving outside of its frame"). The photo also
+ * filled the band edge to edge, so there was no room to move inside it. It
+ * sits in `.art-box` now, inset from the band's edges by more than the zoom
+ * grows it, and the band clips: no lift, no overshoot, nothing leaves the
+ * frame.
+ *
+ * The card always renders its own inline art; while its config tab is open
+ * the travelling <PersistentDeviceArt> covers this slot during the flight,
+ * then hides once it lands, so this inline copy (and its hover) is what is on
+ * screen at rest. */
+.card .art img,
+.card .art svg {
+  transition:
+    transform var(--dur-slow) var(--ease-out),
+    filter var(--dur-slow) var(--ease-out);
+}
+.card:hover .art img,
+.card:hover .art svg {
+  transform: scale(1.04);
+  filter: drop-shadow(0 5px 7px rgba(0, 0, 0, 0.3));
+}
+.card .art::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 58% 62% at 50% 56%,
+    rgba(var(--accent-rgb), 0.2),
+    rgba(var(--accent-rgb), 0.06) 55%,
+    transparent 75%
+  );
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+.card:hover .art::before {
+  opacity: 1;
+}
+.card.offline:hover .art img,
+.card.offline:hover .art svg {
+  transform: none;
+  filter: none;
+}
+.card.offline:hover .art::before {
+  opacity: 0;
+}
+.card.offline {
+  cursor: default;
+  opacity: 0.72;
+}
+.card.offline:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--line);
+  /* An offline card opts out of every hover affordance, including the new
+     surface lift and accent wash. */
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+}
+.card.offline:hover::before {
+  opacity: 0;
+}
+/* home-grid drag-to-reorder feedback — same idiom as .tabstrip-tab's. */
+.card.dragging {
+  opacity: 0.5;
+}
+/* Which side of the hovered card the drop will land on — mirrors
+ * `.tabstrip-tab.drag-over`/`.drag-over-after`'s before/after marker pair —
+ * rather than the old full-ring highlight, which gave no indication of
+ * which side of the target the dragged card would be inserted at. */
+.card.drag-over {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.card.drag-over-after {
+  box-shadow: inset -3px 0 0 var(--accent);
+}
+
+.card .art {
+  position: relative;
+  /* 190px before the photo moved into `.art-box`; the 10px back keeps it
+     nearly the size it was, inset now rather than edge to edge. */
+  height: 200px;
+  /* `flex` centring, not `grid`+`place-items: center` — a centred (rather
+     than stretched) grid item's percentage height doesn't reliably resolve
+     against the box, so a tall product photo fell back to its intrinsic
+     aspect ratio and blew past this fixed slot instead of being scaled down
+     to fit it. Flex's centring doesn't have that percentage-height quirk. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  /* The photo stays in its frame, hover included. */
+  overflow: hidden;
+}
+/* The photo's box inside the band — see the hover comment above. The flight
+   measures this (DeviceGrid's `artRef`) to take off, and the ghost anchor
+   below fills it to land, so both match the photo at rest. */
+.art-box {
+  position: absolute;
+  inset: 12px 18px;
+}
+/* Fills the `.art-box` so its measured rect (reported to the travelling
+   image via <ArtAnchor>) is the whole slot, not shrink-wrapped to nothing. */
+.card-art-anchor {
+  width: 100%;
+  height: 100%;
+}
+/* Measure-only overlay laid over the card's own inline art while its config
+   tab is open — it just reports the card's art box to <PersistentDeviceArt>
+   and must not take part in layout or catch the pointer. */
+.card-art-ghost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* While this card's own return flight is airborne, <PersistentDeviceArt> is
+   sitting exactly on top of this box — hide the inline image for that span
+   (not unmount: the box must stay measurable for ArtAnchor) so the two
+   copies aren't both visible for the whole flight. Descendant (not direct
+   child) selector: the image now nests inside an `.art-layer` box (see the
+   colour cross-fade below), not directly under `.art`. */
+.card .art.art-flying img,
+.card .art.art-flying svg {
+  visibility: hidden;
+}
+/* Colour-picker preview cross-fade — see DeviceGrid.tsx's `layers`. Each
+   layer fills the `.art-box` identically; only the newest one animates in,
+   so the previous colour shows through underneath until it's covered. */
+.art-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.art-layer-entering {
+  animation: artLayerIn var(--dur-med) var(--ease-out) both;
+}
+@keyframes artLayerIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.card .art svg,
+.card .art img {
+  /* `auto` + `max-*: 100%` (not `width/height: 100%`) so the element scales
+     down from its own intrinsic size to fit the flex box instead of being
+     forced to fill it (which is what let a tall photo overflow — see the
+     `.card .art` comment above). `min-height: 0` overrides a flex item's
+     default `min-height: auto`, which would otherwise refuse to shrink below
+     the image's intrinsic height in the first place. */
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  /* `contain` (not `cover`) so a tall product photo (e.g. the V8 mouse) never
+     crops — it letterboxes inside the fixed-height box instead. */
+  object-fit: contain;
+}
+.card h3 {
+  font-size: var(--fs-xl);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  min-height: 24px;
+}
+.card-hint {
+  margin-top: 12px;
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+  /* `.card` is a flex column now, so this — the last element before the
+     colour picker moved into `.meta` — absorbs whatever vertical space a
+     stretched row-mate leaves, instead of every card hard-reserving two
+     blank lines whether or not `d.hint` is set (an online<->offline flip,
+     which toggles the hint, no longer has to change the card's own height
+     to avoid reflowing the grid — `align-items: stretch` on `.grid` already
+     equalises row height, and this flexes to fill it). */
+  flex: 1;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg-3);
+  color: var(--text-dim);
+}
+.pill.good {
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 30%, transparent);
+}
+.pill.warn {
+  color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 30%, transparent);
+}
+.pill.bad {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 30%, transparent);
+}
+/* Icon-only connection pill (see DeviceGrid.tsx) — a bigger glyph (16px, up
+   from the usual 12px) reads more clearly as a specific icon (the cable
+   glyph in particular), with the padding trimmed back so the pill's own
+   footprint still matches its text-bearing siblings (battery, profile,
+   firmware) in the same row instead of growing alongside the icon. */
+.pill.conn-pill {
+  padding: 1px 5px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.status-dot.on {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+.status-dot.off {
+  background: var(--text-mut);
+}
+
+/* ---- card: photo half / detail half --------------------------------------
+ * The card used to be one flat surface with the photo floating above the text
+ * and nothing separating them. Splitting it into two toned areas with a rule
+ * between gives the photo a frame and the details a footer, and stops a
+ * transparent-background product shot from bleeding into the name below it.
+ *
+ * The card's own padding moves onto the two halves so the rule can run the
+ * full width, edge to edge, instead of stopping short on both sides.
+ */
+.card {
+  padding: 0;
+}
+.card .art {
+  /* Very slightly lifted from the card's own gradient — enough to read as a
+     separate area, not enough to look like a different component. */
+  background: color-mix(in srgb, var(--bg-3) 38%, transparent);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 18px;
+  /* Its own top two corners — the card does not clip, so this band rounds
+     itself (and clips its art to the curve) or it paints square over the
+     card's rounded top edge. Minus the card's 1px border, which the radius
+     here sits inside of. */
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+}
+.card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 12px 18px 16px;
+}
+/* The device's own name is the thing you scan a grid for, so it gets the
+   size. It was the same 13px as the pills beneath it. */
+.card-name {
+  margin: 0 0 8px;
+  font-size: var(--fs-xl);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+/* ---- offline / unreachable ----------------------------------------------
+ * A device that has gone away stays on the grid — it is still one of your
+ * devices, and it comes back — so the card is desaturated rather than
+ * removed. Greyer than the old 0.72 opacity alone, which on a dark theme was
+ * barely distinguishable from an online card.
+ */
+.card.offline .art,
+.card.offline .meta,
+.card.offline .card-name {
+  filter: grayscale(1);
+}
+.card.offline {
+  opacity: 0.6;
+}
+
+/* The device is unreachable but its receiver is still plugged in. Greyed like
+   any other offline card, except the connection pill: the dongle really is
+   connected, and leaving that one in colour is what distinguishes "the
+   receiver is there, the mouse is not" from "nothing is plugged in". The hint
+   line underneath says which to check. */
+.card.receiver-only .conn-pill {
+  filter: none;
+  opacity: 1;
+}

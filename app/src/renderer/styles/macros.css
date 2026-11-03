@@ -1,0 +1,878 @@
+/* ---- macros: library rail + editor ------------------------ */
+.macro-pane {
+  display: grid;
+  grid-template-columns: 268px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+/* One column once the rail would squeeze the step rows: the timeline needs
+   the width more than the library does. Queries `.hero-side-content` (the
+   column this actually sits in) rather than the window, so the device photo
+   and the tab rail taking width is accounted for — as a viewport media query
+   this fired at the wrong moments in both directions. */
+@container heroside (max-width: 720px) {
+  .macro-pane {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Stacked, the library is its own grid row, so `position: sticky` buys it no
+     travel — all it does is make it a *positioned* box, which paints above its
+     static sibling below and so drew over the top of the editor as the pane
+     scrolled. */
+  .macro-lib {
+    position: static;
+  }
+  .macro-lib-list {
+    max-height: 180px;
+  }
+}
+.macro-pane .spacer {
+  flex: 1;
+}
+.macro-pane .lbl {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.macro-pane .unit {
+  font-size: var(--fs-2xs);
+  color: var(--text-mut);
+}
+.macro-pane .hint {
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+  line-height: 1.5;
+}
+.macro-pane .sub {
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  margin: 0 0 12px;
+  line-height: 1.55;
+}
+.macro-pane .dot-sep {
+  color: var(--text-mut);
+  margin: 0 5px;
+}
+.macro-pane .linklike {
+  color: var(--accent);
+  text-decoration: underline;
+  font: inherit;
+  padding: 0;
+}
+.macro-pane .badge {
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--bg-3);
+  color: var(--text-dim);
+  border: 1px solid var(--line);
+  margin-left: 6px;
+  white-space: nowrap;
+}
+.macro-pane .badge.dirty {
+  color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 45%, transparent);
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
+}
+
+/* -- library rail -- */
+.macro-lib {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: sticky;
+  top: 8px;
+}
+.macro-lib-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.macro-lib-head h4 {
+  margin: 0;
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-mut);
+  flex: 1;
+}
+.macro-lib-head .btn {
+  min-height: var(--ctl-h-sm);
+  padding: 0 8px;
+  font-size: var(--fs-xs);
+  gap: 4px;
+}
+.macro-lib-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.macro-lib-item {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.macro-lib-item:hover {
+  background: var(--bg-2);
+}
+.macro-lib-item.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.macro-lib-item .nm {
+  font-size: var(--fs-md);
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.macro-lib-item .sub {
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+.macro-lib-device {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.macro-lib-device h5 {
+  margin: 0 0 4px;
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-mut);
+  /* Its slot note is an info dot beside the words now, not a paragraph. */
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.macro-lib-device ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.macro-lib-device li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+}
+.macro-lib-device .sub {
+  color: var(--text-mut);
+  font-size: var(--fs-xs);
+  margin: 0;
+}
+
+/* -- editor -- */
+.macro-edit {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  min-width: 0;
+}
+.macro-edit-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+/* The name field is wrapped in a Tooltip, so the flex sizing has to live on
+   the wrapper — the input then fills it. */
+.macro-edit-head > .tt-wrap:has(> input.macro-name) {
+  flex: 1 1 200px;
+  min-width: 140px;
+}
+input.macro-name {
+  flex: 1 1 200px;
+  width: 100%;
+  min-width: 0;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+/* Library rows are full-width buttons; their tooltip wrapper must not
+   shrink-wrap them. */
+.macro-lib-list .tt-wrap,
+.macro-lib-head .tt-wrap {
+  display: block;
+}
+.macro-lib-head .tt-wrap {
+  flex: none;
+}
+
+/* -- recorder card -- */
+.macro-rec {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-2);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.macro-rec-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* Sized like the other buttons on the card rather than as a banner: it was
+   wide enough (132px, full-height padding) to push the timing options onto
+   their own line on any pane narrower than about 700px. */
+.macro-rec-btn {
+  gap: 6px;
+  padding: 5px 11px;
+  font-size: var(--fs-sm);
+  justify-content: center;
+  font-weight: 600;
+}
+.macro-rec-btn.live {
+  background: color-mix(in srgb, var(--red) 18%, var(--bg-3));
+  border-color: color-mix(in srgb, var(--red) 55%, transparent);
+  color: var(--text);
+}
+.rec-dot,
+.rec-square {
+  width: 7px;
+  height: 7px;
+  background: var(--red);
+  display: inline-block;
+  flex: none;
+}
+.rec-dot {
+  border-radius: 50%;
+}
+.rec-square {
+  border-radius: 2px;
+  animation: blink 1s steps(2) infinite;
+}
+.macro-rec-status {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.macro-rec-status .armed {
+  font-size: var(--fs-sm);
+  color: var(--accent);
+}
+.macro-recording {
+  color: var(--red);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+}
+.macro-rec-opts {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.macro-rec-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.macro-rec-opts input[type='number'] {
+  width: 64px;
+}
+.macro-rec-review {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.macro-rec-review-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+/* The take block is a full-width row of the review column; the tooltip wrapper
+   around it is an inline-flex span by default and would shrink-wrap it. */
+.macro-rec-review > .tt-wrap {
+  display: block;
+}
+
+/* -- the recorded take, and the live rows while recording -- */
+.macro-take-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 156px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-1);
+  font-size: var(--fs-sm);
+}
+.macro-take-list li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 8px;
+  color: var(--text-dim);
+}
+.macro-take-list li + li {
+  border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+.macro-take-list .n {
+  min-width: 16px;
+  text-align: right;
+  font-size: var(--fs-2xs);
+  color: var(--text-mut);
+  font-variant-numeric: tabular-nums;
+}
+.macro-take-list .k {
+  color: var(--accent);
+  font-weight: 600;
+}
+.macro-take-list li.wait .k,
+.macro-take-list li.wait svg {
+  color: var(--text-mut);
+}
+.macro-take-list .tg {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.macro-take-list .hold {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+  white-space: nowrap;
+}
+/* Recording in progress — same rows, but tied to the red of the Stop button
+   so it reads as "this is happening now", not "this is a saved result". */
+.macro-take-list.live {
+  border-color: color-mix(in srgb, var(--red) 40%, transparent);
+}
+.macro-take {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 9px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  cursor: grab;
+}
+.macro-take:active {
+  cursor: grabbing;
+}
+.macro-take-grip {
+  display: flex;
+  align-items: center;
+  color: var(--text-mut);
+  flex: none;
+}
+.macro-take .macro-take-list {
+  flex: 1;
+  min-width: 0;
+}
+.macro-rec-summary {
+  font-size: var(--fs-sm);
+  color: var(--text);
+}
+
+/* -- capacity + notices -- */
+.macro-steps-pane {
+  margin-top: 16px;
+}
+.macro-steps-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.macro-steps-head h4 {
+  margin: 0;
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-mut);
+  flex: 1;
+}
+.macro-steps-meta {
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+  font-variant-numeric: tabular-nums;
+}
+.macro-steps-meta .near {
+  color: var(--amber);
+}
+.macro-steps-meta .over {
+  color: var(--red);
+}
+.macro-capacity {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bg-3);
+  overflow: hidden;
+  margin: 6px 0 2px;
+}
+.macro-capacity > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--dur-med) var(--ease-out);
+}
+.macro-capacity.near > span {
+  background: var(--amber);
+}
+.macro-capacity.over > span {
+  background: var(--red);
+}
+.macro-note {
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  margin: 6px 0;
+  padding: 6px 9px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--text-dim);
+}
+.macro-note.warn {
+  color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 35%, transparent);
+  background: color-mix(in srgb, var(--amber) 10%, transparent);
+}
+.macro-note.err {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 35%, transparent);
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+}
+
+/* -- step rows -- */
+.macro-steps {
+  list-style: none;
+  margin: 10px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  /* No gap: the insert seams below sit between the rows and provide the
+     spacing themselves, so the gap the eye reads *is* the click target. */
+  gap: 0;
+}
+
+/* -- insert seams: click to add a step here, or drop one here -- */
+.macro-insert {
+  position: relative;
+  height: 12px;
+  flex: none;
+}
+.macro-insert.open {
+  height: auto;
+}
+/* A drag is in flight, or a take is waiting to be placed: give every seam a
+   real target and show where they are without needing to hover first. */
+.macro-steps.armed .macro-insert:not(.open) {
+  height: 22px;
+}
+.macro-steps.armed .macro-insert-btn {
+  opacity: 0.45;
+}
+.macro-steps.armed .macro-insert:hover > .macro-insert-btn {
+  opacity: 1;
+}
+/* On an empty list the "no steps yet" message is already the insert point. */
+.macro-steps.is-empty .macro-insert:not(.open) {
+  display: none;
+}
+.macro-insert-btn {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.macro-insert-btn::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.macro-insert-btn svg {
+  position: relative;
+  color: var(--accent);
+  /* A ring of the card's own background punches the line out behind the
+     glyph, so the two read as one control rather than overlapping marks. */
+  box-shadow: 0 0 0 3px var(--bg-1);
+  background: var(--bg-1);
+  border-radius: 50%;
+}
+.macro-insert:hover > .macro-insert-btn,
+.macro-insert-btn:focus-visible,
+.macro-insert.drop-over > .macro-insert-btn {
+  opacity: 1;
+}
+.macro-insert.drop-over > .macro-insert-btn::before {
+  height: 3px;
+  background: var(--accent);
+}
+.macro-inserter {
+  margin: 6px 0;
+  padding: 8px;
+  border: 1px solid var(--accent-dim);
+  border-radius: 8px;
+  background: var(--bg-2);
+  box-shadow: var(--glow);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.macro-inserter-arm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent);
+  border-radius: 7px;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.macro-inserter-arm:focus-visible {
+  outline: none;
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--text);
+}
+.macro-inserter-alt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.macro-inserter-alt .btn {
+  gap: 5px;
+  min-height: var(--ctl-h-sm);
+  padding: 0 8px;
+  font-size: var(--fs-sm);
+}
+/* An empty list is one big insert point — clicking the "no steps yet" message
+   is how you add the first one. */
+.macro-steps-empty .empty {
+  display: block;
+  width: 100%;
+  padding: 26px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+.macro-steps-empty .empty:hover {
+  border-color: var(--accent-dim);
+  color: var(--text-dim);
+}
+.macro-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: var(--fs-sm);
+}
+.macro-step:focus-visible {
+  outline: none;
+  border-color: var(--accent-dim);
+  box-shadow: var(--glow);
+}
+.macro-step.dragging {
+  opacity: 0.45;
+}
+.macro-step.unsupported {
+  border-style: dashed;
+  opacity: 0.75;
+}
+.macro-step-n {
+  font-size: var(--fs-2xs);
+  color: var(--text-mut);
+  font-variant-numeric: tabular-nums;
+  min-width: 16px;
+  text-align: right;
+  flex: none;
+}
+.macro-step .grip {
+  color: var(--text-mut);
+  cursor: grab;
+  display: inline-flex;
+  flex: none;
+}
+.macro-step-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.macro-step-main select {
+  min-height: var(--ctl-h-sm);
+  padding: 3px 6px;
+  font-size: var(--fs-sm);
+}
+.macro-step-main .macro-kind-sel {
+  color: var(--accent);
+  font-weight: 600;
+  min-width: 78px;
+}
+.macro-kind {
+  font-weight: 700;
+  color: var(--accent);
+}
+.macro-kind.warn {
+  color: var(--amber);
+}
+/* A pause has no target and no hold — a dashed, unfilled row so a run of
+   steps reads as "action, gap, action" at a glance instead of as five
+   equally-weighted rows. */
+.macro-step.wait {
+  background: transparent;
+  border-style: dashed;
+}
+.macro-step .macro-kind.wait-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-dim);
+}
+.macro-wait-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.macro-wait-field input {
+  min-height: var(--ctl-h-sm);
+  width: 72px;
+  padding: 3px 5px;
+  font-size: var(--fs-sm);
+}
+.macro-step-times {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+/* Tooltip wrappers are inline-flex spans; inside the row's own flex layout
+   they must not swallow the sizing of the control they wrap. */
+.macro-step-times .tt-wrap,
+.macro-step-btns .tt-wrap,
+.macro-step-main > .tt-wrap {
+  display: inline-flex;
+  min-width: 0;
+}
+/* The kind <select> sits inside its tooltip wrapper, so the row's flex sizing
+   has to reach the wrapper for the select to be able to give up width. */
+.macro-step-main > .tt-wrap {
+  flex: 0 1 auto;
+}
+.macro-step-times label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+}
+.macro-step-times input {
+  min-height: var(--ctl-h-sm);
+  width: 58px;
+  padding: 3px 5px;
+  font-size: var(--fs-sm);
+}
+.macro-step-btns {
+  display: flex;
+  gap: 1px;
+  flex: none;
+}
+.macro-step-btns .btn-icon.danger:hover {
+  color: var(--red);
+}
+
+/* -- add-step row -- */
+.macro-add {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.macro-add .btn {
+  gap: 5px;
+}
+.macro-add-mouse {
+  position: relative;
+}
+.macro-add-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  min-width: 130px;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  box-shadow: 0 10px 26px -12px rgb(0 0 0 / 0.7);
+}
+.macro-add-mouse:hover .macro-add-menu,
+.macro-add-mouse:focus-within .macro-add-menu {
+  display: flex;
+}
+.macro-add-menu button {
+  text-align: left;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+}
+.macro-add-menu button:hover {
+  background: var(--bg-3);
+  color: var(--text);
+}
+
+/* -- key picker -- */
+.keypick {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 8px;
+  background: var(--bg-2);
+}
+.keypick > input {
+  width: 100%;
+  margin-bottom: 6px;
+}
+.keypick-scroll {
+  max-height: 240px;
+  overflow-y: auto;
+}
+.keypick .grp {
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-mut);
+  margin: 6px 0 4px;
+}
+.keypick .keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.keypick-key {
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: var(--fs-sm);
+  background: var(--bg-3);
+  color: var(--text-dim);
+}
+.keypick-key:hover {
+  border-color: var(--accent-dim);
+  color: var(--text);
+}
+.keypick-raw {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.keypick-raw .grp {
+  margin: 0;
+}
+.keypick-raw input {
+  width: 64px;
+}
+
+/* Below this the row's four zones (number, target, hold, buttons) can't all
+   share a line without the selects collapsing to unreadable stubs, so the
+   timing and buttons wrap under the target instead. */
+@container heroside (max-width: 470px) {
+  .macro-step {
+    flex-wrap: wrap;
+  }
+  .macro-step-main {
+    flex: 1 1 100%;
+    order: 1;
+  }
+  .macro-step-times {
+    order: 2;
+  }
+  .macro-step-btns {
+    order: 3;
+    margin-left: auto;
+  }
+  .macro-step-main select,
+  .macro-step-main > .tt-wrap {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .macro-step-main > .tt-wrap > select {
+    width: 100%;
+  }
+}
+
+/* -- footer -- */
+.macro-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.macro-repeat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.macro-repeat input {
+  width: 64px;
+}

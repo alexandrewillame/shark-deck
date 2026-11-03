@@ -1,0 +1,143 @@
+/* Buttons tab — table layout (sections.tsx's ButtonsSection). Replaces the
+ * old stacked "Button N" + a second "Action" row per button. The numbered
+ * picker itself now lives on the device's own photo, in HeroPane's art
+ * column (see .mbp below) rather than beside this table. */
+.buttons-table {
+  min-width: 320px;
+}
+.btn-row {
+  display: grid;
+  grid-template-columns: 28px minmax(90px, 1fr) minmax(140px, 1.2fr) minmax(0, 1.6fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.btn-row-head {
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+}
+.btn-row-n {
+  text-align: center;
+  color: var(--text-mut);
+}
+.btn-row.is-active {
+  background: rgba(var(--accent-rgb), 0.06);
+}
+.btn-row-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.btn-row-fire,
+.btn-row-combo {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.btn-row-fire label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+}
+
+/* Buttons tab's numbered picker — drawn by PersistentDeviceArt.tsx directly
+ * on top of the one travelling mouse photo (never a second local copy of
+ * it; see that component's doc comment), positioned against the photo's own
+ * letterboxed sub-rect within the anchor (`imageContentBox.ts`). `.mbp-badge`
+ * needs `pointer-events: auto` because its ancestor, `.device-art-persistent`,
+ * is `pointer-events: none` for every *other* child (the photo itself). */
+.mbp-badge {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--on-accent);
+  background: var(--accent);
+  box-shadow:
+    0 0 0 2px var(--bg-1),
+    0 1px 4px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+  /* Plays once on mount (an `animation`, not a `transition` — there's no
+     property change to transition FROM on first appearance) so the badges
+     fade in rather than popping in the instant the photo's aspect ratio is
+     known. */
+  animation: mbpBadgeIn var(--dur-med) var(--ease-out) both;
+}
+@keyframes mbpBadgeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.mbp-badge.is-active {
+  transform: translate(-50%, -50%) scale(1.2);
+  box-shadow:
+    0 0 0 2px var(--bg-1),
+    0 0 10px -2px var(--accent);
+}
+/* A button the top-down photo can't actually show (e.g. an underside DPI
+ * switch) — dashed and dimmed instead of a solid fill, so it visibly reads
+ * as "approximate location", not a real callout. */
+.mbp-badge-inferred {
+  background: transparent;
+  color: var(--text-mut);
+  border: 1.5px dashed var(--text-mut);
+  box-shadow: 0 0 0 2px var(--bg-1);
+}
+.mbp-badge-inferred.is-active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Per-key lighting eyedropper — cursor feedback while sampling a colour off
+ * the board (see PerKeyPane's `tool === 'pick'`). */
+.kbmap-picking .kbkey {
+  cursor: crosshair;
+}
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.seg button {
+  /* A pill stretched to its container's width (the Appearance popover's Theme
+     row) shares the spare width among its segments, so they span it evenly
+     and the active one's fill reaches the edge. Packed at the start, they left
+     an empty strip of pill at the right. A pill sized to its content has no
+     spare width, and is unchanged. */
+  flex-grow: 1;
+  /* The pill's 1px border makes up the rest of --ctl-h. */
+  min-height: calc(var(--ctl-h) - 2px);
+  padding: 0 12px;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  background: var(--bg-2);
+}
+.seg button.active {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}

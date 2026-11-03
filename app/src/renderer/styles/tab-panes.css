@@ -1,0 +1,98 @@
+/* ---- tab panes --------------------------------------------------
+ * Every open tab stays mounted (so a device tab's own sub-tab and scroll
+ * position survive switching away and back — see App.tsx) and the inactive
+ * ones are just `display: none`. Toggling an element from `display: none` to
+ * displayed restarts any CSS animation on it from the `from` state, which is
+ * what replays `tabIn` below on every switch without any JS animation code. */
+.content > .view {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  animation: tabIn var(--dur-med) var(--ease-out);
+}
+.content > .view.view-hidden {
+  display: none;
+}
+.content > .view > * {
+  flex: 1;
+  min-height: 0;
+}
+@keyframes tabIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* Second grid column: an optional profile-switcher header (see
+ * ProfileSwitcher.tsx — only for devices with per-profile settings) above
+ * the scrolling tab content. A flex column so the header keeps its natural
+ * height and the tab pane takes the rest — this is scoped to the content
+ * column only, so it never affects .tabrail's own height/sticky behaviour. */
+.config-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  gap: 14px;
+}
+.profile-switcher-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.profile-switcher-bar select {
+  min-width: 160px;
+}
+/* tab-rail content also settles in a touch when the active sub-tab changes.
+ * `container-type: size` turns this into a query container so `.hero-art-col`
+ * below can size itself in `cqh` units against *this* box's actual visible
+ * height — see that rule's own comment for why. Its own size is already
+ * fully determined by the flex layout above (`flex: 1; min-height: 0`), so
+ * containment doesn't change anything about how this box itself is sized. */
+.config-content > .tabpane-in {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  container-type: size;
+  /* The scrollbar's 8px are kept whether or not it shows. Otherwise a pane
+     that happens not to scroll is 8px wider than one that does, and a board
+     that sizes its keys from its width (KeyboardMap `fit`) re-fits and shifts
+     when you move between them — Global vs Per-Key lighting, especially. */
+  scrollbar-gutter: stable;
+}
+.tabpane-in {
+  animation: tabPaneIn var(--dur-fast) var(--ease-out);
+}
+@keyframes tabPaneIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  /* The one deliberate exception: the loading spinner conveys state rather
+     than decoration, and a frozen one reads as a hung app. Slowed rather than
+     stopped, and it always ships with a text label beside it. */
+  .spinner {
+    animation-duration: 1.6s !important;
+    animation-iteration-count: infinite !important;
+  }
+}

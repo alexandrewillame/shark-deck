@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Read(./app/node_modules/**)",
+      "Read(./app/out/**)",
+      "Read(./app/scripts/_raw/**)",
+      "Read(./app/package-lock.json)",
+      "Read(./dist/app/LICENSES.chromium.html)",
+      "Read(./docs/reverse-engineering/*.jsonl)",
+      "Read(./docs/reverse-engineering/*.bin)",
+      "Read(./Notes.txt)"
+    ],
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git stash list:*)",
+      "Bash(npm run check:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm test:*)"
+    ]
+  }
+}

@@ -1,0 +1,167 @@
+/* A segment with a tooltip is wrapped in Tooltip's own `.tt-wrap` span, so the
+ * wrapper — not the button — becomes the flex item. Keep it transparent to the
+ * layout so tipped and untipped segments still render as one joined pill of
+ * equal-height buttons, sharing a stretched pill's spare width alike
+ * (`.seg button`, buttons-tab.css). See Segmented's `tip` option in
+ * common.tsx. */
+.seg > .tt-wrap {
+  flex-grow: 1;
+  align-items: stretch;
+}
+.seg > .tt-wrap > button {
+  flex: 1;
+}
+
+input[type='range'] {
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--bg-3);
+  width: 180px;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  cursor: pointer;
+}
+
+select,
+input[type='text'],
+input[type='number'] {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 7px;
+  min-height: var(--ctl-h);
+  padding: 4px 9px;
+  font-size: var(--fs-md);
+}
+
+.toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  position: relative;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-mut);
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    background var(--dur-fast) var(--ease-out);
+}
+.toggle.on {
+  background: rgba(var(--accent-rgb), 0.2);
+  border-color: var(--accent-dim);
+}
+.toggle.on::after {
+  transform: translateX(18px);
+  background: var(--accent);
+}
+/* Locked on (or off) because the other position isn't a valid device state —
+ * same treatment as `.btn:disabled`, so it reads as unavailable rather than
+ * unresponsive. The wrapping Tooltip says why. */
+.toggle[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---- ListboxSelect (components/ListboxSelect.tsx) ------------------------
+ * A select whose options explain themselves. Dressed like the native select
+ * above, so the two sit together on one form; the list is the language
+ * menu's chrome. */
+.listbox-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 150px;
+  max-width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 7px;
+  min-height: var(--ctl-h);
+  padding: 4px 9px;
+  font-size: var(--fs-md);
+  text-align: left;
+  cursor: pointer;
+}
+.listbox-select[aria-expanded='true'] {
+  border-color: var(--accent-dim);
+}
+.listbox-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.listbox-select-value {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.listbox-select-value.is-placeholder {
+  color: var(--text-mut);
+}
+.listbox-select-caret {
+  flex: none;
+  color: var(--text-mut);
+}
+.listbox-select-list {
+  position: fixed;
+  z-index: 200;
+  overflow-y: auto;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+  box-shadow: 0 16px 40px -16px rgba(0, 0, 0, 0.5);
+  animation: menuIn var(--dur-fast) var(--ease-out);
+}
+.listbox-select-list > .tt-wrap {
+  display: block;
+}
+.listbox-select-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px 7px 6px;
+  border-radius: 6px;
+  font-size: var(--fs-md);
+  color: var(--text-dim);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.listbox-select-option.is-active {
+  background: var(--bg-3);
+  color: var(--text);
+}
+.listbox-select-option[aria-selected='true'] {
+  color: var(--accent);
+  font-weight: 600;
+}
+.listbox-select-option[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.listbox-select-check {
+  display: inline-flex;
+  width: 12px;
+  flex: none;
+}
+.listbox-select-label {
+  flex: 1;
+}

@@ -1,0 +1,62 @@
+/* ---- mouse LED panes --------------------------------------- */
+.led-stage-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 8px 0;
+}
+.led-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+}
+.led-legend {
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+/* What each receiver-LED colour means, shown as the colours themselves rather
+ * than a sentence naming them — the thing being explained is a colour, so a
+ * list of colour names is a translation step the reader should not have to do
+ * while looking at the actual LED. See ReceiverLedPane in tabs/LightingTab.tsx. */
+.led-key {
+  margin-top: 10px;
+}
+.led-key-group + .led-key-group {
+  margin-top: 8px;
+}
+.led-key-title {
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+  margin-bottom: 4px;
+}
+.led-key-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+.led-key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+/* A filled dot with a faint ring, so a light swatch still reads as a chip
+ * against the panel in both themes. */
+.led-key-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 0 6px -1px currentColor;
+  background: currentColor;
+}

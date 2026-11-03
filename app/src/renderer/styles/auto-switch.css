@@ -1,0 +1,192 @@
+/* ---- Auto-Switch profiles table -----------------------------------
+ * Rows are profiles, columns are connected devices, cells pick which of
+ * that device's own slots the profile selects — see screens/AutoSwitch.tsx.
+ * Wrapped in its own scroller so extra device columns scroll horizontally
+ * instead of forcing the whole (centered) pane wide. */
+.as-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.as-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-md);
+}
+.as-table th,
+.as-table td {
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line);
+}
+.as-table thead th {
+  background: var(--bg-2);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.as-table tbody tr:last-child td {
+  border-bottom: none;
+}
+/* The flex layout lives on an inner wrapper, not the <td> itself — a flex
+ * <td> drops out of the table formatting context, so its border/padding
+ * paint on a box a different height than its siblings, showing up as a break
+ * in the row rule right where the MODE column meets GAMES / APPS. */
+.as-col-profile-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.as-table select {
+  max-width: 170px;
+}
+.as-profile-icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--bg-3);
+  color: var(--text-dim);
+  flex: none;
+  overflow: hidden;
+}
+.as-profile-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.as-triggers-cell {
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+}
+
+/* ---- Auto-Switch: the flat, reorderable Games / Apps list ---------- */
+.as-trigger-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.as-trigger-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-1);
+}
+.as-trigger-row.dragging {
+  opacity: 0.5;
+}
+.as-trigger-row.drag-over {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.as-drag-handle {
+  cursor: grab;
+  color: var(--text-mut);
+  font-size: var(--fs-sm);
+  letter-spacing: -2px;
+  user-select: none;
+  flex: none;
+}
+.as-trigger-row .inline-rename {
+  flex: 1;
+  min-width: 0;
+}
+/* The click-to-rename target is now wrapped in a Tooltip (its `.tt-wrap`
+ * sits between `.inline-rename` and the button) — same shrink-chain fix as
+ * `.tabrail > .tt-wrap` below, so the ellipsis on a long name still works. */
+.as-trigger-row .inline-rename > .tt-wrap {
+  min-width: 0;
+}
+.as-trigger-mode {
+  flex: none;
+  max-width: 140px;
+}
+.as-add-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+/* ---- Auto-Switch processes & games panel --------------------------- */
+.as-process-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.as-process-icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--bg-3);
+  flex: none;
+  overflow: hidden;
+}
+.as-process-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.as-trigger-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.as-trigger-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 9px;
+  border-radius: 999px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+.as-trigger-chip.disabled {
+  opacity: 0.5;
+}
+.as-trigger-chip button {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  color: var(--text-mut);
+}
+.as-trigger-chip button:hover {
+  background: var(--bg-2);
+  color: var(--red);
+}
+
+/* A software slot that has never been captured from the device.
+   Every seeded slot holds the same payload, so switching to one applies
+   cleanly and changes nothing — which reads as a broken switch unless the
+   cell says otherwise. */
+.as-slot-unset {
+  border-color: color-mix(in srgb, var(--amber) 45%, var(--line));
+  color: var(--text-dim);
+}
+
+/* The mode currently in force. Every row looked identical, so the table could
+   not answer the question it exists for — which mode am I in? A tinted row
+   plus an explicit pill, because colour alone is not an answer for anyone who
+   cannot distinguish it. */
+.as-table tr.as-row-active > td {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+.as-active-pill {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

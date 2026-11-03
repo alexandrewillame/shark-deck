@@ -1,0 +1,2149 @@
+==============================================================================
+TIMELINE  (session-v8-verify.jsonl, 5453 records, 69 steps)
+==============================================================================
+
+--- 00_open ---
+    DLL  CS_UsbFinder_GetUsbDeviceAttribute
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    DLL  CS_UsbServer_SetPCDriverStatus
+    DLL  CS_UsbServer_ReadAllFlashData
+    DLL  CS_UsbServer_Thread
+    DLL  CS_UsbServer_ReadDPILed
+    DLL  CS_UsbServer_ReadBatteryLevel
+    DLL  CS_UsbServer_ReadVersion
+    DLL  CS_UsbServer_ReadConfig
+    DLL  CS_UsbFinder_Get4KDongleRGBValue
+    DLL  CS_UsbFinder_GetLongRangeMode
+    DLL  CS_UsbFinder_GetDongleRGBBarMode
+    DLL  CS_UsbFinder_GetDongleIndicatorLed
+    DLL  CS_UsbFinder_GetVersion
+    ->           write seq=8     HANDSHAKE  args=[00 00 00 08]
+    ->           write seq=12    STATUS  args=[00 00 00 00]
+    ->           write seq=16    STATUS  args=[00 00 00 00]
+    ->           write seq=19    STATUS  args=[00 00 00 00]
+    ->           write seq=22    HANDSHAKE  args=[00 00 00 08]
+    ->           write seq=26    STATUS  args=[00 00 00 00]
+    ->           write seq=31    STATUS  args=[00 00 00 00]
+    ->           write seq=34    HANDSHAKE  args=[00 00 00 08]
+    ->           write seq=38    STATUS  args=[00 00 00 00]
+    ->           write seq=42    STATUS  args=[00 00 00 00]
+    ->           write seq=45    HANDSHAKE  args=[00 00 00 08]
+    ->           write seq=49    STATUS  args=[00 00 00 00]
+    ->           write seq=57    HANDSHAKE  args=[00 00 00 08]
+    ->           write seq=60    STATUS  args=[00 00 00 00]
+    ->           write seq=66    STATUS  args=[00 00 00 00]
+    ->           write seq=71    STATUS  args=[00 00 00 00]
+    ->           write seq=80    GET_VERSION  args=[00 00 00 01]
+    ->           write seq=81    READ_SETTING off=0x0000 len=10
+    ->           write seq=84    STATUS  args=[00 00 00 00]
+    ->           write seq=87    BATTERY  args=[00 00 00 00]
+    <-            read seq=88    BATTERY  args=[00 00 00 02]
+    ->           write seq=89    READ_SETTING off=0x0000 len=10
+    ->           write seq=90    READ_SETTING off=0x000a len=10
+    ->           write seq=91    READ_SETTING off=0x0014 len=10
+    ->           write seq=92    READ_SETTING off=0x001e len=10
+    ->           write seq=93    READ_SETTING off=0x0028 len=10
+    ->           write seq=94    READ_SETTING off=0x0032 len=10
+    ->           write seq=95    READ_SETTING off=0x003c len=10
+    ->           write seq=96    READ_SETTING off=0x0046 len=10
+    ->           write seq=97    READ_SETTING off=0x0050 len=10
+    ->           write seq=98    READ_SETTING off=0x005a len=10
+    ->           write seq=99    READ_SETTING off=0x0064 len=10
+    ->           write seq=100   READ_SETTING off=0x006e len=10
+    ->           write seq=101   READ_SETTING off=0x0078 len=10
+    ->           write seq=102   READ_SETTING off=0x0082 len=10
+    ->           write seq=103   READ_SETTING off=0x008c len=10
+    ->           write seq=104   READ_SETTING off=0x0096 len=10
+    ->           write seq=105   READ_SETTING off=0x00a0 len=10
+    ->           write seq=106   READ_SETTING off=0x00aa len=10
+    ->           write seq=107   READ_SETTING off=0x00b4 len=10
+    ->           write seq=108   READ_SETTING off=0x00be len=10
+    ->           write seq=109   READ_SETTING off=0x00c8 len=10
+    ->           write seq=110   READ_SETTING off=0x00d2 len=6
+    ->           write seq=111   READ_SETTING off=0x0100 len=10
+    ->           write seq=112   READ_SETTING off=0x0120 len=10
+    ->           write seq=113   READ_SETTING off=0x0140 len=10
+    ->           write seq=114   READ_SETTING off=0x0160 len=10
+    ->           write seq=115   READ_SETTING off=0x0180 len=10
+    ->           write seq=116   READ_SETTING off=0x01a0 len=10
+    ->           write seq=117   READ_SETTING off=0x01c0 len=10
+    ->           write seq=118   READ_SETTING off=0x01e0 len=10
+    ->           write seq=119   READ_SETTING off=0x0200 len=10
+    ->           write seq=120   READ_SETTING off=0x0220 len=10
+    ->           write seq=121   READ_SETTING off=0x0240 len=10
+    ->           write seq=122   READ_SETTING off=0x0260 len=10
+    ->           write seq=123   READ_SETTING off=0x0280 len=10
+    ->           write seq=124   READ_SETTING off=0x02a0 len=10
+    ->           write seq=125   READ_SETTING off=0x02c0 len=10
+    ->           write seq=126   READ_SETTING off=0x02e0 len=10
+    ->           write seq=127   READ_SETTING off=0x0300 len=10
+    ->           write seq=128   READ_SETTING off=0x031f len=10
+    ->           write seq=129   READ_SETTING off=0x0480 len=10
+    ->           write seq=130   READ_SETTING off=0x049f len=10
+    ->           write seq=131   READ_SETTING off=0x0600 len=10
+    ->           write seq=132   READ_SETTING off=0x061f len=10
+    ->           write seq=133   READ_SETTING off=0x0780 len=10
+    ->           write seq=134   READ_SETTING off=0x079f len=10
+    ->           write seq=135   READ_SETTING off=0x0900 len=10
+    ->           write seq=136   READ_SETTING off=0x091f len=10
+    ->           write seq=137   READ_SETTING off=0x0a80 len=10
+    ->           write seq=138   READ_SETTING off=0x0a9f len=10
+    ->           write seq=139   READ_SETTING off=0x0a80 len=10
+    ->           write seq=140   READ_SETTING off=0x0a8a len=10
+    ->           write seq=141   READ_SETTING off=0x0a94 len=10
+    ->           write seq=142   READ_SETTING off=0x0a9e len=10
+    ->           write seq=143   READ_SETTING off=0x0aa8 len=10
+    ->           write seq=144   READ_SETTING off=0x0ab2 len=10
+    ->           write seq=145   READ_SETTING off=0x0abc len=3
+    ->           write seq=146   READ_SETTING off=0x0c00 len=10
+    ->           write seq=147   READ_SETTING off=0x0c1f len=10
+    ->           write seq=148   READ_SETTING off=0x0d80 len=10
+    ->           write seq=149   READ_SETTING off=0x0d9f len=10
+    ->           write seq=150   READ_SETTING off=0x0f00 len=10
+    ->           write seq=151   READ_SETTING off=0x0f1f len=10
+    ->           write seq=152   READ_SETTING off=0x1080 len=10
+    ->           write seq=153   READ_SETTING off=0x109f len=10
+    ->           write seq=154   READ_SETTING off=0x1200 len=10
+    ->           write seq=155   READ_SETTING off=0x121f len=10
+    ->           write seq=156   READ_SETTING off=0x1380 len=10
+    ->           write seq=157   READ_SETTING off=0x139f len=10
+    ->           write seq=158   READ_SETTING off=0x1500 len=10
+    ->           write seq=159   READ_SETTING off=0x151f len=10
+    ->           write seq=160   READ_SETTING off=0x1680 len=10
+    ->           write seq=161   READ_SETTING off=0x169f len=10
+    ->           write seq=162   READ_SETTING off=0x1800 len=10
+    ->           write seq=163   READ_SETTING off=0x181f len=10
+    ->           write seq=164   READ_SETTING off=0x1980 len=10
+    ->           write seq=165   READ_SETTING off=0x199f len=10
+    ->           write seq=177   0x15  args=[00 00 00 00]
+    ->           write seq=182   0x17  args=[00 00 00 00]
+    <- overlapped_read seq=183   READ_SETTING off=0x199f len=10  [ff ff ff ff ff ff ff ff ff ff]
+    ->           write seq=189   0x19  args=[00 00 00 00]
+    ->           write seq=194   0x2d  args=[00 00 00 00]
+    <-            read seq=198   0x15  args=[00 00 00 0a]
+    ->           write seq=199   READ_SETTING off=0x004c len=8
+    <-            read seq=200   0x17  args=[00 00 00 0a]
+    <-            read seq=201   0x19  args=[01 00 00 00]
+    <-            read seq=202   0x2d  args=[00 00 00 0a]
+    ->           write seq=203   BATTERY  args=[00 00 00 00]
+    ->           write seq=204   0x12  args=[00 00 00 00]
+    ->           write seq=208   0x12  args=[00 00 00 00]
+    <-            read seq=210   0x12  args=[00 00 00 02]
+    ->           write seq=211   GET_PROFILE  args=[00 00 00 00]
+    ->           write seq=215   STATUS  args=[00 00 00 00]
+    ->           write seq=218   BATTERY  args=[00 00 00 00]
+    <-            read seq=219   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=220   BATTERY  args=[00 00 00 02]
+
+--- poll_125 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=224   STATUS  args=[00 00 00 00]
+    ->           write seq=227   BATTERY  args=[00 00 00 00]
+    <-            read seq=228   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=229   BATTERY  args=[00 00 00 02]
+    ->           write seq=234   STATUS  args=[00 00 00 00]
+
+--- poll_250 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=239   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=241   STATUS  args=[00 00 00 01]
+    ->           write seq=242   WRITE_SETTING off=0x0000 len=2  [04 51]
+    ->           write seq=245   STATUS  args=[00 00 00 00]
+    ->           write seq=248   BATTERY  args=[00 00 00 00]
+    <-            read seq=249   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=250   BATTERY  args=[00 00 00 02]
+
+--- poll_500 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=255   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=257   STATUS  args=[00 00 00 01]
+    ->           write seq=258   WRITE_SETTING off=0x0000 len=2  [02 53]
+
+--- poll_1000 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=262   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=264   STATUS  args=[00 00 00 01]
+    ->           write seq=265   WRITE_SETTING off=0x0000 len=2  [01 54]
+    ->           write seq=268   STATUS  args=[00 00 00 00]
+    ->           write seq=271   BATTERY  args=[00 00 00 00]
+    <-            read seq=272   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=273   BATTERY  args=[00 00 00 02]
+
+--- poll_2000 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=278   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=280   STATUS  args=[00 00 00 01]
+    ->           write seq=282   WRITE_SETTING off=0x0000 len=2  [10 45]
+
+--- poll_4000 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=285   STATUS  args=[00 00 00 00]
+    ->           write seq=288   BATTERY  args=[00 00 00 00]
+    <-            read seq=289   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=290   BATTERY  args=[00 00 00 02]
+    ->           write seq=295   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=297   STATUS  args=[00 00 00 01]
+    ->           write seq=298   WRITE_SETTING off=0x0000 len=2  [20 35]
+
+--- poll_8000 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=302   STATUS  args=[00 00 00 00]
+    ->           write seq=304   WRITE_SETTING off=0x0000 len=2  [40 15]
+
+--- poll_back ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=307   STATUS  args=[00 00 00 00]
+    ->           write seq=310   BATTERY  args=[00 00 00 00]
+    <-            read seq=311   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=312   BATTERY  args=[00 00 00 02]
+    ->           write seq=317   STATUS  args=[00 00 00 00]
+    ->           write seq=322   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=324   STATUS  args=[00 00 00 01]
+    ->           write seq=326   WRITE_SETTING off=0x0000 len=2  [01 54]
+    <-            read seq=327   STATUS  args=[00 00 00 01]
+
+--- lod_07 ---
+    ->           write seq=330   STATUS  args=[00 00 00 00]
+    ->           write seq=333   BATTERY  args=[00 00 00 00]
+    <-            read seq=334   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=335   BATTERY  args=[00 00 00 02]
+
+--- lod_1 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=340   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=342   STATUS  args=[00 00 00 01]
+    ->           write seq=343   WRITE_SETTING off=0x000a len=2  [01 54]
+
+--- lod_2 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=347   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=349   STATUS  args=[00 00 00 01]
+    ->           write seq=352   STATUS  args=[00 00 00 00]
+    ->           write seq=355   BATTERY  args=[00 00 00 00]
+    ->           write seq=356   WRITE_SETTING off=0x000a len=2  [02 53]
+    <-            read seq=357   STATUS  args=[00 00 00 01]
+    <-            read seq=358   BATTERY  args=[00 00 00 02]
+
+--- mode_hp ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=362   STATUS  args=[00 00 00 00]
+    ->           write seq=365   BATTERY  args=[00 00 00 00]
+    <- overlapped_read seq=366   STATUS  args=[00 00 00 01]
+    <-            read seq=367   BATTERY  args=[00 00 00 02]
+    ->           write seq=372   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=374   STATUS  args=[00 00 00 01]
+    ->           write seq=375   WRITE_SETTING off=0x00b9 len=2  [01 54]
+
+--- mode_lp2 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=379   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=381   STATUS  args=[00 00 00 01]
+    ->           write seq=382   WRITE_SETTING off=0x00b9 len=2  [00 55]
+
+--- motion_on ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=385   STATUS  args=[00 00 00 00]
+    ->           write seq=388   BATTERY  args=[00 00 00 00]
+    <-            read seq=389   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=390   BATTERY  args=[00 00 00 02]
+    ->           write seq=395   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=397   STATUS  args=[00 00 00 01]
+    ->           write seq=398   WRITE_SETTING off=0x00ab len=2  [01 54]
+
+--- motion_off ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=402   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=404   STATUS  args=[00 00 00 01]
+    ->           write seq=405   WRITE_SETTING off=0x00ab len=2  [00 55]
+    ->           write seq=408   STATUS  args=[00 00 00 00]
+    ->           write seq=411   BATTERY  args=[00 00 00 00]
+    <-            read seq=412   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=413   BATTERY  args=[00 00 00 02]
+
+--- anglesnap_on ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=418   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=420   STATUS  args=[00 00 00 01]
+    ->           write seq=421   WRITE_SETTING off=0x00af len=2  [01 54]
+
+--- anglesnap_off ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=425   STATUS  args=[00 00 00 00]
+    ->           write seq=427   WRITE_SETTING off=0x00af len=2  [00 55]
+    ->           write seq=431   STATUS  args=[00 00 00 00]
+    ->           write seq=434   BATTERY  args=[00 00 00 00]
+    <-            read seq=435   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=436   BATTERY  args=[00 00 00 02]
+
+--- ripple_on ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=441   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=443   STATUS  args=[00 00 00 01]
+    ->           write seq=444   WRITE_SETTING off=0x00b1 len=2  [01 54]
+
+--- ripple_off ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=448   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=450   STATUS  args=[00 00 00 01]
+    ->           write seq=451   WRITE_SETTING off=0x00b1 len=2  [00 55]
+    ->           write seq=454   STATUS  args=[00 00 00 00]
+    ->           write seq=457   BATTERY  args=[00 00 00 00]
+    <-            read seq=458   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=459   BATTERY  args=[00 00 00 02]
+
+--- scan20k_on ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=463   STATUS  args=[00 00 00 00]
+    ->           write seq=466   BATTERY  args=[00 00 00 00]
+    <-            read seq=467   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=468   BATTERY  args=[00 00 00 02]
+    ->           write seq=473   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=475   STATUS  args=[00 00 00 01]
+    ->           write seq=476   WRITE_SETTING off=0x0008 len=2  [01 54]
+
+--- scan20k_off ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=480   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=482   STATUS  args=[00 00 00 01]
+    ->           write seq=483   WRITE_SETTING off=0x0008 len=2  [00 55]
+    ->           write seq=486   STATUS  args=[00 00 00 00]
+    ->           write seq=489   BATTERY  args=[00 00 00 00]
+    <-            read seq=490   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=491   BATTERY  args=[00 00 00 02]
+
+--- longrange_on ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    DLL  CS_UsbFinder_SetLongRangeMode
+    ->           write seq=496   STATUS  args=[00 00 00 00]
+    ->           write seq=501   LONG_RANGE  args=[00 00 00 0a]
+    <- overlapped_read seq=503   STATUS  args=[00 00 00 01]
+    <-            read seq=505   LONG_RANGE  args=[00 00 00 0a]
+
+--- longrange_off ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    DLL  CS_UsbFinder_SetLongRangeMode
+    ->           write seq=509   STATUS  args=[00 00 00 00]
+    ->           write seq=514   LONG_RANGE  args=[00 00 00 0a]
+    <- overlapped_read seq=516   STATUS  args=[00 00 00 01]
+    <-            read seq=518   LONG_RANGE  args=[00 00 00 0a]
+    ->           write seq=521   STATUS  args=[00 00 00 00]
+    ->           write seq=524   BATTERY  args=[00 00 00 00]
+    <-            read seq=525   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=526   BATTERY  args=[00 00 00 02]
+
+--- sleep_min ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=531   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=533   STATUS  args=[00 00 00 01]
+    ->           write seq=534   WRITE_SETTING off=0x00ad len=2  [01 54]
+
+--- sleep_mid ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=537   STATUS  args=[00 00 00 00]
+    ->           write seq=540   BATTERY  args=[00 00 00 00]
+    <-            read seq=541   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=542   BATTERY  args=[00 00 00 02]
+    ->           write seq=547   STATUS  args=[00 00 00 00]
+    ->           write seq=549   WRITE_SETTING off=0x00ad len=2  [12 43]
+
+--- sleep_max ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=552   STATUS  args=[00 00 00 00]
+    ->           write seq=555   BATTERY  args=[00 00 00 00]
+    <-            read seq=556   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=557   BATTERY  args=[00 00 00 02]
+    ->           write seq=562   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=564   STATUS  args=[00 00 00 01]
+    ->           write seq=565   WRITE_SETTING off=0x00ad len=2  [5a fb]
+
+--- debounce_min ---
+    ->           write seq=568   STATUS  args=[00 00 00 00]
+    ->           write seq=571   BATTERY  args=[00 00 00 00]
+    <-            read seq=572   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=573   BATTERY  args=[00 00 00 02]
+    ->           write seq=577   STATUS  args=[00 00 00 00]
+    ->           write seq=580   BATTERY  args=[00 00 00 00]
+    <-            read seq=581   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=582   BATTERY  args=[00 00 00 02]
+
+--- debounce_mid ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=586   STATUS  args=[00 00 00 00]
+    ->           write seq=589   BATTERY  args=[00 00 00 00]
+    <-            read seq=590   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=591   BATTERY  args=[00 00 00 02]
+    ->           write seq=596   STATUS  args=[00 00 00 00]
+    ->           write seq=598   WRITE_SETTING off=0x00a9 len=2  [07 4e]
+
+--- debounce_max ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=602   STATUS  args=[00 00 00 00]
+    ->           write seq=605   BATTERY  args=[00 00 00 00]
+    <-            read seq=606   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=607   BATTERY  args=[00 00 00 02]
+    ->           write seq=612   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=614   STATUS  args=[00 00 00 01]
+    ->           write seq=615   WRITE_SETTING off=0x00a9 len=2  [0f 46]
+
+--- debounce_default ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=618   STATUS  args=[00 00 00 00]
+    ->           write seq=621   BATTERY  args=[00 00 00 00]
+    <-            read seq=622   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=623   BATTERY  args=[00 00 00 02]
+    ->           write seq=628   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=630   STATUS  args=[00 00 00 01]
+    ->           write seq=631   WRITE_SETTING off=0x00a9 len=2  [00 55]
+
+--- dpi_count_2 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=634   STATUS  args=[00 00 00 00]
+    ->           write seq=637   BATTERY  args=[00 00 00 00]
+    <-            read seq=638   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=639   BATTERY  args=[00 00 00 02]
+    ->           write seq=644   STATUS  args=[00 00 00 00]
+    ->           write seq=649   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=651   STATUS  args=[00 00 00 01]
+    ->           write seq=654   WRITE_SETTING off=0x0002 len=2  [02 53]
+    <-            read seq=655   STATUS  args=[00 00 00 01]
+
+--- dpi_count_4 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=658   STATUS  args=[00 00 00 00]
+    ->           write seq=661   BATTERY  args=[00 00 00 00]
+    <-            read seq=662   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=663   BATTERY  args=[00 00 00 02]
+    ->           write seq=668   STATUS  args=[00 00 00 00]
+    ->           write seq=673   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=675   STATUS  args=[00 00 00 01]
+    ->           write seq=678   WRITE_SETTING off=0x0002 len=2  [04 51]
+    <-            read seq=679   STATUS  args=[00 00 00 01]
+    ->           write seq=682   STATUS  args=[00 00 00 00]
+    ->           write seq=685   BATTERY  args=[00 00 00 00]
+    <-            read seq=686   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=687   BATTERY  args=[00 00 00 02]
+
+--- dpi_active_1 ---
+    ->           write seq=691   STATUS  args=[00 00 00 00]
+    ->           write seq=694   BATTERY  args=[00 00 00 00]
+    <-            read seq=695   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=696   BATTERY  args=[00 00 00 02]
+
+--- dpi_active_2 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=700   STATUS  args=[00 00 00 00]
+    ->           write seq=703   BATTERY  args=[00 00 00 00]
+    <-            read seq=704   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=705   BATTERY  args=[00 00 00 02]
+    ->           write seq=710   STATUS  args=[00 00 00 00]
+    ->           write seq=715   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=717   STATUS  args=[00 00 00 01]
+    ->           write seq=719   WRITE_SETTING off=0x0004 len=2  [01 54]
+    <-            read seq=720   STATUS  args=[00 00 00 01]
+
+--- dpi_active_3 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=724   STATUS  args=[00 00 00 00]
+    ->           write seq=729   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=731   STATUS  args=[00 00 00 01]
+    ->           write seq=732   WRITE_SETTING off=0x0004 len=2  [02 53]
+    <-            read seq=733   STATUS  args=[00 00 00 01]
+    ->           write seq=736   STATUS  args=[00 00 00 00]
+    ->           write seq=739   BATTERY  args=[00 00 00 00]
+    <-            read seq=740   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=741   BATTERY  args=[00 00 00 02]
+
+--- dpi_s1_400 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=745   STATUS  args=[00 00 00 00]
+    ->           write seq=748   BATTERY  args=[00 00 00 00]
+    <-            read seq=749   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=750   BATTERY  args=[00 00 00 02]
+    ->           write seq=755   STATUS  args=[00 00 00 00]
+    ->           write seq=760   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=762   STATUS  args=[00 00 00 01]
+    ->           write seq=764   WRITE_SETTING off=0x0004 len=2  [00 55]
+    <-            read seq=765   STATUS  args=[00 00 00 01]
+    ->           write seq=769   STATUS  args=[00 00 00 00]
+    ->           write seq=774   STATUS  args=[00 00 00 00]
+    ->           write seq=779   STATUS  args=[00 00 00 00]
+    ->           write seq=781   WRITE_SETTING off=0x000c len=4  [13 13 00 2f]
+    <-            read seq=782   STATUS  args=[00 00 00 01]
+    <-            read seq=783   STATUS  args=[00 00 00 01]
+    ->           write seq=788   STATUS  args=[00 00 00 00]
+    ->           write seq=793   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=795   STATUS  args=[00 00 00 01]
+    ->           write seq=800   STATUS  args=[00 00 00 00]
+    ->           write seq=805   STATUS  args=[00 00 00 00]
+    <-            read seq=807   STATUS  args=[00 00 00 01]
+    ->           write seq=811   STATUS  args=[00 00 00 00]
+    ->           write seq=817   STATUS  args=[00 00 00 00]
+    <-            read seq=819   STATUS  args=[00 00 00 01]
+    <-            read seq=821   STATUS  args=[00 00 00 01]
+    <-            read seq=822   STATUS  args=[00 00 00 01]
+    ->           write seq=826   STATUS  args=[00 00 00 00]
+    ->           write seq=832   STATUS  args=[00 00 00 00]
+    ->           write seq=837   STATUS  args=[00 00 00 00]
+    <-            read seq=839   STATUS  args=[00 00 00 01]
+    <-            read seq=841   STATUS  args=[00 00 00 01]
+    <-            read seq=842   STATUS  args=[00 00 00 01]
+    <-            read seq=843   STATUS  args=[00 00 00 01]
+    ->           write seq=847   STATUS  args=[00 00 00 00]
+    ->           write seq=853   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=855   STATUS  args=[00 00 00 01]
+    ->           write seq=860   STATUS  args=[00 00 00 00]
+    ->           write seq=865   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=867   STATUS  args=[00 00 00 01]
+    <-            read seq=869   STATUS  args=[00 00 00 01]
+    ->           write seq=873   STATUS  args=[00 00 00 00]
+    ->           write seq=878   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=880   STATUS  args=[00 00 00 01]
+    ->           write seq=883   WRITE_SETTING off=0x000c len=4  [07 07 00 47]
+    <-            read seq=884   STATUS  args=[00 00 00 01]
+    ->           write seq=887   STATUS  args=[00 00 00 00]
+    ->           write seq=890   BATTERY  args=[00 00 00 00]
+    <-            read seq=891   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=892   BATTERY  args=[00 00 00 02]
+
+--- dpi_s1_800 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=897   STATUS  args=[00 00 00 00]
+    ->           write seq=902   STATUS  args=[00 00 00 00]
+    <-            read seq=904   STATUS  args=[00 00 00 01]
+    ->           write seq=908   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=910   STATUS  args=[00 00 00 01]
+    ->           write seq=912   WRITE_SETTING off=0x000c len=4  [0b 0b 00 3f]
+    <-            read seq=913   STATUS  args=[00 00 00 01]
+    ->           write seq=917   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=919   STATUS  args=[00 00 00 01]
+    ->           write seq=924   STATUS  args=[00 00 00 00]
+    ->           write seq=929   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=930   STATUS  args=[00 00 00 01]
+    <-            read seq=933   STATUS  args=[00 00 00 01]
+    ->           write seq=936   STATUS  args=[00 00 00 00]
+    ->           write seq=939   BATTERY  args=[00 00 00 00]
+    <-            read seq=940   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=941   BATTERY  args=[00 00 00 02]
+    ->           write seq=946   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=948   STATUS  args=[00 00 00 01]
+    ->           write seq=953   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=955   STATUS  args=[00 00 00 01]
+    ->           write seq=960   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=962   STATUS  args=[00 00 00 01]
+    ->           write seq=967   STATUS  args=[00 00 00 00]
+    ->           write seq=969   WRITE_SETTING off=0x000c len=4  [0f 0f 00 37]
+    <-            read seq=970   STATUS  args=[00 00 00 01]
+
+--- dpi_s1_1600 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=974   STATUS  args=[00 00 00 00]
+    ->           write seq=977   BATTERY  args=[00 00 00 00]
+    <-            read seq=978   BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=979   BATTERY  args=[00 00 00 02]
+    ->           write seq=984   STATUS  args=[00 00 00 00]
+    ->           write seq=989   STATUS  args=[00 00 00 00]
+    ->           write seq=994   STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=996   STATUS  args=[00 00 00 01]
+    ->           write seq=1000  STATUS  args=[00 00 00 00]
+    ->           write seq=1003  WRITE_SETTING off=0x000c len=4  [10 10 00 35]
+    <-            read seq=1004  STATUS  args=[00 00 00 01]
+    <-            read seq=1005  STATUS  args=[00 00 00 01]
+    <-            read seq=1006  STATUS  args=[00 00 00 01]
+    ->           write seq=1010  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1012  STATUS  args=[00 00 00 01]
+    ->           write seq=1017  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1019  STATUS  args=[00 00 00 01]
+    ->           write seq=1024  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1026  STATUS  args=[00 00 00 01]
+    ->           write seq=1031  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1033  STATUS  args=[00 00 00 01]
+    ->           write seq=1038  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1040  STATUS  args=[00 00 00 01]
+    ->           write seq=1045  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1047  STATUS  args=[00 00 00 01]
+    ->           write seq=1052  STATUS  args=[00 00 00 00]
+    ->           write seq=1058  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1060  STATUS  args=[00 00 00 01]
+    ->           write seq=1065  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1067  STATUS  args=[00 00 00 01]
+    ->           write seq=1072  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1074  STATUS  args=[00 00 00 01]
+    ->           write seq=1078  STATUS  args=[00 00 00 00]
+    ->           write seq=1081  BATTERY  args=[00 00 00 00]
+    <-            read seq=1082  STATUS  args=[00 00 00 01]
+    <-            read seq=1084  BATTERY  args=[00 00 00 02]
+    ->           write seq=1088  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1090  STATUS  args=[00 00 00 01]
+    ->           write seq=1095  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1097  STATUS  args=[00 00 00 01]
+    ->           write seq=1102  STATUS  args=[00 00 00 00]
+    ->           write seq=1107  STATUS  args=[00 00 00 00]
+    ->           write seq=1109  WRITE_SETTING off=0x000c len=4  [1f 1f 00 17]
+    <-            read seq=1110  STATUS  args=[00 00 00 01]
+
+--- dpi_s1_3200 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=1115  STATUS  args=[00 00 00 00]
+    ->           write seq=1118  BATTERY  args=[00 00 00 00]
+    <-            read seq=1119  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=1120  BATTERY  args=[00 00 00 02]
+    ->           write seq=1125  STATUS  args=[00 00 00 00]
+    ->           write seq=1130  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1132  STATUS  args=[00 00 00 01]
+    ->           write seq=1134  WRITE_SETTING off=0x000c len=4  [1d 1d 00 1b]
+    <-            read seq=1135  STATUS  args=[00 00 00 01]
+    ->           write seq=1139  STATUS  args=[00 00 00 00]
+    ->           write seq=1144  STATUS  args=[00 00 00 00]
+    ->           write seq=1149  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1151  STATUS  args=[00 00 00 01]
+    ->           write seq=1153  WRITE_SETTING off=0x000c len=4  [22 22 00 11]
+    <-            read seq=1154  STATUS  args=[00 00 00 01]
+    <-            read seq=1155  STATUS  args=[00 00 00 01]
+    ->           write seq=1159  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1161  STATUS  args=[00 00 00 01]
+    ->           write seq=1166  STATUS  args=[00 00 00 00]
+    <-            read seq=1168  STATUS  args=[00 00 00 01]
+    ->           write seq=1173  STATUS  args=[00 00 00 00]
+    ->           write seq=1178  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1180  STATUS  args=[00 00 00 01]
+    ->           write seq=1185  STATUS  args=[00 00 00 00]
+    ->           write seq=1191  STATUS  args=[00 00 00 00]
+    <-            read seq=1193  STATUS  args=[00 00 00 01]
+    ->           write seq=1197  STATUS  args=[00 00 00 00]
+    ->           write seq=1203  STATUS  args=[00 00 00 00]
+    ->           write seq=1208  STATUS  args=[00 00 00 00]
+    ->           write seq=1213  STATUS  args=[00 00 00 00]
+    ->           write seq=1218  STATUS  args=[00 00 00 00]
+    ->           write seq=1224  STATUS  args=[00 00 00 00]
+    <-            read seq=1226  STATUS  args=[00 00 00 01]
+    ->           write seq=1230  STATUS  args=[00 00 00 00]
+    ->           write seq=1235  STATUS  args=[00 00 00 00]
+    ->           write seq=1240  STATUS  args=[00 00 00 00]
+    ->           write seq=1246  STATUS  args=[00 00 00 00]
+    <-            read seq=1249  STATUS  args=[00 00 00 01]
+    ->           write seq=1252  STATUS  args=[00 00 00 00]
+    ->           write seq=1255  BATTERY  args=[00 00 00 00]
+    <-            read seq=1256  STATUS  args=[00 00 00 01]
+    <-            read seq=1258  STATUS  args=[00 00 00 01]
+    <-            read seq=1259  STATUS  args=[00 00 00 01]
+    <-            read seq=1260  STATUS  args=[00 00 00 01]
+    <-            read seq=1261  STATUS  args=[00 00 00 01]
+    <-            read seq=1262  STATUS  args=[00 00 00 01]
+    ->           write seq=1266  STATUS  args=[00 00 00 00]
+    <-            read seq=1269  STATUS  args=[00 00 00 01]
+    ->           write seq=1273  STATUS  args=[00 00 00 00]
+    <-            read seq=1276  STATUS  args=[00 00 00 01]
+    <-            read seq=1277  STATUS  args=[00 00 00 01]
+    <-            read seq=1278  STATUS  args=[00 00 00 01]
+    <-            read seq=1279  BATTERY  args=[00 00 00 02]
+    <-            read seq=1280  STATUS  args=[00 00 00 01]
+    ->           write seq=1284  STATUS  args=[00 00 00 00]
+    <-            read seq=1287  STATUS  args=[00 00 00 01]
+    ->           write seq=1291  STATUS  args=[00 00 00 00]
+    <-            read seq=1294  STATUS  args=[00 00 00 01]
+    <-            read seq=1295  STATUS  args=[00 00 00 01]
+    ->           write seq=1299  STATUS  args=[00 00 00 00]
+    ->           write seq=1305  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1307  STATUS  args=[00 00 00 01]
+    ->           write seq=1312  STATUS  args=[00 00 00 00]
+    ->           write seq=1317  STATUS  args=[00 00 00 00]
+    ->           write seq=1319  WRITE_SETTING off=0x000c len=4  [3f 3f 00 d7]
+    <-            read seq=1320  STATUS  args=[00 00 00 01]
+
+--- dpi_s1_6400 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=1325  STATUS  args=[00 00 00 00]
+    ->           write seq=1328  BATTERY  args=[00 00 00 00]
+    <-            read seq=1329  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=1330  BATTERY  args=[00 00 00 02]
+    ->           write seq=1335  STATUS  args=[00 00 00 00]
+    ->           write seq=1340  STATUS  args=[00 00 00 00]
+    ->           write seq=1345  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1347  STATUS  args=[00 00 00 01]
+    ->           write seq=1352  STATUS  args=[00 00 00 00]
+    ->           write seq=1354  WRITE_SETTING off=0x000c len=4  [41 41 00 d3]
+    <-            read seq=1355  STATUS  args=[00 00 00 01]
+    <-            read seq=1356  STATUS  args=[00 00 00 01]
+    <-            read seq=1357  STATUS  args=[00 00 00 01]
+    ->           write seq=1362  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1364  STATUS  args=[00 00 00 01]
+    ->           write seq=1369  STATUS  args=[00 00 00 00]
+    ->           write seq=1374  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1376  STATUS  args=[00 00 00 01]
+    <-            read seq=1378  STATUS  args=[00 00 00 01]
+    ->           write seq=1382  STATUS  args=[00 00 00 00]
+    <-            read seq=1385  STATUS  args=[00 00 00 01]
+    ->           write seq=1389  STATUS  args=[00 00 00 00]
+    ->           write seq=1394  STATUS  args=[00 00 00 00]
+    <-            read seq=1396  STATUS  args=[00 00 00 01]
+    ->           write seq=1400  STATUS  args=[00 00 00 00]
+    ->           write seq=1405  STATUS  args=[00 00 00 00]
+    <-            read seq=1408  STATUS  args=[00 00 00 01]
+    ->           write seq=1412  STATUS  args=[00 00 00 00]
+    ->           write seq=1417  STATUS  args=[00 00 00 00]
+    <-            read seq=1420  STATUS  args=[00 00 00 01]
+    <-            read seq=1421  STATUS  args=[00 00 00 01]
+    ->           write seq=1425  STATUS  args=[00 00 00 00]
+    <-            read seq=1428  STATUS  args=[00 00 00 01]
+    ->           write seq=1432  STATUS  args=[00 00 00 00]
+    ->           write seq=1438  STATUS  args=[00 00 00 00]
+    <-            read seq=1440  STATUS  args=[00 00 00 01]
+    ->           write seq=1445  STATUS  args=[00 00 00 00]
+    ->           write seq=1450  STATUS  args=[00 00 00 00]
+    ->           write seq=1456  STATUS  args=[00 00 00 00]
+    ->           write seq=1461  STATUS  args=[00 00 00 00]
+    <-            read seq=1463  STATUS  args=[00 00 00 01]
+    ->           write seq=1467  STATUS  args=[00 00 00 00]
+    ->           write seq=1473  STATUS  args=[00 00 00 00]
+    ->           write seq=1478  STATUS  args=[00 00 00 00]
+    ->           write seq=1484  STATUS  args=[00 00 00 00]
+    <-            read seq=1486  STATUS  args=[00 00 00 01]
+    <-            read seq=1488  STATUS  args=[00 00 00 01]
+    ->           write seq=1492  STATUS  args=[00 00 00 00]
+    <-            read seq=1495  STATUS  args=[00 00 00 01]
+    <-            read seq=1496  STATUS  args=[00 00 00 01]
+    ->           write seq=1500  STATUS  args=[00 00 00 00]
+    ->           write seq=1506  STATUS  args=[00 00 00 00]
+    ->           write seq=1511  STATUS  args=[00 00 00 00]
+    <-            read seq=1514  STATUS  args=[00 00 00 01]
+    <-            read seq=1515  STATUS  args=[00 00 00 01]
+    ->           write seq=1519  STATUS  args=[00 00 00 00]
+    <-            read seq=1522  STATUS  args=[00 00 00 01]
+    <-            read seq=1523  STATUS  args=[00 00 00 01]
+    ->           write seq=1527  STATUS  args=[00 00 00 00]
+    ->           write seq=1532  STATUS  args=[00 00 00 00]
+    ->           write seq=1535  BATTERY  args=[00 00 00 00]
+    <-            read seq=1536  STATUS  args=[00 00 00 01]
+    ->           write seq=1541  STATUS  args=[00 00 00 00]
+    <-            read seq=1544  STATUS  args=[00 00 00 01]
+    ->           write seq=1548  STATUS  args=[00 00 00 00]
+    <-            read seq=1550  STATUS  args=[00 00 00 01]
+    <-            read seq=1552  STATUS  args=[00 00 00 01]
+    <-            read seq=1553  STATUS  args=[00 00 00 01]
+    ->           write seq=1557  STATUS  args=[00 00 00 00]
+    <-            read seq=1560  STATUS  args=[00 00 00 01]
+    ->           write seq=1564  STATUS  args=[00 00 00 00]
+    ->           write seq=1569  STATUS  args=[00 00 00 00]
+    <-            read seq=1571  STATUS  args=[00 00 00 01]
+    ->           write seq=1575  STATUS  args=[00 00 00 00]
+    ->           write seq=1581  STATUS  args=[00 00 00 00]
+    ->           write seq=1587  STATUS  args=[00 00 00 00]
+    <-            read seq=1589  STATUS  args=[00 00 00 01]
+    ->           write seq=1593  STATUS  args=[00 00 00 00]
+    <-            read seq=1596  STATUS  args=[00 00 00 01]
+    <-            read seq=1597  BATTERY  args=[00 00 00 02]
+    <-            read seq=1598  STATUS  args=[00 00 00 01]
+    ->           write seq=1602  STATUS  args=[00 00 00 00]
+    <-            read seq=1605  STATUS  args=[00 00 00 01]
+    ->           write seq=1609  STATUS  args=[00 00 00 00]
+    <-            read seq=1611  STATUS  args=[00 00 00 01]
+    ->           write seq=1615  STATUS  args=[00 00 00 00]
+    ->           write seq=1621  STATUS  args=[00 00 00 00]
+    <-            read seq=1624  STATUS  args=[00 00 00 01]
+    <-            read seq=1625  STATUS  args=[00 00 00 01]
+    <-            read seq=1626  STATUS  args=[00 00 00 01]
+    <-            read seq=1627  STATUS  args=[00 00 00 01]
+    <-            read seq=1628  STATUS  args=[00 00 00 01]
+    <-            read seq=1629  STATUS  args=[00 00 00 01]
+    <-            read seq=1630  STATUS  args=[00 00 00 01]
+    <-            read seq=1631  STATUS  args=[00 00 00 01]
+    ->           write seq=1635  STATUS  args=[00 00 00 00]
+    <-            read seq=1638  STATUS  args=[00 00 00 01]
+    <-            read seq=1639  STATUS  args=[00 00 00 01]
+    <-            read seq=1640  STATUS  args=[00 00 00 01]
+    ->           write seq=1644  STATUS  args=[00 00 00 00]
+    ->           write seq=1649  STATUS  args=[00 00 00 00]
+    ->           write seq=1652  BATTERY  args=[00 00 00 00]
+    <-            read seq=1653  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=1654  BATTERY  args=[00 00 00 02]
+    ->           write seq=1659  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1661  STATUS  args=[00 00 00 01]
+    ->           write seq=1665  STATUS  args=[00 00 00 00]
+    ->           write seq=1668  BATTERY  args=[00 00 00 00]
+    <-            read seq=1669  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=1670  BATTERY  args=[00 00 00 02]
+    ->           write seq=1675  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1677  STATUS  args=[00 00 00 01]
+    ->           write seq=1682  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1684  STATUS  args=[00 00 00 01]
+    ->           write seq=1689  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1691  STATUS  args=[00 00 00 01]
+    ->           write seq=1696  STATUS  args=[00 00 00 00]
+    <-            read seq=1698  STATUS  args=[00 00 00 01]
+    ->           write seq=1703  STATUS  args=[00 00 00 00]
+    <-            read seq=1706  STATUS  args=[00 00 00 01]
+    ->           write seq=1710  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1712  STATUS  args=[00 00 00 01]
+    ->           write seq=1717  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1719  STATUS  args=[00 00 00 01]
+    ->           write seq=1723  STATUS  args=[00 00 00 00]
+    ->           write seq=1726  BATTERY  args=[00 00 00 00]
+    <-            read seq=1727  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=1728  BATTERY  args=[00 00 00 02]
+    ->           write seq=1733  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1735  STATUS  args=[00 00 00 01]
+    ->           write seq=1740  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1742  STATUS  args=[00 00 00 01]
+    ->           write seq=1747  STATUS  args=[00 00 00 00]
+    ->           write seq=1753  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1755  STATUS  args=[00 00 00 01]
+    ->           write seq=1759  STATUS  args=[00 00 00 00]
+    ->           write seq=1762  BATTERY  args=[00 00 00 00]
+    <-            read seq=1763  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=1764  BATTERY  args=[00 00 00 02]
+    ->           write seq=1769  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1771  STATUS  args=[00 00 00 01]
+    ->           write seq=1776  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1778  STATUS  args=[00 00 00 01]
+    ->           write seq=1783  STATUS  args=[00 00 00 00]
+    <-            read seq=1786  STATUS  args=[00 00 00 01]
+    ->           write seq=1790  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1792  STATUS  args=[00 00 00 01]
+    ->           write seq=1797  STATUS  args=[00 00 00 00]
+    ->           write seq=1802  STATUS  args=[00 00 00 00]
+    ->           write seq=1805  BATTERY  args=[00 00 00 00]
+    <-            read seq=1806  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=1807  BATTERY  args=[00 00 00 02]
+    ->           write seq=1812  STATUS  args=[00 00 00 00]
+    ->           write seq=1817  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1819  STATUS  args=[00 00 00 01]
+    ->           write seq=1822  WRITE_SETTING off=0x000c len=4  [7e 7e 00 59]
+    <-            read seq=1823  STATUS  args=[00 00 00 01]
+
+--- dpi_s1_12800 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=1826  STATUS  args=[00 00 00 00]
+    ->           write seq=1829  BATTERY  args=[00 00 00 00]
+    <-            read seq=1830  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=1831  BATTERY  args=[00 00 00 02]
+    ->           write seq=1836  STATUS  args=[00 00 00 00]
+    ->           write seq=1841  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1842  STATUS  args=[00 00 00 01]
+    ->           write seq=1847  STATUS  args=[00 00 00 00]
+    ->           write seq=1849  WRITE_SETTING off=0x000c len=4  [82 82 00 51]
+    <-            read seq=1850  STATUS  args=[00 00 00 01]
+    <-            read seq=1851  STATUS  args=[00 00 00 01]
+    ->           write seq=1856  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=1858  STATUS  args=[00 00 00 01]
+    ->           write seq=1863  STATUS  args=[00 00 00 00]
+    <-            read seq=1865  STATUS  args=[00 00 00 01]
+    ->           write seq=1869  STATUS  args=[00 00 00 00]
+    ->           write seq=1875  STATUS  args=[00 00 00 00]
+    ->           write seq=1880  STATUS  args=[00 00 00 00]
+    ->           write seq=1885  STATUS  args=[00 00 00 00]
+    ->           write seq=1890  STATUS  args=[00 00 00 00]
+    ->           write seq=1895  STATUS  args=[00 00 00 00]
+    <-            read seq=1897  STATUS  args=[00 00 00 01]
+    ->           write seq=1902  STATUS  args=[00 00 00 00]
+    ->           write seq=1907  STATUS  args=[00 00 00 00]
+    ->           write seq=1913  STATUS  args=[00 00 00 00]
+    <-            read seq=1915  STATUS  args=[00 00 00 01]
+    ->           write seq=1919  STATUS  args=[00 00 00 00]
+    ->           write seq=1924  STATUS  args=[00 00 00 00]
+    ->           write seq=1930  STATUS  args=[00 00 00 00]
+    ->           write seq=1935  STATUS  args=[00 00 00 00]
+    ->           write seq=1940  STATUS  args=[00 00 00 00]
+    <-            read seq=1943  STATUS  args=[00 00 00 01]
+    ->           write seq=1947  STATUS  args=[00 00 00 00]
+    ->           write seq=1952  STATUS  args=[00 00 00 00]
+    <-            read seq=1955  STATUS  args=[00 00 00 01]
+    ->           write seq=1959  STATUS  args=[00 00 00 00]
+    ->           write seq=1965  STATUS  args=[00 00 00 00]
+    ->           write seq=1970  STATUS  args=[00 00 00 00]
+    ->           write seq=1975  STATUS  args=[00 00 00 00]
+    <-            read seq=1977  STATUS  args=[00 00 00 01]
+    ->           write seq=1982  STATUS  args=[00 00 00 00]
+    <-            read seq=1984  STATUS  args=[00 00 00 01]
+    ->           write seq=1988  STATUS  args=[00 00 00 00]
+    ->           write seq=1993  STATUS  args=[00 00 00 00]
+    ->           write seq=1998  STATUS  args=[00 00 00 00]
+    ->           write seq=2004  STATUS  args=[00 00 00 00]
+    ->           write seq=2009  STATUS  args=[00 00 00 00]
+    ->           write seq=2014  STATUS  args=[00 00 00 00]
+    <-            read seq=2017  STATUS  args=[00 00 00 01]
+    ->           write seq=2021  STATUS  args=[00 00 00 00]
+    ->           write seq=2027  STATUS  args=[00 00 00 00]
+    <-            read seq=2029  STATUS  args=[00 00 00 01]
+    ->           write seq=2034  STATUS  args=[00 00 00 00]
+    <-            read seq=2036  STATUS  args=[00 00 00 01]
+    ->           write seq=2040  STATUS  args=[00 00 00 00]
+    <-            read seq=2043  STATUS  args=[00 00 00 01]
+    ->           write seq=2047  STATUS  args=[00 00 00 00]
+    ->           write seq=2053  STATUS  args=[00 00 00 00]
+    ->           write seq=2058  STATUS  args=[00 00 00 00]
+    ->           write seq=2063  STATUS  args=[00 00 00 00]
+    <-            read seq=2066  STATUS  args=[00 00 00 01]
+    ->           write seq=2070  STATUS  args=[00 00 00 00]
+    ->           write seq=2075  STATUS  args=[00 00 00 00]
+    ->           write seq=2081  STATUS  args=[00 00 00 00]
+    <-            read seq=2083  STATUS  args=[00 00 00 01]
+    ->           write seq=2088  STATUS  args=[00 00 00 00]
+    ->           write seq=2093  STATUS  args=[00 00 00 00]
+    <-            read seq=2096  STATUS  args=[00 00 00 01]
+    ->           write seq=2100  STATUS  args=[00 00 00 00]
+    ->           write seq=2105  STATUS  args=[00 00 00 00]
+    ->           write seq=2110  STATUS  args=[00 00 00 00]
+    ->           write seq=2116  STATUS  args=[00 00 00 00]
+    <-            read seq=2118  STATUS  args=[00 00 00 01]
+    <-            read seq=2120  STATUS  args=[00 00 00 01]
+    ->           write seq=2124  STATUS  args=[00 00 00 00]
+    <-            read seq=2127  STATUS  args=[00 00 00 01]
+    ->           write seq=2131  STATUS  args=[00 00 00 00]
+    ->           write seq=2137  STATUS  args=[00 00 00 00]
+    <-            read seq=2140  STATUS  args=[00 00 00 01]
+    ->           write seq=2144  STATUS  args=[00 00 00 00]
+    <-            read seq=2147  STATUS  args=[00 00 00 01]
+    <-            read seq=2148  STATUS  args=[00 00 00 01]
+    <-            read seq=2149  STATUS  args=[00 00 00 01]
+    ->           write seq=2153  STATUS  args=[00 00 00 00]
+    <-            read seq=2155  STATUS  args=[00 00 00 01]
+    ->           write seq=2159  STATUS  args=[00 00 00 00]
+    <-            read seq=2162  STATUS  args=[00 00 00 01]
+    ->           write seq=2166  STATUS  args=[00 00 00 00]
+    ->           write seq=2172  STATUS  args=[00 00 00 00]
+    <-            read seq=2175  STATUS  args=[00 00 00 01]
+    ->           write seq=2179  STATUS  args=[00 00 00 00]
+    <-            read seq=2181  STATUS  args=[00 00 00 01]
+    ->           write seq=2186  STATUS  args=[00 00 00 00]
+    ->           write seq=2192  STATUS  args=[00 00 00 00]
+    <-            read seq=2194  STATUS  args=[00 00 00 01]
+    ->           write seq=2199  STATUS  args=[00 00 00 00]
+    <-            read seq=2201  STATUS  args=[00 00 00 01]
+    <-            read seq=2203  STATUS  args=[00 00 00 01]
+    <-            read seq=2204  STATUS  args=[00 00 00 01]
+    ->           write seq=2208  STATUS  args=[00 00 00 00]
+    ->           write seq=2214  STATUS  args=[00 00 00 00]
+    <-            read seq=2216  STATUS  args=[00 00 00 01]
+    ->           write seq=2220  STATUS  args=[00 00 00 00]
+    ->           write seq=2226  STATUS  args=[00 00 00 00]
+    ->           write seq=2231  STATUS  args=[00 00 00 00]
+    ->           write seq=2234  BATTERY  args=[00 00 00 00]
+    <-            read seq=2235  STATUS  args=[00 00 00 01]
+    ->           write seq=2240  STATUS  args=[00 00 00 00]
+    <-            read seq=2243  STATUS  args=[00 00 00 01]
+    <-            read seq=2244  STATUS  args=[00 00 00 01]
+    <-            read seq=2245  STATUS  args=[00 00 00 01]
+    <-            read seq=2246  STATUS  args=[00 00 00 01]
+    ->           write seq=2250  STATUS  args=[00 00 00 00]
+    <-            read seq=2252  STATUS  args=[00 00 00 01]
+    <-            read seq=2254  STATUS  args=[00 00 00 01]
+    ->           write seq=2258  STATUS  args=[00 00 00 00]
+    <-            read seq=2261  STATUS  args=[00 00 00 01]
+    ->           write seq=2265  STATUS  args=[00 00 00 00]
+    <-            read seq=2268  STATUS  args=[00 00 00 01]
+    ->           write seq=2272  STATUS  args=[00 00 00 00]
+    <-            read seq=2275  STATUS  args=[00 00 00 01]
+    ->           write seq=2279  STATUS  args=[00 00 00 00]
+    ->           write seq=2284  STATUS  args=[00 00 00 00]
+    ->           write seq=2290  STATUS  args=[00 00 00 00]
+    <-            read seq=2292  STATUS  args=[00 00 00 01]
+    ->           write seq=2296  STATUS  args=[00 00 00 00]
+    <-            read seq=2299  STATUS  args=[00 00 00 01]
+    ->           write seq=2303  STATUS  args=[00 00 00 00]
+    <-            read seq=2306  STATUS  args=[00 00 00 01]
+    <-            read seq=2307  STATUS  args=[00 00 00 01]
+    ->           write seq=2311  STATUS  args=[00 00 00 00]
+    ->           write seq=2317  STATUS  args=[00 00 00 00]
+    ->           write seq=2322  STATUS  args=[00 00 00 00]
+    ->           write seq=2327  STATUS  args=[00 00 00 00]
+    <-            read seq=2329  STATUS  args=[00 00 00 01]
+    ->           write seq=2333  STATUS  args=[00 00 00 00]
+    ->           write seq=2339  STATUS  args=[00 00 00 00]
+    <-            read seq=2342  STATUS  args=[00 00 00 01]
+    ->           write seq=2346  STATUS  args=[00 00 00 00]
+    <-            read seq=2349  STATUS  args=[00 00 00 01]
+    <-            read seq=2350  STATUS  args=[00 00 00 01]
+    <-            read seq=2351  STATUS  args=[00 00 00 01]
+    <-            read seq=2352  STATUS  args=[00 00 00 01]
+    ->           write seq=2356  STATUS  args=[00 00 00 00]
+    ->           write seq=2362  STATUS  args=[00 00 00 00]
+    <-            read seq=2365  STATUS  args=[00 00 00 01]
+    <-            read seq=2366  STATUS  args=[00 00 00 01]
+    ->           write seq=2370  STATUS  args=[00 00 00 00]
+    <-            read seq=2373  STATUS  args=[00 00 00 01]
+    <-            read seq=2374  STATUS  args=[00 00 00 01]
+    <-            read seq=2375  STATUS  args=[00 00 00 01]
+    <-            read seq=2376  STATUS  args=[00 00 00 01]
+    <-            read seq=2377  STATUS  args=[00 00 00 01]
+    ->           write seq=2381  STATUS  args=[00 00 00 00]
+    <-            read seq=2384  STATUS  args=[00 00 00 01]
+    ->           write seq=2388  STATUS  args=[00 00 00 00]
+    <-            read seq=2391  STATUS  args=[00 00 00 01]
+    ->           write seq=2395  STATUS  args=[00 00 00 00]
+    <-            read seq=2398  STATUS  args=[00 00 00 01]
+    <-            read seq=2399  BATTERY  args=[00 00 00 02]
+    <-            read seq=2400  STATUS  args=[00 00 00 01]
+    <-            read seq=2401  STATUS  args=[00 00 00 01]
+    <-            read seq=2402  STATUS  args=[00 00 00 01]
+    <-            read seq=2403  STATUS  args=[00 00 00 01]
+    <-            read seq=2404  STATUS  args=[00 00 00 01]
+    ->           write seq=2408  STATUS  args=[00 00 00 00]
+    ->           write seq=2413  STATUS  args=[00 00 00 00]
+    ->           write seq=2417  WRITE_SETTING off=0x000c len=4  [ff ff 00 57]
+    <-            read seq=2418  STATUS  args=[00 00 00 01]
+    <-            read seq=2419  STATUS  args=[00 00 00 01]
+    <-            read seq=2420  STATUS  args=[00 00 00 01]
+    <-            read seq=2421  STATUS  args=[00 00 00 01]
+    <-            read seq=2422  STATUS  args=[00 00 00 01]
+    <-            read seq=2423  STATUS  args=[00 00 00 01]
+    <-            read seq=2424  STATUS  args=[00 00 00 01]
+    <-            read seq=2425  STATUS  args=[00 00 00 01]
+    <-            read seq=2426  STATUS  args=[00 00 00 01]
+    <-            read seq=2427  STATUS  args=[00 00 00 01]
+    <-            read seq=2428  STATUS  args=[00 00 00 01]
+    <-            read seq=2429  STATUS  args=[00 00 00 01]
+    <-            read seq=2430  STATUS  args=[00 00 00 01]
+    <-            read seq=2431  STATUS  args=[00 00 00 01]
+    <-            read seq=2432  STATUS  args=[00 00 00 01]
+    <-            read seq=2433  STATUS  args=[00 00 00 01]
+    <-            read seq=2434  STATUS  args=[00 00 00 01]
+    <-            read seq=2435  STATUS  args=[00 00 00 01]
+    <-            read seq=2436  STATUS  args=[00 00 00 01]
+    <-            read seq=2437  STATUS  args=[00 00 00 01]
+    ->           write seq=2440  STATUS  args=[00 00 00 00]
+    ->           write seq=2443  BATTERY  args=[00 00 00 00]
+    <-            read seq=2444  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=2445  BATTERY  args=[00 00 00 02]
+
+--- dpi_s1_20000 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=2449  STATUS  args=[00 00 00 00]
+    ->           write seq=2452  BATTERY  args=[00 00 00 00]
+    <-            read seq=2453  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=2454  BATTERY  args=[00 00 00 02]
+    ->           write seq=2458  STATUS  args=[00 00 00 00]
+    ->           write seq=2461  BATTERY  args=[00 00 00 00]
+    <-            read seq=2462  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=2463  BATTERY  args=[00 00 00 02]
+    ->           write seq=2468  STATUS  args=[00 00 00 00]
+    ->           write seq=2473  STATUS  args=[00 00 00 00]
+    ->           write seq=2478  STATUS  args=[00 00 00 00]
+    ->           write seq=2480  WRITE_SETTING off=0x000c len=4  [fe fe 00 59]
+    <-            read seq=2481  STATUS  args=[00 00 00 01]
+    <-            read seq=2482  STATUS  args=[00 00 00 01]
+    ->           write seq=2486  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=2488  STATUS  args=[00 00 00 01]
+    ->           write seq=2493  STATUS  args=[00 00 00 00]
+    <-            read seq=2495  STATUS  args=[00 00 00 01]
+    ->           write seq=2499  STATUS  args=[00 00 00 00]
+    <-            read seq=2502  STATUS  args=[00 00 00 01]
+    ->           write seq=2506  STATUS  args=[00 00 00 00]
+    ->           write seq=2512  STATUS  args=[00 00 00 00]
+    ->           write seq=2517  STATUS  args=[00 00 00 00]
+    ->           write seq=2522  STATUS  args=[00 00 00 00]
+    ->           write seq=2527  STATUS  args=[00 00 00 00]
+    <-            read seq=2529  STATUS  args=[00 00 00 01]
+    ->           write seq=2533  STATUS  args=[00 00 00 00]
+    ->           write seq=2539  STATUS  args=[00 00 00 00]
+    ->           write seq=2544  STATUS  args=[00 00 00 00]
+    ->           write seq=2549  STATUS  args=[00 00 00 00]
+    ->           write seq=2554  STATUS  args=[00 00 00 00]
+    ->           write seq=2559  STATUS  args=[00 00 00 00]
+    ->           write seq=2564  STATUS  args=[00 00 00 00]
+    <-            read seq=2566  STATUS  args=[00 00 00 01]
+    ->           write seq=2571  STATUS  args=[00 00 00 00]
+    ->           write seq=2576  STATUS  args=[00 00 00 00]
+    ->           write seq=2581  STATUS  args=[00 00 00 00]
+    ->           write seq=2586  STATUS  args=[00 00 00 00]
+    ->           write seq=2591  STATUS  args=[00 00 00 00]
+    ->           write seq=2596  STATUS  args=[00 00 00 00]
+    ->           write seq=2601  STATUS  args=[00 00 00 00]
+    ->           write seq=2606  STATUS  args=[00 00 00 00]
+    ->           write seq=2611  STATUS  args=[00 00 00 00]
+    ->           write seq=2617  STATUS  args=[00 00 00 00]
+    ->           write seq=2622  STATUS  args=[00 00 00 00]
+    ->           write seq=2627  STATUS  args=[00 00 00 00]
+    ->           write seq=2632  STATUS  args=[00 00 00 00]
+    <-            read seq=2634  STATUS  args=[00 00 00 01]
+    ->           write seq=2638  STATUS  args=[00 00 00 00]
+    ->           write seq=2643  STATUS  args=[00 00 00 00]
+    ->           write seq=2648  STATUS  args=[00 00 00 00]
+    ->           write seq=2654  STATUS  args=[00 00 00 00]
+    <-            read seq=2657  STATUS  args=[00 00 00 01]
+    <-            read seq=2658  STATUS  args=[00 00 00 01]
+    <-            read seq=2659  STATUS  args=[00 00 00 01]
+    ->           write seq=2663  STATUS  args=[00 00 00 00]
+    <-            read seq=2665  STATUS  args=[00 00 00 01]
+    <-            read seq=2667  STATUS  args=[00 00 00 01]
+    ->           write seq=2671  STATUS  args=[00 00 00 00]
+    ->           write seq=2676  STATUS  args=[00 00 00 00]
+    ->           write seq=2682  STATUS  args=[00 00 00 00]
+    <-            read seq=2685  STATUS  args=[00 00 00 01]
+    ->           write seq=2689  STATUS  args=[00 00 00 00]
+    ->           write seq=2695  STATUS  args=[00 00 00 00]
+    <-            read seq=2697  STATUS  args=[00 00 00 01]
+    ->           write seq=2702  STATUS  args=[00 00 00 00]
+    ->           write seq=2707  STATUS  args=[00 00 00 00]
+    ->           write seq=2712  STATUS  args=[00 00 00 00]
+    ->           write seq=2718  STATUS  args=[00 00 00 00]
+    <-            read seq=2720  STATUS  args=[00 00 00 01]
+    ->           write seq=2724  STATUS  args=[00 00 00 00]
+    ->           write seq=2730  STATUS  args=[00 00 00 00]
+    ->           write seq=2735  STATUS  args=[00 00 00 00]
+    ->           write seq=2740  STATUS  args=[00 00 00 00]
+    <-            read seq=2743  STATUS  args=[00 00 00 01]
+    ->           write seq=2747  STATUS  args=[00 00 00 00]
+    ->           write seq=2753  STATUS  args=[00 00 00 00]
+    ->           write seq=2758  STATUS  args=[00 00 00 00]
+    ->           write seq=2763  STATUS  args=[00 00 00 00]
+    <-            read seq=2766  STATUS  args=[00 00 00 01]
+    ->           write seq=2770  STATUS  args=[00 00 00 00]
+    ->           write seq=2776  STATUS  args=[00 00 00 00]
+    <-            read seq=2778  STATUS  args=[00 00 00 01]
+    ->           write seq=2783  STATUS  args=[00 00 00 00]
+    ->           write seq=2788  STATUS  args=[00 00 00 00]
+    ->           write seq=2793  STATUS  args=[00 00 00 00]
+    ->           write seq=2800  STATUS  args=[00 00 00 00]
+    ->           write seq=2801  STATUS  args=[00 00 00 00]
+    ->           write seq=2805  BATTERY  args=[00 00 00 00]
+    ->           write seq=2806  BATTERY  args=[00 00 00 00]
+    <-            read seq=2807  STATUS  args=[00 00 00 01]
+    ->           write seq=2813  STATUS  args=[00 00 00 00]
+    ->           write seq=2818  STATUS  args=[00 00 00 00]
+    ->           write seq=2823  STATUS  args=[00 00 00 00]
+    ->           write seq=2828  STATUS  args=[00 00 00 00]
+    ->           write seq=2833  STATUS  args=[00 00 00 00]
+    <-            read seq=2835  STATUS  args=[00 00 00 01]
+    ->           write seq=2840  STATUS  args=[00 00 00 00]
+    ->           write seq=2845  STATUS  args=[00 00 00 00]
+    <-            read seq=2848  STATUS  args=[00 00 00 01]
+    ->           write seq=2852  STATUS  args=[00 00 00 00]
+    <-            read seq=2854  STATUS  args=[00 00 00 01]
+    ->           write seq=2859  STATUS  args=[00 00 00 00]
+    ->           write seq=2865  STATUS  args=[00 00 00 00]
+    ->           write seq=2870  STATUS  args=[00 00 00 00]
+    <-            read seq=2872  STATUS  args=[00 00 00 01]
+    ->           write seq=2876  STATUS  args=[00 00 00 00]
+    <-            read seq=2879  STATUS  args=[00 00 00 01]
+    ->           write seq=2883  STATUS  args=[00 00 00 00]
+    ->           write seq=2889  STATUS  args=[00 00 00 00]
+    <-            read seq=2891  STATUS  args=[00 00 00 01]
+    ->           write seq=2895  STATUS  args=[00 00 00 00]
+    ->           write seq=2901  STATUS  args=[00 00 00 00]
+    ->           write seq=2906  STATUS  args=[00 00 00 00]
+    <-            read seq=2909  STATUS  args=[00 00 00 01]
+    ->           write seq=2913  STATUS  args=[00 00 00 00]
+    ->           write seq=2919  STATUS  args=[00 00 00 00]
+    ->           write seq=2925  STATUS  args=[00 00 00 00]
+    <-            read seq=2927  STATUS  args=[00 00 00 01]
+    ->           write seq=2932  STATUS  args=[00 00 00 00]
+    <-            read seq=2935  STATUS  args=[00 00 00 01]
+    <-            read seq=2936  STATUS  args=[00 00 00 01]
+    ->           write seq=2940  STATUS  args=[00 00 00 00]
+    <-            read seq=2942  STATUS  args=[00 00 00 01]
+    ->           write seq=2947  STATUS  args=[00 00 00 00]
+    <-            read seq=2950  STATUS  args=[00 00 00 01]
+    ->           write seq=2954  STATUS  args=[00 00 00 00]
+    <-            read seq=2957  STATUS  args=[00 00 00 01]
+    <-            read seq=2958  STATUS  args=[00 00 00 01]
+    <-            read seq=2959  STATUS  args=[00 00 00 01]
+    ->           write seq=2963  STATUS  args=[00 00 00 00]
+    <-            read seq=2966  STATUS  args=[00 00 00 01]
+    ->           write seq=2970  STATUS  args=[00 00 00 00]
+    <-            read seq=2973  STATUS  args=[00 00 00 01]
+    ->           write seq=2977  STATUS  args=[00 00 00 00]
+    <-            read seq=2980  STATUS  args=[00 00 00 01]
+    ->           write seq=2984  STATUS  args=[00 00 00 00]
+    <-            read seq=2987  BATTERY  args=[00 00 00 02]
+    ->           write seq=2991  STATUS  args=[00 00 00 00]
+    ->           write seq=2996  STATUS  args=[00 00 00 00]
+    <-            read seq=2999  STATUS  args=[00 00 00 01]
+    ->           write seq=3003  STATUS  args=[00 00 00 00]
+    ->           write seq=3008  STATUS  args=[00 00 00 00]
+    ->           write seq=3014  STATUS  args=[00 00 00 00]
+    <-            read seq=3017  STATUS  args=[00 00 00 01]
+    <-            read seq=3018  STATUS  args=[00 00 00 01]
+    <-            read seq=3019  STATUS  args=[00 00 00 01]
+    <-            read seq=3020  STATUS  args=[00 00 00 01]
+    ->           write seq=3024  STATUS  args=[00 00 00 00]
+    <-            read seq=3026  STATUS  args=[00 00 00 01]
+    ->           write seq=3030  STATUS  args=[00 00 00 00]
+    ->           write seq=3035  STATUS  args=[00 00 00 00]
+    <-            read seq=3037  STATUS  args=[00 00 00 01]
+    <-            read seq=3039  STATUS  args=[00 00 00 01]
+    <-            read seq=3040  STATUS  args=[00 00 00 01]
+    <-            read seq=3041  STATUS  args=[00 00 00 01]
+    <-            read seq=3042  STATUS  args=[00 00 00 01]
+    ->           write seq=3046  STATUS  args=[00 00 00 00]
+    <-            read seq=3049  STATUS  args=[00 00 00 01]
+    <-            read seq=3050  STATUS  args=[00 00 00 01]
+    <-            read seq=3051  STATUS  args=[00 00 00 01]
+    <-            read seq=3052  STATUS  args=[00 00 00 01]
+    ->           write seq=3056  STATUS  args=[00 00 00 00]
+    ->           write seq=3061  STATUS  args=[00 00 00 00]
+    ->           write seq=3065  WRITE_SETTING off=0x000c len=4  [8f 8f 44 f3]
+    <-            read seq=3066  STATUS  args=[00 00 00 01]
+    <-            read seq=3067  STATUS  args=[00 00 00 01]
+    <-            read seq=3068  STATUS  args=[00 00 00 01]
+    <-            read seq=3069  STATUS  args=[00 00 00 01]
+    <-            read seq=3070  STATUS  args=[00 00 00 01]
+    <-            read seq=3071  STATUS  args=[00 00 00 01]
+    <-            read seq=3072  STATUS  args=[00 00 00 01]
+    <-            read seq=3073  STATUS  args=[00 00 00 01]
+    <-            read seq=3074  STATUS  args=[00 00 00 01]
+    <-            read seq=3075  STATUS  args=[00 00 00 01]
+    <-            read seq=3076  STATUS  args=[00 00 00 01]
+    <-            read seq=3077  STATUS  args=[00 00 00 01]
+    <-            read seq=3078  STATUS  args=[00 00 00 01]
+    <-            read seq=3079  STATUS  args=[00 00 00 01]
+    <-            read seq=3080  STATUS  args=[00 00 00 01]
+    <-            read seq=3081  STATUS  args=[00 00 00 01]
+    <-            read seq=3082  STATUS  args=[00 00 00 01]
+    <-            read seq=3083  STATUS  args=[00 00 00 01]
+    <-            read seq=3084  STATUS  args=[00 00 00 01]
+    <-            read seq=3085  STATUS  args=[00 00 00 01]
+    <-            read seq=3086  STATUS  args=[00 00 00 01]
+    <-            read seq=3087  STATUS  args=[00 00 00 01]
+    <-            read seq=3088  STATUS  args=[00 00 00 01]
+    <-            read seq=3089  STATUS  args=[00 00 00 01]
+    ->           write seq=3092  STATUS  args=[00 00 00 00]
+    ->           write seq=3095  BATTERY  args=[00 00 00 00]
+    <-            read seq=3096  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=3097  BATTERY  args=[00 00 00 02]
+
+--- dpi_s1_26000 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=3102  STATUS  args=[00 00 00 00]
+    ->           write seq=3107  STATUS  args=[00 00 00 00]
+    ->           write seq=3112  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=3114  STATUS  args=[00 00 00 01]
+    ->           write seq=3116  WRITE_SETTING off=0x000c len=4  [8d 8d 44 f7]
+    <-            read seq=3117  STATUS  args=[00 00 00 01]
+    <-            read seq=3118  STATUS  args=[00 00 00 01]
+    ->           write seq=3122  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=3124  STATUS  args=[00 00 00 01]
+    ->           write seq=3129  STATUS  args=[00 00 00 00]
+    ->           write seq=3134  STATUS  args=[00 00 00 00]
+    ->           write seq=3138  STATUS  args=[00 00 00 00]
+    ->           write seq=3144  STATUS  args=[00 00 00 00]
+    ->           write seq=3145  BATTERY  args=[00 00 00 00]
+    ->           write seq=3147  BATTERY  args=[00 00 00 00]
+    <-            read seq=3148  STATUS  args=[00 00 00 01]
+    <-            read seq=3151  STATUS  args=[00 00 00 01]
+    <-            read seq=3152  STATUS  args=[00 00 00 01]
+    ->           write seq=3156  STATUS  args=[00 00 00 00]
+    ->           write seq=3161  STATUS  args=[00 00 00 00]
+    ->           write seq=3167  STATUS  args=[00 00 00 00]
+    <-            read seq=3169  STATUS  args=[00 00 00 01]
+    ->           write seq=3174  STATUS  args=[00 00 00 00]
+    ->           write seq=3179  STATUS  args=[00 00 00 00]
+    <-            read seq=3182  BATTERY  args=[00 00 00 02]
+    ->           write seq=3186  STATUS  args=[00 00 00 00]
+    ->           write seq=3192  STATUS  args=[00 00 00 00]
+    <-            read seq=3195  STATUS  args=[00 00 00 01]
+    ->           write seq=3199  STATUS  args=[00 00 00 00]
+    ->           write seq=3204  STATUS  args=[00 00 00 00]
+    <-            read seq=3207  STATUS  args=[00 00 00 01]
+    ->           write seq=3211  STATUS  args=[00 00 00 00]
+    ->           write seq=3216  STATUS  args=[00 00 00 00]
+    ->           write seq=3222  STATUS  args=[00 00 00 00]
+    ->           write seq=3227  STATUS  args=[00 00 00 00]
+    <-            read seq=3229  STATUS  args=[00 00 00 01]
+    ->           write seq=3234  STATUS  args=[00 00 00 00]
+    ->           write seq=3240  STATUS  args=[00 00 00 00]
+    ->           write seq=3245  STATUS  args=[00 00 00 00]
+    ->           write seq=3250  STATUS  args=[00 00 00 00]
+    <-            read seq=3252  STATUS  args=[00 00 00 01]
+    ->           write seq=3256  STATUS  args=[00 00 00 00]
+    ->           write seq=3262  STATUS  args=[00 00 00 00]
+    <-            read seq=3265  STATUS  args=[00 00 00 01]
+    ->           write seq=3269  STATUS  args=[00 00 00 00]
+    ->           write seq=3274  STATUS  args=[00 00 00 00]
+    ->           write seq=3280  STATUS  args=[00 00 00 00]
+    <-            read seq=3283  STATUS  args=[00 00 00 01]
+    ->           write seq=3287  STATUS  args=[00 00 00 00]
+    ->           write seq=3292  STATUS  args=[00 00 00 00]
+    ->           write seq=3297  STATUS  args=[00 00 00 00]
+    ->           write seq=3302  STATUS  args=[00 00 00 00]
+    ->           write seq=3307  STATUS  args=[00 00 00 00]
+    ->           write seq=3312  STATUS  args=[00 00 00 00]
+    ->           write seq=3318  STATUS  args=[00 00 00 00]
+    <-            read seq=3320  STATUS  args=[00 00 00 01]
+    ->           write seq=3324  STATUS  args=[00 00 00 00]
+    ->           write seq=3330  STATUS  args=[00 00 00 00]
+    ->           write seq=3335  STATUS  args=[00 00 00 00]
+    ->           write seq=3340  STATUS  args=[00 00 00 00]
+    ->           write seq=3346  STATUS  args=[00 00 00 00]
+    <-            read seq=3348  STATUS  args=[00 00 00 01]
+    ->           write seq=3352  STATUS  args=[00 00 00 00]
+    ->           write seq=3357  STATUS  args=[00 00 00 00]
+    ->           write seq=3363  STATUS  args=[00 00 00 00]
+    ->           write seq=3368  STATUS  args=[00 00 00 00]
+    ->           write seq=3373  STATUS  args=[00 00 00 00]
+    ->           write seq=3378  STATUS  args=[00 00 00 00]
+    <-            read seq=3380  STATUS  args=[00 00 00 01]
+    ->           write seq=3384  STATUS  args=[00 00 00 00]
+    ->           write seq=3389  STATUS  args=[00 00 00 00]
+    ->           write seq=3394  STATUS  args=[00 00 00 00]
+    ->           write seq=3400  STATUS  args=[00 00 00 00]
+    ->           write seq=3405  STATUS  args=[00 00 00 00]
+    ->           write seq=3410  STATUS  args=[00 00 00 00]
+    ->           write seq=3415  STATUS  args=[00 00 00 00]
+    <-            read seq=3418  STATUS  args=[00 00 00 01]
+    ->           write seq=3422  STATUS  args=[00 00 00 00]
+    ->           write seq=3427  STATUS  args=[00 00 00 00]
+    ->           write seq=3432  STATUS  args=[00 00 00 00]
+    ->           write seq=3437  STATUS  args=[00 00 00 00]
+    <-            read seq=3439  STATUS  args=[00 00 00 01]
+    ->           write seq=3443  STATUS  args=[00 00 00 00]
+    ->           write seq=3448  STATUS  args=[00 00 00 00]
+    ->           write seq=3453  STATUS  args=[00 00 00 00]
+    ->           write seq=3458  STATUS  args=[00 00 00 00]
+    ->           write seq=3463  STATUS  args=[00 00 00 00]
+    <-            read seq=3466  STATUS  args=[00 00 00 01]
+    ->           write seq=3470  STATUS  args=[00 00 00 00]
+    ->           write seq=3476  STATUS  args=[00 00 00 00]
+    <-            read seq=3479  STATUS  args=[00 00 00 01]
+    ->           write seq=3483  STATUS  args=[00 00 00 00]
+    ->           write seq=3488  STATUS  args=[00 00 00 00]
+    ->           write seq=3493  STATUS  args=[00 00 00 00]
+    ->           write seq=3498  STATUS  args=[00 00 00 00]
+    <-            read seq=3501  STATUS  args=[00 00 00 01]
+    ->           write seq=3505  STATUS  args=[00 00 00 00]
+    ->           write seq=3511  STATUS  args=[00 00 00 00]
+    <-            read seq=3513  STATUS  args=[00 00 00 01]
+    ->           write seq=3518  STATUS  args=[00 00 00 00]
+    ->           write seq=3524  STATUS  args=[00 00 00 00]
+    <-            read seq=3526  STATUS  args=[00 00 00 01]
+    <-            read seq=3528  STATUS  args=[00 00 00 01]
+    <-            read seq=3529  STATUS  args=[00 00 00 01]
+    ->           write seq=3533  STATUS  args=[00 00 00 00]
+    ->           write seq=3539  STATUS  args=[00 00 00 00]
+    ->           write seq=3544  STATUS  args=[00 00 00 00]
+    <-            read seq=3546  STATUS  args=[00 00 00 01]
+    ->           write seq=3551  STATUS  args=[00 00 00 00]
+    <-            read seq=3554  STATUS  args=[00 00 00 01]
+    <-            read seq=3555  STATUS  args=[00 00 00 01]
+    ->           write seq=3559  STATUS  args=[00 00 00 00]
+    <-            read seq=3562  STATUS  args=[00 00 00 01]
+    ->           write seq=3566  STATUS  args=[00 00 00 00]
+    ->           write seq=3572  STATUS  args=[00 00 00 00]
+    ->           write seq=3577  STATUS  args=[00 00 00 00]
+    <-            read seq=3579  STATUS  args=[00 00 00 01]
+    ->           write seq=3584  STATUS  args=[00 00 00 00]
+    <-            read seq=3587  STATUS  args=[00 00 00 01]
+    <-            read seq=3588  STATUS  args=[00 00 00 01]
+    <-            read seq=3589  STATUS  args=[00 00 00 01]
+    ->           write seq=3593  STATUS  args=[00 00 00 00]
+    <-            read seq=3596  STATUS  args=[00 00 00 01]
+    ->           write seq=3600  STATUS  args=[00 00 00 00]
+    <-            read seq=3603  STATUS  args=[00 00 00 01]
+    <-            read seq=3604  STATUS  args=[00 00 00 01]
+    <-            read seq=3605  STATUS  args=[00 00 00 01]
+    <-            read seq=3606  STATUS  args=[00 00 00 01]
+    <-            read seq=3607  STATUS  args=[00 00 00 01]
+    ->           write seq=3611  STATUS  args=[00 00 00 00]
+    <-            read seq=3614  STATUS  args=[00 00 00 01]
+    ->           write seq=3618  STATUS  args=[00 00 00 00]
+    <-            read seq=3621  STATUS  args=[00 00 00 01]
+    <-            read seq=3622  STATUS  args=[00 00 00 01]
+    <-            read seq=3623  STATUS  args=[00 00 00 01]
+    <-            read seq=3624  STATUS  args=[00 00 00 01]
+    <-            read seq=3625  STATUS  args=[00 00 00 01]
+    <-            read seq=3626  STATUS  args=[00 00 00 01]
+    <-            read seq=3627  STATUS  args=[00 00 00 01]
+    <-            read seq=3628  STATUS  args=[00 00 00 01]
+    ->           write seq=3631  STATUS  args=[00 00 00 00]
+    ->           write seq=3634  BATTERY  args=[00 00 00 00]
+    <-            read seq=3635  STATUS  args=[00 00 00 01]
+    ->           write seq=3640  STATUS  args=[00 00 00 00]
+    ->           write seq=3645  STATUS  args=[00 00 00 00]
+    ->           write seq=3647  WRITE_SETTING off=0x000c len=4  [06 06 88 c1]
+    <-            read seq=3648  STATUS  args=[00 00 00 01]
+    <-            read seq=3649  STATUS  args=[00 00 00 01]
+    <-            read seq=3650  STATUS  args=[00 00 00 01]
+    <-            read seq=3651  STATUS  args=[00 00 00 01]
+    <-            read seq=3652  STATUS  args=[00 00 00 01]
+    <-            read seq=3653  STATUS  args=[00 00 00 01]
+    <-            read seq=3654  STATUS  args=[00 00 00 01]
+    <-            read seq=3655  STATUS  args=[00 00 00 01]
+    <-            read seq=3656  STATUS  args=[00 00 00 01]
+    <-            read seq=3657  STATUS  args=[00 00 00 01]
+    <-            read seq=3658  STATUS  args=[00 00 00 01]
+    <-            read seq=3659  STATUS  args=[00 00 00 01]
+    <-            read seq=3660  STATUS  args=[00 00 00 01]
+    <-            read seq=3661  STATUS  args=[00 00 00 01]
+    <-            read seq=3662  STATUS  args=[00 00 00 01]
+    <-            read seq=3663  STATUS  args=[00 00 00 01]
+    <-            read seq=3664  STATUS  args=[00 00 00 01]
+    <-            read seq=3665  STATUS  args=[00 00 00 01]
+    <-            read seq=3666  BATTERY  args=[00 00 00 02]
+    <-            read seq=3667  STATUS  args=[00 00 00 01]
+    <-            read seq=3668  STATUS  args=[00 00 00 01]
+
+--- dpi_s1_1000 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=3673  STATUS  args=[00 00 00 00]
+    ->           write seq=3676  BATTERY  args=[00 00 00 00]
+    <-            read seq=3677  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=3678  BATTERY  args=[00 00 00 02]
+    ->           write seq=3682  STATUS  args=[00 00 00 00]
+    ->           write seq=3685  BATTERY  args=[00 00 00 00]
+    <-            read seq=3686  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=3687  BATTERY  args=[00 00 00 02]
+    ->           write seq=3691  STATUS  args=[00 00 00 00]
+    ->           write seq=3694  BATTERY  args=[00 00 00 00]
+    <-            read seq=3695  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=3696  BATTERY  args=[00 00 00 02]
+    ->           write seq=3700  STATUS  args=[00 00 00 00]
+    ->           write seq=3703  BATTERY  args=[00 00 00 00]
+    <-            read seq=3704  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=3705  BATTERY  args=[00 00 00 02]
+    ->           write seq=3710  STATUS  args=[00 00 00 00]
+    ->           write seq=3715  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=3717  STATUS  args=[00 00 00 01]
+    ->           write seq=3719  WRITE_SETTING off=0x000c len=4  [a5 a5 44 c7]
+    <-            read seq=3720  STATUS  args=[00 00 00 01]
+    ->           write seq=3724  STATUS  args=[00 00 00 00]
+    ->           write seq=3729  STATUS  args=[00 00 00 00]
+    ->           write seq=3734  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=3736  STATUS  args=[00 00 00 01]
+    ->           write seq=3738  WRITE_SETTING off=0x000c len=4  [a8 a8 44 c1]
+    <-            read seq=3739  STATUS  args=[00 00 00 01]
+    <-            read seq=3740  STATUS  args=[00 00 00 01]
+    ->           write seq=3744  STATUS  args=[00 00 00 00]
+    ->           write seq=3749  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=3751  STATUS  args=[00 00 00 01]
+    ->           write seq=3756  STATUS  args=[00 00 00 00]
+    ->           write seq=3761  STATUS  args=[00 00 00 00]
+    ->           write seq=3766  STATUS  args=[00 00 00 00]
+    ->           write seq=3771  STATUS  args=[00 00 00 00]
+    <-            read seq=3774  STATUS  args=[00 00 00 01]
+    ->           write seq=3778  STATUS  args=[00 00 00 00]
+    ->           write seq=3783  STATUS  args=[00 00 00 00]
+    ->           write seq=3788  STATUS  args=[00 00 00 00]
+    ->           write seq=3793  STATUS  args=[00 00 00 00]
+    ->           write seq=3798  STATUS  args=[00 00 00 00]
+    ->           write seq=3803  STATUS  args=[00 00 00 00]
+    ->           write seq=3808  STATUS  args=[00 00 00 00]
+    ->           write seq=3813  STATUS  args=[00 00 00 00]
+    ->           write seq=3819  STATUS  args=[00 00 00 00]
+    ->           write seq=3824  STATUS  args=[00 00 00 00]
+    ->           write seq=3829  STATUS  args=[00 00 00 00]
+    ->           write seq=3834  STATUS  args=[00 00 00 00]
+    ->           write seq=3839  STATUS  args=[00 00 00 00]
+    ->           write seq=3844  STATUS  args=[00 00 00 00]
+    ->           write seq=3849  STATUS  args=[00 00 00 00]
+    ->           write seq=3854  STATUS  args=[00 00 00 00]
+    ->           write seq=3859  STATUS  args=[00 00 00 00]
+    ->           write seq=3864  STATUS  args=[00 00 00 00]
+    ->           write seq=3869  STATUS  args=[00 00 00 00]
+    ->           write seq=3874  STATUS  args=[00 00 00 00]
+    ->           write seq=3879  STATUS  args=[00 00 00 00]
+    ->           write seq=3884  STATUS  args=[00 00 00 00]
+    ->           write seq=3889  STATUS  args=[00 00 00 00]
+    ->           write seq=3894  STATUS  args=[00 00 00 00]
+    ->           write seq=3899  STATUS  args=[00 00 00 00]
+    ->           write seq=3904  STATUS  args=[00 00 00 00]
+    ->           write seq=3909  STATUS  args=[00 00 00 00]
+    ->           write seq=3914  STATUS  args=[00 00 00 00]
+    ->           write seq=3919  STATUS  args=[00 00 00 00]
+    ->           write seq=3924  STATUS  args=[00 00 00 00]
+    ->           write seq=3929  STATUS  args=[00 00 00 00]
+    <-            read seq=3931  STATUS  args=[00 00 00 01]
+    ->           write seq=3935  STATUS  args=[00 00 00 00]
+    ->           write seq=3940  STATUS  args=[00 00 00 00]
+    ->           write seq=3945  STATUS  args=[00 00 00 00]
+    ->           write seq=3950  STATUS  args=[00 00 00 00]
+    ->           write seq=3955  STATUS  args=[00 00 00 00]
+    ->           write seq=3960  STATUS  args=[00 00 00 00]
+    ->           write seq=3965  STATUS  args=[00 00 00 00]
+    ->           write seq=3970  STATUS  args=[00 00 00 00]
+    ->           write seq=3975  STATUS  args=[00 00 00 00]
+    ->           write seq=3980  STATUS  args=[00 00 00 00]
+    ->           write seq=3985  STATUS  args=[00 00 00 00]
+    ->           write seq=3990  STATUS  args=[00 00 00 00]
+    ->           write seq=3995  STATUS  args=[00 00 00 00]
+    ->           write seq=4000  STATUS  args=[00 00 00 00]
+    ->           write seq=4005  STATUS  args=[00 00 00 00]
+    ->           write seq=4010  STATUS  args=[00 00 00 00]
+    ->           write seq=4015  STATUS  args=[00 00 00 00]
+    ->           write seq=4020  STATUS  args=[00 00 00 00]
+    ->           write seq=4025  STATUS  args=[00 00 00 00]
+    ->           write seq=4030  STATUS  args=[00 00 00 00]
+    ->           write seq=4035  STATUS  args=[00 00 00 00]
+    ->           write seq=4040  STATUS  args=[00 00 00 00]
+    ->           write seq=4045  STATUS  args=[00 00 00 00]
+    ->           write seq=4050  STATUS  args=[00 00 00 00]
+    ->           write seq=4055  STATUS  args=[00 00 00 00]
+    ->           write seq=4060  STATUS  args=[00 00 00 00]
+    ->           write seq=4065  STATUS  args=[00 00 00 00]
+    ->           write seq=4070  STATUS  args=[00 00 00 00]
+    ->           write seq=4075  STATUS  args=[00 00 00 00]
+    ->           write seq=4080  STATUS  args=[00 00 00 00]
+    ->           write seq=4085  STATUS  args=[00 00 00 00]
+    ->           write seq=4090  STATUS  args=[00 00 00 00]
+    ->           write seq=4095  STATUS  args=[00 00 00 00]
+    ->           write seq=4100  STATUS  args=[00 00 00 00]
+    ->           write seq=4105  STATUS  args=[00 00 00 00]
+    ->           write seq=4110  STATUS  args=[00 00 00 00]
+    ->           write seq=4115  STATUS  args=[00 00 00 00]
+    ->           write seq=4120  STATUS  args=[00 00 00 00]
+    ->           write seq=4125  STATUS  args=[00 00 00 00]
+    ->           write seq=4130  STATUS  args=[00 00 00 00]
+    ->           write seq=4135  STATUS  args=[00 00 00 00]
+    ->           write seq=4140  STATUS  args=[00 00 00 00]
+    ->           write seq=4145  STATUS  args=[00 00 00 00]
+    ->           write seq=4150  STATUS  args=[00 00 00 00]
+    ->           write seq=4155  STATUS  args=[00 00 00 00]
+    ->           write seq=4160  STATUS  args=[00 00 00 00]
+    ->           write seq=4165  STATUS  args=[00 00 00 00]
+    ->           write seq=4170  STATUS  args=[00 00 00 00]
+    ->           write seq=4175  STATUS  args=[00 00 00 00]
+    ->           write seq=4180  STATUS  args=[00 00 00 00]
+    ->           write seq=4185  STATUS  args=[00 00 00 00]
+    ->           write seq=4190  STATUS  args=[00 00 00 00]
+    ->           write seq=4195  STATUS  args=[00 00 00 00]
+    ->           write seq=4200  STATUS  args=[00 00 00 00]
+    ->           write seq=4205  STATUS  args=[00 00 00 00]
+    ->           write seq=4210  STATUS  args=[00 00 00 00]
+    <-            read seq=4212  STATUS  args=[00 00 00 01]
+    ->           write seq=4216  STATUS  args=[00 00 00 00]
+    ->           write seq=4221  STATUS  args=[00 00 00 00]
+    ->           write seq=4226  STATUS  args=[00 00 00 00]
+    ->           write seq=4231  STATUS  args=[00 00 00 00]
+    ->           write seq=4236  STATUS  args=[00 00 00 00]
+    ->           write seq=4241  STATUS  args=[00 00 00 00]
+    ->           write seq=4246  STATUS  args=[00 00 00 00]
+    ->           write seq=4251  STATUS  args=[00 00 00 00]
+    ->           write seq=4256  STATUS  args=[00 00 00 00]
+    ->           write seq=4261  STATUS  args=[00 00 00 00]
+    ->           write seq=4266  STATUS  args=[00 00 00 00]
+    ->           write seq=4271  STATUS  args=[00 00 00 00]
+    ->           write seq=4276  STATUS  args=[00 00 00 00]
+    ->           write seq=4281  STATUS  args=[00 00 00 00]
+    ->           write seq=4286  STATUS  args=[00 00 00 00]
+    ->           write seq=4291  STATUS  args=[00 00 00 00]
+    ->           write seq=4296  STATUS  args=[00 00 00 00]
+    ->           write seq=4301  STATUS  args=[00 00 00 00]
+    ->           write seq=4306  STATUS  args=[00 00 00 00]
+    ->           write seq=4311  STATUS  args=[00 00 00 00]
+    ->           write seq=4316  STATUS  args=[00 00 00 00]
+    ->           write seq=4321  STATUS  args=[00 00 00 00]
+    ->           write seq=4326  STATUS  args=[00 00 00 00]
+    ->           write seq=4331  STATUS  args=[00 00 00 00]
+    ->           write seq=4336  STATUS  args=[00 00 00 00]
+    ->           write seq=4341  STATUS  args=[00 00 00 00]
+    ->           write seq=4346  STATUS  args=[00 00 00 00]
+    ->           write seq=4351  STATUS  args=[00 00 00 00]
+    ->           write seq=4356  STATUS  args=[00 00 00 00]
+    ->           write seq=4361  STATUS  args=[00 00 00 00]
+    ->           write seq=4366  STATUS  args=[00 00 00 00]
+    ->           write seq=4371  STATUS  args=[00 00 00 00]
+    ->           write seq=4376  STATUS  args=[00 00 00 00]
+    ->           write seq=4381  STATUS  args=[00 00 00 00]
+    ->           write seq=4386  STATUS  args=[00 00 00 00]
+    ->           write seq=4391  STATUS  args=[00 00 00 00]
+    ->           write seq=4396  STATUS  args=[00 00 00 00]
+    ->           write seq=4402  STATUS  args=[00 00 00 00]
+    <-            read seq=4404  STATUS  args=[00 00 00 01]
+    ->           write seq=4409  STATUS  args=[00 00 00 00]
+    ->           write seq=4414  STATUS  args=[00 00 00 00]
+    ->           write seq=4419  STATUS  args=[00 00 00 00]
+    <-            read seq=4422  STATUS  args=[00 00 00 01]
+    ->           write seq=4426  STATUS  args=[00 00 00 00]
+    <-            read seq=4429  STATUS  args=[00 00 00 01]
+    <-            read seq=4430  STATUS  args=[00 00 00 01]
+    ->           write seq=4433  STATUS  args=[00 00 00 00]
+    ->           write seq=4436  BATTERY  args=[00 00 00 00]
+    <-            read seq=4437  STATUS  args=[00 00 00 01]
+    ->           write seq=4442  STATUS  args=[00 00 00 00]
+    <-            read seq=4445  STATUS  args=[00 00 00 01]
+    ->           write seq=4449  STATUS  args=[00 00 00 00]
+    ->           write seq=4454  STATUS  args=[00 00 00 00]
+    ->           write seq=4459  STATUS  args=[00 00 00 00]
+    <-            read seq=4462  STATUS  args=[00 00 00 01]
+    <-            read seq=4463  STATUS  args=[00 00 00 01]
+    <-            read seq=4464  STATUS  args=[00 00 00 01]
+    ->           write seq=4468  STATUS  args=[00 00 00 00]
+    ->           write seq=4473  STATUS  args=[00 00 00 00]
+    ->           write seq=4478  STATUS  args=[00 00 00 00]
+    ->           write seq=4483  STATUS  args=[00 00 00 00]
+    <-            read seq=4486  STATUS  args=[00 00 00 01]
+    ->           write seq=4490  STATUS  args=[00 00 00 00]
+    <-            read seq=4493  STATUS  args=[00 00 00 01]
+    ->           write seq=4497  STATUS  args=[00 00 00 00]
+    ->           write seq=4502  STATUS  args=[00 00 00 00]
+    <-            read seq=4505  STATUS  args=[00 00 00 01]
+    <-            read seq=4506  STATUS  args=[00 00 00 01]
+    ->           write seq=4510  STATUS  args=[00 00 00 00]
+    ->           write seq=4516  STATUS  args=[00 00 00 00]
+    <-            read seq=4519  STATUS  args=[00 00 00 01]
+    ->           write seq=4523  STATUS  args=[00 00 00 00]
+    ->           write seq=4528  STATUS  args=[00 00 00 00]
+    ->           write seq=4534  STATUS  args=[00 00 00 00]
+    ->           write seq=4539  STATUS  args=[00 00 00 00]
+    <-            read seq=4541  STATUS  args=[00 00 00 01]
+    ->           write seq=4546  STATUS  args=[00 00 00 00]
+    <-            read seq=4549  STATUS  args=[00 00 00 01]
+    ->           write seq=4553  STATUS  args=[00 00 00 00]
+    ->           write seq=4559  STATUS  args=[00 00 00 00]
+    <-            read seq=4562  STATUS  args=[00 00 00 01]
+    ->           write seq=4566  STATUS  args=[00 00 00 00]
+    ->           write seq=4572  STATUS  args=[00 00 00 00]
+    <-            read seq=4575  STATUS  args=[00 00 00 01]
+    <-            read seq=4576  STATUS  args=[00 00 00 01]
+    ->           write seq=4580  STATUS  args=[00 00 00 00]
+    <-            read seq=4582  STATUS  args=[00 00 00 01]
+    ->           write seq=4587  STATUS  args=[00 00 00 00]
+    <-            read seq=4590  STATUS  args=[00 00 00 01]
+    <-            read seq=4591  STATUS  args=[00 00 00 01]
+    <-            read seq=4592  STATUS  args=[00 00 00 01]
+    ->           write seq=4596  STATUS  args=[00 00 00 00]
+    ->           write seq=4601  STATUS  args=[00 00 00 00]
+    ->           write seq=4605  WRITE_SETTING off=0x000c len=4  [27 27 00 07]
+    <-            read seq=4606  STATUS  args=[00 00 00 01]
+    <-            read seq=4607  STATUS  args=[00 00 00 01]
+    <-            read seq=4608  STATUS  args=[00 00 00 01]
+    <-            read seq=4609  BATTERY  args=[00 00 00 02]
+    <-            read seq=4610  STATUS  args=[00 00 00 01]
+    <-            read seq=4611  STATUS  args=[00 00 00 01]
+    <-            read seq=4612  STATUS  args=[00 00 00 01]
+    <-            read seq=4613  STATUS  args=[00 00 00 01]
+    <-            read seq=4614  STATUS  args=[00 00 00 01]
+    <-            read seq=4615  STATUS  args=[00 00 00 01]
+    <-            read seq=4616  STATUS  args=[00 00 00 01]
+    <-            read seq=4617  STATUS  args=[00 00 00 01]
+    <-            read seq=4618  STATUS  args=[00 00 00 01]
+    <-            read seq=4619  STATUS  args=[00 00 00 01]
+    <-            read seq=4620  STATUS  args=[00 00 00 01]
+    <-            read seq=4621  STATUS  args=[00 00 00 01]
+    <-            read seq=4622  STATUS  args=[00 00 00 01]
+    <-            read seq=4623  STATUS  args=[00 00 00 01]
+    <-            read seq=4624  STATUS  args=[00 00 00 01]
+    <-            read seq=4625  STATUS  args=[00 00 00 01]
+    <-            read seq=4626  STATUS  args=[00 00 00 01]
+    <-            read seq=4627  STATUS  args=[00 00 00 01]
+    <-            read seq=4628  STATUS  args=[00 00 00 01]
+    <-            read seq=4629  STATUS  args=[00 00 00 01]
+    <-            read seq=4630  STATUS  args=[00 00 00 01]
+    <-            read seq=4631  STATUS  args=[00 00 00 01]
+    <-            read seq=4632  STATUS  args=[00 00 00 01]
+    <-            read seq=4633  STATUS  args=[00 00 00 01]
+    <-            read seq=4634  STATUS  args=[00 00 00 01]
+    <-            read seq=4635  STATUS  args=[00 00 00 01]
+    ->           write seq=4639  STATUS  args=[00 00 00 00]
+    ->           write seq=4644  STATUS  args=[00 00 00 00]
+    ->           write seq=4649  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=4651  STATUS  args=[00 00 00 01]
+    ->           write seq=4653  WRITE_SETTING off=0x000c len=4  [29 29 00 03]
+    <-            read seq=4654  STATUS  args=[00 00 00 01]
+    <-            read seq=4655  STATUS  args=[00 00 00 01]
+    ->           write seq=4659  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=4661  STATUS  args=[00 00 00 01]
+    ->           write seq=4665  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=4667  STATUS  args=[00 00 00 01]
+    ->           write seq=4672  STATUS  args=[00 00 00 00]
+    ->           write seq=4677  STATUS  args=[00 00 00 00]
+    <-            read seq=4679  STATUS  args=[00 00 00 01]
+    <-            read seq=4681  STATUS  args=[00 00 00 01]
+    ->           write seq=4685  STATUS  args=[00 00 00 00]
+    <-            read seq=4688  STATUS  args=[00 00 00 01]
+    ->           write seq=4692  STATUS  args=[00 00 00 00]
+    <-            read seq=4695  STATUS  args=[00 00 00 01]
+    ->           write seq=4699  STATUS  args=[00 00 00 00]
+    ->           write seq=4705  STATUS  args=[00 00 00 00]
+    ->           write seq=4710  STATUS  args=[00 00 00 00]
+    <-            read seq=4712  STATUS  args=[00 00 00 01]
+    ->           write seq=4716  STATUS  args=[00 00 00 00]
+    ->           write seq=4721  STATUS  args=[00 00 00 00]
+    <-            read seq=4724  STATUS  args=[00 00 00 01]
+    <-            read seq=4725  STATUS  args=[00 00 00 01]
+    <-            read seq=4726  STATUS  args=[00 00 00 01]
+    ->           write seq=4730  STATUS  args=[00 00 00 00]
+    <-            read seq=4733  STATUS  args=[00 00 00 01]
+    ->           write seq=4737  STATUS  args=[00 00 00 00]
+    <-            read seq=4740  STATUS  args=[00 00 00 01]
+    <-            read seq=4741  STATUS  args=[00 00 00 01]
+    ->           write seq=4745  STATUS  args=[00 00 00 00]
+    ->           write seq=4750  STATUS  args=[00 00 00 00]
+    ->           write seq=4752  WRITE_SETTING off=0x000c len=4  [13 13 00 2f]
+    <-            read seq=4753  STATUS  args=[00 00 00 01]
+    ->           write seq=4758  STATUS  args=[00 00 00 00]
+    ->           write seq=4761  BATTERY  args=[00 00 00 00]
+    <-            read seq=4762  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=4763  BATTERY  args=[00 00 00 02]
+
+--- dpi_s2_2000 ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=4767  STATUS  args=[00 00 00 00]
+    ->           write seq=4770  BATTERY  args=[00 00 00 00]
+    <-            read seq=4771  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=4772  BATTERY  args=[00 00 00 02]
+    ->           write seq=4776  STATUS  args=[00 00 00 00]
+    ->           write seq=4779  BATTERY  args=[00 00 00 00]
+    <-            read seq=4780  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=4781  BATTERY  args=[00 00 00 02]
+    ->           write seq=4785  STATUS  args=[00 00 00 00]
+    ->           write seq=4788  BATTERY  args=[00 00 00 00]
+    <-            read seq=4789  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=4790  BATTERY  args=[00 00 00 02]
+    ->           write seq=4795  STATUS  args=[00 00 00 00]
+    ->           write seq=4800  STATUS  args=[00 00 00 00]
+    ->           write seq=4802  WRITE_SETTING off=0x0004 len=2  [01 54]
+    <-            read seq=4803  STATUS  args=[00 00 00 01]
+    ->           write seq=4808  STATUS  args=[00 00 00 00]
+    ->           write seq=4813  STATUS  args=[00 00 00 00]
+    ->           write seq=4818  STATUS  args=[00 00 00 00]
+    ->           write seq=4820  WRITE_SETTING off=0x0010 len=4  [23 23 00 0f]
+    <-            read seq=4821  STATUS  args=[00 00 00 01]
+    <-            read seq=4822  STATUS  args=[00 00 00 01]
+    ->           write seq=4827  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=4829  STATUS  args=[00 00 00 01]
+    ->           write seq=4834  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=4836  STATUS  args=[00 00 00 01]
+    ->           write seq=4841  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=4843  STATUS  args=[00 00 00 01]
+    ->           write seq=4848  STATUS  args=[00 00 00 00]
+    <-            read seq=4850  STATUS  args=[00 00 00 01]
+    ->           write seq=4854  STATUS  args=[00 00 00 00]
+    ->           write seq=4857  BATTERY  args=[00 00 00 00]
+    <-            read seq=4858  STATUS  args=[00 00 00 01]
+    <-            read seq=4860  BATTERY  args=[00 00 00 02]
+    ->           write seq=4864  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=4866  STATUS  args=[00 00 00 01]
+    ->           write seq=4871  STATUS  args=[00 00 00 00]
+    ->           write seq=4876  STATUS  args=[00 00 00 00]
+    ->           write seq=4878  WRITE_SETTING off=0x0010 len=4  [27 27 00 07]
+    <-            read seq=4879  STATUS  args=[00 00 00 01]
+
+--- dpi_s1_color_r ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=4884  STATUS  args=[00 00 00 00]
+    ->           write seq=4887  BATTERY  args=[00 00 00 00]
+    <-            read seq=4888  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=4889  BATTERY  args=[00 00 00 02]
+    ->           write seq=4894  STATUS  args=[00 00 00 00]
+    ->           write seq=4899  STATUS  args=[00 00 00 00]
+    ->           write seq=4901  WRITE_SETTING off=0x0004 len=2  [00 55]
+    <-            read seq=4902  STATUS  args=[00 00 00 01]
+    ->           write seq=4907  STATUS  args=[00 00 00 00]
+    ->           write seq=4912  STATUS  args=[00 00 00 00]
+    ->           write seq=4915  BATTERY  args=[00 00 00 00]
+    <-            read seq=4916  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=4917  BATTERY  args=[00 00 00 02]
+    ->           write seq=4922  STATUS  args=[00 00 00 00]
+    ->           write seq=4927  STATUS  args=[00 00 00 00]
+    ->           write seq=4929  WRITE_SETTING off=0x002c len=4  [ff 00 00 56]
+    <-            read seq=4930  STATUS  args=[00 00 00 01]
+    ->           write seq=4933  STATUS  args=[00 00 00 00]
+    ->           write seq=4936  BATTERY  args=[00 00 00 00]
+    <-            read seq=4937  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=4938  BATTERY  args=[00 00 00 02]
+
+--- dpi_s1_color_g ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=4943  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=4945  STATUS  args=[00 00 00 01]
+    ->           write seq=4949  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=4951  STATUS  args=[00 00 00 01]
+    ->           write seq=4955  STATUS  args=[00 00 00 00]
+    ->           write seq=4958  BATTERY  args=[00 00 00 00]
+    <- overlapped_read seq=4959  STATUS  args=[00 00 00 01]
+    <-            read seq=4960  BATTERY  args=[00 00 00 02]
+    ->           write seq=4965  STATUS  args=[00 00 00 00]
+    ->           write seq=4970  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=4972  STATUS  args=[00 00 00 01]
+    ->           write seq=4974  WRITE_SETTING off=0x002c len=4  [00 ff 00 56]
+    <-            read seq=4975  STATUS  args=[00 00 00 01]
+    ->           write seq=4978  STATUS  args=[00 00 00 00]
+    ->           write seq=4981  BATTERY  args=[00 00 00 00]
+    <-            read seq=4982  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=4983  BATTERY  args=[00 00 00 02]
+
+--- dpi_s2_color_b ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=4988  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=4990  STATUS  args=[00 00 00 01]
+    ->           write seq=4994  STATUS  args=[00 00 00 00]
+    ->           write seq=4997  BATTERY  args=[00 00 00 00]
+    <-            read seq=4998  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=4999  BATTERY  args=[00 00 00 02]
+    ->           write seq=5004  STATUS  args=[00 00 00 00]
+    ->           write seq=5009  STATUS  args=[00 00 00 00]
+    ->           write seq=5011  WRITE_SETTING off=0x002c len=4  [00 00 ff 56]
+    <-            read seq=5012  STATUS  args=[00 00 00 01]
+
+--- dpiled_off ---
+    ->           write seq=5016  STATUS  args=[00 00 00 00]
+    ->           write seq=5019  BATTERY  args=[00 00 00 00]
+    <-            read seq=5020  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5021  BATTERY  args=[00 00 00 02]
+    ->           write seq=5025  STATUS  args=[00 00 00 00]
+    ->           write seq=5028  BATTERY  args=[00 00 00 00]
+    <-            read seq=5029  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5030  BATTERY  args=[00 00 00 02]
+
+--- dpiled_steady ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5035  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5037  STATUS  args=[00 00 00 01]
+    ->           write seq=5039  WRITE_SETTING off=0x0052 len=2  [01 54]
+    ->           write seq=5042  STATUS  args=[00 00 00 00]
+    ->           write seq=5045  BATTERY  args=[00 00 00 00]
+    <-            read seq=5046  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5047  BATTERY  args=[00 00 00 02]
+
+--- dpiled_breath ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5052  STATUS  args=[00 00 00 00]
+    ->           write seq=5054  WRITE_SETTING off=0x004c len=2  [02 53]
+    ->           write seq=5058  STATUS  args=[00 00 00 00]
+    ->           write seq=5061  BATTERY  args=[00 00 00 00]
+    <-            read seq=5062  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5063  BATTERY  args=[00 00 00 02]
+
+--- dpiled_bright_lo ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5067  STATUS  args=[00 00 00 00]
+    ->           write seq=5070  BATTERY  args=[00 00 00 00]
+    <-            read seq=5071  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5072  BATTERY  args=[00 00 00 02]
+    ->           write seq=5077  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5079  STATUS  args=[00 00 00 01]
+    ->           write seq=5081  WRITE_SETTING off=0x004c len=2  [01 54]
+    ->           write seq=5085  STATUS  args=[00 00 00 00]
+    ->           write seq=5087  WRITE_SETTING off=0x004e len=2  [e6 6f]
+    ->           write seq=5091  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5093  STATUS  args=[00 00 00 01]
+    ->           write seq=5098  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5100  STATUS  args=[00 00 00 01]
+    ->           write seq=5101  WRITE_SETTING off=0x004e len=2  [10 45]
+    ->           write seq=5104  STATUS  args=[00 00 00 00]
+    ->           write seq=5107  BATTERY  args=[00 00 00 00]
+    <-            read seq=5108  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5109  BATTERY  args=[00 00 00 02]
+
+--- dpiled_bright_hi ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5114  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5116  STATUS  args=[00 00 00 01]
+    ->           write seq=5121  STATUS  args=[00 00 00 00]
+    ->           write seq=5123  WRITE_SETTING off=0x004e len=2  [ff 56]
+
+--- rx_led1_off ---
+    DLL  CS_UsbFinder_SetDongleIndicatorLed
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5126  STATUS  args=[00 00 00 00]
+    ->           write seq=5129  BATTERY  args=[00 00 00 00]
+    <-            read seq=5130  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5131  BATTERY  args=[00 00 00 02]
+    ->           write seq=5136  RX_LED  args=[00 00 00 0a]
+    ->           write seq=5141  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5143  RX_LED  args=[00 00 00 0a]
+    <-            read seq=5145  STATUS  args=[00 00 00 01]
+
+--- rx_led1_batt ---
+    DLL  CS_UsbFinder_SetDongleIndicatorLed
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5148  STATUS  args=[00 00 00 00]
+    ->           write seq=5151  BATTERY  args=[00 00 00 00]
+    <-            read seq=5152  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5153  BATTERY  args=[00 00 00 02]
+    ->           write seq=5158  RX_LED  args=[00 00 00 0a]
+    ->           write seq=5163  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5165  RX_LED  args=[00 00 00 0a]
+    <-            read seq=5167  STATUS  args=[00 00 00 01]
+
+--- rx_led1_quality ---
+    DLL  CS_UsbFinder_SetDongleIndicatorLed
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5171  RX_LED  args=[00 00 00 0a]
+    ->           write seq=5176  STATUS  args=[00 00 00 00]
+    <-            read seq=5178  STATUS  args=[00 00 00 01]
+    <- overlapped_read seq=5179  STATUS  args=[00 00 00 01]
+    ->           write seq=5183  STATUS  args=[00 00 00 00]
+    ->           write seq=5186  BATTERY  args=[00 00 00 00]
+    <-            read seq=5187  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5188  BATTERY  args=[00 00 00 02]
+
+--- rx_led1_poll ---
+    DLL  CS_UsbFinder_SetDongleIndicatorLed
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5193  RX_LED  args=[00 00 00 0a]
+    ->           write seq=5198  STATUS  args=[00 00 00 00]
+    <-            read seq=5200  STATUS  args=[00 00 00 01]
+    <- overlapped_read seq=5201  STATUS  args=[00 00 00 01]
+
+--- rx_led1_dpi ---
+    ->           write seq=5206  STATUS  args=[00 00 00 00]
+    ->           write seq=5209  BATTERY  args=[00 00 00 00]
+    <-            read seq=5210  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5211  BATTERY  args=[00 00 00 02]
+    ->           write seq=5215  STATUS  args=[00 00 00 00]
+    ->           write seq=5218  BATTERY  args=[00 00 00 00]
+    <-            read seq=5219  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5220  BATTERY  args=[00 00 00 02]
+
+--- rx_led2_batt ---
+    DLL  CS_UsbFinder_SetDongleIndicatorLed
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5224  STATUS  args=[00 00 00 00]
+    ->           write seq=5227  BATTERY  args=[00 00 00 00]
+    <-            read seq=5228  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5229  BATTERY  args=[00 00 00 02]
+    ->           write seq=5234  RX_LED  args=[00 00 00 0a]
+    ->           write seq=5239  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5241  RX_LED  args=[00 00 00 0a]
+    <-            read seq=5243  STATUS  args=[00 00 00 01]
+
+--- rx_led3_quality ---
+    DLL  CS_UsbFinder_SetDongleIndicatorLed
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5246  STATUS  args=[00 00 00 00]
+    ->           write seq=5249  BATTERY  args=[00 00 00 00]
+    <-            read seq=5250  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5251  BATTERY  args=[00 00 00 02]
+    ->           write seq=5256  RX_LED  args=[00 00 00 0a]
+    ->           write seq=5261  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5263  RX_LED  args=[00 00 00 0a]
+    <-            read seq=5265  STATUS  args=[00 00 00 01]
+
+--- btn1_default ---
+    ->           write seq=5268  STATUS  args=[00 00 00 00]
+    ->           write seq=5271  BATTERY  args=[00 00 00 00]
+    <-            read seq=5272  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5273  BATTERY  args=[00 00 00 02]
+    ->           write seq=5277  STATUS  args=[00 00 00 00]
+    ->           write seq=5280  BATTERY  args=[00 00 00 00]
+    <-            read seq=5281  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5282  BATTERY  args=[00 00 00 02]
+    ->           write seq=5286  STATUS  args=[00 00 00 00]
+    ->           write seq=5289  BATTERY  args=[00 00 00 00]
+    <-            read seq=5290  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5291  BATTERY  args=[00 00 00 02]
+
+--- btn2_right ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5295  STATUS  args=[00 00 00 00]
+    ->           write seq=5298  BATTERY  args=[00 00 00 00]
+    <-            read seq=5299  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5300  BATTERY  args=[00 00 00 02]
+    ->           write seq=5305  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5307  STATUS  args=[00 00 00 01]
+
+--- btn3_dpiloop ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5310  STATUS  args=[00 00 00 00]
+    ->           write seq=5313  BATTERY  args=[00 00 00 00]
+    <-            read seq=5314  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5315  BATTERY  args=[00 00 00 02]
+    ->           write seq=5319  STATUS  args=[00 00 00 00]
+    ->           write seq=5322  BATTERY  args=[00 00 00 00]
+    <-            read seq=5323  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5324  BATTERY  args=[00 00 00 02]
+    ->           write seq=5329  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5331  STATUS  args=[00 00 00 01]
+    ->           write seq=5332  WRITE_SETTING off=0x0068 len=4  [02 01 00 52]
+
+--- btn4_pollswitch ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5335  STATUS  args=[00 00 00 00]
+    ->           write seq=5338  BATTERY  args=[00 00 00 00]
+    <-            read seq=5339  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5340  BATTERY  args=[00 00 00 02]
+    ->           write seq=5345  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5347  STATUS  args=[00 00 00 01]
+    ->           write seq=5348  WRITE_SETTING off=0x0070 len=4  [07 00 00 4e]
+
+--- btn5_forward ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5351  STATUS  args=[00 00 00 00]
+    ->           write seq=5354  BATTERY  args=[00 00 00 00]
+    <-            read seq=5355  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5356  BATTERY  args=[00 00 00 02]
+    ->           write seq=5361  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5363  STATUS  args=[00 00 00 01]
+    ->           write seq=5364  WRITE_SETTING off=0x006c len=4  [01 10 00 44]
+
+--- btn6_dpilock ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5368  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5370  STATUS  args=[00 00 00 01]
+    ->           write seq=5373  STATUS  args=[00 00 00 00]
+    ->           write seq=5376  BATTERY  args=[00 00 00 00]
+    ->           write seq=5377  WRITE_SETTING off=0x0074 len=4  [02 01 00 52]
+    <-            read seq=5378  STATUS  args=[00 00 00 01]
+    <-            read seq=5379  BATTERY  args=[00 00 00 02]
+    ->           write seq=5383  STATUS  args=[00 00 00 00]
+    ->           write seq=5386  BATTERY  args=[00 00 00 00]
+    <-            read seq=5387  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5388  BATTERY  args=[00 00 00 02]
+    ->           write seq=5392  STATUS  args=[00 00 00 00]
+    ->           write seq=5395  BATTERY  args=[00 00 00 00]
+    <-            read seq=5396  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5397  BATTERY  args=[00 00 00 02]
+    ->           write seq=5402  STATUS  args=[00 00 00 00]
+    ->           write seq=5404  WRITE_SETTING off=0x0074 len=4  [0a 0f 00 3c]
+
+--- btn6_disable ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5407  STATUS  args=[00 00 00 00]
+    ->           write seq=5410  BATTERY  args=[00 00 00 00]
+    <-            read seq=5411  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5412  BATTERY  args=[00 00 00 02]
+    ->           write seq=5416  STATUS  args=[00 00 00 00]
+    ->           write seq=5419  BATTERY  args=[00 00 00 00]
+    <-            read seq=5420  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5421  BATTERY  args=[00 00 00 02]
+    ->           write seq=5426  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5428  STATUS  args=[00 00 00 01]
+    ->           write seq=5429  WRITE_SETTING off=0x0074 len=4  [00 00 00 55]
+
+--- btn6_restore ---
+    DLL  CS_UsbFinder_GetDeviceOnLine
+    ->           write seq=5432  STATUS  args=[00 00 00 00]
+    ->           write seq=5435  BATTERY  args=[00 00 00 00]
+    <-            read seq=5436  BATTERY  args=[00 00 00 02]
+    <- overlapped_read seq=5437  BATTERY  args=[00 00 00 02]
+    ->           write seq=5442  STATUS  args=[00 00 00 00]
+    <- overlapped_read seq=5444  STATUS  args=[00 00 00 01]
+    ->           write seq=5447  STATUS  args=[00 00 00 00]
+    ->           write seq=5450  BATTERY  args=[00 00 00 00]
+    ->           write seq=5451  WRITE_SETTING off=0x0074 len=4  [02 01 00 52]
+    <-            read seq=5452  STATUS  args=[00 00 00 01]
+    <-            read seq=5453  BATTERY  args=[00 00 00 02]
+
+==============================================================================
+COMMAND MAP — 0x08 command bytes seen, their steps and distinct replies
+==============================================================================
+
+  HANDSHAKE (0x01)
+    written in (1): 00_open
+
+  GET_VERSION (0x02)
+    written in (1): 00_open
+
+  STATUS (0x03)
+    written in (69): 00_open, anglesnap_off, anglesnap_on, btn1_default, btn2_right, btn3_dpiloop, btn4_pollswitch, btn5_forward, btn6_disable, btn6_dpilock, btn6_restore, debounce_default, debounce_max, debounce_mid, debounce_min, dpi_active_1, dpi_active_2, dpi_active_3, dpi_count_2, dpi_count_4, dpi_s1_1000, dpi_s1_12800, dpi_s1_1600, dpi_s1_20000, dpi_s1_26000, dpi_s1_3200, dpi_s1_400, dpi_s1_6400, dpi_s1_800, dpi_s1_color_g, dpi_s1_color_r, dpi_s2_2000, dpi_s2_color_b, dpiled_breath, dpiled_bright_hi, dpiled_bright_lo, dpiled_off, dpiled_steady, lod_07, lod_1, lod_2, longrange_off, longrange_on, mode_hp, mode_lp2, motion_off, motion_on, poll_1000, poll_125, poll_2000, poll_250, poll_4000, poll_500, poll_8000, poll_back, ripple_off, ripple_on, rx_led1_batt, rx_led1_dpi, rx_led1_off, rx_led1_poll, rx_led1_quality, rx_led2_batt, rx_led3_quality, scan20k_off, scan20k_on, sleep_max, sleep_mid, sleep_min
+    reply: 08 03 00 00 00 01 01 35 71 3e 00 00 00 00 00 00 64
+
+  BATTERY (0x04)
+    written in (58): 00_open, anglesnap_off, btn1_default, btn2_right, btn3_dpiloop, btn4_pollswitch, btn5_forward, btn6_disable, btn6_dpilock, btn6_restore, debounce_default, debounce_max, debounce_mid, debounce_min, dpi_active_1, dpi_active_2, dpi_active_3, dpi_count_2, dpi_count_4, dpi_s1_1000, dpi_s1_12800, dpi_s1_1600, dpi_s1_20000, dpi_s1_26000, dpi_s1_3200, dpi_s1_400, dpi_s1_6400, dpi_s1_800, dpi_s1_color_g, dpi_s1_color_r, dpi_s2_2000, dpi_s2_color_b, dpiled_breath, dpiled_bright_lo, dpiled_off, dpiled_steady, lod_07, lod_2, longrange_off, mode_hp, motion_off, motion_on, poll_1000, poll_125, poll_250, poll_4000, poll_back, ripple_off, rx_led1_batt, rx_led1_dpi, rx_led1_off, rx_led1_quality, rx_led2_batt, rx_led3_quality, scan20k_off, scan20k_on, sleep_max, sleep_mid
+    reply: 08 04 00 00 00 02 5f 00 10 1e 00 00 00 00 00 00 ba
+    reply: 08 04 00 00 00 02 5f 00 10 23 00 00 00 00 00 00 b5
+    reply: 08 04 00 00 00 02 5f 00 10 27 00 00 00 00 00 00 b1
+
+  WRITE_SETTING (0x07)
+    written in (52): anglesnap_off, anglesnap_on, btn3_dpiloop, btn4_pollswitch, btn5_forward, btn6_disable, btn6_dpilock, btn6_restore, debounce_default, debounce_max, debounce_mid, dpi_active_2, dpi_active_3, dpi_count_2, dpi_count_4, dpi_s1_1000, dpi_s1_12800, dpi_s1_1600, dpi_s1_20000, dpi_s1_26000, dpi_s1_3200, dpi_s1_400, dpi_s1_6400, dpi_s1_800, dpi_s1_color_g, dpi_s1_color_r, dpi_s2_2000, dpi_s2_color_b, dpiled_breath, dpiled_bright_hi, dpiled_bright_lo, dpiled_steady, lod_1, lod_2, mode_hp, mode_lp2, motion_off, motion_on, poll_1000, poll_2000, poll_250, poll_4000, poll_500, poll_8000, poll_back, ripple_off, ripple_on, scan20k_off, scan20k_on, sleep_max, sleep_mid, sleep_min
+
+  READ_SETTING (0x08)
+    written in (1): 00_open
+    reply: 08 08 00 19 9f 0a ff ff ff ff ff ff ff ff ff ff 8d
+
+  GET_PROFILE (0x0e)
+    written in (1): 00_open
+
+  0x12 (0x12)
+    written in (1): 00_open
+    reply: 08 12 00 00 00 02 03 03 00 00 00 00 00 00 00 00 33
+
+  0x15 (0x15)
+    written in (1): 00_open
+    reply: 08 15 00 00 00 0a 02 ff 00 00 ff 00 00 ff 00 00 2f
+
+  LONG_RANGE (0x16)
+    written in (2): longrange_off, longrange_on
+    reply: 08 16 00 00 00 0a 00 00 00 00 00 00 00 00 00 00 2d
+    reply: 08 16 00 00 00 0a 01 00 00 00 00 00 00 00 00 00 2c
+
+  0x17 (0x17)
+    written in (1): 00_open
+    reply: 08 17 00 00 00 0a 00 00 00 00 00 00 00 00 00 00 2c
+
+  0x19 (0x19)
+    written in (1): 00_open
+    reply: 08 19 01 00 00 00 00 00 00 00 00 00 00 00 00 00 33
+
+  RX_LED (0x2c)
+    written in (6): rx_led1_batt, rx_led1_off, rx_led1_poll, rx_led1_quality, rx_led2_batt, rx_led3_quality
+    reply: 08 2c 00 00 00 0a 00 00 02 00 00 00 00 00 00 00 15
+    reply: 08 2c 00 00 00 0a 02 00 02 00 00 00 00 00 00 00 13
+    reply: 08 2c 00 00 00 0a 03 01 02 00 00 00 00 00 00 00 11
+    reply: 08 2c 00 00 00 0a 03 02 02 00 00 00 00 00 00 00 10
+
+  0x2d (0x2d)
+    written in (1): 00_open
+    reply: 08 2d 00 00 00 0a 03 00 02 00 00 00 00 00 00 00 11
+
+==============================================================================
+SETTING-WRITE MAP — every 0x07 write (offset <- bytes), by step / DLL call
+==============================================================================
+  0x0000 <- [04 51]   poll_250   CS_UsbFinder_GetDeviceOnLine
+  0x0000 <- [02 53]   poll_500   CS_UsbFinder_GetDeviceOnLine
+  0x0000 <- [01 54]   poll_1000   CS_UsbFinder_GetDeviceOnLine
+  0x0000 <- [10 45]   poll_2000   CS_UsbFinder_GetDeviceOnLine
+  0x0000 <- [20 35]   poll_4000   CS_UsbFinder_GetDeviceOnLine
+  0x0000 <- [40 15]   poll_8000   CS_UsbFinder_GetDeviceOnLine
+  0x0000 <- [01 54]   poll_back   CS_UsbFinder_GetDeviceOnLine
+  0x000a <- [01 54]   lod_1   CS_UsbFinder_GetDeviceOnLine
+  0x000a <- [02 53]   lod_2   CS_UsbFinder_GetDeviceOnLine
+  0x00b9 <- [01 54]   mode_hp   CS_UsbFinder_GetDeviceOnLine
+  0x00b9 <- [00 55]   mode_lp2   CS_UsbFinder_GetDeviceOnLine
+  0x00ab <- [01 54]   motion_on   CS_UsbFinder_GetDeviceOnLine
+  0x00ab <- [00 55]   motion_off   CS_UsbFinder_GetDeviceOnLine
+  0x00af <- [01 54]   anglesnap_on   CS_UsbFinder_GetDeviceOnLine
+  0x00af <- [00 55]   anglesnap_off   CS_UsbFinder_GetDeviceOnLine
+  0x00b1 <- [01 54]   ripple_on   CS_UsbFinder_GetDeviceOnLine
+  0x00b1 <- [00 55]   ripple_off   CS_UsbFinder_GetDeviceOnLine
+  0x0008 <- [01 54]   scan20k_on   CS_UsbFinder_GetDeviceOnLine
+  0x0008 <- [00 55]   scan20k_off   CS_UsbFinder_GetDeviceOnLine
+  0x00ad <- [01 54]   sleep_min   CS_UsbFinder_GetDeviceOnLine
+  0x00ad <- [12 43]   sleep_mid   CS_UsbFinder_GetDeviceOnLine
+  0x00ad <- [5a fb]   sleep_max   CS_UsbFinder_GetDeviceOnLine
+  0x00a9 <- [07 4e]   debounce_mid   CS_UsbFinder_GetDeviceOnLine
+  0x00a9 <- [0f 46]   debounce_max   CS_UsbFinder_GetDeviceOnLine
+  0x00a9 <- [00 55]   debounce_default   CS_UsbFinder_GetDeviceOnLine
+  0x0002 <- [02 53]   dpi_count_2   CS_UsbFinder_GetDeviceOnLine
+  0x0002 <- [04 51]   dpi_count_4   CS_UsbFinder_GetDeviceOnLine
+  0x0004 <- [01 54]   dpi_active_2   CS_UsbFinder_GetDeviceOnLine
+  0x0004 <- [02 53]   dpi_active_3   CS_UsbFinder_GetDeviceOnLine
+  0x0004 <- [00 55]   dpi_s1_400   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [13 13 00 2f]   dpi_s1_400   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [07 07 00 47]   dpi_s1_400   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [0b 0b 00 3f]   dpi_s1_800   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [0f 0f 00 37]   dpi_s1_800   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [10 10 00 35]   dpi_s1_1600   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [1f 1f 00 17]   dpi_s1_1600   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [1d 1d 00 1b]   dpi_s1_3200   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [22 22 00 11]   dpi_s1_3200   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [3f 3f 00 d7]   dpi_s1_3200   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [41 41 00 d3]   dpi_s1_6400   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [7e 7e 00 59]   dpi_s1_6400   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [82 82 00 51]   dpi_s1_12800   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [ff ff 00 57]   dpi_s1_12800   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [fe fe 00 59]   dpi_s1_20000   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [8f 8f 44 f3]   dpi_s1_20000   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [8d 8d 44 f7]   dpi_s1_26000   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [06 06 88 c1]   dpi_s1_26000   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [a5 a5 44 c7]   dpi_s1_1000   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [a8 a8 44 c1]   dpi_s1_1000   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [27 27 00 07]   dpi_s1_1000   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [29 29 00 03]   dpi_s1_1000   CS_UsbFinder_GetDeviceOnLine
+  0x000c <- [13 13 00 2f]   dpi_s1_1000   CS_UsbFinder_GetDeviceOnLine
+  0x0004 <- [01 54]   dpi_s2_2000   CS_UsbFinder_GetDeviceOnLine
+  0x0010 <- [23 23 00 0f]   dpi_s2_2000   CS_UsbFinder_GetDeviceOnLine
+  0x0010 <- [27 27 00 07]   dpi_s2_2000   CS_UsbFinder_GetDeviceOnLine
+  0x0004 <- [00 55]   dpi_s1_color_r   CS_UsbFinder_GetDeviceOnLine
+  0x002c <- [ff 00 00 56]   dpi_s1_color_r   CS_UsbFinder_GetDeviceOnLine
+  0x002c <- [00 ff 00 56]   dpi_s1_color_g   CS_UsbFinder_GetDeviceOnLine
+  0x002c <- [00 00 ff 56]   dpi_s2_color_b   CS_UsbFinder_GetDeviceOnLine
+  0x0052 <- [01 54]   dpiled_steady   CS_UsbFinder_GetDeviceOnLine
+  0x004c <- [02 53]   dpiled_breath   CS_UsbFinder_GetDeviceOnLine
+  0x004c <- [01 54]   dpiled_bright_lo   CS_UsbFinder_GetDeviceOnLine
+  0x004e <- [e6 6f]   dpiled_bright_lo   CS_UsbFinder_GetDeviceOnLine
+  0x004e <- [10 45]   dpiled_bright_lo   CS_UsbFinder_GetDeviceOnLine
+  0x004e <- [ff 56]   dpiled_bright_hi   CS_UsbFinder_GetDeviceOnLine
+  0x0068 <- [02 01 00 52]   btn3_dpiloop   CS_UsbFinder_GetDeviceOnLine
+  0x0070 <- [07 00 00 4e]   btn4_pollswitch   CS_UsbFinder_GetDeviceOnLine
+  0x006c <- [01 10 00 44]   btn5_forward   CS_UsbFinder_GetDeviceOnLine
+  0x0074 <- [02 01 00 52]   btn6_dpilock   CS_UsbFinder_GetDeviceOnLine
+  0x0074 <- [0a 0f 00 3c]   btn6_dpilock   CS_UsbFinder_GetDeviceOnLine
+  0x0074 <- [00 00 00 55]   btn6_disable   CS_UsbFinder_GetDeviceOnLine
+  0x0074 <- [02 01 00 52]   btn6_restore   CS_UsbFinder_GetDeviceOnLine
+
+==============================================================================
+REGION-A DIFF — config-block bytes that changed between consecutive steps
+==============================================================================
+
+[done]

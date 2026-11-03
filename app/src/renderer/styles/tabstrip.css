@@ -1,0 +1,105 @@
+/* ---- tab strip --------------------------------------------------
+ * Lives inline in the topbar's flexible middle (not a separate row) —
+ * flex:1/min-width:0 makes it both the scrollable tab region and, when
+ * empty, the same spacer the old `.topbar .spacer` used to be. */
+.tabstrip {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Stays part of the drag region (unlike the tabs it contains) — its empty
+     remainder is the widest strip of the topbar, and users naturally grab
+     it. Only .tabstrip-tab itself opts back out to keep click/reorder
+     working. */
+  scrollbar-width: none;
+}
+.tabstrip::-webkit-scrollbar {
+  display: none;
+}
+/* One shared underline that slides to the active tab instead of each tab's
+ * own border-bottom snapping on/off — position/width set inline in App.tsx
+ * from the active tab's measured rect. */
+.tabstrip-underline {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  pointer-events: none;
+  transition:
+    left var(--dur-med) var(--ease-out),
+    width var(--dur-med) var(--ease-out);
+}
+.tabstrip-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  border-bottom: 2px solid transparent;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-app-region: no-drag;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+.tabstrip-tab:hover {
+  color: var(--text);
+  background: var(--bg-2);
+}
+.tabstrip-tab.active {
+  color: var(--accent);
+  /* The underline itself is the shared, sliding `.tabstrip-underline`
+     element — this border stays transparent so its reserved 2px of height
+     doesn't shift layout. */
+}
+.tabstrip-tab.dragging {
+  opacity: 0.5;
+}
+.tabstrip-tab.drag-over {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+/* Dropping on the right half of a tab (or in the empty trailing region of
+   the strip, past the last tab — see TabStrip's own onDragOver/onDrop in
+   App.tsx) inserts *after* it instead of before — a right-edge marker so
+   that's visible too, not just the left-edge one above. */
+.tabstrip-tab.drag-over-after {
+  box-shadow: inset -2px 0 0 var(--accent);
+}
+.tabstrip-label {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tabstrip-close {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  color: var(--text-mut);
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.tabstrip-tab:hover .tabstrip-close,
+.tabstrip-tab.active .tabstrip-close,
+.tabstrip-tab:focus-within .tabstrip-close {
+  opacity: 1;
+}
+.tabstrip-close:hover {
+  background: var(--bg-3);
+  color: var(--text);
+}

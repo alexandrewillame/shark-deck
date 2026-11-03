@@ -1,0 +1,15 @@
+# Line endings: LF on every OS for everything the app is built, tested and
+# packaged from. A Windows checkout (CI's windows runner included) otherwise
+# writes CRLF into the working tree, and a CRLF breaks a shell script outright
+# ("/bin/bash^M: bad interpreter" in the .deb/.rpm post-install), the udev
+# rule, and any test that reads a file line by line. The repository already
+# stores these files as LF; this keeps every checkout that way too.
+#
+# Scoped to app/ and .github/ on purpose: the reverse-engineering captures
+# and legacy files elsewhere are stored as they were recorded.
+/app/** text=auto eol=lf
+/.github/** text=auto eol=lf
+
+# What a Linux shell or udev reads, wherever it is.
+*.sh text eol=lf
+*.rules text eol=lf

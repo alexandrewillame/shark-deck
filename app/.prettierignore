@@ -1,0 +1,18 @@
+# Build output and deps
+node_modules/
+out/
+release/
+../dist/
+
+# AUTO-EXTRACTED sources. Each carries a "Do not edit. Regenerate: npm run
+# extract*" header and is emitted by a script in scripts/. Formatting them
+# here would be undone by the next extract run, producing a phantom diff --
+# and dpi-tables.ts / mouse-options.ts hold multi-kilobyte single-line
+# register and option maps that are meant to stay on one line.
+src/main/devices/catalog/known-pids.ts
+src/main/devices/dpi-tables.ts
+src/shared/keyboard-options.ts
+src/shared/mouse-options.ts
+
+# Raw vendor protocol dumps (48k lines, incl. a 2.6 MB single-line bundle).
+scripts/_raw/

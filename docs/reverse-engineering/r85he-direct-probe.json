@@ -1,0 +1,48 @@
+{
+ "capturedAt": "2026-08-30",
+ "method": "direct HidD_SetFeature/GetFeature via node-hid, no vendor app",
+ "device": {
+  "vid": "0x3151",
+  "pid": "0x5029",
+  "collection": "HID\\VID_3151&PID_5029&MI_02",
+  "usagePage": "0xFFFF",
+  "usage": "0x02",
+  "interface": 2,
+  "reportLength": 65,
+  "bcdDevice": "0x0511"
+ },
+ "frameFormat": {
+  "layout": "[0]=reportId 0x00, [1]=command, [2]=checksum, [3..]=args/payload",
+  "checksum": "(0xFF - (sum of every byte except [2])) & 0xFF, written at byte 2",
+  "provenance": "verified-capture",
+  "proof": "GET_MACRO(139) idx0 with correct [2] -> real reply '00 ff ff ...'; [2] off-by-one -> no reply"
+ },
+ "getReplies": {
+  "GET_USB_VERSION_143": {
+   "reply": "00 8f 33 0c 00 00 00 00 11 05",
+   "modelId": "[2..3] LE = 0x0c33 = 3123",
+   "firmware": "[8..9] LE = 0x0511 = 1297",
+   "provenance": "verified-capture"
+  },
+  "GET_RF_VERSION_128": { "reply": null, "note": "no reply — wired board, no receiver, no battery" },
+  "GET_REPORT_131": { "reply": "00 83 7c 01", "pollRateCode": "[3] = 0x01", "provenance": "verified-capture" },
+  "GET_PROFILE_132": { "reply": "00 84 00", "activeSlot": "[3] = 0 (slot 1)", "note": "driver reads [2] today — that is the checksum byte, bug" },
+  "GET_LEDONOFF_133": { "reply": "00 85 00" },
+  "GET_DEBOUNCE_134": { "reply": "00 86 00", "debounceMs": "[3] = 0" },
+  "GET_LEDPARAM_135": { "reply": "00 87 0d 04 01 00 00 c8 c8", "fields": "[3]=effect 0x0d, [4]=brightness 0x04, [5]=speed 0x01, [8..]=colour c8 c8 .." },
+  "GET_SLEDPARAM_136": { "reply": "00 88 04 00 01 08 00 bf ff", "fields": "[3]=effect, [5]=brightness, [6]=speed, [8..]=colour bf ff .." },
+  "GET_KBOPTION_137": { "reply": "00 89 00 00 01" },
+  "GET_SLEEPTIME_145": { "reply": "00 91 00 00 00 00 00 00 00 3c 00 3c 00 90 06 90 06", "pairsFromByte9_LE": [60, 60, 1680, 1680] },
+  "GET_MACRO_139_idx0": { "reply": "00 ff ff ff ... (0xFF fill)", "note": "empty macro slot" },
+  "GET_KEYMATRIX_138": { "reply": null, "note": "no reply to a bare query — needs a layer/page arg" }
+ },
+ "notResolvedHere": [
+  "SET_* frame layouts + read-back",
+  "GET_KEYMATRIX / GET_FN argument + reply layout",
+  "live MULTI_MAGNETISM page reads (endpoint wedged during rapid probing)",
+  "SET_PROFILE persistence",
+  "SET_MACRO / SET_USERPIC chunking",
+  "SET_MAGNETISM_REPORT stream format"
+ ],
+ "endpointLockup": "Dozens of back-to-back HidD_SetFeature calls -> error 0x79 semaphore timeout on MI_02; keyboard keeps typing; needs a USB replug to clear. Pace writes."
+}

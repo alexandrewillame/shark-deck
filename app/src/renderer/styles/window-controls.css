@@ -1,0 +1,94 @@
+/* ---- custom titlebar window controls -----------------------------
+ * Rounded like every other topbar button (.topbar-btn, .brand-group) —
+ * previously these were full-height 46px rectangles, the one squared-off
+ * highlight among rounded ones.
+ *
+ * The rounded pill is a ::before, NOT the button's own box. The button has to
+ * reach the window's physical top and right edges or the corner pixel belongs
+ * to `.topbar`'s drag region and Close cannot be thrown at — you have to aim
+ * for it. Three insets used to stack up there: the topbar's own
+ * `padding: 8px 12px`, `.winctl`'s `padding-right: 6px`, and a 32px button
+ * centred in a 48px bar. The negative margins below cancel the first, and the
+ * pill's `inset` puts the visible highlight back exactly where it was.
+ */
+.winctl {
+  display: flex;
+  align-self: stretch;
+  gap: 0;
+  /* Cancel .topbar's padding (8px 12px 8px 16px) on the three edges this group
+     touches, so its hit area runs to the window frame itself. */
+  margin: -8px -12px -8px 0;
+  -webkit-app-region: no-drag;
+}
+/* Widths chosen so the three hit boxes TILE the exact region the pills used
+   to sit in (136px from the window's right edge) with nothing dead between
+   them: 40 + 40 + 56, minus the 12px negative margin, is the same 124px outer
+   box the group had before. */
+.winctl-btn {
+  width: 40px;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 0;
+  position: relative;
+  color: var(--text-dim);
+  transition: color 0.12s;
+}
+/* The last button also owns the 12px the topbar used to reserve on its right,
+   so the rightmost pixel column is Close. */
+.winctl-close {
+  width: 56px;
+}
+/*
+ * The highlight is a softly-rounded pill filling the button's width, inset
+ * from the bar's top and bottom edges — the same shape the topbar's icon
+ * buttons use, so the two groups differ only in how bright the wash is.
+ *
+ * Close reaching the window's own corner is the point: `.winctl`'s negative
+ * right margin cancels the topbar padding, so this 56px cell ends at the
+ * window edge, the way a title bar's close button is expected to.
+ */
+.winctl-btn::before {
+  content: '';
+  position: absolute;
+  /* A small inset so the rounded highlight is a shape sitting in the bar
+     rather than a block wedged against its edges — and Close is included in
+     that. It used to square off its two right-hand corners to meet the window
+     frame, which made it the only button in the bar with two corner shapes.
+     The BUTTON still runs edge to edge either way, so Close stays throwable
+     at the corner; only the pill inside it is rounded. */
+  inset: 4px 0;
+  border-radius: 7px;
+  transition: background 0.12s;
+}
+/* Centred in the cell now that the cell IS the highlight — the old `right`
+   offsets existed to centre each glyph on its narrower pill instead. */
+.winctl-btn > svg {
+  position: relative;
+}
+.winctl-btn:hover {
+  color: var(--text);
+}
+/*
+ * Deliberately FAINTER than the icon buttons to the left, which is the
+ * relationship that was wrong before: minimise/maximise are window chrome, and
+ * washing them brighter than the app's own controls made the chrome the
+ * loudest thing in the bar.
+ *
+ * Both groups now derive from the same `--bg-3` surface so they are visibly
+ * the same kind of highlight, and the icon buttons lift theirs toward
+ * `--text` (see layout.css) while these stay at the plain surface. That is a
+ * full surface step apart — the same step the app uses everywhere between
+ * `--bg-2` and `--bg-3` — and it inverts correctly in light mode, where
+ * mixing in `--text` darkens instead of brightening.
+ */
+.winctl-btn:hover::before {
+  background: var(--bg-3);
+}
+.winctl-close:hover {
+  color: #fff;
+}
+.winctl-close:hover::before {
+  background: var(--red);
+}

@@ -1,0 +1,19 @@
+# SharkDeck — grants the active local console user access to Attack Shark /
+# Compx HID vendor collections, without which node-hid's Linux backend
+# (hidraw) can only open /dev/hidraw* as root.
+#
+# `TAG+="uaccess"` (systemd-logind's ACL mechanism) rather than `MODE="0666"`:
+# it grants access to whoever is logged in at the physical seat, not to every
+# local user on a shared/multi-user machine.
+#
+# `ATTRS{idVendor}` (not `ATTR{idVendor}`) matches the USB device's vendor id
+# on any ancestor of the hidraw node — the hidraw device itself carries no
+# idVendor attribute, only its USB parent does.
+#
+# Installed automatically by the .deb/.rpm packages (see
+# scripts/linux/after-install.sh); AppImage users run
+# scripts/linux/install-udev-rules.sh once. Keep the VID list in sync with
+# main/devices/registry.ts's knownVendorIds() —
+# app/src/main/hid/udev-rules.test.ts fails the build if it drifts.
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3554", TAG+="uaccess"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3151", TAG+="uaccess"

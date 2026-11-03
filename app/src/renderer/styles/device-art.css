@@ -1,0 +1,787 @@
+/* the one travelling device image -------------------------------
+ * See components/ArtAnchor.tsx / PersistentDeviceArt.tsx. One fixed element,
+ * rendered once under `.content`, that glides between a Home card's art slot
+ * and a device page's <ArtAnchor>. Unlike a home-grid card it has no frame —
+ * no border, no background box — it just sits on the pane.
+ *
+ * No `overflow: hidden` by default: the inner <img> is `object-fit:
+ * contain`, which cannot spill, and clipping here only ever *hid* a wrong
+ * rect instead of making it visible. If the image ever looks cropped
+ * without `.is-fitted` (below), the anchor rect is wrong — fix that, don't
+ * mask it. `.is-fitted` (`mode: 'keyboard'`, see PersistentDeviceArt.tsx) is
+ * the deliberate exception: the image there is intentionally oversized and
+ * absolutely positioned so the *photo's own non-transparent content*, not
+ * its full canvas, lines up with the target — overflow past the target box
+ * is then expected, not a sign of a wrong rect. */
+.device-art-persistent.is-fitted {
+  overflow: hidden;
+}
+.device-art-persistent {
+  position: fixed;
+  /* Click-through by default, and that is the safe state.
+     This is a fixed overlay sitting on top of whatever pane is showing. On
+     the Keys / Actuation / per-key Lighting panes it is anchored onto the
+     interactive keyboard itself and merely faded out (opacity 0, still laid
+     out), so taking pointer events here made an invisible rectangle swallow
+     every click and hover on the key map. Only `.is-draggable` opts in — see
+     PersistentDeviceArt, which sets it exclusively for the modes where the
+     photo really is the thing on top. */
+  pointer-events: none;
+  z-index: 5;
+  /* --dur-art, not --dur-slow: this is the one flight-of-the-image
+     animation in the app (home card <-> device page, and between tabs of one
+     device) and reads better noticeably slower than every other UI motion.
+     `.is-hidden` below (only `mode: 'keyboard'`) overrides opacity's own
+     delay/duration/timing-function — see it for why.
+     Opacity itself stays on --dur-med, not --dur-art, here in the BASE rule —
+     this is what's live the instant `.is-hidden` gets removed (leaving a
+     keyboard pane): the photo starts that departure at opacity 0, and tying
+     its fade-*in* to the full --dur-art flight left it barely visible for
+     most of the move over to the next tab — read as the move itself skipping
+     its start, unlike every other flight (never starts below opacity 1, so
+     this duration never mattered for those). Fading back in over a much
+     shorter span means it's fully visible again well before the position
+     transition (still the full --dur-art, unaffected) finishes settling. */
+  transition:
+    top var(--dur-art) var(--ease-spring),
+    left var(--dur-art) var(--ease-spring),
+    width var(--dur-art) var(--ease-spring),
+    height var(--dur-art) var(--ease-spring),
+    opacity var(--dur-med) var(--ease-out),
+    /* The rubber-band offset (useRubberBandDrag). Spring-eased and much
+       shorter than the flight: this is a snap back to rest, not a journey.
+       Listed here rather than in a later override because `.is-hidden` below
+       carries positional value LISTS that have to stay the same length as
+       this one. */
+    transform var(--dur-med) var(--ease-spring);
+  opacity: 1;
+}
+.device-art-persistent.no-transition {
+  transition: none;
+}
+/* Only `mode: 'keyboard'` ever gets this class now (see PersistentDeviceArt's
+ * doc comment) — a genuinely different surface underneath (the interactive
+ * key map), so unlike the Buttons tab's identical-photo handoff, this one
+ * actually has to fade. Overriding just the delay/duration/timing-function
+ * longhands (not the `transition` shorthand — that would also clobber
+ * top/left/width/height's own transition, which must keep running) confines
+ * the fade to roughly the back half of the flight instead of the whole
+ * thing: starting it at the same time as the move, over the same duration,
+ * let it visibly vanish well before the keyboard had actually arrived (the
+ * first attempt at this fix); waiting until the move was almost done left it
+ * fully opaque for noticeably longer than it should (the second). Finishing
+ * *before* --dur-art (not after) means the fade is done by the time the
+ * board settles, rather than lingering visible past it. */
+.device-art-persistent.is-hidden {
+  opacity: 0;
+  transition-duration:
+    var(--dur-art), var(--dur-art), var(--dur-art), var(--dur-art), 0.3s, var(--dur-med);
+  transition-delay: 0s, 0s, 0s, 0s, 0.2s, 0s;
+  transition-timing-function:
+    var(--ease-spring), var(--ease-spring), var(--ease-spring), var(--ease-spring), ease-in-out,
+    var(--ease-spring);
+}
+/* Not on Home or its own device tab (Settings, Auto-Switch, another device) —
+   there's no anchor there to position it, so it must not paint at all rather
+   than freeze at its last box over an unrelated screen. State is kept; it
+   resumes when its surface comes back. */
+.device-art-persistent.is-gone {
+  display: none;
+}
+/* No `.is-draggable` rule any more, and deliberately none: the rubber-band
+   gesture listens on `window` (see useRubberBandDrag), so this overlay is
+   `pointer-events: none` in EVERY state and can never sit on top of the card
+   or the key map it is anchored over. deviceArtOverlay.test.ts pins that. */
+/* While being tugged, the box transition must not fight the pointer: the
+   photo should track the cursor, not ease toward it a beat behind. On
+   release the class drops and the spring back rides the normal transition. */
+/* While being tugged the offset must track the pointer rather than ease
+   behind it; on release the class drops and the shorthand above springs it
+   back. Only the transform's own duration is zeroed — clobbering the
+   shorthand would stop a flight mid-move if one were still settling. */
+.device-art-persistent.is-dragging {
+  transition-duration:
+    var(--dur-art), var(--dur-art), var(--dur-art), var(--dur-art), var(--dur-med), 0s;
+}
+
+.device-art-persistent svg,
+.device-art-persistent img {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+/* Placeholder box a "hero" tab (Profile, Buttons, Macros, Device, and
+ * Lighting's non-keyboard panes) reserves in its own layout for the art —
+ * always empty itself (no children, in either 'hero' or 'interactive' mode);
+ * PersistentDeviceArt is what actually paints there, including the Buttons
+ * tab's numbered badges (`.mbp-badge`, drawn *by* that component directly on
+ * the one travelling photo — see its doc comment for why, not here). */
+.art-hero-anchor {
+  width: 100%;
+  /* No fixed cap any more: the column that holds this is itself fluid
+     (`--hero-art-w` below), and a hard `max-width` here would have kept the
+     photo at full size while the menu beside it was squeezed. */
+  max-width: 100%;
+  /* `--hero-art-h`, not a literal — set per-variant below (`.pane.hero-side`,
+     `.pane.hero-side.is-keyboard`, `.hero-art-col.has-detail`) so this one
+     rule and `.hero-art-col`'s sticky `top` (which needs exactly half the
+     same value to centre the box, not just its top edge) always agree — CSS
+     has no way to reference one rule's computed value from another, so
+     without the variable the two had to be kept in sync by hand. */
+  height: var(--hero-art-h);
+  margin-bottom: 18px;
+}
+
+/* A hero tab (Profile, Buttons, Macros, Device, and the mouse-only Lighting
+ * sub-panes) puts its hero photo in a fixed left column instead of stacking
+ * it above the content — see HeroPane in tabs/common.tsx. `--hero-art-h` is
+ * the one number that varies per photo shape: a mouse photo is tall enough
+ * to want most of the scrollport's height, a keyboard photo is wide (~3:1)
+ * and would just letterbox into a short strip with dead space below it if
+ * given the same budget, so `.is-keyboard` caps it much shorter instead. */
+.pane.hero-side {
+  /* The art column is a *share* of the pane, not a fixed slab. With a fixed
+     340px track, narrowing the window (or opening the tab rail) took every
+     lost pixel out of the settings column while the photo kept its full size,
+     until controls that sit side by side — a select next to its ms field next
+     to its buttons — were touching or wrapping into each other. Now the photo
+     is the thing that gives way: it shrinks with the pane down to a floor
+     where it still reads as the device, and the menu keeps its width for as
+     long as possible. `cqw` resolves against `.tabpane-in`, which is the real
+     scrollport (see its `container-type: size`), so this tracks the pane
+     rather than the window — collapsing the tab rail widens the photo again. */
+  --hero-art-w: clamp(150px, 30cqw, 340px);
+  /* Also bounded by the width, so a short-but-wide pane doesn't hand the photo
+     a tall box it can only letterbox inside (the image is object-fit:
+     contain). */
+  --hero-art-h: min(62cqh, 480px, calc(var(--hero-art-w) * 1.45));
+  display: grid;
+  grid-template-columns: var(--hero-art-w) minmax(0, 1fr);
+  column-gap: 24px;
+  align-items: start;
+}
+.pane.hero-side.is-keyboard {
+  --hero-art-w: clamp(170px, 34cqw, 380px);
+  --hero-art-h: min(28cqh, 200px, calc(var(--hero-art-w) * 0.55));
+}
+.pane.hero-side > h2,
+.pane.hero-side > .sub,
+.pane.hero-side > .pane-head {
+  grid-column: 1 / -1;
+}
+.hero-art-col {
+  grid-column: 1;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  /* Tracks the middle of the *visible* scrollport (`.tabpane-in` for a
+     device tab — see `.pane`'s own comment above for why it's that ancestor
+     and not `.pane` itself) as the taller settings column beside it
+     scrolls, instead of pinning to the top edge and scrolling out of view
+     the moment the page scrolls past where it started.
+     A first attempt used `top: 50%; transform: translateY(-50%)` — the usual
+     sticky-centred-sidebar trick — but a percentage `top` on a sticky element
+     resolves against its *containing block* (here, the grid row this column
+     shares with its much-taller sibling), not the scrollport itself. On a
+     long settings page that containing block can be many times taller than
+     the actual visible area, so `50%` of it computed to an offset far
+     bigger than the scrollport's own height — the photo effectively never
+     reached the middle of what's on screen at all.
+     A second attempt gave this column `height: 100cqh` (`.tabpane-in`, the
+     actual scrollport, is marked `container-type: size`, so `cqh` resolves
+     against *its* real height) and centred the photo inside that box with
+     `align-items: center` — correct for a long tab, but on a *short* one
+     (Buttons, Device, …) it forced this column, and so the whole grid row,
+     to be at least as tall as the full scrollport, leaving a slab of empty
+     space below short content that used to end right after it.
+     Offsetting `top` by a length instead avoids both problems:
+     `calc(50cqh - var(--hero-art-h) / 2)` is exactly the offset that puts
+     the art box's centre, not its top edge, at the scrollport's centre, with
+     no explicit height on this column at all, so a short tab's row stays
+     exactly as tall as its content and gains no dead space. */
+  position: sticky;
+  top: calc(50cqh - var(--hero-art-h) / 2);
+  align-self: start;
+}
+.hero-art-col .art-hero-anchor {
+  margin-bottom: 0;
+}
+/* When a close-up detail shot (receiver / DPI LED / side-light) sits beside
+ * the main photo, both shrink to a matched thumbnail size instead of the
+ * detail shot competing with the hero photo's own (larger) box. */
+.hero-art-col.has-detail {
+  --hero-art-h: 160px;
+}
+.hero-art-col.has-detail .art-hero-anchor {
+  /* `0 1` rather than `0 0`: two 160px thumbnails plus their gap no longer fit
+     once the column is fluid, and they should shrink together rather than
+     overflow the column. */
+  flex: 0 1 160px;
+  width: 160px;
+  min-width: 84px;
+  max-width: 160px;
+}
+.led-detail-art {
+  flex: 0 1 160px;
+  width: 160px;
+  min-width: 84px;
+  height: 160px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+}
+.hero-side-content {
+  grid-column: 2;
+  min-width: 0;
+}
+/* Below the point where even a floor-width art column would leave the menu
+   too narrow, stack instead. A container query, not a viewport one: the pane
+   is what the layout actually depends on, and it changes width with the tab
+   rail as well as with the window — a `max-width: 900px` media query treated
+   a 950px window with the rail expanded (a genuinely cramped pane) as roomy. */
+@container (max-width: 640px) {
+  .pane.hero-side {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hero-art-col,
+  .hero-side-content {
+    grid-column: 1;
+  }
+  /* Stacked, this column is its own grid row, so sticky has no travel room
+     inside it and only pins the fixed travelling photo (PersistentDeviceArt
+     chases this box) to a spot the content then scrolls underneath. */
+  .hero-art-col {
+    position: static;
+    justify-content: center;
+  }
+  .pane.hero-side {
+    --hero-art-w: 100%;
+    --hero-art-h: min(34cqh, 260px);
+  }
+  .pane.hero-side.is-keyboard {
+    --hero-art-h: min(22cqh, 150px);
+  }
+  .art-hero-anchor {
+    max-width: 320px;
+  }
+}
+/* The macro pane queries this box's width rather than `.tabpane-in`'s, since
+   the art column beside it takes a share the pane query can't see. */
+.hero-side-content {
+  container-type: inline-size;
+  container-name: heroside;
+}
+/* Wraps an actual <KeyboardMap> (Keys / Actuation / per-key Lighting) so the
+ * anchor's rect exactly matches the interactive surface it hands off to. */
+.art-keyboard-anchor {
+  /* Was inline-block, which shrink-wrapped the board and left it flush-left
+   * in the pane instead of centred/full-width — the travelling device photo
+   * (PersistentDeviceArt) already hides itself in keyboard mode, so a wider
+   * anchor rect has no visual side effect on it. */
+  display: block;
+  width: 100%;
+  /* The board sits directly above the first panel, which carries no top
+     margin of its own — so the two were flush and the keys touched the panel
+     border. Half of `.panel`'s own 14px gap, since the board reads as that
+     panel's subject rather than as a peer of it. */
+  margin-bottom: 8px;
+}
+
+/* Actuation tab's per-key stage: the switch illustration
+ * (SwitchCrossSection) plus one vertical slider per depth setting
+ * (SwitchTravelStage) — see tabs/keyboard/switchGeometry.ts for the shared
+ * mm-to-px mapping both sides are drawn from. `.switch-stage`'s own height
+ * is set inline by the component (it must match the SVG's own rendered
+ * height exactly), so nothing here fixes a height that could drift out of
+ * sync with it. */
+.switch-stage {
+  display: flex;
+  gap: 10px;
+}
+/* Neither side may flex-shrink — an SVG with explicit width/height attrs (as
+ * this one has, so its internal mm-to-px math renders 1:1) has no intrinsic
+ * `min-width`, so plain flexbox would happily squash it narrower than its
+ * viewBox on a tight window, distorting the travel axis non-uniformly
+ * (height untouched, width compressed) and throwing every slider out of
+ * alignment with it. The outer per-key panel row (MagneticSection) already
+ * wraps the settings column below this whole stage when the pane is too
+ * narrow — that's the intended overflow behaviour, not squishing here. */
+.switch-stage > svg {
+  flex-shrink: 0;
+}
+.switch-stage-cols {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-shrink: 0;
+  gap: 16px;
+}
+/* 60px + the label's 14px bleed either side gives an ~88px header box, which
+ * wraps "Bottom dead zone" to two lines inside HEADER_H (34px at line-height
+ * 1.2). The columns used to be 48px because the headers were abbreviated to
+ * "Top DZ"/"Bottom DZ" — three names for one setting across this one screen. */
+.switch-stage-col {
+  position: relative;
+  width: 60px;
+}
+.switch-stage-col-label {
+  position: absolute;
+  left: -14px;
+  right: -14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  /* Clear of the track below it. */
+  padding-bottom: 5px;
+  gap: 2px;
+  font-size: var(--fs-2xs);
+  line-height: 1.2;
+  color: var(--text-dim);
+  text-align: center;
+}
+.switch-stage-col-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+}
+/* `height` is COL_VALUE_H in switchGeometry.ts, which lays the box out (above
+   the track for the bottom dead zone) — pinned so the two cannot drift. */
+.switch-stage-col-value {
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* The vertical range input itself — oriented with `writing-mode` +
+ * `direction` (set inline by VerticalSlider, since which edge is "min"
+ * differs per column), not the long-dropped `-webkit-appearance:
+ * slider-vertical`. Selector is deliberately more specific than the plain
+ * `input[type='range']` rule above so it wins regardless of source order. */
+.switch-stage-col-track input.vslider {
+  width: 4px;
+  border-radius: 4px;
+  background: var(--bg-3);
+  margin: 0;
+}
+/* NOTE: width/height here must stay equal to THUMB_PX in
+ * tabs/keyboard/switchGeometry.ts — TravelSliderColumn subtracts exactly this
+ * to cancel Chromium's thumb inset, and a mismatch puts every handle back off
+ * the marker line it controls. */
+.switch-stage-col-track input.vslider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  cursor: pointer;
+}
+/* The two dead-zone tracks. A dead zone is a REGION of the stroke that does
+ * not count, so the track is drawn as a barred-out bar the width of a keycap
+ * edge rather than a hairline with a number under it — the same 45° hatch
+ * SwitchCrossSection paints across the axis, so the band on the switch and the
+ * control that sets it read as one object. The thumb becomes the bar's movable
+ * EDGE for the same reason: there is no single "value" position to point at,
+ * only a boundary. */
+.switch-stage-col-track.dz input.vslider {
+  width: 16px;
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(45deg, var(--text-mut) 0 2px, transparent 2px 6px),
+    color-mix(in srgb, var(--text-mut) 14%, transparent);
+}
+/* Still 14px along the travel axis — that is THUMB_PX, and switchGeometry's
+ * `sliderTrack` cancels exactly that much of Chromium's thumb inset. The 4px
+ * bar the user sees is painted inside the box with a gradient rather than by
+ * shrinking it, so the visual edge stays on the row it controls. */
+.switch-stage-col-track.dz input.vslider::-webkit-slider-thumb {
+  width: 24px;
+  height: 14px;
+  border-radius: 0;
+  box-shadow: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0 5px,
+    var(--text-dim) 5px 9px,
+    transparent 9px 14px
+  );
+}
+
+/* A setting the current multi-key selection does not agree on. No number is
+ * printed (the anchor key's would be a lie the user then applies to the rest)
+ * and the handle goes faint — but both stay live, so setting one value still
+ * sets it for the whole selection. */
+.switch-stage-col-track.is-mixed input.vslider::-webkit-slider-thumb {
+  opacity: 0.35;
+  box-shadow: none;
+}
+.switch-stage-col-value .is-mixed {
+  color: var(--text-mut);
+}
+
+/* "All keys" popover on the Actuation tab's per-key toolbar — whole-board
+ * actuation + Hall calibration, which used to be a full-width panel above the
+ * keyboard. Portaled to document.body at position:fixed (see
+ * usePortalPosition.ts), so it can't be clipped by the pane's scrollport;
+ * shares .lang-menu-list's chrome and its menuIn animation. */
+.allkeys-menu {
+  display: inline-flex;
+}
+.allkeys-panel {
+  position: fixed;
+  z-index: 200;
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  overflow-y: auto;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 16px 40px -16px rgba(0, 0, 0, 0.5);
+  animation: menuIn var(--dur-fast) var(--ease-out);
+}
+.allkeys-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--fs-md);
+}
+.allkeys-section .hint {
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+  margin: 0;
+}
+.allkeys-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  margin-top: 2px;
+}
+/**
+ * The slider takes the room; the button beside it takes what it needs.
+ *
+ * This used to name `.slider` and a direct-child `input[type='range']`, and
+ * `Slider` renders neither: its wrapper is a plain flex div and the range is a
+ * grandchild. So nothing matched, the row laid out at its natural width — a
+ * 180px track, a 64px readout and a button, ~370px — inside a 300px panel, and
+ * the whole menu grew a horizontal scrollbar.
+ */
+.allkeys-controls > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.allkeys-controls input[type='range'] {
+  /* Beats the global `input[type='range'] { width: 180px }` on specificity. */
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 40px;
+}
+/* 64px is sized for "100%"; nothing in here is a percentage. */
+.allkeys-controls .slider-value {
+  min-width: 50px;
+}
+.allkeys-sep {
+  height: 1px;
+  background: var(--line);
+  margin: 14px 0;
+}
+
+/* toasts
+ *
+ * The whole stack is click-through — `pointer-events: none` on the container,
+ * never re-enabled on the toasts themselves. It sits bottom-right, which is
+ * exactly where the keyboard tabs put their controls, and a live toast used to
+ * swallow every click that landed on one. Nothing on a toast is interactive
+ * any more (click-to-dismiss went with it, which costs nothing: `toast()` in
+ * state/store.ts drops each one after 6 s, and no toast is sticky).
+ *
+ * Click-through fixes the clicks but not the *view*, so Toasts.tsx tracks the
+ * cursor and sets `--toast-prox` per toast — 1 when the pointer is a fade
+ * radius away or more, 0 when it is over the toast. The opacity below fades a
+ * toast out of the pointer's way so the menu underneath stays readable.
+ *
+ * The entry animation also animates `opacity`, and an animation outranks a
+ * normal declaration while it runs — so the proximity fade only takes effect
+ * once `toastIn` finishes. It has no `forwards`, so control returns here on
+ * its own. `toast-out` DOES use `forwards` and deliberately keeps opacity 0.
+ * The global prefers-reduced-motion rule near the end of this file already
+ * collapses the transition below to ~0 ms, which is the right outcome: the
+ * fade still happens, just without the ramp.
+ */
+/* Above dialogs (the modal scrim is 200) and menus, below tooltips (400) —
+   portalled to <body>, so this z-index is compared with theirs at last. */
+.toasts {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 300;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  padding: 10px 14px 10px 11px;
+  border-radius: 8px;
+  font-size: var(--fs-sm);
+  max-width: 320px;
+  box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.55);
+  opacity: calc(0.12 + 0.88 * var(--toast-prox, 1));
+  transition: opacity 120ms linear;
+}
+.toast-icon {
+  display: inline-flex;
+  flex: none;
+  margin-top: 1px;
+  color: var(--green);
+}
+.toast.warn {
+  border-left-color: var(--amber);
+}
+.toast.warn .toast-icon {
+  color: var(--amber);
+}
+.toast.err {
+  border-left-color: var(--red);
+}
+.toast.err .toast-icon {
+  color: var(--red);
+}
+.toast-in {
+  animation: toastIn var(--dur-med) var(--ease-spring);
+}
+.toast-out {
+  animation: toastOut var(--dur-fast) var(--ease-out) forwards;
+  pointer-events: none;
+}
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    max-height: 80px;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(16px) scale(0.96);
+  }
+}
+
+.empty {
+  color: var(--text-mut);
+  font-size: var(--fs-md);
+  padding: 40px;
+  text-align: center;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+/* The info dot is pulled OUT of the header's flow.
+ *
+ * InfoLabel lays out as `label · icon` in one inline-flex, and the header box
+ * centres that whole pair — so the title sat about half an icon's width left
+ * of the slider it names ("Actuation" visibly off-centre over the actuation
+ * track), and the icon leaned into the neighbouring column. Absolute means the
+ * text alone is what gets centred, and the icon is pinned inside this column's
+ * own 60px rather than the header's ±14px bleed. */
+.switch-stage-col-label > span {
+  margin-top: auto;
+}
+.switch-stage-col-label .tt-wrap {
+  line-height: 0;
+}
+
+/* ---- switch cross-section: hover-linked callouts ------------------
+ * Near the top of the stroke, Actuate / RT press / RT release / Now can land
+ * within a couple of pixels of each other. Their labels are dodged apart and
+ * their lines staggered, but at that scale "which row is which" still is not
+ * answerable from a still image. Pointing at any part of a callout raises that
+ * one and dims the others, which is what a dense annotated diagram does.
+ *
+ * `opacity` here is a CSS declaration and the faint state is an attribute on
+ * the <g>, so these win without needing !important. */
+.switch-cross .switch-marker {
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.switch-cross .switch-marker.is-faint {
+  opacity: 0.5;
+}
+.switch-cross:has(.switch-marker:hover) .switch-marker {
+  opacity: 0.18;
+}
+.switch-cross:has(.switch-marker:hover) .switch-marker:hover {
+  opacity: 1;
+}
+/* The label is the easiest part to aim at, so give the whole group a target
+   rather than relying on hitting a 1.5px line. */
+.switch-cross .switch-marker text {
+  cursor: default;
+}
+
+/* The All-keys popover is a menu, not a document.
+ *
+ * Every section carried two or three sentences of prose under its heading,
+ * which pushed the later sections past the bottom of a 340px box — so on a
+ * short window there appeared to be nothing below RT stabilisation when in
+ * fact there were two more sections. The explanations live in the headings'
+ * own tooltips now, and the box is sized so its sections fit. */
+.allkeys-panel {
+  width: 300px;
+  max-height: min(70vh, 520px);
+  /* Nothing in here may scroll sideways: every row is built to fit this width,
+     so a horizontal bar means a layout bug, not content worth reaching. */
+  overflow-x: hidden;
+  /* `scroll`, not `auto`: the track is then always there, so a panel with more
+     below it looks different from one without — a thumb filling the track means
+     you are seeing everything. With `auto` and the app's near-invisible default
+     bar, the sections past the fold simply did not appear to exist. */
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+.allkeys-panel::-webkit-scrollbar {
+  width: 12px;
+}
+.allkeys-panel::-webkit-scrollbar-track {
+  background: var(--bg-1);
+  border-radius: 6px;
+  margin: 4px 0;
+}
+.allkeys-panel::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border: 3px solid var(--bg-2);
+  border-radius: 6px;
+}
+.allkeys-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--text-mut);
+}
+.allkeys-section {
+  padding-block: 2px;
+}
+.allkeys-section .row {
+  padding-block: 4px;
+}
+/* A control in here gets the width it needs and no more, so a long label does
+   not get squeezed into a three-line column beside it. */
+.allkeys-section .row > .label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Each callout gets real hit areas instead of a 1.5px line to aim at — see
+ * `.switch-marker-hit` in SwitchCrossSection. A transparent FILL still takes
+ * pointer events in SVG (`fill: none` does not), which is what makes this work
+ * without disabling events anywhere else: the markers are the last thing drawn,
+ * so they are already on top. */
+.switch-cross .switch-marker-hit {
+  fill: transparent;
+}
+
+/* A one-line section: name on the left, its single control on the right.
+ *
+ * Calibrate and Restore each had their name on one line and a wide button on
+ * the next, so two actions took four lines of a menu that has to fit in a
+ * popover. The actuation row keeps its two lines — a slider needs the width —
+ * but its name is short enough now not to take a third. */
+.allkeys-section.allkeys-inline {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.allkeys-section.allkeys-inline .allkeys-controls {
+  flex: none;
+}
+.allkeys-section.allkeys-inline .btn {
+  min-height: var(--ctl-h-sm);
+  padding: 0 12px;
+}
+/* The slider takes the room; the button beside it takes what it needs. */
+.allkeys-section .allkeys-controls > .btn {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* "Reading from device…" is an overlay, not a row.
+ *
+ * It appeared between the board and the toolbar for the seconds a multi-page
+ * sweep takes, pushing every control below it down and then back up. A panel
+ * that rearranges itself while you are reaching for a button is worse than one
+ * that says nothing. */
+.panel-board-first {
+  position: relative;
+}
+.panel-loading {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-xs);
+  color: var(--text-mut);
+  pointer-events: none;
+}
+
+/* A value the selection holds that is not the one the handle is parked at.
+ *
+ * With several keys selected the number is blanked, but the handle still had to
+ * sit somewhere — and a handle at the first key's depth beside a blank number
+ * reads as "they are all set to this". One marker per distinct value says what
+ * the selection actually contains. */
+.switch-stage-ghost {
+  position: absolute;
+  left: 50%;
+  width: 16px;
+  height: 2px;
+  margin-left: -8px;
+  border-radius: 1px;
+  background: var(--accent);
+  opacity: 0.75;
+  pointer-events: none;
+}
+/* With ghosts on the track the real handle is not a value, only a target. */
+.switch-stage-col-track.is-mixed input.vslider::-webkit-slider-thumb {
+  opacity: 0.18;
+}

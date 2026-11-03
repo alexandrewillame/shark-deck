@@ -1,0 +1,120 @@
+/* ---- tooltip ---------------------------------------------------- */
+.tt-wrap {
+  display: inline-flex;
+}
+/* Rendered in a document.body portal at `position: fixed`, with `left`/`top`
+ * computed and clamped to the viewport in JS (see components/common.tsx) —
+ * so it can overflow its anchor's card/pane and still never clip against the
+ * window edge. */
+.tt {
+  position: fixed;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--text-dim);
+  width: max-content;
+  /* `pre-line` so a tooltip whose text is a list — one line per choice, e.g.
+     the Actuation tab's Mode row explaining all six modes at once — keeps its
+     line breaks, while ordinary prose still wraps normally at max-width. */
+  white-space: pre-line;
+  max-width: 280px;
+  z-index: 400;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(2px);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+.tt-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* A tooltip carrying an illustration (see Tooltip's `media` prop) gets a
+ * little more room than a plain text bubble. */
+.tt-media {
+  max-width: 300px;
+}
+.tt-media-box {
+  display: block;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-2);
+}
+/* A preview whose own outline is the content (see Tooltip's `mediaBare`).
+   The rounding and the clip above are for illustrations that fill their box;
+   on a keyboard layout they lopped the four corner keys off the very thing
+   being previewed. */
+.tt-media-box.is-bare {
+  border-radius: 0;
+  overflow: visible;
+  background: none;
+}
+/* ...and it needs room. The 280/300px caps are sized for prose and a small
+   illustration; a 79-key board at `u = 14` is wider than that, and the excess
+   went into `.kbmap`'s `overflow-x: auto` — a scroll area inside a bubble
+   that is `pointer-events: none`, so simply invisible. */
+.tt.tt-media-bare {
+  max-width: min(560px, 92vw);
+}
+
+/* A value that reads as plain text/mono but is actually a button opening a
+ * small floating numeric editor — see EditableNumber. No button chrome at
+ * rest; a dashed underline hints it's clickable, same idiom as the pencil in
+ * InlineRename but for "click the number itself". */
+.editable-number-trigger {
+  font: inherit;
+  color: inherit;
+  padding: 0 1px;
+  border-radius: 3px;
+  border-bottom: 1px dashed var(--text-mut);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.editable-number-trigger:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.editable-number-popover {
+  position: fixed;
+  z-index: 400;
+  background: var(--bg-3);
+  border: 1px solid var(--accent-dim);
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transform: translateY(2px);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+.editable-number-popover.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.editable-number-popover input {
+  width: 80px;
+}
+/* `overlay` mode (see EditableNumber's `overlay` prop) — sits exactly on top
+ * of the trigger's own box instead of floating beside it, transform-free
+ * since its position is set directly from the measured rect every time. */
+.editable-number-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transform: none;
+}
+.editable-number-overlay input {
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}

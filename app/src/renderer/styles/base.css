@@ -1,0 +1,130 @@
+/* Cross-fades the resolved colour of every element for `--dur-theme` around a
+ * palette/mode swap (custom properties themselves can't be interpolated, so
+ * this transitions what they resolve to instead). Toggled by applyTheme() in
+ * state/theme.ts. `!important` is scoped to this short window only, so it
+ * doesn't fight per-component transitions the rest of the time. Colour
+ * properties only — transform/opacity are deliberately excluded so layout
+ * motion (menus, tab panes, the device-art flight) is unaffected. Neutralised
+ * by the reduced-motion block below like every other transition. */
+:root.theme-anim,
+:root.theme-anim *,
+:root.theme-anim *::before,
+:root.theme-anim *::after {
+  transition:
+    background-color var(--dur-theme) var(--ease-out),
+    background-image var(--dur-theme) var(--ease-out),
+    border-color var(--dur-theme) var(--ease-out),
+    color var(--dur-theme) var(--ease-out),
+    fill var(--dur-theme) var(--ease-out),
+    stroke var(--dur-theme) var(--ease-out),
+    box-shadow var(--dur-theme) var(--ease-out),
+    outline-color var(--dur-theme) var(--ease-out) !important;
+}
+
+/* Arabic (or any future RTL locale) is only ever `lang`, never `dir`, on the
+ * document (see state/i18n.tsx) — the app's chrome doesn't mirror by locale.
+ * `unicode-bidi: plaintext` still lets each individual text node work out
+ * its own paragraph direction from its first strong character, so Arabic
+ * strings still read right-to-left in place inside the app's fixed
+ * left-to-right layout, without flipping anything around them. */
+html[lang='ar'] {
+  unicode-bidi: plaintext;
+}
+
+/* focus-visible rings — keyboard-navigation only, keyed to the active accent.
+ * There was previously no focus style anywhere in the app beyond the UA
+ * default outline, since every interactive element strips its own border. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.toggle:focus-visible {
+  outline-offset: 3px;
+}
+/* Inside a joined pill that clips its corners (`.seg`, the auto-switch
+   group), an outset ring is cut off top and bottom, and the 4px radius above
+   notched the segment's square ends. Drawn inside instead. */
+.seg button:focus-visible,
+.autoswitch-group button:focus-visible {
+  outline-offset: -2px;
+  border-radius: 0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Photos and icons are illustration, never payload: without this, pressing one
+ * starts an HTML5 image drag and the picture follows the cursor as a ghost.
+ * `user-select: none` on body (below) does NOT cover this - dragging an image
+ * is a separate mechanism from selecting it. Anything that genuinely IS a drag
+ * source opts back in with its own `draggable` attribute. */
+img {
+  -webkit-user-drag: none;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: var(--fs-lg);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* Thin themed scrollbar for every scroll container in the app, instead of
+ * the default chunky UA one. Vertical scrolling is fine; horizontal scroll
+ * containers ("escalators") are deliberately avoided elsewhere (min-width:0
+ * on grid/flex tracks, overflow-x: hidden) rather than styled here. */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--bg-3);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--line);
+  background-clip: padding-box;
+}
+
+/* Each OS's own monospace named outright — Cascadia/Consolas (Windows), SF
+   Mono/Menlo (macOS), DejaVu/Liberation/Noto (Linux) — before the generic
+   fallback. `ui-monospace` is Safari's alone; in Electron it does nothing, and
+   macOS and Linux fell through to `monospace`, which Chromium draws as
+   Courier. */
+.mono {
+  font-family:
+    'JetBrains Mono', 'Cascadia Mono', Consolas, 'SF Mono', Menlo, 'DejaVu Sans Mono',
+    'Liberation Mono', 'Noto Sans Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+a {
+  color: var(--accent);
+}
