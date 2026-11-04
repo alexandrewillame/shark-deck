@@ -13,6 +13,15 @@
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws://localhost:* http://localhost:* ws://127.0.0.1:* http://127.0.0.1:*; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'"
     />
     <meta name="referrer" content="no-referrer" />
+    <!--
+      The app draws its own light and dark themes, so nothing else may repaint
+      it. `only light` turns off the browsers' forced dark ("Auto Dark Mode" in
+      Chrome, Edge, Opera, Brave): native controls render as they do with no
+      declaration at all, but the page is never darkened for the user. And
+      Dark Reader removes its theme from any page carrying `darkreader-lock`.
+    -->
+    <meta name="color-scheme" content="only light" />
+    <meta name="darkreader-lock" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
