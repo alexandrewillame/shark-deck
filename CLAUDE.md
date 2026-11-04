@@ -242,6 +242,10 @@ only (WebHID).
   overlay, window chrome, ambient (screen/music) lighting, simulated devices.
   `browserHandlers` answers those methods with empty shapes; the renderer hides
   them via `hostFeatures`.
+- **Nothing else repaints the page.** `src/web/index.html` carries
+  `color-scheme: only light` (turns off the browsers' forced dark) and
+  `darkreader-lock` (Dark Reader stands down); `src/web/index.test.ts` pins
+  both.
 - **A device must be picked** in the browser's own dialog
   (`requestDeviceAccess()`, from a click). Devices with no USB serial (the
   R85HE) are forgotten by the browser on unplug.
