@@ -90,6 +90,7 @@ describe('sweeping every onboard profile', () => {
 
   beforeEach(async () => {
     mgr = new DeviceManager();
+    mgr.configure({ allowSimulated: true }); // an unpackaged desktop build
     await scanOnce(mgr);
   });
 

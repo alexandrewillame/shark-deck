@@ -1,6 +1,4 @@
-import { EventEmitter } from 'node:events';
 import { TRAVEL_POLL_MIN_MS } from '@shared/keyboard-travel';
-import { app } from 'electron';
 import type { DeviceDescriptor, Provenance } from '@shared/types/device';
 import type { ScanDiagnostic } from '@shared/types/diagnostics';
 import type { LiveDevice, TravelStreamResult, WriteResult } from '@shared/types/live';
@@ -25,6 +23,7 @@ import {
   resolveDescriptor,
   resolveModelId,
 } from './registry';
+import { Emitter } from '../emitter';
 import { createDriver, Driver } from './drivers';
 import { VirtualDriver, virtualDescriptors } from './virtual';
 import { frameLog } from '../diagnostics';
@@ -192,7 +191,38 @@ function receiverOnline(wireless: boolean, online: boolean, channelOpen: boolean
   return wireless && !online && channelOpen;
 }
 
+/**
+ * What the host decides, set once with `deviceManager.configure()` before
+ * `start()` — main/index.ts on the desktop, web/main.ts in the browser
+ * edition. The defaults are the conservative values, so a host that forgets
+ * the call ships no developer aids.
+ */
+export interface ManagerConfig {
+  /** Developer mode may add the simulated devices. Desktop: unpackaged builds only. */
+  allowSimulated: boolean;
+  /** Show developer-only card notes (the "protocol inferred" hint). Desktop: unpackaged builds only. */
+  showDevNotes: boolean;
+  /** A `process.platform`-style OS name. Picks the advice a refused open gets. */
+  os: string;
+  /**
+   * How a device that reports no USB serial is keyed. `'path'` keys it by its
+   * endpoint (the desktop; the R85HE reports an empty serial). `'model'` keys
+   * it by model — for WebHID, which exposes no serial at all, so the V8's
+   * dongle and cable still collapse into one card through the cable-preferred
+   * handover in `scan()`.
+   */
+  serialless: 'path' | 'model';
+}
+
+const DEFAULT_CONFIG: ManagerConfig = {
+  allowSimulated: false,
+  showDevNotes: false,
+  os: 'unknown',
+  serialless: 'path',
+};
+
 function hint(
+  config: ManagerConfig,
   kind: string,
   online: boolean,
   wireless: boolean,
@@ -212,9 +242,9 @@ function hint(
     // means another program holds the device (the vendor's software, most
     // often) — the rule would be advice about nothing they have.
     return t(
-      process.platform === 'darwin'
+      config.os === 'darwin'
         ? 'hint.offlinePermission.mac'
-        : process.platform === 'win32'
+        : config.os === 'win32'
           ? 'hint.offlinePermission.win'
           : 'hint.offlinePermission',
     );
@@ -233,10 +263,15 @@ function hint(
   // information: it names no problem the user can act on, and on a card it
   // reads as "this device is half-supported". Unpackaged builds only, matching
   // DevNote in the renderer.
-  if (provenance === 'inferred' && !app.isPackaged) {
+  if (provenance === 'inferred' && config.showDevNotes) {
     return t('hint.inferred');
   }
   return null;
+}
+
+/** The endpoint-based device id: what a serial-less device is keyed by on the desktop. */
+function pathKey(descriptor: DeviceDescriptor, path: string): string {
+  return `${descriptor.vid.toString(16)}:${descriptor.pid.toString(16)}:${path}`;
 }
 
 const EMPTY_DIAGNOSTIC: ScanDiagnostic = {
@@ -247,9 +282,12 @@ const EMPTY_DIAGNOSTIC: ScanDiagnostic = {
   unmatched: [],
 };
 
-export class DeviceManager extends EventEmitter {
+export class DeviceManager extends Emitter {
   private entries = new Map<string, Entry>();
-  private timer: NodeJS.Timeout | null = null;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private config: ManagerConfig = DEFAULT_CONFIG;
+  /** Set by `pause()`: no scan is scheduled, but nothing is dropped either. */
+  private paused = false;
   /**
    * Presence/profile poll cadence — and the floor on everything that rides the
    * same pass, including the live DPI/poll-rate read (see LIVE_POLL_MS).
@@ -275,9 +313,37 @@ export class DeviceManager extends EventEmitter {
   private scanning = false;
   private rescanRequested = false;
 
+  /** Set the host's choices — see `ManagerConfig`. Call before `start()`. */
+  configure(patch: Partial<ManagerConfig>): void {
+    this.config = { ...this.config, ...patch };
+  }
+
   start(): void {
     this.stopped = false;
+    this.paused = false;
     this.scheduleNextScan(0);
+  }
+
+  /**
+   * Stop polling without forgetting anything — unlike `stop()`, which drops
+   * every entry and with it every open device tab. The browser edition pauses
+   * while its tab is hidden: Chromium throttles a hidden tab's timers to once
+   * a second or slower, so polling there would only stretch each exchange out.
+   * A write already in flight is not part of the scan and runs to completion.
+   */
+  pause(): void {
+    this.paused = true;
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+  }
+
+  /** Undo `pause()` with an immediate pass, so the cards catch up at once. */
+  resume(): void {
+    if (!this.paused) return;
+    this.paused = false;
+    if (this.stopped) return;
+    if (this.scanning) this.rescanRequested = true;
+    else this.scheduleNextScan(0);
   }
 
   /** Self-scheduling `setTimeout` chain, not `setInterval` — the next pass is
@@ -290,15 +356,21 @@ export class DeviceManager extends EventEmitter {
     this.timer = setTimeout(() => {
       this.timer = null;
       this.scanning = true;
-      void this.scan().finally(() => {
-        this.scanning = false;
-        if (this.stopped) return;
-        // A nudge that arrived mid-scan runs immediately; otherwise wait out
-        // the normal tick. Either way there is exactly one pending timer.
-        const next = this.rescanRequested ? 0 : this.scanIntervalMs;
-        this.rescanRequested = false;
-        this.scheduleNextScan(next);
-      });
+      void this.scan()
+        // A pass that throws must not end the chain, or become an unhandled
+        // rejection — the renderer turns those into an error toast, and this
+        // fires every tick. `hint()` runs outside the per-entry try, so one
+        // bad device can reach here.
+        .catch((err) => console.error('[devices] scan pass failed:', err))
+        .finally(() => {
+          this.scanning = false;
+          if (this.stopped || this.paused) return;
+          // A nudge that arrived mid-scan runs immediately; otherwise wait out
+          // the normal tick. Either way there is exactly one pending timer.
+          const next = this.rescanRequested ? 0 : this.scanIntervalMs;
+          this.rescanRequested = false;
+          this.scheduleNextScan(next);
+        });
     }, delayMs);
   }
 
@@ -306,7 +378,7 @@ export class DeviceManager extends EventEmitter {
    *  used when a setting that changes what the scan produces (developer mode)
    *  is toggled, so the grid reacts immediately. */
   nudgeScan(): void {
-    if (this.stopped) return;
+    if (this.stopped || this.paused) return;
     if (this.scanning) {
       // Don't fork a second timer chain on top of the in-flight scan's own
       // `finally` reschedule — just tell that reschedule to fire at once.
@@ -432,11 +504,17 @@ export class DeviceManager extends EventEmitter {
    * A device with no serial (the R85HE reports an empty one) has nothing to
    * correlate on, so it keeps the path-based key and is unaffected. Two
    * physically distinct units reporting the SAME serial would merge.
+   *
+   * Under WebHID nothing has a serial, so the browser edition keys serial-less
+   * devices by model instead (`serialless: 'model'`), which merges the V8's
+   * two endpoints the same way. The cost is that two identical units would
+   * share one card — and `findVendorCollection` only ever attaches the first
+   * unit of a VID/PID anyway, on either host.
    */
   private key(descriptor: DeviceDescriptor, serial: string, path: string): string {
-    return serial
-      ? `${descriptor.model}:${serial}`
-      : `${descriptor.vid.toString(16)}:${descriptor.pid.toString(16)}:${path}`;
+    if (serial) return `${descriptor.model}:${serial}`;
+    if (this.config.serialless === 'model') return descriptor.model;
+    return pathKey(descriptor, path);
   }
 
   /**
@@ -640,6 +718,7 @@ export class DeviceManager extends EventEmitter {
     e.live.receiverOnline = receiverOnline(e.live.wireless, false, e.channel.isOpen());
     this.stopTravel(deviceId, false, { force: true });
     e.live.hint = hint(
+      this.config,
       e.live.kind,
       false,
       e.live.wireless,
@@ -798,7 +877,7 @@ export class DeviceManager extends EventEmitter {
     // otherwise follow the user into a packaged build, where there is no
     // longer any row to turn it back off. Gate on the build itself so the
     // setting really is inert once packaged, as documented.
-    if (!app.isPackaged && getSettingsSync().devMode && !this.stopped) {
+    if (this.config.allowSimulated && getSettingsSync().devMode && !this.stopped) {
       if (await this.scanVirtual(seen)) changed = true;
     }
 
@@ -845,7 +924,8 @@ export class DeviceManager extends EventEmitter {
       // No serial: simulated devices are per-descriptor on purpose — developer
       // mode exists to put every supported *shape* on screen at once, including
       // both endpoints of a device that real hardware would merge into one.
-      const id = this.key(descriptor, '', `sim-${descriptor.model}`);
+      // So always the endpoint key, whatever `serialless` says.
+      const id = pathKey(descriptor, `sim-${descriptor.model}`);
       if (seen.has(id)) continue;
       seen.add(id);
 
@@ -1003,6 +1083,7 @@ export class DeviceManager extends EventEmitter {
     }
     e.live.receiverOnline = receiverOnline(e.live.wireless, e.live.online, e.channel.isOpen());
     e.live.hint = hint(
+      this.config,
       e.live.kind,
       e.live.online,
       e.live.wireless,

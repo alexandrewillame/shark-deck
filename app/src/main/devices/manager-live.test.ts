@@ -63,6 +63,7 @@ describe('live device-state poll', () => {
     writes.length = 0;
     mockSettings.devMode = true;
     mgr = new DeviceManager();
+    mgr.configure({ allowSimulated: true }); // an unpackaged desktop build
     await scanOnce(mgr);
   });
 

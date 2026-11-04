@@ -12,15 +12,27 @@
  * with cyan bleeding through the amber palette.
  */
 :root {
+  /* The night: the dark theme's page, text and accent colours, under names
+     that hold in BOTH themes. The app background is a night sky in either
+     theme (docs/design/background.md), so it, and the text set straight on
+     it, read these; everything else reads the plain tokens below, which the
+     light theme overrides. A palette sets its own night colours in its
+     `:root[data-palette]` block. */
+  --night-bg: #0a0c10;
+  --night-text: #e8edf4;
+  --night-text-dim: #9aa7ba;
+  --night-text-mut: #64728a;
+  --night-accent-rgb: 61, 248, 232;
+  --night-violet-rgb: 139, 125, 255;
   /* surfaces — dark */
-  --bg: #0a0c10;
+  --bg: var(--night-bg);
   --bg-1: #10141b;
   --bg-2: #161c26;
   --bg-3: #1e2632;
   --line: #263041;
-  --text: #e8edf4;
-  --text-dim: #9aa7ba;
-  --text-mut: #64728a;
+  --text: var(--night-text);
+  --text-dim: var(--night-text-dim);
+  --text-mut: var(--night-text-mut);
   /* status — shared, palette-independent (success/warning/danger meaning) */
   --amber: #ffb454;
   --red: #ff5c6c;
@@ -109,10 +121,10 @@
   --kbkey-factory-text: #06201b;
   /* accents — shark-cyan */
   --accent: #3df8e8;
-  --accent-rgb: 61, 248, 232;
+  --accent-rgb: var(--night-accent-rgb);
   --accent-dim: #1c8f88;
   --violet: #8b7dff;
-  --violet-rgb: 139, 125, 255;
+  --violet-rgb: var(--night-violet-rgb);
   /* Text on an accent fill (a primary button, a chosen segment): white or a
      deep shade of the accent, whichever reads better on it. White on light
      cyan was 2.5:1, on dark blue 2.8:1 — the labels of the buttons that
@@ -164,17 +176,17 @@
  * two colours. */
 :root[data-palette='amber'] {
   --accent: #ffb02e;
-  --accent-rgb: 255, 176, 46;
+  --night-accent-rgb: 255, 176, 46;
   --accent-dim: #c8801a;
   --violet: #ff5c8a;
-  --violet-rgb: 255, 92, 138;
+  --night-violet-rgb: 255, 92, 138;
   --on-accent: #241700;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.4), 0 0 18px -4px rgba(var(--accent-rgb), 0.55);
+  --night-bg: #0f0b08;
 }
 /* warm-tinted surfaces so amber reads as its own theme, not a cyan UI with
  * orange buttons — same lightness ladder as the default, hue shifted warm. */
 :root[data-palette='amber']:not([data-mode='light']) {
-  --bg: #0f0b08;
   --bg-1: #191310;
   --bg-2: #221a14;
   --bg-3: #2c2119;
@@ -184,10 +196,10 @@
 /* accent palette: violet */
 :root[data-palette='violet'] {
   --accent: #8f7bff;
-  --accent-rgb: 143, 123, 255;
+  --night-accent-rgb: 143, 123, 255;
   --accent-dim: #6a56d1;
   --violet: #ff6fd8;
-  --violet-rgb: 255, 111, 216;
+  --night-violet-rgb: 255, 111, 216;
   --on-accent: #160d3d;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.4), 0 0 18px -4px rgba(var(--accent-rgb), 0.55);
 }
@@ -200,10 +212,10 @@
  * 30 ΔE from red in both modes; palette-distance.test.ts pins the floor. */
 :root[data-palette='crimson'] {
   --accent: #b0122d;
-  --accent-rgb: 176, 18, 45;
+  --night-accent-rgb: 176, 18, 45;
   --accent-dim: #800d21;
   --violet: #f0a53a;
-  --violet-rgb: 240, 165, 58;
+  --night-violet-rgb: 240, 165, 58;
   --on-accent: #ffffff;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.4), 0 0 18px -4px rgba(var(--accent-rgb), 0.55);
 }
@@ -212,10 +224,10 @@
  * second tone (it was a mint, a paler shade of the same green). */
 :root[data-palette='emerald'] {
   --accent: #35e08a;
-  --accent-rgb: 53, 224, 138;
+  --night-accent-rgb: 53, 224, 138;
   --accent-dim: #1fa868;
   --violet: #a06bff;
-  --violet-rgb: 160, 107, 255;
+  --night-violet-rgb: 160, 107, 255;
   --on-accent: #04210f;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.35), 0 0 18px -4px rgba(var(--accent-rgb), 0.5);
 }
@@ -225,31 +237,31 @@
  * palettes which only ever change the accent hue on the shared dark ladder. */
 :root[data-palette='black'] {
   --accent: #e6e6e6;
-  --accent-rgb: 230, 230, 230;
+  --night-accent-rgb: 230, 230, 230;
   --accent-dim: #8f8f8f;
   --violet: #9a9a9a;
-  --violet-rgb: 154, 154, 154;
+  --night-violet-rgb: 154, 154, 154;
   --on-accent: #0a0a0a;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.3), 0 0 18px -4px rgba(var(--accent-rgb), 0.4);
+  --night-bg: #000000;
+  --night-text: #f2f2f2;
+  --night-text-dim: #a8a8a8;
+  --night-text-mut: #707070;
 }
 :root[data-palette='black']:not([data-mode='light']) {
-  --bg: #000000;
   --bg-1: #0c0c0c;
   --bg-2: #161616;
   --bg-3: #202020;
   --line: #2c2c2c;
-  --text: #f2f2f2;
-  --text-dim: #a8a8a8;
-  --text-mut: #707070;
 }
 
 /* accent palette: red (bright scarlet, vs. crimson's deep red) */
 :root[data-palette='red'] {
   --accent: #ff3131;
-  --accent-rgb: 255, 49, 49;
+  --night-accent-rgb: 255, 49, 49;
   --accent-dim: #c22323;
   --violet: #ff7a6b;
-  --violet-rgb: 255, 122, 107;
+  --night-violet-rgb: 255, 122, 107;
   --on-accent: #ffffff;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.4), 0 0 18px -4px rgba(var(--accent-rgb), 0.55);
 }
@@ -259,10 +271,10 @@
  * accent has too little contrast for white text on top of it. */
 :root[data-palette='pink'] {
   --accent: #ff8dd6;
-  --accent-rgb: 255, 141, 214;
+  --night-accent-rgb: 255, 141, 214;
   --accent-dim: #cc5aa8;
   --violet: #2ee6c8;
-  --violet-rgb: 46, 230, 200;
+  --night-violet-rgb: 46, 230, 200;
   --on-accent: #3a0f28;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.4), 0 0 18px -4px rgba(var(--accent-rgb), 0.55);
 }
@@ -270,40 +282,40 @@
 /* accent palette: synthwave — neon magenta over an electric sky blue */
 :root[data-palette='synthwave'] {
   --accent: #d63cff;
-  --accent-rgb: 214, 60, 255;
+  --night-accent-rgb: 214, 60, 255;
   --accent-dim: #9a22c2;
   --violet: #3db8ff;
-  --violet-rgb: 61, 184, 255;
+  --night-violet-rgb: 61, 184, 255;
   --on-accent: #1a0524;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.4), 0 0 18px -4px rgba(var(--accent-rgb), 0.55);
 }
 /* accent palette: lime — acid lime over a cool teal */
 :root[data-palette='lime'] {
   --accent: #c4f53d;
-  --accent-rgb: 196, 245, 61;
+  --night-accent-rgb: 196, 245, 61;
   --accent-dim: #8db81c;
   --violet: #2ed6c4;
-  --violet-rgb: 46, 214, 196;
+  --night-violet-rgb: 46, 214, 196;
   --on-accent: #172300;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.4), 0 0 18px -4px rgba(var(--accent-rgb), 0.55);
 }
 /* accent palette: frost — ice blue over lavender */
 :root[data-palette='frost'] {
   --accent: #7fd0ff;
-  --accent-rgb: 127, 208, 255;
+  --night-accent-rgb: 127, 208, 255;
   --accent-dim: #4a9ccc;
   --violet: #c3a6ff;
-  --violet-rgb: 195, 166, 255;
+  --night-violet-rgb: 195, 166, 255;
   --on-accent: #06202f;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.4), 0 0 18px -4px rgba(var(--accent-rgb), 0.55);
 }
 /* accent palette: blue */
 :root[data-palette='blue'] {
   --accent: #4d9dff;
-  --accent-rgb: 77, 157, 255;
+  --night-accent-rgb: 77, 157, 255;
   --accent-dim: #3a79c8;
   --violet: #7d8bff;
-  --violet-rgb: 125, 139, 255;
+  --night-violet-rgb: 125, 139, 255;
   --on-accent: #03162e;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.4), 0 0 18px -4px rgba(var(--accent-rgb), 0.55);
 }
@@ -312,15 +324,15 @@
  * on a grey (not true-black) surface ladder that still tracks light/dark. */
 :root[data-palette='grey'] {
   --accent: #b0b0b0;
-  --accent-rgb: 176, 176, 176;
+  --night-accent-rgb: 176, 176, 176;
   --accent-dim: #8a8a8a;
   --violet: #9a9a9a;
-  --violet-rgb: 154, 154, 154;
+  --night-violet-rgb: 154, 154, 154;
   --on-accent: #0a0a0a;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.3), 0 0 18px -4px rgba(var(--accent-rgb), 0.4);
+  --night-bg: #1a1a1a;
 }
 :root[data-palette='grey']:not([data-mode='light']) {
-  --bg: #1a1a1a;
   --bg-1: #222222;
   --bg-2: #2a2a2a;
   --bg-3: #343434;
@@ -333,22 +345,22 @@
  * brown — hue held ~30°, saturation raised from ~13% back up to ~26%). */
 :root[data-palette='grey-brown'] {
   --accent: #c3ad98;
-  --accent-rgb: 195, 173, 152;
+  --night-accent-rgb: 195, 173, 152;
   --accent-dim: #9d856c;
   --violet: #b29170;
-  --violet-rgb: 178, 145, 112;
+  --night-violet-rgb: 178, 145, 112;
   --on-accent: #221a12;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.3), 0 0 18px -4px rgba(var(--accent-rgb), 0.4);
+  --night-bg: #1a1613;
+  --night-text: #f1ebe3;
+  --night-text-dim: #b0a494;
+  --night-text-mut: #7e7264;
 }
 :root[data-palette='grey-brown']:not([data-mode='light']) {
-  --bg: #1a1613;
   --bg-1: #221d18;
   --bg-2: #2d261f;
   --bg-3: #392f26;
   --line: #4a3f33;
-  --text: #f1ebe3;
-  --text-dim: #b0a494;
-  --text-mut: #7e7264;
 }
 
 /* light surfaces (palette-independent, except amber's warm tint below) */

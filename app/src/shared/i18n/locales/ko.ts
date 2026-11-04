@@ -1270,4 +1270,49 @@ export const ko: Partial<Messages> = {
     '이 데스크톱의 마우스 설정을 찾을 수 없습니다. 시스템 설정에서 직접 여세요.',
   'welcome.scanFailedLibusb':
     'Shark Deck이 USB 장치와 통신하려면 libusb 1.0이 필요하지만 이 시스템에는 설치되어 있지 않습니다. 설치한 후(Ubuntu·Debian: sudo apt install libusb-1.0-0, Fedora: sudo dnf install libusb1) Shark Deck을 다시 시작하세요.',
+  'web.boot.framed':
+    'Shark Deck은 다른 페이지 안에서는 실행되지 않습니다. 별도의 탭에서 직접 열어 주세요.',
+  'web.boot.otherTab':
+    'Shark Deck이 이미 다른 탭이나 창에서 열려 있습니다. 그쪽을 닫으면 이 탭이 자동으로 이어받습니다.',
+  'web.welcome.body':
+    'Shark Deck은 이 탭 안에서만 실행됩니다. 아무것도 설치되지 않으며, 설정은 이 페이지에서 장치로 바로 전달됩니다. 장치를 연결한 다음 브라우저에 표시되는 목록에서 선택하세요.',
+  'web.connect': '장치 연결',
+  'web.connect.another': '다른 장치 연결',
+  'web.connect.failed': '브라우저가 장치 목록을 표시하지 못했습니다: {error}',
+  'web.unsupported.title': '이 브라우저는 USB 장치에 접근할 수 없습니다',
+  'web.unsupported.body':
+    '브라우저용 Shark Deck에는 WebHID가 필요하며, 컴퓨터용 Chrome, Edge, Opera에서 지원됩니다. Firefox와 Safari는 지원하지 않고, Brave는 이를 꺼 두며, 휴대폰에서는 사용할 수 없습니다. 데스크톱 앱은 어디서나 작동합니다.',
+  'web.note.otherApps':
+    '먼저 Shark Deck 앱과 Attack Shark 소프트웨어를 종료하세요. 같은 장치와 통신하는 두 프로그램은 서로 방해합니다.',
+  'web.note.replug':
+    '일부 키보드는 일련번호를 알려 주지 않습니다. 브라우저는 이런 장치를 분리하면 잊어버리므로, 다시 연결해 주세요.',
+  'web.linux.title': 'Linux에서는 한 번만 접근을 허용하세요',
+  'web.linux.body':
+    '이 규칙이 설치되어야 브라우저가 장치에 접근할 수 있습니다. 터미널에서 다음 명령을 실행한 뒤 장치를 뽑았다가 다시 꽂으세요:',
+  'web.copy': '복사',
+  'web.copied': '복사됨',
+  'web.access.title': '브라우저 접근 권한',
+  'web.access.body':
+    '브라우저의 장치 목록에서 이 장치를 선택했기 때문에 이 브라우저가 Shark Deck의 장치 접근을 허용하고 있습니다. 접근을 취소하면 이 권한이 철회됩니다.',
+  'web.access.forget': '이 장치 접근 취소',
+  'web.access.forgetConfirm':
+    '다시 연결하기 전까지 Shark Deck은 이 브라우저에서 이 장치에 접근할 수 없습니다.',
+  'web.access.forgotten': '장치 접근을 취소했습니다.',
+  'web.access.forgetFailed': '장치 접근을 취소하지 못했습니다: {error}',
+  'restore.download': '다운로드',
+  'restore.download.tip':
+    '이 백업을 파일로 저장합니다. 안전한 곳에 보관하거나 Shark Deck의 다른 에디션으로 가져갈 수 있습니다.',
+  'restore.import': '백업 가져오기…',
+  'restore.import.tip':
+    '이전에 다운로드한 백업 파일을 추가합니다. Shark Deck의 어느 에디션에서 받은 것이든 괜찮지만, 이 모델용이어야 합니다.',
+  'restore.imported': '백업을 가져왔습니다.',
+  'restore.importFailed': '이 파일을 가져오지 못했습니다: {error}',
+  'restore.exportFailed': '이 백업을 읽지 못했습니다.',
+  'restore.browserNote':
+    '브라우저에서는 이 브라우저가 백업을 보관하며, 브라우저가 이를 지울 수 있습니다. 보관하려는 백업은 다운로드하세요.',
+  'set.about.browser':
+    '브라우저 에디션입니다. 아무것도 설치되지 않으며, 설정과 백업은 이 브라우저에 남습니다. 페이지는 GitHub Pages에서 제공되며, 로드하고 업데이트를 확인할 때 그곳에만 연결합니다.',
+  'web.update.ready': 'Shark Deck의 새 버전이 준비되었습니다.',
+  'web.update.restart': '지금 다시 시작',
+  'web.update.later': '나중에',
 };

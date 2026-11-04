@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import type { ActuationLayout, KeyGroup } from '@shared/types/keyboard-settings';
 import { paths, readJson, withFileLock, writeJson } from '../store';
 
@@ -24,7 +23,7 @@ export async function listActuationLayouts(): Promise<ActuationLayout[]> {
 export async function saveActuationLayout(l: ActuationLayout): Promise<ActuationLayout[]> {
   return withFileLock(paths.actuationLayouts(), async () => {
     const all = await listActuationLayouts();
-    const id = l.id || randomUUID();
+    const id = l.id || crypto.randomUUID();
     const entry: ActuationLayout = { ...l, id, createdAt: l.createdAt || Date.now() };
     const at = all.findIndex((x) => x.id === id);
     const next = at === -1 ? [...all, entry] : all.map((x, i) => (i === at ? entry : x));
@@ -107,7 +106,7 @@ export async function saveKeyGroup(
     const all = await readGroups();
     const m = modelGroups(all, model);
     const list = listFor(m, profile);
-    const id = g.id || randomUUID();
+    const id = g.id || crypto.randomUUID();
     const entry: KeyGroup = { ...g, id };
     const claimed = new Set(entry.slots);
     const stripped = list.map((x) =>
@@ -156,7 +155,7 @@ export async function replaceKeyGroups(
 ): Promise<KeyGroup[]> {
   return withFileLock(paths.keyGroups(), async () => {
     const all = await readGroups();
-    const next = groups.map((g) => ({ ...g, id: g.id || randomUUID() }));
+    const next = groups.map((g) => ({ ...g, id: g.id || crypto.randomUUID() }));
     await writeJson(
       paths.keyGroups(),
       withList(all, model, modelGroups(all, model), profile, next),

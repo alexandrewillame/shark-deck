@@ -26,8 +26,9 @@
 }
 /* macOS draws native traffic lights over the window's top-left corner (see
    main/index.ts's trafficLightPosition) — clear space for them instead of
-   letting BrandHome sit underneath. */
-.platform-mac .topbar {
+   letting BrandHome sit underneath. Desktop only: the class follows
+   PlatformInfo.nativeTrafficLights, which a Mac browser tab does not have. */
+.native-traffic-lights .topbar {
   padding-left: 78px;
 }
 /* Brand + "back to home" merged into one bordered control (App.tsx's

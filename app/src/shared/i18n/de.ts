@@ -1319,4 +1319,49 @@ export const de: Partial<Messages> = {
     'Die Mauseinstellungen dieser Desktopumgebung wurden nicht gefunden. Öffnen Sie sie stattdessen über die Systemeinstellungen.',
   'welcome.scanFailedLibusb':
     'Shark Deck benötigt libusb 1.0, um mit USB-Geräten zu kommunizieren, und dieses System hat sie nicht. Installieren Sie sie (sudo apt install libusb-1.0-0 unter Ubuntu oder Debian, sudo dnf install libusb1 unter Fedora) und starten Sie Shark Deck neu.',
+  'web.boot.framed':
+    'Shark Deck läuft nicht innerhalb einer anderen Seite. Öffnen Sie es direkt in einem eigenen Tab.',
+  'web.boot.otherTab':
+    'Shark Deck ist bereits in einem anderen Tab oder Fenster geöffnet. Schließen Sie es dort, dann übernimmt dieser Tab von selbst.',
+  'web.welcome.body':
+    'Shark Deck läuft vollständig in diesem Tab: Es wird nichts installiert, und Ihre Einstellungen gehen direkt von dieser Seite zum Gerät. Schließen Sie das Gerät an und wählen Sie es dann in der Liste, die Ihr Browser anzeigt.',
+  'web.connect': 'Gerät verbinden',
+  'web.connect.another': 'Weiteres Gerät verbinden',
+  'web.connect.failed': 'Der Browser konnte seine Geräteliste nicht anzeigen: {error}',
+  'web.unsupported.title': 'Dieser Browser kann nicht auf USB-Geräte zugreifen',
+  'web.unsupported.body':
+    'Shark Deck im Browser benötigt WebHID, das Chrome, Edge und Opera auf dem Computer bieten. Firefox und Safari haben es nicht, Brave schaltet es ab, und auf Smartphones ist es nicht nutzbar. Die Desktop-App funktioniert überall.',
+  'web.note.otherApps':
+    'Schließen Sie zuerst die Shark-Deck-App und die Attack-Shark-Software: Zwei Programme, die mit demselben Gerät sprechen, stören sich gegenseitig.',
+  'web.note.replug':
+    'Manche Tastaturen melden keine Seriennummer. Der Browser vergisst sie beim Abstecken; verbinden Sie sie danach erneut.',
+  'web.linux.title': 'Unter Linux einmalig den Zugriff erlauben',
+  'web.linux.body':
+    'Der Browser erreicht das Gerät erst, wenn diese Regel installiert ist. Führen Sie diese Befehle in einem Terminal aus und stecken Sie das Gerät dann ab und wieder an:',
+  'web.copy': 'Kopieren',
+  'web.copied': 'Kopiert',
+  'web.access.title': 'Browserzugriff',
+  'web.access.body':
+    'Dieser Browser lässt Shark Deck auf das Gerät zugreifen, weil Sie es in seiner Geräteliste ausgewählt haben. Wenn Sie es vergessen, wird diese Berechtigung entzogen.',
+  'web.access.forget': 'Dieses Gerät vergessen',
+  'web.access.forgetConfirm':
+    'Shark Deck kann in diesem Browser nicht mehr auf dieses Gerät zugreifen, bis Sie es erneut verbinden.',
+  'web.access.forgotten': 'Gerät vergessen.',
+  'web.access.forgetFailed': 'Das Gerät konnte nicht vergessen werden: {error}',
+  'restore.download': 'Herunterladen',
+  'restore.download.tip':
+    'Diese Sicherung als Datei speichern — um sie sicher aufzubewahren oder in die andere Edition von Shark Deck zu übernehmen.',
+  'restore.import': 'Sicherung importieren…',
+  'restore.import.tip':
+    'Eine zuvor heruntergeladene Sicherungsdatei hinzufügen, aus einer der beiden Editionen von Shark Deck. Sie muss für dieses Modell sein.',
+  'restore.imported': 'Sicherung importiert.',
+  'restore.importFailed': 'Diese Datei konnte nicht importiert werden: {error}',
+  'restore.exportFailed': 'Diese Sicherung konnte nicht gelesen werden.',
+  'restore.browserNote':
+    'Im Browser werden Sicherungen von diesem Browser aufbewahrt, der sie löschen kann. Laden Sie diejenigen herunter, die Sie behalten möchten.',
+  'set.about.browser':
+    'Dies ist die Browser-Edition: Es wird nichts installiert, Einstellungen und Sicherungen bleiben in diesem Browser. Die Seite stammt von GitHub Pages, dem einzigen Ort, den sie je kontaktiert — zum Laden und um nach Updates zu suchen.',
+  'web.update.ready': 'Eine neue Version von Shark Deck ist bereit.',
+  'web.update.restart': 'Jetzt neu starten',
+  'web.update.later': 'Später',
 };

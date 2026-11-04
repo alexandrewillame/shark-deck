@@ -69,6 +69,8 @@ const TARGETS = [
 ];
 
 const sharkSum = (b) => (0x55 - b.reduce((s, x) => s + x, 0)) & 0xff;
+/** compx-fea, the keyboard scheme (src/main/hid/checksum.ts): 0xFF - Σ bytes[1..7], at byte 8. */
+const feaSum = (b) => (0xff - b.slice(1, 8).reduce((s, x) => s + x, 0)) & 0xff;
 
 function frame(id, len, cmd, args = []) {
   const f = new Array(len).fill(0);
@@ -76,6 +78,10 @@ function frame(id, len, cmd, args = []) {
   f[1] = cmd;
   args.forEach((a, i) => (f[2 + i] = a));
   if (id === 0x08) f[len - 1] = sharkSum(f.slice(0, len - 1));
+  // The keyboard firmware ignores a GET without its checksum and Windows then
+  // hands back our own SET buffer — so unsigned, every R85HE line below read
+  // "no answer / echo". Confirmed again over WebHID, 2026-11-03.
+  else f[8] = feaSum(f);
   return f;
 }
 
@@ -268,15 +274,20 @@ async function runDefault() {
         const qp = frame(t.id, t.reportLen, 132); // GET_PROFILE
         await send(dev, t.mode, qp);
         const p = await readMatch(dev, 132, t.mode, qp);
-        console.log(`  profile   ${p ? p[2] + 1 : 'no answer / echo (checksum unconfirmed)'}`);
+        console.log(`  profile   ${p ? p[2] + 1 : 'no answer / echo'}`);
+        // Offsets as the driver reads them (CompxKeyboard.getFirmware): model id
+        // at [2..3] LE, firmware at [8..9] LE — `00 8f 33 0c … 11 05` is model
+        // 3123 (the R85HE), firmware v5.11.
         const qv = frame(t.id, t.reportLen, 143); // GET_USB_VERSION
         await send(dev, t.mode, qv);
         const v = await readMatch(dev, 143, t.mode, qv);
-        console.log(`  firmware  ${v ? fmtVersion((v[8] << 8) | v[7]) : 'no answer / echo'}`);
+        console.log(
+          `  firmware  ${v ? `${fmtVersion((v[9] << 8) | v[8])}  (model id ${(v[3] << 8) | v[2]})` : 'no answer / echo'}`,
+        );
         const qr = frame(t.id, t.reportLen, 128); // GET_RF_VERSION
         await send(dev, t.mode, qr);
         const rf = await readMatch(dev, 128, t.mode, qr);
-        const rfv = rf ? (rf[2] << 8) | rf[1] : 0;
+        const rfv = rf ? (rf[3] << 8) | rf[2] : 0;
         console.log(`  receiver  ${rfv ? fmtVersion(rfv) : 'none (wired)'}`);
         const ql = frame(t.id, t.reportLen, 135); // GET_LEDPARAM
         await send(dev, t.mode, ql);

@@ -50,6 +50,12 @@ switcher's `capture/` folder).
 
 Re-extract after a vendor update with `npm run extract` and review the diff.
 
+## In the browser
+
+The browser edition reaches these same devices through Chromium's WebHID
+instead of node-hid. What that changes on the wire — and what has been seen on
+real hardware — is in [webhid.md](webhid.md).
+
 ## Mouse — Compx 8K dongle (V8), `3554:F517`
 
 Full detail + provenance: [`../reverse-engineering/FINDINGS.md`](../reverse-engineering/FINDINGS.md).

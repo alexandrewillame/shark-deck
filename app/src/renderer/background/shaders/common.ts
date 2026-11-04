@@ -12,8 +12,8 @@
  *   uTime       seconds of animation (frozen while still)
  *   uA, uB      the effect's two colours — the palette's accent and secondary,
  *               or its own natural pair (registry.ts)
- *   uBg         the page colour, `--bg`
- *   uLight      1 on a light page
+ *   uBg         the page colour, `--night-bg`: the dark theme's page, in both
+ *               themes — the background is a night sky either way (palette.ts)
  *   uIntensity  how strongly to draw, 0..1
  *   uPal        1 when uA/uB are the palette's, 0 for the natural pair — for
  *               what an effect has beyond its two colours: fire's white-hot
@@ -29,9 +29,8 @@
  *                unlit rather than failing
  *   stars(p, t)  a sparse field of twinkling points, one maybe-star per cell
  *   glow(light)  an effect that EMITS light (smoke lit from within, fire,
- *                sparks), its colour already times how much of it there is.
- *                On a dark page light adds; on a light one it would vanish, so
- *                it is laid down as ink instead, as strongly as it was bright.
+ *                sparks), its colour already times how much of it there is:
+ *                light adds to the page
  *   scene(col)   an effect that is a PICTURE (a landscape, a painting): the
  *                whole frame, faded toward the page by the intensity
  *   finish(col)  the pixel, dithered by a fraction of a step so a slow dark
@@ -51,7 +50,6 @@ uniform float uTime;
 uniform vec3 uA;
 uniform vec3 uB;
 uniform vec3 uBg;
-uniform float uLight;
 uniform float uIntensity;
 uniform float uPal;
 
@@ -137,10 +135,7 @@ float stars(vec2 p, float t) {
 
 vec3 glow(vec3 light) {
   vec3 l = max(light, 0.0) * uIntensity;
-  if (uLight < 0.5) return uBg + l;
-  float a = clamp(max(l.r, max(l.g, l.b)), 0.0, 1.0);
-  vec3 ink = l / max(a, 0.0001);
-  return mix(uBg, ink * 0.78, min(a * 1.15, 0.85));
+  return uBg + l;
 }
 
 vec3 scene(vec3 col) {

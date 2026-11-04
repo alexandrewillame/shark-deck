@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import type { PerKeyLightingPreset } from '@shared/types/lighting';
 import { paths, readJson, withFileLock, writeJson } from '../store';
 
@@ -16,7 +15,7 @@ export async function listPerKeyPresets(): Promise<PerKeyLightingPreset[]> {
 export async function savePerKeyPreset(p: PerKeyLightingPreset): Promise<PerKeyLightingPreset[]> {
   return withFileLock(paths.perKeyLightingLibrary(), async () => {
     const all = await listPerKeyPresets();
-    const id = p.id || randomUUID();
+    const id = p.id || crypto.randomUUID();
     const entry = { ...p, id, createdAt: p.createdAt || Date.now() };
     // Upsert in place — filtering then appending moved an edited preset to the
     // bottom of the list on every save (same bug macros/store.ts already fixed).

@@ -1214,4 +1214,44 @@ export const zhTW: Partial<Messages> = {
   'set.mouse.openFailed': '找不到此桌面環境的滑鼠設定。請從系統設定中開啟。',
   'welcome.scanFailedLibusb':
     'Shark Deck 需要 libusb 1.0 才能與 USB 裝置通訊，但此系統尚未安裝。請先安裝（Ubuntu 或 Debian：sudo apt install libusb-1.0-0；Fedora：sudo dnf install libusb1），然後重新啟動 Shark Deck。',
+  'web.boot.framed': 'Shark Deck 無法在其他頁面內執行。請直接在獨立的分頁中開啟。',
+  'web.boot.otherTab': 'Shark Deck 已在另一個分頁或視窗中開啟。在那裡關閉它，這個分頁會自動接手。',
+  'web.welcome.body':
+    'Shark Deck 完全在這個分頁中執行：不需安裝任何東西，你的設定會直接從此頁面傳送到裝置。請插入裝置，然後在瀏覽器顯示的清單中選擇它。',
+  'web.connect': '連接裝置',
+  'web.connect.another': '連接其他裝置',
+  'web.connect.failed': '瀏覽器無法顯示裝置清單：{error}',
+  'web.unsupported.title': '此瀏覽器無法存取 USB 裝置',
+  'web.unsupported.body':
+    '瀏覽器版 Shark Deck 需要 WebHID，電腦上的 Chrome、Edge 和 Opera 都支援。Firefox 和 Safari 不支援，Brave 預設關閉，手機也無法使用。桌面應用程式在任何環境都能使用。',
+  'web.note.otherApps':
+    '請先關閉 Shark Deck 應用程式和 Attack Shark 軟體：兩個程式同時與同一裝置通訊會互相干擾。',
+  'web.note.replug': '有些鍵盤不提供序號。瀏覽器會在拔除後忘記它們；之後請重新連接。',
+  'web.linux.title': '在 Linux 上，授權一次存取',
+  'web.linux.body':
+    '必須安裝此規則，瀏覽器才能存取裝置。請在終端機中執行以下命令，然後拔除並重新插入裝置：',
+  'web.copy': '複製',
+  'web.copied': '已複製',
+  'web.access.title': '瀏覽器存取權限',
+  'web.access.body':
+    '因為你在瀏覽器的裝置清單中選擇了此裝置，瀏覽器才允許 Shark Deck 存取它。忘記此裝置會撤銷這項權限。',
+  'web.access.forget': '忘記此裝置',
+  'web.access.forgetConfirm': '在你重新連接之前，Shark Deck 將無法在此瀏覽器中存取此裝置。',
+  'web.access.forgotten': '已忘記裝置。',
+  'web.access.forgetFailed': '無法忘記裝置：{error}',
+  'restore.download': '下載',
+  'restore.download.tip': '將此備份儲存為檔案——可妥善保管，或匯入 Shark Deck 的另一個版本。',
+  'restore.import': '匯入備份…',
+  'restore.import.tip':
+    '加入你先前下載的備份檔案，來自 Shark Deck 任一版本皆可，但必須是此型號的。',
+  'restore.imported': '備份已匯入。',
+  'restore.importFailed': '無法匯入該檔案：{error}',
+  'restore.exportFailed': '無法讀取該備份。',
+  'restore.browserNote':
+    '在瀏覽器中，備份由此瀏覽器保存，瀏覽器可能會清除它們。請下載你想保留的備份。',
+  'set.about.browser':
+    '這是瀏覽器版：不需安裝任何東西，設定和備份都保存在此瀏覽器中。頁面來自 GitHub Pages，這也是它唯一會連線的地方——用於載入和檢查更新。',
+  'web.update.ready': 'Shark Deck 新版本已就緒。',
+  'web.update.restart': '立即重新啟動',
+  'web.update.later': '稍後',
 };

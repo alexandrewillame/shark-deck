@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ATTACK_SHARK_R85HE } from './catalog/r85he';
 import { ATTACK_SHARK_V8, ATTACK_SHARK_V8_WIRED } from './catalog/v8';
+import { CATALOG } from './catalog';
 import {
   genericCompxKeyboard,
+  genericCompxMouse,
+  hidRequestFilters,
+  knownVendorIds,
   modelIdConflicts,
   resolveDescriptor,
   resolveModelId,
@@ -117,5 +121,35 @@ describe('the R85HE descriptor', () => {
     // 0x0c33, read off a real R85HE (fw v5.11) — see
     // docs/reverse-engineering/r85he-identify.json
     expect(ATTACK_SHARK_R85HE.modelId).toBe(0x0c33);
+  });
+});
+
+describe('hidRequestFilters (the browser edition device picker)', () => {
+  const filters = hidRequestFilters();
+  const covers = (vid: number, page: number) =>
+    filters.some((f) => f.vendorId === vid && f.usagePage === page);
+
+  it('offers every catalog model by vendor id and config usage page', () => {
+    for (const d of CATALOG) expect(covers(d.vid, d.usagePage), d.model).toBe(true);
+  });
+
+  it('offers the generic families for any product id', () => {
+    for (const pid of [0x0001, 0x5555, 0xfffe]) {
+      for (const d of [genericCompxKeyboard(pid), genericCompxMouse(pid)]) {
+        expect(covers(d.vid, d.usagePage), d.model).toBe(true);
+      }
+    }
+  });
+
+  it('asks only for vendor-defined pages, from vendors the scan enumerates, without repeats', () => {
+    const vids = new Set(knownVendorIds());
+    for (const f of filters) {
+      expect(vids.has(f.vendorId)).toBe(true);
+      // Chromium refuses the protected keyboard/mouse collections; a picker
+      // entry for one would be a device the app then cannot talk to.
+      expect(f.usagePage).toBeGreaterThanOrEqual(0xff00);
+    }
+    const keys = filters.map((f) => `${f.vendorId}:${f.usagePage}`);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });

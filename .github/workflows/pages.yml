@@ -1,0 +1,81 @@
+name: Pages
+
+# Publishes the browser edition (app/vite.web.config.ts) to GitHub Pages:
+# https://alexandrewillame.github.io/shark-deck/
+#
+# On a PUBLISHED release only — the moment the installers go public — not on
+# every push: the page is what every visitor runs, so it should be a release
+# someone chose to publish. The draft build.yml opens on a tag is not enough;
+# pressing Publish is. `workflow_dispatch` redeploys by hand (pick the tag in
+# the Run workflow dialog).
+#
+# One-time repository setup, by hand (see README, "On GitHub"):
+#   Settings -> Pages -> Build and deployment -> Source: GitHub Actions
+#   Settings -> Environments -> github-pages -> deployment branches and tags:
+#     add the tag rule `v*` — by default only `main` may deploy, and a release
+#     event runs on its tag.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+# Read-only by default; only the deploy job asks for more.
+permissions:
+  contents: read
+
+# One deploy at a time. A newer one waits rather than cancelling one that is
+# half way through.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # A release event checks out the tag it was published from.
+      - uses: actions/checkout@v7
+
+      # Node 24 — see ci.yml.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      # --ignore-scripts: no electron binary, no node-hid build — the browser
+      # edition needs neither (see ci.yml for why the tests do not either).
+      - run: npm ci --ignore-scripts
+
+      # The whole gate again, here rather than via ci.yml's matrix: what ships
+      # is one Linux build, and every visitor runs it.
+      - run: npm run --silent check
+
+      - run: npm run build:web
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          # Not relative to `defaults.run.working-directory` — that only
+          # applies to `run:` steps.
+          path: app/out/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

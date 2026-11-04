@@ -9,13 +9,29 @@ import {
 } from '@shared/lighting';
 import type { LightingSettings } from '@shared/types/lighting';
 import type { LightingPreset } from '@shared/types/app-settings';
+import { hostFeatures } from '../../state/host';
 import { applyPreset } from './effectMemory';
 
 export type LightingMode = 'global' | 'perkey';
 
+/**
+ * Effects the app itself feeds, frame by frame, from a screen or audio
+ * capture (see useAmbientLighting) — not something the board runs alone.
+ * Offered only where `hostFeatures.ambientLighting` says the host can keep
+ * that capture going.
+ */
+export const HOST_FED_EFFECTS: ReadonlySet<string> = new Set([
+  'LightScreenColor',
+  'LightMusicFollow2',
+  'LightMusicFollow3',
+]);
+
 /** The effects the Global picker offers: every listed one except per-key. */
 export const GLOBAL_PICKER_EFFECTS: readonly KbLightEffect[] = KB_LIGHT_EFFECTS_TABLE.filter(
-  (e, wire) => wire !== KB_PERKEY_EFFECT_INDEX && e.listed,
+  (e, wire) =>
+    wire !== KB_PERKEY_EFFECT_INDEX &&
+    e.listed &&
+    (hostFeatures.ambientLighting || !HOST_FED_EFFECTS.has(e.id)),
 );
 /** Board layers rather than effects: never a Global choice, listed or not. */
 const NOT_GLOBAL = new Set(['LightUserPicture', 'LightUserColor']);

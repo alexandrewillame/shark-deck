@@ -1215,4 +1215,45 @@ export const zhCN: Partial<Messages> = {
   'set.mouse.openFailed': '找不到此桌面环境的鼠标设置。请从系统设置中打开。',
   'welcome.scanFailedLibusb':
     'Shark Deck 需要 libusb 1.0 才能与 USB 设备通信，但此系统尚未安装。请先安装（Ubuntu 或 Debian：sudo apt install libusb-1.0-0；Fedora：sudo dnf install libusb1），然后重新启动 Shark Deck。',
+  'web.boot.framed': 'Shark Deck 不能在其他页面内运行。请直接在单独的标签页中打开它。',
+  'web.boot.otherTab':
+    'Shark Deck 已在另一个标签页或窗口中打开。在那边关闭它，这个标签页会自动接管。',
+  'web.welcome.body':
+    'Shark Deck 完全在这个标签页中运行：无需安装任何东西，你的设置会直接从此页面发送到设备。请插入设备，然后在浏览器显示的列表中选择它。',
+  'web.connect': '连接设备',
+  'web.connect.another': '连接其他设备',
+  'web.connect.failed': '浏览器无法显示设备列表：{error}',
+  'web.unsupported.title': '此浏览器无法访问 USB 设备',
+  'web.unsupported.body':
+    '浏览器版 Shark Deck 需要 WebHID，电脑上的 Chrome、Edge 和 Opera 都支持。Firefox 和 Safari 不支持，Brave 默认关闭它，手机也无法使用。桌面应用在任何环境下都能使用。',
+  'web.note.otherApps':
+    '请先关闭 Shark Deck 应用和 Attack Shark 软件：两个程序同时与同一设备通信会互相干扰。',
+  'web.note.replug': '有些键盘不提供序列号。浏览器会在拔出后忘记它们；之后请重新连接。',
+  'web.linux.title': '在 Linux 上，授权一次访问',
+  'web.linux.body':
+    '只有安装此规则后，浏览器才能访问设备。请在终端中运行以下命令，然后拔出并重新插入设备：',
+  'web.copy': '复制',
+  'web.copied': '已复制',
+  'web.access.title': '浏览器访问权限',
+  'web.access.body':
+    '因为你在浏览器的设备列表中选择了此设备，浏览器才允许 Shark Deck 访问它。忘记此设备会撤销该权限。',
+  'web.access.forget': '忘记此设备',
+  'web.access.forgetConfirm': '在你重新连接之前，Shark Deck 将无法在此浏览器中访问此设备。',
+  'web.access.forgotten': '已忘记设备。',
+  'web.access.forgetFailed': '无法忘记设备：{error}',
+  'restore.download': '下载',
+  'restore.download.tip': '将此备份保存为文件——可妥善保管，或导入 Shark Deck 的另一个版本。',
+  'restore.import': '导入备份…',
+  'restore.import.tip':
+    '添加你之前下载的备份文件，来自 Shark Deck 的任一版本均可，但必须是此型号的。',
+  'restore.imported': '备份已导入。',
+  'restore.importFailed': '无法导入该文件：{error}',
+  'restore.exportFailed': '无法读取该备份。',
+  'restore.browserNote':
+    '在浏览器中，备份由此浏览器保存，浏览器可能会清除它们。请下载你想保留的备份。',
+  'set.about.browser':
+    '这是浏览器版：无需安装任何东西，设置和备份都保存在此浏览器中。页面来自 GitHub Pages，这也是它唯一会联系的地方——用于加载和检查更新。',
+  'web.update.ready': 'Shark Deck 新版本已就绪。',
+  'web.update.restart': '立即重启',
+  'web.update.later': '稍后',
 };

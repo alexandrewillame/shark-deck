@@ -65,11 +65,22 @@ describe('developer mode through the scan loop', () => {
     writes.length = 0;
     mockSettings.devMode = false;
     mgr = new DeviceManager();
+    // What main/index.ts passes in an unpackaged build.
+    mgr.configure({ allowSimulated: true });
   });
 
   it('lists nothing with dev mode off and no hardware', async () => {
     await scanOnce(mgr);
     expect(mgr.list()).toEqual([]);
+  });
+
+  it('adds nothing for a host that never allowed simulated devices', async () => {
+    // The default must be the packaged-build behaviour: a dev-mode flag left
+    // on in the shared settings must stay inert unless the host opts in.
+    const unconfigured = new DeviceManager();
+    mockSettings.devMode = true;
+    await scanOnce(unconfigured);
+    expect(unconfigured.list()).toEqual([]);
   });
 
   it('attaches one online device per supported shape when switched on', async () => {
@@ -173,5 +184,65 @@ describe('nudgeScan() does not fork a second scan-timer chain', () => {
     expect(priv.timer).not.toBeNull(); // exactly one pending timer
 
     mgr.stop();
+  });
+});
+
+describe('pause() / resume() — the browser edition’s hidden-tab mode', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    mockDevicesAsync.mockReset();
+    mockDevicesAsync.mockResolvedValue([]);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const drain = async () => {
+    for (let i = 0; i < 30; i++) await Promise.resolve();
+  };
+
+  it('stops scheduling passes while paused, keeps the entries, and catches up at once on resume', async () => {
+    const mgr = new DeviceManager();
+    const priv = mgr as unknown as { timer: unknown };
+    mgr.start();
+    await vi.advanceTimersByTimeAsync(1);
+    await drain();
+    const passes = mockDevicesAsync.mock.calls.length;
+    expect(passes).toBeGreaterThan(0);
+
+    mgr.pause();
+    expect(priv.timer).toBeNull();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(mockDevicesAsync.mock.calls.length).toBe(passes);
+    mgr.nudgeScan(); // a WebHID connect event while hidden: ignored until resume
+    await vi.advanceTimersByTimeAsync(1);
+    expect(mockDevicesAsync.mock.calls.length).toBe(passes);
+
+    mgr.resume();
+    await vi.advanceTimersByTimeAsync(1);
+    await drain();
+    expect(mockDevicesAsync.mock.calls.length).toBe(passes + 1);
+    mgr.stop();
+  });
+
+  it('keeps the chain alive when a pass throws', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const mgr = new DeviceManager();
+    // Not through enumerate(), which already catches: make the pass itself throw.
+    const priv = mgr as unknown as { scan: () => Promise<void> };
+    let calls = 0;
+    priv.scan = async () => {
+      calls++;
+      throw new Error('boom');
+    };
+    mgr.start();
+    await vi.advanceTimersByTimeAsync(1);
+    await drain();
+    await vi.advanceTimersByTimeAsync(1300);
+    await drain();
+    expect(calls).toBe(2);
+    expect(errors).toHaveBeenCalled();
+    mgr.stop();
+    errors.mockRestore();
   });
 });

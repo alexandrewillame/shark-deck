@@ -1,5 +1,7 @@
 // Must stay the first import — see bootstrapEnv.ts's doc comment on why.
 import './bootstrapEnv';
+// Second, before anything can touch app data — see bootstrapStorage.ts.
+import './bootstrapStorage';
 import {
   app,
   BrowserWindow,
@@ -487,6 +489,12 @@ function applyThemeSource(s: AppSettings): void {
 }
 
 async function bootstrap(): Promise<void> {
+  deviceManager.configure({
+    allowSimulated: isDev,
+    showDevNotes: isDev,
+    os: process.platform,
+    serialless: 'path',
+  });
   buildAppMenu();
   ensureDirs();
   await seedDefaults(); // first-run only: "Desktop" / "Gaming" profiles

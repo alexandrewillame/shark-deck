@@ -4,6 +4,7 @@ import type { FrameLogEntry } from '@shared/types/diagnostics';
 import { PaneHeader, Panel, Row, Toggle } from '../components/common';
 import { useStore } from '../state/store';
 import { useT } from '../state/i18n';
+import { hostFeatures } from '../state/host';
 
 import { sd } from '../state/bridge';
 
@@ -37,19 +38,25 @@ export function AppSettingsScreen() {
       <PaneHeader title={t('set.title')} sub={t('set.sub')} />
 
       <Panel title={t('set.general')}>
-        <Row label={t('set.startAtLogin')} hint={t('set.startAtLogin.hint')}>
-          <Toggle on={s.startAtBoot} onChange={(v) => patch({ startAtBoot: v })} />
-        </Row>
+        {hostFeatures.startAtBoot && (
+          <Row label={t('set.startAtLogin')} hint={t('set.startAtLogin.hint')}>
+            <Toggle on={s.startAtBoot} onChange={(v) => patch({ startAtBoot: v })} />
+          </Row>
+        )}
         {/* A Mac has no tray: the icon lives in the menu bar. */}
-        <Row
-          label={t(platformInfo?.os === 'darwin' ? 'set.closeToTray.mac' : 'set.closeToTray')}
-          hint={t('set.closeToTray.hint')}
-        >
-          <Toggle on={s.minimizeToTray} onChange={(v) => patch({ minimizeToTray: v })} />
-        </Row>
-        <Row label={t('set.overlay')} hint={t('set.overlay.hint')}>
-          <Toggle on={s.overlayEnabled} onChange={(v) => patch({ overlayEnabled: v })} />
-        </Row>
+        {hostFeatures.tray && (
+          <Row
+            label={t(platformInfo?.os === 'darwin' ? 'set.closeToTray.mac' : 'set.closeToTray')}
+            hint={t('set.closeToTray.hint')}
+          >
+            <Toggle on={s.minimizeToTray} onChange={(v) => patch({ minimizeToTray: v })} />
+          </Row>
+        )}
+        {hostFeatures.overlay && (
+          <Row label={t('set.overlay')} hint={t('set.overlay.hint')}>
+            <Toggle on={s.overlayEnabled} onChange={(v) => patch({ overlayEnabled: v })} />
+          </Row>
+        )}
         <Row label={t('set.lowBattery')} hint={t('set.lowBattery.hint')}>
           <select
             value={s.batteryLowThreshold}
@@ -67,7 +74,7 @@ export function AppSettingsScreen() {
 
       {/* Default to showing this until platformInfo resolves (undefined on
           first render) — only hide once we positively know it's unsupported. */}
-      {platformInfo?.canOpenMouseSettings !== false && (
+      {hostFeatures.mouseSettingsLink && platformInfo?.canOpenMouseSettings !== false && (
         <Panel title={t('set.shortcuts')}>
           <Row label={t('set.sysMouseProps')} hint={t('set.sysMouseProps.hint')}>
             <button
@@ -89,6 +96,7 @@ export function AppSettingsScreen() {
           <span className="mono">{platformInfo?.appVersion ?? '—'}</span>
         </Row>
         <p className="hint">{t('set.about.license')}</p>
+        {hostFeatures.devicePicker && <p className="hint">{t('set.about.browser')}</p>}
       </Panel>
 
       {/* The whole section, not just its rows.
@@ -102,9 +110,11 @@ export function AppSettingsScreen() {
           grid with hardware they do not own. */}
       {platformInfo?.isDev && (
         <Panel title={t('set.developer')}>
-          <Row label={t('set.devDevices')} hint={t('set.devDevices.hint')}>
-            <Toggle on={s.devMode} onChange={(v) => patch({ devMode: v })} />
-          </Row>
+          {hostFeatures.simulatedDevices && (
+            <Row label={t('set.devDevices')} hint={t('set.devDevices.hint')}>
+              <Toggle on={s.devMode} onChange={(v) => patch({ devMode: v })} />
+            </Row>
+          )}
           <Row label={t('set.frameLog')} hint={t('set.frameLog.hint')}>
             <Toggle on={showLog} onChange={setShowLog} />
           </Row>

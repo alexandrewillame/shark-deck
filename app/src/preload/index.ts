@@ -16,6 +16,8 @@ const api: Api = {
   getFirmware: (id) => invoke('getFirmware', id),
   renameOnboardProfile: (model, slot, name) => invoke('renameOnboardProfile', model, slot, name),
   setDeviceColor: (model, variantId) => invoke('setDeviceColor', model, variantId),
+  requestDeviceAccess: () => invoke('requestDeviceAccess'),
+  forgetDevice: (id) => invoke('forgetDevice', id),
 
   readDpiStages: (id) => invoke('readDpiStages', id),
   readActiveDpiStage: (id) => invoke('readActiveDpiStage', id),
@@ -105,6 +107,8 @@ const api: Api = {
   listBackups: (id) => invoke('listBackups', id),
   restoreBackup: (id, file) => invoke('restoreBackup', id, file),
   deleteBackup: (id, file) => invoke('deleteBackup', id, file),
+  exportBackup: (id, file) => invoke('exportBackup', id, file),
+  importBackup: (id, json) => invoke('importBackup', id, json),
 
   checkFirmwareFile: (id, p) => invoke('checkFirmwareFile', id, p),
 

@@ -13,6 +13,9 @@ directories:
 # needs (node-hid + its loader) comes from node_modules.
 files:
   - out/**
+  # The browser edition's build (vite.web.config.ts) shares out/ but is
+  # published to GitHub Pages, not shipped inside the desktop app.
+  - '!out/web/**'
   - package.json
   # App/tray icon and device art are read at runtime via app.getAppPath().
   - assets/**

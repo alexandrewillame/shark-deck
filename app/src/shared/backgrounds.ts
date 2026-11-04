@@ -2,7 +2,7 @@
  * The app backgrounds, by id — the one list the settings file is checked
  * against (main/settings.ts) and the picker is built from
  * (renderer/background/registry.ts). In the picker's order; `none` is the
- * plain theme, and the default.
+ * plain theme. The default is Nebula (main/settings.ts).
  */
 export const BACKGROUND_EFFECTS = [
   'none',

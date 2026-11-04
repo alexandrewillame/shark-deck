@@ -131,3 +131,26 @@ export function genericCompxKeyboard(pid: number): DeviceDescriptor {
 export function knownVendorIds(): number[] {
   return Array.from(new Set([COMPX_VID, COMPX_8K_DONGLE_VID, ...CATALOG.map((d) => d.vid)]));
 }
+
+/**
+ * The browser edition's device-picker filters (WebHID `requestDevice`): one
+ * per vendor id + config usage page `resolveDescriptor` can attach — every
+ * catalog model, plus the two generic families, which match ANY product id of
+ * their vendor. Filtering on the vendor-defined page rather than the VID alone
+ * also keeps the picker from offering a device's keyboard or mouse interface,
+ * which Chromium would refuse to talk to anyway.
+ */
+export function hidRequestFilters(): { vendorId: number; usagePage: number }[] {
+  const all = [
+    ...CATALOG.map((d) => ({ vendorId: d.vid, usagePage: d.usagePage })),
+    { vendorId: COMPX_VID, usagePage: genericCompxKeyboard(0).usagePage },
+    { vendorId: COMPX_8K_DONGLE_VID, usagePage: genericCompxMouse(0).usagePage },
+  ];
+  const seen = new Set<string>();
+  return all.filter((f) => {
+    const key = `${f.vendorId}:${f.usagePage}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}

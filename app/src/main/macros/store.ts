@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import type { Macro } from '@shared/types/macros';
 import { paths, readJson, withFileLock, writeJson } from '../store';
 
@@ -17,7 +16,7 @@ export async function listLibraryMacros(): Promise<Macro[]> {
 export async function saveLibraryMacro(m: Macro): Promise<Macro[]> {
   return withFileLock(paths.macroLibrary(), async () => {
     const all = await listLibraryMacros();
-    const id = m.id || randomUUID();
+    const id = m.id || crypto.randomUUID();
     // Upsert in place. Filtering then appending moved an edited macro to the
     // bottom of the library on every save, so the list reshuffled itself under
     // the user each time they touched a macro.

@@ -1,0 +1,24 @@
+/* The browser edition's own page furniture, outside the renderer — see
+   web/pwa.ts. Uses the renderer's tokens, which are loaded by the time a
+   newer deploy can have been downloaded. */
+.update-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-1);
+  color: var(--text);
+  font-size: var(--fs-md);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+.update-banner span {
+  flex: 1 1 auto;
+}

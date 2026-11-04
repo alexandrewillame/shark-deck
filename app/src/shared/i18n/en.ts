@@ -1292,6 +1292,51 @@ export const en = {
     "Couldn't find this desktop's mouse settings. Open them from your system settings instead.",
   'welcome.scanFailedLibusb':
     'Shark Deck needs libusb 1.0 to talk to USB devices, and this system does not have it. Install it (sudo apt install libusb-1.0-0 on Ubuntu or Debian, sudo dnf install libusb1 on Fedora), then restart Shark Deck.',
+  'web.boot.framed':
+    'Shark Deck does not run inside another page. Open it directly in its own tab.',
+  'web.boot.otherTab':
+    'Shark Deck is already open in another tab or window. Close it there, and this one takes over by itself.',
+  'web.welcome.body':
+    'Shark Deck runs entirely in this tab: nothing is installed, and your settings go straight from this page to the device. Plug the device in, then choose it in the list your browser shows.',
+  'web.connect': 'Connect a device',
+  'web.connect.another': 'Connect another device',
+  'web.connect.failed': 'The browser could not show its device list: {error}',
+  'web.unsupported.title': 'This browser cannot reach USB devices',
+  'web.unsupported.body':
+    'Shark Deck in the browser needs WebHID, which Chrome, Edge and Opera have on a computer. Firefox and Safari do not, Brave turns it off, and phones cannot use it. The desktop app works everywhere.',
+  'web.note.otherApps':
+    'Close the Shark Deck app and the Attack Shark software first: two programs talking to the same device get in each other’s way.',
+  'web.note.replug':
+    'Some keyboards report no serial number. The browser forgets those when they are unplugged; connect them again afterwards.',
+  'web.linux.title': 'On Linux, allow access once',
+  'web.linux.body':
+    'The browser can reach the device only once this rule is installed. Run these commands in a terminal, then unplug and replug the device:',
+  'web.copy': 'Copy',
+  'web.copied': 'Copied',
+  'web.access.title': 'Browser access',
+  'web.access.body':
+    'This browser lets Shark Deck reach the device because you chose it in the browser’s device list. Forgetting it takes that permission back.',
+  'web.access.forget': 'Forget this device',
+  'web.access.forgetConfirm':
+    'Shark Deck will not be able to reach this device in this browser until you connect it again.',
+  'web.access.forgotten': 'Device forgotten.',
+  'web.access.forgetFailed': 'Could not forget the device: {error}',
+  'restore.download': 'Download',
+  'restore.download.tip':
+    'Save this backup as a file — to keep it somewhere safe, or to bring it into the other edition of Shark Deck.',
+  'restore.import': 'Import a backup…',
+  'restore.import.tip':
+    'Add a backup file you downloaded earlier, from either edition of Shark Deck. It must be for this model.',
+  'restore.imported': 'Backup imported.',
+  'restore.importFailed': 'Could not import that file: {error}',
+  'restore.exportFailed': 'Could not read that backup.',
+  'restore.browserNote':
+    'In the browser, backups are kept by this browser, which can clear them. Download the ones you want to keep.',
+  'set.about.browser':
+    'This is the browser edition: nothing is installed, and settings and backups stay in this browser. The page comes from GitHub Pages, the one place it ever contacts — to load, and to look for updates.',
+  'web.update.ready': 'A new version of Shark Deck is ready.',
+  'web.update.restart': 'Restart now',
+  'web.update.later': 'Later',
 } as const;
 
 export type MessageKey = keyof typeof en;

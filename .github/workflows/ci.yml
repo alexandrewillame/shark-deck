@@ -87,3 +87,11 @@ jobs:
       - name: file map is current
         if: runner.os == 'Linux'
         run: npm run map:check
+
+      # The browser edition (pages.yml publishes it on a release). The contract
+      # tier already walks its import graph; only a real build proves Vite can
+      # bundle it — and vite.web.config.ts fails the build on any Node or
+      # Electron import that reaches the page.
+      - name: browser edition builds
+        if: runner.os == 'Linux'
+        run: npm run build:web
