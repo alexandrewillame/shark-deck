@@ -29,6 +29,7 @@ import { getUnsavedGuard } from './state/unsavedGuard';
 import { Icon, type IconName } from './components/icons';
 import { LOCALES, localeMeta } from '@shared/i18n';
 import { useDragOrClick } from './components/useDragOrClick';
+import { hostFeatures } from './state/host';
 
 import { sd } from './state/bridge';
 
@@ -94,9 +95,13 @@ export function App() {
     });
     sd.getPlatformInfo().then((info) => {
       setPlatformInfo(info);
-      // Clears the topbar's left edge for macOS's native traffic lights
-      // (see main/index.ts's trafficLightPosition) — see styles.css.
+      // ⌘/⌥ key wording and shortcuts (state/shortcuts.ts) — any Mac,
+      // including the browser edition's.
       document.documentElement.classList.toggle('platform-mac', info.os === 'darwin');
+      // Clears the topbar's left edge for macOS's native traffic lights (see
+      // main/index.ts's trafficLightPosition, and layout.css). Only the
+      // desktop window has them; a Mac browser tab does not.
+      document.documentElement.classList.toggle('native-traffic-lights', info.nativeTrafficLights);
     });
     const offTheme = initSystemThemeFeed(() => useStore.getState().settings);
 
@@ -124,6 +129,7 @@ export function App() {
   // never fire on navigation.
   const onDeviceMenu = tabs.find((t) => t.id === activeTabId)?.route.name === 'config';
   useEffect(() => {
+    if (!hostFeatures.autoSwitch) return;
     sd.setSwitcherSuspended(onDeviceMenu).then(setSwitcher);
   }, [onDeviceMenu, setSwitcher]);
 
@@ -160,6 +166,7 @@ export function App() {
         className="topbar"
         onDoubleClick={(e) => {
           // double-click the drag region (not a button or a tab) toggles maximize
+          if (!hostFeatures.windowChrome) return;
           if (!(e.target as HTMLElement).closest('button, .tabstrip-tab'))
             sd.windowToggleMaximize();
         }}
@@ -177,9 +184,11 @@ export function App() {
             onReorder={reorderTab}
           />
         </ErrorBoundary>
-        <ErrorBoundary fallback={null}>
-          <AutoSwitchControl onOpen={() => openTab({ name: 'autoswitch' })} />
-        </ErrorBoundary>
+        {hostFeatures.autoSwitch && (
+          <ErrorBoundary fallback={null}>
+            <AutoSwitchControl onOpen={() => openTab({ name: 'autoswitch' })} />
+          </ErrorBoundary>
+        )}
         {/* Language first, then appearance: language is the one that changes
             what everything else in the bar SAYS, so it reads before the
             control that only changes how it looks. */}
@@ -195,7 +204,7 @@ export function App() {
             custom set here would just duplicate them. Default to showing
             them (undefined on first render, before platformInfo resolves)
             so Windows/Linux never flash without controls. */}
-        {!platformInfo?.nativeTrafficLights && (
+        {hostFeatures.windowChrome && !platformInfo?.nativeTrafficLights && (
           // Unlike the rest of the topbar, this one keeps the window closable
           // even if it errors — see MinimalWindowControls.
           <ErrorBoundary fallback={<MinimalWindowControls />}>

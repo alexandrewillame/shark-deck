@@ -5,7 +5,10 @@
  */
 import type { AppSettings, PlatformInfo } from './types/app-settings';
 import type {
+  BackupExport,
+  BackupImportResult,
   BackupInfo,
+  DeviceAccessResult,
   FrameLogEntry,
   RunningProcess,
   ScanDiagnostic,
@@ -52,6 +55,15 @@ export interface Api {
   renameOnboardProfile(model: string, slot: number, name: string): Promise<LiveDevice[]>;
   /** Sets the cosmetic colour/edition choice for a model (see LiveDevice.colorVariant); null clears it. */
   setDeviceColor(model: string, variantId: string | null): Promise<LiveDevice[]>;
+  /**
+   * Browser edition: open the browser's device picker so the user can let
+   * Shark Deck reach a device — WebHID grants one device at a time, and only
+   * from a click, so call this straight from the click handler. The desktop
+   * app sees every device already and answers `not-needed`.
+   */
+  requestDeviceAccess(): Promise<DeviceAccessResult>;
+  /** Browser edition: take back the browser's permission for this device. Desktop: `not-needed`. */
+  forgetDevice(deviceId: string): Promise<DeviceAccessResult>;
 
   // ---- reads (null = the device did not answer; [] / {} = genuinely empty) --
   readDpiStages(deviceId: string): Promise<DpiStage[] | null>;
@@ -270,6 +282,15 @@ export interface Api {
   restoreBackup(deviceId: string, file: string): Promise<WriteResult>;
   /** Delete one of this device's backups. Never touches the device itself. */
   deleteBackup(deviceId: string, file: string): Promise<{ ok: boolean; error?: string }>;
+  /** One of this device's backups as JSON text, to save as a file. null = no such backup. */
+  exportBackup(deviceId: string, file: string): Promise<BackupExport | null>;
+  /**
+   * Keep a backup file the user picked as one of this device's backups — the
+   * way back from `exportBackup`, including from the other edition (desktop ↔
+   * browser). It must be for this device's model. Never touches the device;
+   * putting it back on the device is `restoreBackup`.
+   */
+  importBackup(deviceId: string, json: string): Promise<BackupImportResult>;
 
   // ---- firmware -------------------------------------------------------
   checkFirmwareFile(

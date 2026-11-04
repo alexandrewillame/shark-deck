@@ -6,7 +6,9 @@ import { DeviceArt } from '../components/DeviceArt';
 import { ArtAnchor, ArtAnchorContext, type ArtMode, type ArtRect } from '../components/ArtAnchor';
 import { ColorPicker } from '../components/ColorPicker';
 import { BatteryPill, Tooltip } from '../components/common';
+import { ConnectDeviceButton } from '../components/ConnectDevice';
 import { Icon } from '../components/icons';
+import { hostFeatures } from '../state/host';
 import type { LiveDevice } from '@shared/types/live';
 
 import { sd } from '../state/bridge';
@@ -437,6 +439,13 @@ export function DeviceGrid() {
           />
         ))}
       </div>
+      {/* Browser edition: each device is reached only once picked in the
+          browser's own list — the welcome screen offers the first, this the rest. */}
+      {hostFeatures.devicePicker && (
+        <div className="grid-connect">
+          <ConnectDeviceButton label="web.connect.another" />
+        </div>
+      )}
     </div>
   );
 }

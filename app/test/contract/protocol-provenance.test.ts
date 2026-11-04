@@ -60,6 +60,7 @@ const PROTOCOL_MODULES = [
   'src/shared/mouse-buttons.ts',
   'src/shared/mouse-options.ts',
   'src/shared/mouse-wire.ts',
+  'src/web/hid/node-hid-webhid.ts',
 ];
 
 /**
@@ -81,7 +82,7 @@ const NOT_PROTOCOL: Record<string, string> = {
 };
 
 /** Directories swept by the classification check. */
-const PROTOCOL_DIRS = ['src/main/hid', 'src/main/devices/drivers', 'src/shared'];
+const PROTOCOL_DIRS = ['src/main/hid', 'src/main/devices/drivers', 'src/shared', 'src/web/hid'];
 
 function tsFilesDirectlyIn(dir: string): string[] {
   return readdirSync(resolve(APP_ROOT, dir), { withFileTypes: true })

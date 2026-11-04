@@ -1286,4 +1286,49 @@ export const ja: Partial<Messages> = {
     'このデスクトップのマウス設定が見つかりませんでした。システムの設定から開いてください。',
   'welcome.scanFailedLibusb':
     'Shark Deck が USB デバイスと通信するには libusb 1.0 が必要ですが、このシステムにはインストールされていません。インストールしてから（Ubuntu・Debian: sudo apt install libusb-1.0-0、Fedora: sudo dnf install libusb1）Shark Deck を再起動してください。',
+  'web.boot.framed':
+    'Shark Deck は他のページの中では動作しません。専用のタブで直接開いてください。',
+  'web.boot.otherTab':
+    'Shark Deck はすでに別のタブまたはウィンドウで開かれています。そちらを閉じると、このタブが自動的に引き継ぎます。',
+  'web.welcome.body':
+    'Shark Deck はこのタブの中だけで動作します。何もインストールされず、設定はこのページから直接デバイスに送られます。デバイスを接続し、ブラウザーに表示される一覧から選んでください。',
+  'web.connect': 'デバイスを接続',
+  'web.connect.another': '別のデバイスを接続',
+  'web.connect.failed': 'ブラウザーがデバイス一覧を表示できませんでした: {error}',
+  'web.unsupported.title': 'このブラウザーは USB デバイスにアクセスできません',
+  'web.unsupported.body':
+    'ブラウザー版の Shark Deck には WebHID が必要です。パソコン版の Chrome、Edge、Opera が対応しています。Firefox と Safari は非対応、Brave は無効化しており、スマートフォンでは使えません。デスクトップ版アプリはどの環境でも動作します。',
+  'web.note.otherApps':
+    '先に Shark Deck アプリと Attack Shark のソフトウェアを終了してください。同じデバイスと通信する 2 つのプログラムは互いに干渉します。',
+  'web.note.replug':
+    'シリアル番号を持たないキーボードもあります。ブラウザーは取り外すとそれを忘れるので、その後もう一度接続してください。',
+  'web.linux.title': 'Linux では一度だけアクセスを許可してください',
+  'web.linux.body':
+    'このルールをインストールするまで、ブラウザーはデバイスにアクセスできません。ターミナルで次のコマンドを実行し、デバイスを抜き差ししてください:',
+  'web.copy': 'コピー',
+  'web.copied': 'コピーしました',
+  'web.access.title': 'ブラウザーのアクセス',
+  'web.access.body':
+    'このデバイスをブラウザーのデバイス一覧で選んだため、このブラウザーは Shark Deck にデバイスへのアクセスを許可しています。アクセスを取り消すと、この許可は解除されます。',
+  'web.access.forget': 'このデバイスへのアクセスを取り消す',
+  'web.access.forgetConfirm':
+    'もう一度接続するまで、Shark Deck はこのブラウザーでこのデバイスにアクセスできなくなります。',
+  'web.access.forgotten': 'デバイスへのアクセスを取り消しました。',
+  'web.access.forgetFailed': 'デバイスへのアクセスを取り消せませんでした: {error}',
+  'restore.download': 'ダウンロード',
+  'restore.download.tip':
+    'このバックアップをファイルとして保存します。安全な場所に保管したり、Shark Deck のもう一方のエディションに取り込んだりできます。',
+  'restore.import': 'バックアップを読み込む…',
+  'restore.import.tip':
+    '以前ダウンロードしたバックアップファイルを追加します。Shark Deck のどちらのエディションのものでも構いませんが、このモデル用である必要があります。',
+  'restore.imported': 'バックアップを読み込みました。',
+  'restore.importFailed': 'このファイルを読み込めませんでした: {error}',
+  'restore.exportFailed': 'このバックアップを読み取れませんでした。',
+  'restore.browserNote':
+    'ブラウザー版では、バックアップはこのブラウザーが保存しており、ブラウザーによって消去されることがあります。残しておきたいものはダウンロードしてください。',
+  'set.about.browser':
+    'これはブラウザー版です。何もインストールされず、設定とバックアップはこのブラウザー内に保存されます。ページは GitHub Pages から配信され、通信するのは読み込みとアップデートの確認のためにそこへアクセスするときだけです。',
+  'web.update.ready': 'Shark Deck の新しいバージョンの準備ができました。',
+  'web.update.restart': '今すぐ再起動',
+  'web.update.later': '後で',
 };

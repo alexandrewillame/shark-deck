@@ -1,8 +1,7 @@
-import { EventEmitter } from 'node:events';
-import { readFileSync } from 'node:fs';
 import type { AppSettings } from '@shared/types/app-settings';
 import { BACKGROUND_INTENSITY_DEFAULT, toBackgroundEffect } from '@shared/backgrounds';
-import { paths, readJson, withFileLock, writeJson } from './store';
+import { Emitter } from './emitter';
+import { paths, readJson, readJsonSync, withFileLock, writeJson } from './store';
 
 /**
  * `'changed'` (next settings, the patch that made them) after every
@@ -10,7 +9,7 @@ import { paths, readJson, withFileLock, writeJson } from './store';
  * like the tray menu, which is in the UI language and otherwise only redrew
  * when the switcher next had news.
  */
-export const settingsEvents = new EventEmitter();
+export const settingsEvents = new Emitter();
 
 const DEFAULTS: AppSettings = {
   startAtBoot: false,
@@ -18,7 +17,9 @@ const DEFAULTS: AppSettings = {
   language: 'en',
   palette: 'shark-cyan',
   themeMode: 'dark',
-  background: 'none',
+  // The look a newcomer meets, on the desktop and in the browser alike: the
+  // Nebula background in the default palette's colours (Shark Cyan).
+  background: 'nebula',
   backgroundPalette: true,
   backgroundIntensity: BACKGROUND_INTENSITY_DEFAULT,
   pollSeconds: 2,
@@ -69,8 +70,10 @@ function coerce(raw: Record<string, unknown>): AppSettings {
         ? raw.themeMode
         : DEFAULTS.themeMode,
     // Checked against the list, unlike `palette`: an id the renderer has no
-    // shader for must not reach it.
-    background: toBackgroundEffect(raw.background),
+    // shader for must not reach it. Only a file that names no background at
+    // all gets the default — a stored `none` is someone's choice, and stays.
+    background:
+      raw.background === undefined ? DEFAULTS.background : toBackgroundEffect(raw.background),
     backgroundPalette: bool(raw.backgroundPalette, DEFAULTS.backgroundPalette),
     backgroundIntensity: int(raw.backgroundIntensity, DEFAULTS.backgroundIntensity, 0, 100),
     // Left unset rather than defaulted: unset, the system's reduced-motion
@@ -163,8 +166,8 @@ export async function setSettings(patch: Partial<AppSettings>): Promise<AppSetti
 export function getSettingsSync(): AppSettings {
   if (cache) return cache;
   try {
-    const raw = readFileSync(paths.settings(), 'utf8');
-    cache = coerce(migrate(JSON.parse(raw) as Record<string, unknown>));
+    const raw = readJsonSync<Record<string, unknown> | null>(paths.settings(), null);
+    cache = raw && typeof raw === 'object' ? coerce(migrate(raw)) : { ...DEFAULTS };
   } catch {
     cache = { ...DEFAULTS };
   }

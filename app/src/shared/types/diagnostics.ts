@@ -39,6 +39,33 @@ export interface BackupInfo {
   blocks: number;
 }
 
+/** One backup as a file the user can keep — `exportBackup`'s answer. */
+export interface BackupExport {
+  /** A file name to save it under. */
+  name: string;
+  /** The backup exactly as stored, as JSON text. */
+  json: string;
+}
+
+export type BackupImportResult = { ok: true; info: BackupInfo } | { ok: false; error: string };
+
+/**
+ * What `requestDeviceAccess()` / `forgetDevice()` did. Only the browser
+ * edition has per-device permissions to manage (WebHID grants one device at a
+ * time, from a click); the desktop app sees every device and answers
+ * `not-needed`.
+ */
+export type DeviceAccessResult =
+  | { status: 'not-needed' }
+  /** The picker closed with this many interfaces granted (0: nothing chosen that was new). */
+  | { status: 'granted'; count: number }
+  | { status: 'forgotten' }
+  /** The user closed the picker without choosing. */
+  | { status: 'cancelled' }
+  /** This browser has no WebHID. */
+  | { status: 'unsupported' }
+  | { status: 'failed'; error: string };
+
 /** Why a connected Attack Shark collection did not become a configurable device. */
 export type ScanUnmatchedReason =
   /** VID is a known Attack Shark vendor, but the PID is in neither the catalog

@@ -33,7 +33,7 @@ attribute vec2 aPos;
 void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
 `;
 
-const UNIFORMS = ['uRes', 'uTime', 'uA', 'uB', 'uBg', 'uLight', 'uIntensity', 'uPal'] as const;
+const UNIFORMS = ['uRes', 'uTime', 'uA', 'uB', 'uBg', 'uIntensity', 'uPal'] as const;
 type Uniform = (typeof UNIFORMS)[number];
 
 interface Program {
@@ -188,17 +188,12 @@ export class BackgroundRenderer implements FrameSink {
     gl.enableVertexAttribArray(prog.pos);
     gl.vertexAttribPointer(prog.pos, 2, gl.FLOAT, false, 0, 0);
 
-    const [a, b] = p.usePalette
-      ? [p.palette.accent, p.palette.secondary]
-      : p.palette.light
-        ? p.def.natural.light
-        : p.def.natural.dark;
+    const [a, b] = p.usePalette ? [p.palette.accent, p.palette.secondary] : p.def.natural;
     gl.uniform2f(prog.loc.uRes, w, h);
     gl.uniform1f(prog.loc.uTime, p.time);
     gl.uniform3fv(prog.loc.uA, a);
     gl.uniform3fv(prog.loc.uB, b);
     gl.uniform3fv(prog.loc.uBg, p.palette.base);
-    gl.uniform1f(prog.loc.uLight, p.palette.light ? 1 : 0);
     gl.uniform1f(prog.loc.uIntensity, Math.min(1, Math.max(0, p.intensity)));
     gl.uniform1f(prog.loc.uPal, p.usePalette ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);

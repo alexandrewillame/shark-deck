@@ -11,9 +11,9 @@ description: How to validate a change in SharkDeck cheaply - which command to ru
 cd app && npm run --silent check
 ```
 
-format -> contract -> unit -> typecheck -> ui, cheapest first. **About 20
-seconds, 3 lines of output on green.** Use `--silent` so npm does not prepend
-two lines per step.
+contract -> unit -> typecheck -> ui, cheapest first. **About 20 seconds, 3
+lines of output on green.** Use `--silent` so npm does not prepend two lines per
+step. It does not format: run `npm run format` as well — CI checks it.
 
 Do not verify by re-reading the files you edited. `git diff` shows what you
 changed; `check` shows whether it works.
@@ -134,3 +134,20 @@ original Windows-only implementation. Whether Linux hidraw or macOS
 IOHIDManager echo the same way is unconfirmed. If a report is rejected or
 misread **only** on macOS or Linux, look there before concluding the wire
 protocol is wrong. See `docs/platform-support.md`.
+
+## The browser edition
+
+Anything under `app/src/web/`, a change to a module the browser reaches (the
+device layer, `handlers.ts`, `store.ts`, `settings.ts`, the renderer), or to
+`vite.web.config.ts`:
+
+```bash
+cd app && npm run --silent check && npm run build:web
+```
+
+`check` already walks the browser's import graph (`browser-node-free`), but only
+the build proves Vite can bundle it. To look at it, serve the build in the
+background (`npm run preview:web`, port 4174) and open it in the built-in
+browser — it renders the UI, but has no WebHID device chooser and no working
+service worker. Real devices need Chrome on `http://127.0.0.1` with the desktop
+Shark Deck (tray) quit first.

@@ -1287,4 +1287,49 @@ export const fr: Partial<Messages> = {
     'Réglages de la souris introuvables pour ce bureau. Ouvrez-les plutôt depuis les paramètres du système.',
   'welcome.scanFailedLibusb':
     'Shark Deck a besoin de libusb 1.0 pour communiquer avec les périphériques USB, et ce système ne l’a pas. Installez-la (sudo apt install libusb-1.0-0 sous Ubuntu ou Debian, sudo dnf install libusb1 sous Fedora), puis redémarrez Shark Deck.',
+  'web.boot.framed':
+    'Shark Deck ne s’exécute pas à l’intérieur d’une autre page. Ouvrez-le directement dans son propre onglet.',
+  'web.boot.otherTab':
+    'Shark Deck est déjà ouvert dans un autre onglet ou une autre fenêtre. Fermez-le là-bas : celui-ci prendra le relais tout seul.',
+  'web.welcome.body':
+    'Shark Deck fonctionne entièrement dans cet onglet : rien n’est installé, et vos réglages vont directement de cette page au périphérique. Branchez le périphérique, puis choisissez-le dans la liste qu’affiche votre navigateur.',
+  'web.connect': 'Connecter un périphérique',
+  'web.connect.another': 'Connecter un autre périphérique',
+  'web.connect.failed': 'Le navigateur n’a pas pu afficher sa liste de périphériques : {error}',
+  'web.unsupported.title': 'Ce navigateur ne peut pas accéder aux périphériques USB',
+  'web.unsupported.body':
+    'Shark Deck dans le navigateur a besoin de WebHID, que proposent Chrome, Edge et Opera sur ordinateur. Firefox et Safari ne l’ont pas, Brave le désactive, et les téléphones ne peuvent pas l’utiliser. L’application de bureau fonctionne partout.',
+  'web.note.otherApps':
+    'Fermez d’abord l’application Shark Deck et le logiciel Attack Shark : deux programmes qui parlent au même périphérique se gênent mutuellement.',
+  'web.note.replug':
+    'Certains claviers n’indiquent pas de numéro de série. Le navigateur les oublie quand ils sont débranchés ; reconnectez-les ensuite.',
+  'web.linux.title': 'Sous Linux, autorisez l’accès une fois',
+  'web.linux.body':
+    'Le navigateur ne peut accéder au périphérique qu’une fois cette règle installée. Lancez ces commandes dans un terminal, puis débranchez et rebranchez le périphérique :',
+  'web.copy': 'Copier',
+  'web.copied': 'Copié',
+  'web.access.title': 'Accès du navigateur',
+  'web.access.body':
+    'Ce navigateur laisse Shark Deck accéder au périphérique parce que vous l’avez choisi dans sa liste de périphériques. L’oublier retire cette autorisation.',
+  'web.access.forget': 'Oublier ce périphérique',
+  'web.access.forgetConfirm':
+    'Shark Deck ne pourra plus accéder à ce périphérique dans ce navigateur tant que vous ne l’aurez pas reconnecté.',
+  'web.access.forgotten': 'Périphérique oublié.',
+  'web.access.forgetFailed': 'Impossible d’oublier le périphérique : {error}',
+  'restore.download': 'Télécharger',
+  'restore.download.tip':
+    'Enregistrer cette sauvegarde dans un fichier — pour la garder en lieu sûr, ou pour l’importer dans l’autre édition de Shark Deck.',
+  'restore.import': 'Importer une sauvegarde…',
+  'restore.import.tip':
+    'Ajouter un fichier de sauvegarde téléchargé auparavant, depuis l’une ou l’autre édition de Shark Deck. Il doit correspondre à ce modèle.',
+  'restore.imported': 'Sauvegarde importée.',
+  'restore.importFailed': 'Impossible d’importer ce fichier : {error}',
+  'restore.exportFailed': 'Impossible de lire cette sauvegarde.',
+  'restore.browserNote':
+    'Dans le navigateur, les sauvegardes sont conservées par ce navigateur, qui peut les effacer. Téléchargez celles que vous voulez garder.',
+  'set.about.browser':
+    'Ceci est l’édition navigateur : rien n’est installé, et les réglages et sauvegardes restent dans ce navigateur. La page provient de GitHub Pages, le seul endroit qu’elle contacte — pour se charger et chercher des mises à jour.',
+  'web.update.ready': 'Une nouvelle version de Shark Deck est prête.',
+  'web.update.restart': 'Redémarrer maintenant',
+  'web.update.later': 'Plus tard',
 };

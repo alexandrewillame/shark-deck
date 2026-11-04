@@ -1304,4 +1304,49 @@ export const es: Partial<Messages> = {
     'No se encontraron los ajustes del ratón de este escritorio. Ábrelos desde la configuración del sistema.',
   'welcome.scanFailedLibusb':
     'Shark Deck necesita libusb 1.0 para comunicarse con los dispositivos USB, y este sistema no la tiene. Instálala (sudo apt install libusb-1.0-0 en Ubuntu o Debian, sudo dnf install libusb1 en Fedora) y reinicia Shark Deck.',
+  'web.boot.framed':
+    'Shark Deck no funciona dentro de otra página. Ábrelo directamente en su propia pestaña.',
+  'web.boot.otherTab':
+    'Shark Deck ya está abierto en otra pestaña o ventana. Ciérralo allí y esta tomará el relevo sola.',
+  'web.welcome.body':
+    'Shark Deck funciona por completo en esta pestaña: no se instala nada y tus ajustes van directamente de esta página al dispositivo. Conecta el dispositivo y elígelo en la lista que muestra tu navegador.',
+  'web.connect': 'Conectar un dispositivo',
+  'web.connect.another': 'Conectar otro dispositivo',
+  'web.connect.failed': 'El navegador no pudo mostrar su lista de dispositivos: {error}',
+  'web.unsupported.title': 'Este navegador no puede acceder a dispositivos USB',
+  'web.unsupported.body':
+    'Shark Deck en el navegador necesita WebHID, que tienen Chrome, Edge y Opera en un ordenador. Firefox y Safari no lo tienen, Brave lo desactiva y los móviles no pueden usarlo. La aplicación de escritorio funciona en todas partes.',
+  'web.note.otherApps':
+    'Cierra primero la aplicación Shark Deck y el software de Attack Shark: dos programas que hablan con el mismo dispositivo se estorban.',
+  'web.note.replug':
+    'Algunos teclados no informan de un número de serie. El navegador los olvida al desconectarlos; vuelve a conectarlos después.',
+  'web.linux.title': 'En Linux, permite el acceso una vez',
+  'web.linux.body':
+    'El navegador solo puede acceder al dispositivo cuando esta regla está instalada. Ejecuta estos comandos en una terminal y luego desconecta y vuelve a conectar el dispositivo:',
+  'web.copy': 'Copiar',
+  'web.copied': 'Copiado',
+  'web.access.title': 'Acceso del navegador',
+  'web.access.body':
+    'Este navegador deja que Shark Deck acceda al dispositivo porque lo elegiste en su lista de dispositivos. Olvidarlo retira ese permiso.',
+  'web.access.forget': 'Olvidar este dispositivo',
+  'web.access.forgetConfirm':
+    'Shark Deck no podrá acceder a este dispositivo en este navegador hasta que vuelvas a conectarlo.',
+  'web.access.forgotten': 'Dispositivo olvidado.',
+  'web.access.forgetFailed': 'No se pudo olvidar el dispositivo: {error}',
+  'restore.download': 'Descargar',
+  'restore.download.tip':
+    'Guarda esta copia de seguridad como archivo, para conservarla a salvo o llevarla a la otra edición de Shark Deck.',
+  'restore.import': 'Importar una copia…',
+  'restore.import.tip':
+    'Añade un archivo de copia de seguridad que descargaste antes, de cualquiera de las dos ediciones de Shark Deck. Debe ser de este modelo.',
+  'restore.imported': 'Copia de seguridad importada.',
+  'restore.importFailed': 'No se pudo importar ese archivo: {error}',
+  'restore.exportFailed': 'No se pudo leer esa copia de seguridad.',
+  'restore.browserNote':
+    'En el navegador, las copias de seguridad las guarda este navegador, que puede borrarlas. Descarga las que quieras conservar.',
+  'set.about.browser':
+    'Esta es la edición para navegador: no se instala nada, y los ajustes y las copias de seguridad se quedan en este navegador. La página viene de GitHub Pages, el único sitio con el que se comunica, para cargarse y buscar actualizaciones.',
+  'web.update.ready': 'Hay una nueva versión de Shark Deck lista.',
+  'web.update.restart': 'Reiniciar ahora',
+  'web.update.later': 'Más tarde',
 };

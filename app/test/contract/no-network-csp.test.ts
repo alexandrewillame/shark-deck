@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
-import { hardenCsp } from '../../build/csp';
+import { hardenCsp, hardenWebCsp } from '../../build/csp';
 import { APP_ROOT } from '../lib/ast';
 
 /**
@@ -119,8 +119,19 @@ describe('renderer CSP', () => {
   });
 });
 
+/**
+ * The one exemption. The browser edition's service worker caches its own
+ * site's files so the installed app starts offline — that is a request, to
+ * the origin the page itself came from. It runs in its own context, outside
+ * the page's CSP, so its guard has to be in its code, and is pinned below.
+ */
+const NETWORK_EXEMPT: Record<string, string> = {
+  'src/web/sw.ts': 'the browser edition service worker; same origin, GET, its own files only',
+};
+
 describe('no source file reaches the network', () => {
   const files = [...tsFilesUnder(resolve(APP_ROOT, 'src'))];
+  const rel = (abs: string) => relative(APP_ROOT, abs).split(sep).join('/');
 
   it('scanned a plausible number of files', () => {
     expect(files.length, 'source scan found almost nothing').toBeGreaterThan(100);
@@ -138,6 +149,7 @@ describe('no source file reaches the network', () => {
     ];
     const hits: string[] = [];
     for (const abs of files) {
+      if (rel(abs) in NETWORK_EXEMPT) continue;
       const text = readFileSync(abs, 'utf8');
       for (const re of banned) {
         if (re.test(text)) {
@@ -146,6 +158,20 @@ describe('no source file reaches the network', () => {
       }
     }
     expect(hits, `network usage found: ${hits.join('; ')}`).toEqual([]);
+  });
+
+  it('lets the service worker reach nothing but its own origin', () => {
+    for (const file of Object.keys(NETWORK_EXEMPT)) {
+      expect(files.map(rel), `${file} is exempt but no longer exists`).toContain(file);
+    }
+    const sw = readFileSync(resolve(APP_ROOT, 'src/web/sw.ts'), 'utf8');
+    // The guards, verbatim: nothing that is not a GET, nothing off-origin.
+    expect(sw).toContain("if (request.method !== 'GET') return;");
+    expect(sw).toContain('if (url.origin !== self.location.origin) return;');
+    // Its one network call is the intercepted request itself, after both.
+    expect(sw.match(/\bfetch\s*\(/g)).toEqual(['fetch(']);
+    expect(sw).toContain('fetch(request)');
+    expect(sw).not.toMatch(/XMLHttpRequest|WebSocket|importScripts|sendBeacon/);
   });
 
   it('keeps shell.openExternal behind an http(s) guard, in known places only', () => {
@@ -162,6 +188,47 @@ describe('no source file reaches the network', () => {
       const text = readFileSync(resolve(APP_ROOT, rel), 'utf8');
       expect(text, `${rel}: openExternal must be guarded by an ^https?:// test`).toMatch(
         /\^https\?:/,
+      );
+    }
+  });
+});
+
+/**
+ * The browser edition's page. Unlike the desktop renderer it is served from a
+ * public origin, so it ships stricter still: `connect-src 'none'`. Checked on
+ * the parsed policy, never the raw text — the first version of hardenWebCsp
+ * matched the directive's name in an HTML comment and left the real policy
+ * as it was.
+ */
+describe('browser edition CSP (src/web/index.html)', () => {
+  const dev = readFileSync(resolve(APP_ROOT, 'src/web/index.html'), 'utf8');
+  const prod = hardenWebCsp(dev);
+  const devCsp = cspOf(dev);
+  const csp = cspOf(prod);
+
+  it('declares a strict CSP', () => {
+    expect(csp.size, 'no Content-Security-Policy meta found').toBeGreaterThan(5);
+    expect(csp.get('default-src')).toEqual(["'self'"]);
+    expect(csp.get('script-src')).toEqual(["'self'"]);
+    expect(csp.get('object-src')).toEqual(["'none'"]);
+    expect(csp.get('base-uri')).toEqual(["'none'"]);
+    const all = [...csp.values()].flat().join(' ');
+    expect(all).not.toContain('unsafe-eval');
+    expect(all, 'no http(s) origin may appear in any directive').not.toMatch(/https?:\/\//);
+  });
+
+  it('ships with every connection closed, and the hardening really fired', () => {
+    expect(devCsp.get('connect-src'), 'the dev page should allow HMR').not.toEqual(["'none'"]);
+    expect(csp.get('connect-src')).toEqual(["'none'"]);
+    expect(csp.get('form-action')).toEqual(["'none'"]);
+    expect([...csp.values()].flat().join(' ')).not.toContain('localhost');
+  });
+
+  it('confines the dev localhost allowance to connect-src', () => {
+    for (const [directive, values] of devCsp) {
+      if (directive === 'connect-src') continue;
+      expect(values.join(' '), `localhost must not appear in ${directive}`).not.toMatch(
+        /localhost|127\.0\.0\.1/,
       );
     }
   });

@@ -1,13 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
 let dir: string;
-vi.mock('electron', () => ({ app: { getPath: () => dir, isPackaged: false } }));
 
 const { getSettings, setSettings, getSettingsSync } = await import('./settings');
-const { paths } = await import('./store');
+const { installStorage, paths } = await import('./store');
+const { createFsStorage } = await import('./store-fs');
+installStorage(createFsStorage(() => dir));
 
 beforeEach(async () => {
   dir = await fs.mkdtemp(path.join(os.tmpdir(), 'sharkdeck-settings-'));
@@ -69,11 +70,21 @@ describe('settings coercion', () => {
     expect((await getSettings()).background).toBe('none');
   });
 
-  it('defaults the background off and palette-coloured, leaving Animate to the system', async () => {
+  it('keeps a background turned off, and turns off one it cannot draw', async () => {
+    // The default only fills a file that names no background: someone who
+    // chose None before Nebula became the default keeps None.
+    await writeRaw({ background: 'none' });
+    expect((await getSettings()).background).toBe('none');
+    await writeRaw({ background: 'plasma' });
+    expect((await getSettings()).background).toBe('none');
+  });
+
+  it('defaults the background to Nebula in Shark Cyan, leaving Animate to the system', async () => {
     await writeRaw({});
     const s = await getSettings();
     expect(s).toMatchObject({
-      background: 'none',
+      background: 'nebula',
+      palette: 'shark-cyan',
       backgroundPalette: true,
       backgroundIntensity: 60,
     });

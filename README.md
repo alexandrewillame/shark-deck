@@ -5,6 +5,20 @@
 Open-source configurator for Attack Shark keyboards and mice — an auditable,
 offline replacement for the vendor's _Mouse Hub_ and _Driver v4_.
 
+## Use it in your browser
+
+**[alexandrewillame.github.io/shark-deck](https://alexandrewillame.github.io/shark-deck/)**
+is the same configurator with nothing to install. Open it in Chrome, Edge or
+Opera on a computer, click **Connect a device** and pick your mouse or keyboard
+in the browser's list. It can be installed as an app, and then works offline.
+
+The browser edition configures the device — DPI, buttons, lighting, actuation,
+macros, onboard profiles, backups (downloadable as files). What needs software
+on the computer stays in the desktop app: per-game auto-switching, the tray
+icon, start at login. Firefox and Safari cannot reach USB devices; on Linux the
+browser needs the udev rule once, and the page shows the commands. Details in
+the [platform support matrix](docs/platform-support.md#browser-edition-webhid).
+
 ## Walkthrough
 
 **Mouse:** DPI, polling rate, sensor settings, angle mode, buttons, macros, lighting.
@@ -64,6 +78,7 @@ Nothing built yet, or you just want to launch it:
 cd app
 npm install
 npm run dev        # dev build with hot reload
+npm run dev:web    # or the browser edition, on http://127.0.0.1:5174 (Chrome/Edge)
 ```
 
 Then run the launcher in `dist/app/` after a build (below) — `SharkDeck.exe`
@@ -112,6 +127,13 @@ git push origin v0.1.0
 The tag builds all three platforms again and opens a **draft** release with
 every installer attached. Nothing is public until you check the draft on the
 repository's **Releases** page and press **Publish**.
+
+Publishing the release also deploys the browser edition to GitHub Pages
+(`.github/workflows/pages.yml`, after the tests pass); it can be redeployed by
+hand from that workflow's page under **Actions**. Two repository settings, once:
+**Settings → Pages → Source: GitHub Actions**, and under **Settings →
+Environments → github-pages**, allow deployments from tags matching `v*` (by
+default it accepts only `main`, and a release builds from its tag).
 
 ## Develop further
 

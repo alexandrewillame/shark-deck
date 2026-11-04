@@ -67,6 +67,7 @@ import {
   recallPreset,
 } from './lighting/effectMemory';
 import { useAmbientLighting } from './lighting/useAmbientLighting';
+import { hostFeatures } from '../state/host';
 import { useStore } from '../state/store';
 import { usePaneView } from '../state/paneView';
 
@@ -487,8 +488,12 @@ function GlobalEffectPane({
   // edited — nothing reaches the device until Apply, and streaming to a board
   // that is still on the previous effect would fight it.
   const liveEffect = applied?.effect;
-  const ambientMode =
-    liveEffect === 'Screen Colour'
+  // The browser edition never captures: the stream would stop whenever its
+  // tab is hidden, which is exactly when a game or a film is on screen. Its
+  // picker leaves these effects out (see GLOBAL_PICKER_EFFECTS).
+  const ambientMode = !hostFeatures.ambientLighting
+    ? null
+    : liveEffect === 'Screen Colour'
       ? ('screen' as const)
       : liveEffect === 'Music (Level)' || liveEffect === 'Music (Spectrum)'
         ? ('music' as const)

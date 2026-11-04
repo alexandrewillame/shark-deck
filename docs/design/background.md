@@ -4,6 +4,11 @@ The Appearance popover's **Background** group. You pick an effect, and it is
 drawn behind every screen in the colours of the current palette. The panels in
 front of it turn to frosted glass.
 
+A new install starts on Nebula in Shark Cyan, on the desktop and in the browser
+alike (`DEFAULTS` in `main/settings.ts`). Only a settings file that names no
+background gets it: one that says None, from before Nebula was the default,
+keeps None.
+
 Code lives in `app/src/renderer/background/`. Surfaces are in
 `app/src/renderer/styles/background.css`. Settings are in
 `app/src/shared/backgrounds.ts` and `AppSettings`.
@@ -16,7 +21,8 @@ There are nine, plus None:
   over the page colour.
 - Landscape is a picture.
 
-They are backgrounds, not light shows: muted, unhurried, and mostly dark.
+They are backgrounds, not light shows: muted, unhurried, and mostly dark, in
+both themes (see [Light theme](#light-theme)).
 Electricity is a thunderstorm at night: a ceiling of storm cloud drifting
 slowly, its lumps lit faintly from below, rain, and about every three or four
 seconds, unevenly, a burst of one to three bolts that lights the clouds around
@@ -45,18 +51,54 @@ the window, which blurred at one size and aliased at another.
 
 ## Colours
 
-- **Palette on.** An effect is drawn in `--accent-rgb` and `--violet-rgb` (the
-  secondary accent) over `--bg`. All three are read from the stylesheet with
-  `getComputedStyle`, so tokens.css stays the only place palette colours live.
-- **Palette off.** An effect uses its own natural pair (registry.ts), one for
-  dark pages and one for light ones: orange fire, green-violet aurora, and so
-  on. A few effects need to know which (`uPal`): Rain's city has red tail
-  lights and warm white of its own, which a palette's two colours replace,
-  and the white-hot cores of Fire and Lava are warmer in their own colours.
-- **Light pages.** Emitters cannot add light to a light page. `glow()` lays
-  them down as ink instead: the same hue, as strong as the light was bright.
-- **Palette or mode changes.** A `MutationObserver` on `<html>` picks these up,
-  and the canvas cross-fades over 400 ms, the same length as `.theme-anim`.
+- **Palette on.** An effect is drawn in `--night-accent-rgb` and
+  `--night-violet-rgb` (the secondary accent) over `--night-bg`: the dark
+  theme's colours, which tokens.css keeps under those names in both themes.
+  All three are read from the stylesheet with `getComputedStyle`, so
+  tokens.css stays the only place palette colours live.
+- **Palette off.** An effect uses its own natural pair (registry.ts): orange
+  fire, green-violet aurora, and so on. A few effects need to know which
+  (`uPal`): Rain's city has red tail lights and warm white of its own, which a
+  palette's two colours replace, and the white-hot cores of Fire and Lava are
+  warmer in their own colours.
+- **Palette changes.** A `MutationObserver` on `<html>` picks these up, and the
+  canvas cross-fades over 400 ms, the same length as `.theme-anim`. A light /
+  dark switch changes nothing here.
+
+## Light theme
+
+The background is the same night sky in both themes. The light theme lightens
+the panels in front of it, not the sky.
+
+Light versions were tried first, and dropped:
+
+- **Ink on a light page** (the original). An emitter cannot add light to
+  white, so it was laid down as ink, as opaque as it was bright. Faint, and a
+  light hue such as the cyan accent stayed light whatever its strength; the
+  white glass hid the rest: "you basically do not see any background".
+- **Stronger, perceptual ink.** Visible, but the dense parts went dark and
+  muddy (a deep teal): "very ugly".
+- **Clean pastel paint**, never darker than the accent, with white highlights.
+  Clean, but still pastel stains on white.
+
+These effects are night things: aurora, nebula, lightning, glowing lava, a
+city's lights in the rain. A daylight version of them is never quite the
+thing. So:
+
+- **The layer ignores the theme.** It reads the `--night-*` tokens, which the
+  light theme leaves alone (`palette.ts`), and the shaders have no light-page
+  path; Landscape is always the night one.
+- **Light glass is denser:** white at 88% (`--glass-a`; 92% for the sticky
+  sub-tab bars, 85% for the tab rail), where the dark panes take 72%. Any
+  thinner, and white over a dark sky turns grey.
+- **Text set straight on the sky** — the home grid's heading, a pane's title
+  and its info dot, the onboard-profile label, the welcome copy — takes the
+  night's text colours (`--night-text*`) and a dark shadow, as in the dark
+  theme. Only the text itself: a control or a box beside it is a light
+  surface and keeps the light theme's colours.
+- **An inert panel** (Actuation's key editor before a key is picked) dims what
+  is in it rather than itself: dimmed as a whole, a light panel over the dark
+  sky is a grey slab.
 
 ## Layering
 

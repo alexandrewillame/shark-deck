@@ -87,3 +87,53 @@
     opacity: 0.2;
   }
 }
+
+/* ---- browser edition (see Welcome's BrowserWelcomeBody) ------------- */
+.welcome .connect-device {
+  gap: 8px;
+}
+.web-notes {
+  margin: 22px auto 0;
+  padding: 0;
+  list-style: none;
+  max-width: 460px;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--text-mut);
+}
+.web-notes li + li {
+  margin-top: 8px;
+}
+.web-linux {
+  margin-top: 22px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: var(--bg-1);
+}
+.web-linux h2 {
+  font-size: var(--fs-lg);
+  margin: 0 0 6px;
+}
+.web-linux p {
+  font-size: var(--fs-sm);
+  margin-bottom: 10px;
+}
+.web-linux pre {
+  margin: 0 0 10px;
+  padding: 10px;
+  overflow-x: auto;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  white-space: pre;
+  border-radius: 6px;
+  background: var(--bg-2);
+  color: var(--text);
+  user-select: all;
+}
+.grid-connect {
+  display: flex;
+  justify-content: center;
+  margin-top: 22px;
+}

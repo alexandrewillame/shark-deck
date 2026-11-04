@@ -1,6 +1,12 @@
+import { useState } from 'react';
 import { useStore } from '../state/store';
 import { useT } from '../state/i18n';
+import { hostFeatures } from '../state/host';
+import { ConnectDeviceButton } from '../components/ConnectDevice';
 import type { ScanDiagnostic } from '@shared/types/diagnostics';
+// The rule the desktop's Linux packages install, bundled as text so the
+// browser edition can hand the same lines to the user (see LinuxAccess).
+import udevRules from '../../../assets/linux/60-sharkdeck.rules?raw';
 
 const hex4 = (n: number) => n.toString(16).padStart(4, '0');
 
@@ -66,6 +72,70 @@ function Diagnostic({ diag }: { diag: ScanDiagnostic }) {
   return null;
 }
 
+/** What the browser edition asks a Linux user to run once: install the rule, reload udev. */
+export const LINUX_ACCESS_COMMANDS = [
+  "sudo tee /etc/udev/rules.d/60-sharkdeck.rules >/dev/null <<'EOF'",
+  ...udevRules.split(/\r?\n/).filter((line) => line.trim() && !line.startsWith('#')),
+  'EOF',
+  'sudo udevadm control --reload-rules && sudo udevadm trigger',
+].join('\n');
+
+/**
+ * Chromium on Linux opens /dev/hidraw* as the logged-in user, which by
+ * default only root may do — the same reason the desktop's .deb/.rpm install
+ * this rule. A web page cannot install anything, so it shows the commands.
+ */
+function LinuxAccess() {
+  const t = useT();
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="web-linux">
+      <h2>{t('web.linux.title')}</h2>
+      <p>{t('web.linux.body')}</p>
+      <pre className="mono">{LINUX_ACCESS_COMMANDS}</pre>
+      <button
+        className="btn"
+        onClick={() =>
+          void navigator.clipboard.writeText(LINUX_ACCESS_COMMANDS).then(() => setCopied(true))
+        }
+      >
+        <span aria-live="polite">{copied ? t('web.copied') : t('web.copy')}</span>
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The browser edition's empty state: nothing is found until the user picks a
+ * device in the browser's own list, so this asks for that instead of saying
+ * it is scanning — and says plainly when the browser cannot do it at all.
+ */
+function BrowserWelcomeBody() {
+  const t = useT();
+  const os = useStore((s) => s.platformInfo?.os);
+  const supported = typeof navigator !== 'undefined' && 'hid' in navigator;
+  if (!supported) {
+    return (
+      <>
+        <h1>{t('web.unsupported.title')}</h1>
+        <p>{t('web.unsupported.body')}</p>
+      </>
+    );
+  }
+  return (
+    <>
+      <h1>{t('welcome.title')}</h1>
+      <p>{t('web.welcome.body')}</p>
+      <ConnectDeviceButton primary label="web.connect" />
+      <ul className="web-notes">
+        <li>{t('web.note.otherApps')}</li>
+        <li>{t('web.note.replug')}</li>
+      </ul>
+      {os === 'linux' && <LinuxAccess />}
+    </>
+  );
+}
+
 export function Welcome() {
   const diag = useStore((s) => s.scanDiag);
   const t = useT();
@@ -110,12 +180,18 @@ export function Welcome() {
             </linearGradient>
           </defs>
         </svg>
-        <h1>{t('welcome.title')}</h1>
-        <p>{t('welcome.body')}</p>
-        <div className="scanning">
-          <span className="dot-scan" />
-          {t('welcome.scanning')}
-        </div>
+        {hostFeatures.devicePicker ? (
+          <BrowserWelcomeBody />
+        ) : (
+          <>
+            <h1>{t('welcome.title')}</h1>
+            <p>{t('welcome.body')}</p>
+            <div className="scanning">
+              <span className="dot-scan" />
+              {t('welcome.scanning')}
+            </div>
+          </>
+        )}
         {diag && <Diagnostic diag={diag} />}
       </div>
     </div>

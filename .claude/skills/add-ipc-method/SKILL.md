@@ -12,7 +12,19 @@ literal hand-written transcription of the `Api` interface.
 |---|---|---|
 | 1 | `app/src/shared/ipc.ts` | Declare it on `interface Api`. |
 | 2 | `app/src/preload/index.ts` | `yourMethod: (a, b) => invoke('yourMethod', a, b),` |
-| 3 | `app/src/main/ipc.ts` | Add the implementation to the `handlers` object. |
+| 3 | `app/src/main/handlers.ts` | Add the implementation to `deviceHandlers` — the table **both hosts** share (the desktop and the browser edition). Anything that needs only the device layer or app data goes here. |
+
+**A method only one host can do** (it needs Electron or the OS — a window, a
+native dialog, the process list) goes in that host's table instead of #3, and
+then **both** host tables need an entry — a fourth file:
+
+| Host | Table |
+|---|---|
+| desktop | `desktopHandlers` in `app/src/main/ipc.ts` |
+| browser | `browserHandlers` in `app/src/web/host/handlers.ts` — answer with the empty shape the renderer already handles, and gate the UI on `hostFeatures` (`app/src/renderer/state/host.ts`) |
+
+Both host tables are declared `satisfies { [K in HostMethods]: Handler }`, so
+`tsc` fails if either misses a host method or redefines a shared one.
 
 The renderer then calls it as `sd.yourMethod(...)` - `sd` comes from
 `app/src/renderer/state/bridge.ts` (or is re-exported by `tabs/common.tsx`).
@@ -33,10 +45,10 @@ setYourThing: (id: string, v: any) => guardedWrite(id, () => driverOrThrow(id).s
 
 `guardedWrite` calls `deviceManager.ensureBackup(id)` and **refuses the write**
 if no backup could be taken - so a device that can be written but not fully read
-never gets mutated with nothing to restore from. It also stamps
-`switcher.noteDeviceWrite()` and `deviceManager.noteWriteStart(id)`, which is
-how auto-switch knows something changed and how the live poll avoids reading
-mid-write.
+never gets mutated with nothing to restore from. It also calls the host's
+`onDeviceWrite` hook (the desktop's `switcher.noteDeviceWrite()`) and
+`deviceManager.noteWriteStart(id)`, which is how auto-switch knows something
+changed and how the live poll avoids reading mid-write.
 
 This is CLAUDE.md invariant #1. `npm run test:contract` enforces it: any `Api`
 method returning `Promise<WriteResult>` whose handler does not call
@@ -60,9 +72,15 @@ assignable. There are ~90 hand-written `invoke('name', ...)` lines and nothing
 but the contract test checks that each matches its own key - it calls every
 method and asserts which channel it asks for.
 
-**Also:** `handlers` is typed `{ [K in keyof Api]?: ... }` - every key optional -
-so `tsc` does **not** catch a missing handler. The contract test asserts
-`Api` <-> `handlers` parity in both directions.
+**Also:** the shared table is typed `{ [K in keyof Api]?: ... }` — every key
+optional — so on its own it cannot prove completeness. The host tables'
+`satisfies` does, and the contract test asserts `Api` <-> shared + host parity
+for each host, in both directions. A new **write** must be in the shared table:
+the test fails a mutating method found only in a host table.
+
+**Browser edition:** add any new `Promise<WriteResult>` method to
+`DEVICE_WRITES` in `app/src/web/host/bridge.ts` (the page warns before closing
+mid-write); `test/contract/browser-api.test.ts` fails until you do.
 
 ## Push events instead of a call
 

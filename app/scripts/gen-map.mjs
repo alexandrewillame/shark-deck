@@ -24,10 +24,17 @@ const THRESHOLD = 200;
 
 /** Areas in the order they should appear, with a one-line orientation. */
 const AREAS = [
-  ['src/main', 'Electron main -- the only process that touches HID.'],
+  [
+    'src/main',
+    'Electron main -- the only process that touches HID on the desktop. The device layer here also runs in the browser edition.',
+  ],
   ['src/renderer', 'Sandboxed React UI. No Node.'],
   ['src/shared', 'Types, the IPC contract, key layouts, i18n. Imported by all three processes.'],
   ['src/preload', 'contextBridge surfaces.'],
+  [
+    'src/web',
+    'The browser edition (GitHub Pages, WebHID): the in-page host that replaces main + preload.',
+  ],
   ['scripts', 'Build helpers, protocol extraction, hardware probes.'],
 ];
 

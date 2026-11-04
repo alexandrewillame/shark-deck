@@ -1294,4 +1294,49 @@ export const tr: Partial<Messages> = {
     'Bu masaüstünün fare ayarları bulunamadı. Bunları sistem ayarlarından açın.',
   'welcome.scanFailedLibusb':
     'Shark Deck’in USB aygıtlarıyla iletişim kurabilmesi için libusb 1.0 gerekir ve bu sistemde yüklü değil. Yükleyin (Ubuntu veya Debian’da sudo apt install libusb-1.0-0, Fedora’da sudo dnf install libusb1), ardından Shark Deck’i yeniden başlatın.',
+  'web.boot.framed':
+    'Shark Deck başka bir sayfanın içinde çalışmaz. Doğrudan kendi sekmesinde açın.',
+  'web.boot.otherTab':
+    'Shark Deck zaten başka bir sekmede veya pencerede açık. Orada kapatın; bu sekme işi kendiliğinden devralır.',
+  'web.welcome.body':
+    'Shark Deck tamamen bu sekmede çalışır: hiçbir şey kurulmaz ve ayarlarınız doğrudan bu sayfadan cihaza gider. Cihazı takın, ardından tarayıcınızın gösterdiği listeden seçin.',
+  'web.connect': 'Cihaz bağla',
+  'web.connect.another': 'Başka bir cihaz bağla',
+  'web.connect.failed': 'Tarayıcı cihaz listesini gösteremedi: {error}',
+  'web.unsupported.title': 'Bu tarayıcı USB cihazlarına erişemiyor',
+  'web.unsupported.body':
+    'Tarayıcıdaki Shark Deck, bilgisayardaki Chrome, Edge ve Opera’da bulunan WebHID’e ihtiyaç duyar. Firefox ve Safari’de yoktur, Brave onu kapatır ve telefonlarda kullanılamaz. Masaüstü uygulaması her yerde çalışır.',
+  'web.note.otherApps':
+    'Önce Shark Deck uygulamasını ve Attack Shark yazılımını kapatın: aynı cihazla konuşan iki program birbirini engeller.',
+  'web.note.replug':
+    'Bazı klavyeler seri numarası bildirmez. Tarayıcı bunları çıkarıldıklarında unutur; ardından yeniden bağlayın.',
+  'web.linux.title': 'Linux’ta erişime bir kez izin verin',
+  'web.linux.body':
+    'Tarayıcı, bu kural kurulmadan cihaza erişemez. Bu komutları bir terminalde çalıştırın, ardından cihazı çıkarıp yeniden takın:',
+  'web.copy': 'Kopyala',
+  'web.copied': 'Kopyalandı',
+  'web.access.title': 'Tarayıcı erişimi',
+  'web.access.body':
+    'Bu tarayıcı, cihazı tarayıcının cihaz listesinden seçtiğiniz için Shark Deck’in ona erişmesine izin veriyor. Cihazı unutmak bu izni geri alır.',
+  'web.access.forget': 'Bu cihazı unut',
+  'web.access.forgetConfirm':
+    'Yeniden bağlayana kadar Shark Deck bu tarayıcıda bu cihaza erişemeyecek.',
+  'web.access.forgotten': 'Cihaz unutuldu.',
+  'web.access.forgetFailed': 'Cihaz unutulamadı: {error}',
+  'restore.download': 'İndir',
+  'restore.download.tip':
+    'Bu yedeği bir dosya olarak kaydedin — güvenli bir yerde saklamak ya da Shark Deck’in diğer sürümüne taşımak için.',
+  'restore.import': 'Yedek içe aktar…',
+  'restore.import.tip':
+    'Shark Deck’in herhangi bir sürümünden daha önce indirdiğiniz bir yedek dosyasını ekleyin. Bu modele ait olmalıdır.',
+  'restore.imported': 'Yedek içe aktarıldı.',
+  'restore.importFailed': 'Bu dosya içe aktarılamadı: {error}',
+  'restore.exportFailed': 'Bu yedek okunamadı.',
+  'restore.browserNote':
+    'Tarayıcıda yedekleri bu tarayıcı saklar ve bunları silebilir. Saklamak istediklerinizi indirin.',
+  'set.about.browser':
+    'Bu, tarayıcı sürümüdür: hiçbir şey kurulmaz, ayarlar ve yedekler bu tarayıcıda kalır. Sayfa GitHub Pages’ten gelir ve yalnızca orayla iletişim kurar — yüklenmek ve güncellemeleri denetlemek için.',
+  'web.update.ready': 'Shark Deck’in yeni bir sürümü hazır.',
+  'web.update.restart': 'Şimdi yeniden başlat',
+  'web.update.later': 'Daha sonra',
 };

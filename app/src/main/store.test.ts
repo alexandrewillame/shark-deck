@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { promises as fs } from 'node:fs';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
@@ -6,10 +6,8 @@ import path from 'node:path';
 
 let dir: string;
 
-vi.mock('electron', () => ({ app: { getPath: () => dir, isPackaged: false } }));
-
-// Imported after the mock is registered.
 const {
+  installStorage,
   readJson,
   writeJson,
   withFileLock,
@@ -18,7 +16,13 @@ const {
   listBackupFiles,
   readBackup,
   deleteBackupFile,
+  readBackupText,
+  parseBackupFile,
+  MAX_BACKUP_IMPORT_CHARS,
 } = await import('./store');
+const { createFsStorage } = await import('./store-fs');
+// The desktop backend, rooted at the fresh temp dir each test makes below.
+installStorage(createFsStorage(() => dir));
 
 beforeEach(async () => {
   dir = await fs.mkdtemp(path.join(os.tmpdir(), 'sharkdeck-store-'));
@@ -155,5 +159,50 @@ describe('backups', () => {
     // …and none of that touched the real file or the one it tried to escape to.
     expect(existsSync(outside)).toBe(true);
     expect(await listBackupFiles('v8')).toEqual([file]);
+  });
+});
+
+describe('backup files carried between editions (export / import)', () => {
+  it('round-trips an exported backup through the import parser', async () => {
+    const blocks = { '0x84': '00 84 00 00', keymatrix_base: '[{"slot":1}]' };
+    const file = await writeBackup('R85HE', 'abc', blocks, 1_700_000_000_000);
+    const text = await readBackupText(file);
+    expect(text).not.toBeNull();
+    expect(parseBackupFile(text!)).toEqual({
+      model: 'R85HE',
+      serial: 'abc',
+      createdAt: 1_700_000_000_000,
+      blocks,
+    });
+  });
+
+  it('accepts only what writeBackup produces', () => {
+    const bad = [
+      'not json',
+      '[]',
+      'null',
+      '{}',
+      '{"blocks":{"a":"b"}}',
+      '{"model":"../../settings","blocks":{"a":"b"}}', // the model lands in a file name
+      '{"model":"V8","blocks":{}}',
+      '{"model":"V8","blocks":["a"]}',
+      '{"model":"V8","blocks":{"a":1}}',
+    ];
+    for (const json of bad) expect('error' in parseBackupFile(json), json).toBe(true);
+  });
+
+  it('fills in a missing serial and timestamp', () => {
+    const parsed = parseBackupFile('{"model":"V8","blocks":{"profile1":"08 0f"}}');
+    expect(parsed).toMatchObject({ model: 'V8', serial: 'imported' });
+    expect('createdAt' in parsed && Number.isFinite(parsed.createdAt)).toBe(true);
+  });
+
+  it('refuses a file far larger than any backup', () => {
+    const huge = `{"model":"V8","blocks":{"a":"${'0'.repeat(MAX_BACKUP_IMPORT_CHARS)}"}}`;
+    expect(parseBackupFile(huge)).toEqual({ error: 'file too large to be a backup' });
+  });
+
+  it('exports nothing for a name that is not a plain backup file name', async () => {
+    expect(await readBackupText('../config/settings.json')).toBeNull();
   });
 });

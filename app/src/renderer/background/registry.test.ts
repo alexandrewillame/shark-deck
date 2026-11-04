@@ -22,14 +22,13 @@ describe('the background registry', () => {
     expect(en['set.background.none']).toBeTruthy();
   });
 
-  it('gives each one a main(), and its own natural colours for both kinds of page', () => {
+  it('gives each one a main(), and its own pair of natural colours', () => {
     for (const id of DRAWN_EFFECTS) {
       const d = BACKGROUNDS[id];
       expect(d.frag, id).toMatch(/void main\(\)/);
-      for (const pair of [d.natural.dark, d.natural.light]) {
-        expect(pair).toHaveLength(2);
-        for (const c of pair) for (const v of c) expect(v >= 0 && v <= 1, `${id} ${c}`).toBe(true);
-      }
+      expect(d.natural).toHaveLength(2);
+      for (const c of d.natural)
+        for (const v of c) expect(v >= 0 && v <= 1, `${id} ${c}`).toBe(true);
     }
   });
 

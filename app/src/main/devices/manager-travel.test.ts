@@ -73,6 +73,7 @@ describe('live travel stream: refcount and cadence', () => {
   beforeEach(async () => {
     mockSettings.devMode = true;
     mgr = new DeviceManager();
+    mgr.configure({ allowSimulated: true }); // an unpackaged desktop build
     await scanOnce(mgr);
     // Any simulated magnetic keyboard will do; the stream bookkeeping is
     // driver-independent.
@@ -158,6 +159,7 @@ describe('live travel stream: what it answers', () => {
   beforeEach(async () => {
     mockSettings.devMode = true;
     mgr = new DeviceManager();
+    mgr.configure({ allowSimulated: true }); // an unpackaged desktop build
     await scanOnce(mgr);
     id = mgr.list().find((d) => d.capabilities.includes('magneticSwitches'))!.id;
   });

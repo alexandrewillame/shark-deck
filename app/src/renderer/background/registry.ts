@@ -31,9 +31,9 @@ export interface BackgroundDef {
   /** The moment a still frame shows — with reduced motion, with Animate off,
    *  and in the picker's thumbnail — chosen to be a good-looking one. */
   still: number;
-  /** Its own colours, for when "Use palette colours" is off: [main, second],
-   *  for a dark page and for a light one. */
-  natural: { dark: [Rgb, Rgb]; light: [Rgb, Rgb] };
+  /** Its own colours, for when "Use palette colours" is off: [main, second].
+   *  One pair: the background is a night sky in both themes (palette.ts). */
+  natural: [Rgb, Rgb];
   /** The fragment shader's `main()`, after shaders/common.ts. */
   frag: string;
 }
@@ -47,7 +47,7 @@ export const BACKGROUNDS: Record<DrawnEffect, BackgroundDef> = {
     fps: 30,
     scale: 0.75,
     still: 24,
-    natural: { dark: [hex('#a9b8c8'), hex('#64707e')], light: [hex('#4e5864'), hex('#7d8894')] },
+    natural: [hex('#a9b8c8'), hex('#64707e')],
     frag: SMOKE,
   },
   fire: {
@@ -56,7 +56,7 @@ export const BACKGROUNDS: Record<DrawnEffect, BackgroundDef> = {
     fps: 30,
     scale: 1,
     still: 21,
-    natural: { dark: [hex('#ff8a2a'), hex('#c0250c')], light: [hex('#d9480f'), hex('#a61e0a')] },
+    natural: [hex('#ff8a2a'), hex('#c0250c')],
     frag: FIRE,
   },
   electricity: {
@@ -65,7 +65,7 @@ export const BACKGROUNDS: Record<DrawnEffect, BackgroundDef> = {
     fps: 30,
     scale: 1,
     still: 1.55,
-    natural: { dark: [hex('#8fb8ff'), hex('#7a5cff')], light: [hex('#1f5fd1'), hex('#6a3fd1')] },
+    natural: [hex('#8fb8ff'), hex('#7a5cff')],
     frag: ELECTRICITY,
   },
   lava: {
@@ -74,7 +74,7 @@ export const BACKGROUNDS: Record<DrawnEffect, BackgroundDef> = {
     fps: 24,
     scale: 0.9,
     still: 80,
-    natural: { dark: [hex('#ff6a10'), hex('#b8160a')], light: [hex('#d24a0c'), hex('#8e1408')] },
+    natural: [hex('#ff6a10'), hex('#b8160a')],
     frag: LAVA,
   },
   aurora: {
@@ -83,7 +83,7 @@ export const BACKGROUNDS: Record<DrawnEffect, BackgroundDef> = {
     fps: 30,
     scale: 0.75,
     still: 18,
-    natural: { dark: [hex('#38f08f'), hex('#8a5cff')], light: [hex('#0f9d5c'), hex('#6a3fd1')] },
+    natural: [hex('#38f08f'), hex('#8a5cff')],
     frag: AURORA,
   },
   nebula: {
@@ -92,7 +92,7 @@ export const BACKGROUNDS: Record<DrawnEffect, BackgroundDef> = {
     fps: 24,
     scale: 0.9,
     still: 40,
-    natural: { dark: [hex('#e05ac0'), hex('#3d6bff')], light: [hex('#b02a8f'), hex('#2448c9')] },
+    natural: [hex('#e05ac0'), hex('#3d6bff')],
     frag: NEBULA,
   },
   landscape: {
@@ -101,7 +101,7 @@ export const BACKGROUNDS: Record<DrawnEffect, BackgroundDef> = {
     fps: 12,
     scale: 1,
     still: 30,
-    natural: { dark: [hex('#ff9a5c'), hex('#5a4a9a')], light: [hex('#f2a65a'), hex('#6b8fc4')] },
+    natural: [hex('#ff9a5c'), hex('#5a4a9a')],
     frag: LANDSCAPE,
   },
   water: {
@@ -112,7 +112,7 @@ export const BACKGROUNDS: Record<DrawnEffect, BackgroundDef> = {
     still: 12,
     // Sunlight through the waves: a pale aqua for the light, a clear deep
     // blue for the water itself.
-    natural: { dark: [hex('#8fe6ff'), hex('#0b5bbf')], light: [hex('#0d7fb5'), hex('#0b4f9e')] },
+    natural: [hex('#8fe6ff'), hex('#0b5bbf')],
     frag: WATER,
   },
   rain: {
@@ -124,7 +124,7 @@ export const BACKGROUNDS: Record<DrawnEffect, BackgroundDef> = {
     // A city at night through wet glass: sodium-amber street lights and a cool
     // white-blue. The shader adds the odd red tail light and warm white of its
     // own, palette off (`uPal`).
-    natural: { dark: [hex('#ffb35c'), hex('#7fb2ff')], light: [hex('#c66a12'), hex('#2f66c9')] },
+    natural: [hex('#ffb35c'), hex('#7fb2ff')],
     frag: RAIN,
   },
 };

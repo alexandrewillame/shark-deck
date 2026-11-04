@@ -4,6 +4,9 @@
  * Every effect draws in the theme's two colours (`uA`, `uB`) over the page
  * (`uBg`), so a palette change recolours it with nothing else to do. Emitters
  * finish through `glow()`, pictures through `scene()` (see common.ts).
+ *
+ * Every one is a night scene, in both themes: the light theme lightens the
+ * panels in front of it, not the sky (docs/design/background.md).
  */
 
 /** Smoke: domain-warped fbm (fbm feeding fbm feeding fbm), drifting upward —
@@ -318,8 +321,7 @@ void main() {
   vec2 uv = gl_FragCoord.xy / uRes;
   float x = uv.x * uRes.x / uRes.y;
   float t = uTime * 0.1;
-  vec3 light = vec3(stars(gl_FragCoord.xy / uRes.y * 160.0, uTime))
-    * (1.0 - uLight) * smoothstep(0.2, 0.6, uv.y) * 0.8;
+  vec3 light = vec3(stars(gl_FragCoord.xy / uRes.y * 160.0, uTime)) * smoothstep(0.2, 0.6, uv.y) * 0.8;
   for (int i = 0; i < 3; i++) {
     float fi = float(i);
     float curve = 0.52 + fi * 0.08
@@ -356,14 +358,14 @@ void main() {
   vec3 light = col * neb * (0.9 + 0.5 * heart) + mix(uA, uB, 0.5) * 0.05 * heart;
   float far = stars(gl_FragCoord.xy / uRes.y * 210.0, uTime);
   float near = stars(gl_FragCoord.xy / uRes.y * 90.0 + 17.0, uTime * 0.7);
-  light += vec3(far * 0.8 + near * 1.2) * (1.0 - uLight);
+  light += vec3(far * 0.8 + near * 1.2);
   gl_FragColor = finish(glow(light * 1.2));
 }
 `;
 
 /** Landscape: five ridged-noise mountain ranges with atmospheric perspective,
- *  rimmed in light, mist pooling in the valleys; a night sky with a moon and
- *  stars, or a hazy day with a low sun on a light page. Drifts very slowly. */
+ *  rimmed in light, mist pooling in the valleys, under a night sky with a moon
+ *  and stars. Drifts very slowly. */
 export const LANDSCAPE = /* glsl */ `
 float ridge(float x) {
   float v = 0.0;
@@ -382,16 +384,13 @@ void main() {
   float x = uv.x * aspect;
   float t = uTime * 0.015;
   float px = 0.8 / uRes.y;
-  bool day = uLight > 0.5;
-  vec3 top = day ? mix(uBg, uB, 0.18) : uBg;
-  vec3 horizon = mix(uBg, uA, day ? 0.3 : 0.45);
+  vec3 top = uBg;
+  vec3 horizon = mix(uBg, uA, 0.45);
   vec3 col = mix(horizon, top, smoothstep(0.2, 0.95, uv.y));
   float md = length(vec2(x, uv.y) - vec2(aspect * 0.74, 0.74));
-  vec3 orb = mix(uA, vec3(1.0), day ? 0.6 : 0.78);
+  vec3 orb = mix(uA, vec3(1.0), 0.78);
   col += orb * (smoothstep(0.05 + px, 0.05 - px, md) * 0.85 + 0.22 * exp(-md * 7.0));
-  if (!day) {
-    col += vec3(stars(gl_FragCoord.xy / uRes.y * 170.0, uTime)) * smoothstep(0.45, 0.85, uv.y) * 0.9;
-  }
+  col += vec3(stars(gl_FragCoord.xy / uRes.y * 170.0, uTime)) * smoothstep(0.45, 0.85, uv.y) * 0.9;
   for (int i = 0; i < 5; i++) {
     float fi = float(i);
     float depth = fi / 4.0;
@@ -399,7 +398,7 @@ void main() {
       + (0.15 + depth * 0.08) * (ridge(x * (0.9 + depth * 1.3) + fi * 9.7 + t * (0.5 + depth)) - 0.45);
     float m = smoothstep(h + px, h - px, uv.y);
     vec3 far = mix(horizon, mix(uA, uB, 0.5), 0.25);
-    vec3 near = day ? mix(uBg, uB, 0.45) * 0.8 : uBg * 0.35 + uB * 0.05;
+    vec3 near = uBg * 0.35 + uB * 0.05;
     vec3 layer = mix(far, near, pow(depth, 0.8));
     layer += uA * smoothstep(h - 0.012, h, uv.y) * m * (1.0 - depth) * 0.35;
     col = mix(col, layer, m);

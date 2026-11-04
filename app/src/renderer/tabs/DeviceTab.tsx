@@ -8,6 +8,8 @@ import { useT } from '../state/i18n';
 import { FirmwareSection } from './device/FirmwareSection';
 import { PairSection } from './device/PairSection';
 import { RestoreSection } from './device/RestoreSection';
+import { BrowserAccessSection } from './device/BrowserAccessSection';
+import { hostFeatures } from '../state/host';
 import { SwitchTypeSection } from './keyboard/SwitchTypeSection';
 
 type View = 'device' | 'switches';
@@ -77,6 +79,7 @@ export function DeviceTab({ device }: TabProps) {
           <FirmwareSection device={device} />
           {device.wireless && caps.includes('pairing') && <PairSection device={device} />}
           {caps.includes('restore') && <RestoreSection device={device} />}
+          {hostFeatures.devicePicker && <BrowserAccessSection device={device} />}
         </>
       )}
     </HeroPane>

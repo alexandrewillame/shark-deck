@@ -25,6 +25,30 @@ was built on a Windows machine with no Mac or Linux box to test against.
 | Music lighting effect (system audio) | ✅ | n/a — no system-audio loopback | n/a — no system-audio loopback |
 | CI (format, typecheck, all test tiers) | ✅ | ✅ | ✅ |
 
+## Browser edition (WebHID)
+
+The same app, run from `https://alexandrewillame.github.io/shark-deck/` with
+nothing installed: the renderer and the whole device layer run in the page, and
+the browser's WebHID API replaces node-hid (see CLAUDE.md, *Browser edition*).
+Configuration only — everything that needs software on the computer stays in
+the desktop app.
+
+| Area | Windows | macOS | Linux |
+|---|---|---|---|
+| Browsers | Chrome, Edge, Opera (desktop) | Chrome, Edge, Opera | Chrome, Edge, Opera — the distro packages; snap/Flatpak Chromium may not reach `/dev/hidraw*` |
+| HID device access | ⚠️ R85HE reads and a write verified (Chrome 157, 2026-11-03 — see [`protocol/webhid.md`](protocol/webhid.md)); the V8 untested | ⚠️ implemented, untested | ⚠️ implemented, untested. Needs the same udev rule as the desktop app; the page shows the commands |
+| Picking a device | the browser's own device dialog, once per device (devices with no USB serial — the R85HE — again after each unplug) | same | same |
+| Installable, works offline | ✅ (service worker, verified in Chromium) | ✅ | ✅ |
+| App data | this browser's storage (IndexedDB); backups downloadable as files | same | same |
+| Auto-switch, app profiles, tray, start at login, overlay | n/a — need software installed | n/a | n/a |
+| Screen / music lighting | n/a — the capture stops when the tab is hidden | n/a | n/a |
+| V8 receiver firmware version | not shown — WebHID exposes no USB `bcdDevice` | same | same |
+
+Firefox and Safari have no WebHID, Brave turns it off by default, and phones
+cannot use it at all; the page says so instead of offering a dead button. Run
+the browser edition **or** the desktop app, not both: two programs polling the
+same device interleave their frames.
+
 ## Why Windows is ahead
 
 This project's entire hardware-verification history — the protocol capture

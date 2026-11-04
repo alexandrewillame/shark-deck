@@ -4,33 +4,33 @@
 
 Every non-test source file of 200 lines or more, largest first, with what it exports. Read this instead of opening files to find out what is in them.
 
-99 of 242 source files are at or above 200 lines. Anything not listed here is small enough to read whole.
+104 of 259 source files are at or above 200 lines. Anything not listed here is small enough to read whole.
 
 ## Largest first
 
 | Lines | File | Exports |
 |---:|---|---|
 | 2167 | `src/renderer/tabs/keyboard/MagneticSection.tsx` | MagneticSection |
-| 1668 | `src/main/devices/manager.ts` | DeviceManager, deviceManager |
+| 1749 | `src/main/devices/manager.ts` | ManagerConfig, DeviceManager, deviceManager |
 | 1609 | `src/renderer/components/common.tsx` | Tooltip, InfoDot, BatteryPill, Toggle, EditableNumber, Panel, Row, PaneHeader, TitleTabs, Segmented, Select, ColorField, +9 |
 | 1576 | `src/main/devices/drivers/compx-keyboard.ts` | KB_CMD, decodeQuad, delay, isEchoOf, KB_MACRO_MAX_STEPS, encodeMacro, decodeMacro, fmtVersion, KeyQuad, quadFor, keymatrixArgs, CompxKeyboard, +1 |
 | 1507 | `src/main/devices/drivers/compx-he-keyboard.ts` | snapPairMismatch, CompxHeKeyboard |
-| 1340 | `src/renderer/tabs/LightingTab.tsx` | LightingTab |
-| 1323 | `src/shared/i18n/de.ts` | de |
-| 1310 | `src/shared/i18n/locales/ru.ts` | ru |
-| 1308 | `src/shared/i18n/es.ts` | es |
-| 1299 | `src/shared/i18n/en.ts` | en, MessageKey, Messages |
-| 1298 | `src/shared/i18n/locales/tr.ts` | tr |
-| 1291 | `src/shared/i18n/fr.ts` | fr |
-| 1290 | `src/shared/i18n/locales/ja.ts` | ja |
-| 1275 | `src/shared/i18n/locales/ar.ts` | ar |
-| 1274 | `src/shared/i18n/locales/ko.ts` | ko |
-| 1219 | `src/shared/i18n/locales/zh-CN.ts` | zhCN |
-| 1218 | `src/shared/i18n/locales/zh-TW.ts` | zhTW |
+| 1368 | `src/shared/i18n/de.ts` | de |
+| 1355 | `src/shared/i18n/locales/ru.ts` | ru |
+| 1353 | `src/shared/i18n/es.ts` | es |
+| 1345 | `src/renderer/tabs/LightingTab.tsx` | LightingTab |
+| 1344 | `src/shared/i18n/en.ts` | en, MessageKey, Messages |
+| 1343 | `src/shared/i18n/locales/tr.ts` | tr |
+| 1336 | `src/shared/i18n/fr.ts` | fr |
+| 1335 | `src/shared/i18n/locales/ja.ts` | ja |
+| 1319 | `src/shared/i18n/locales/ar.ts` | ar |
+| 1319 | `src/shared/i18n/locales/ko.ts` | ko |
+| 1260 | `src/shared/i18n/locales/zh-CN.ts` | zhCN |
+| 1258 | `src/shared/i18n/locales/zh-TW.ts` | zhTW |
 | 1104 | `src/main/devices/drivers/compx-mouse-8k.ts` | CompxMouse8K |
 | 897 | `src/renderer/components/KeyboardMap.tsx` | KeyRef, GAP_U, bakedGapOf, flickerTiming, legendIcon, KeyGauge, KeyboardMap |
+| 785 | `src/renderer/App.tsx` | App |
 | 778 | `src/renderer/tabs/keyboard/KeyModePanels.tsx` | ModeContext, ExperimentalTag, ModeRow, SnapTapPanel, TogglePanel, KeyChooser, ModTapPanel, DksPanel |
-| 776 | `src/renderer/App.tsx` | App |
 | 752 | `src/main/devices/virtual.ts` | virtualDescriptors, VirtualDriver |
 | 727 | `src/renderer/components/tooltipMediaData.ts` | TooltipAnimation, svgWords, localizeSvg, ANIMATIONS |
 | 724 | `src/main/hid/transport.ts` | HidCandidate, FrameLogger, lastHidError, enumerate, findVendorCollection, HidWedgedError, HidChannel |
@@ -38,25 +38,27 @@ Every non-test source file of 200 lines or more, largest first, with what it exp
 
 ## src/main
 
-Electron main -- the only process that touches HID.
+Electron main -- the only process that touches HID on the desktop. The device layer here also runs in the browser edition.
 
 | Lines | File | Exports |
 |---:|---|---|
-| 1668 | `src/main/devices/manager.ts` | DeviceManager, deviceManager |
+| 1749 | `src/main/devices/manager.ts` | ManagerConfig, DeviceManager, deviceManager |
 | 1576 | `src/main/devices/drivers/compx-keyboard.ts` | KB_CMD, decodeQuad, delay, isEchoOf, KB_MACRO_MAX_STEPS, encodeMacro, decodeMacro, fmtVersion, KeyQuad, quadFor, keymatrixArgs, CompxKeyboard, +1 |
 | 1507 | `src/main/devices/drivers/compx-he-keyboard.ts` | snapPairMismatch, CompxHeKeyboard |
 | 1104 | `src/main/devices/drivers/compx-mouse-8k.ts` | CompxMouse8K |
 | 752 | `src/main/devices/virtual.ts` | virtualDescriptors, VirtualDriver |
 | 724 | `src/main/hid/transport.ts` | HidCandidate, FrameLogger, lastHidError, enumerate, findVendorCollection, HidWedgedError, HidChannel |
 | 636 | `src/main/profiles/switcher.ts` | Switcher, switcher |
-| 595 | `src/main/ipc.ts` | registerIpc, wireWindowChrome |
-| 579 | `src/main/index.ts` | _(none)_ |
+| 587 | `src/main/index.ts` | _(none)_ |
 | 563 | `src/main/devices/drivers/base.ts` | delay, fmtVersion, TravelSample, MagneticWriteOpts, DriverContext, Driver |
+| 467 | `src/main/handlers.ts` | Handler, HandlerTable, HostMethods, DeviceHandlerDeps, createDeviceHandlers, DeviceHandlers, createDispatcher, wireDeviceEvents |
 | 398 | `src/main/platform/linux.ts` | desktopExecArg, linux |
 | 376 | `src/main/overlayWindow.ts` | showSwitchOverlay, destroySwitchOverlay |
+| 285 | `src/main/ipc.ts` | registerIpc, wireWindowChrome |
 | 276 | `src/main/platform/win.ts` | win |
 | 256 | `src/main/crash.ts` | reportFatalBootstrap, installCrashReporter |
 | 245 | `src/main/profiles/store.ts` | listProfiles, saveProfile, setTriggerIcon, deleteProfile, seedDefaults, migrateRulesToProfiles, ensureDefaultProfile |
+| 242 | `src/main/store.ts` | StorageBackend, installStorage, paths, ensureDirs, withFileLock, readJson, readJsonSync, writeJson, listBackupFiles, writeBackup, readBackupText, MAX_BACKUP_IMPORT_CHARS, +4 |
 | 206 | `src/main/lighting/ambient.ts` | AmbientMode, isAmbientActive, startAmbient, stopAmbient, stopAllAmbient, pushAmbientSample, captureArmed |
 
 ## src/renderer
@@ -67,15 +69,15 @@ Sandboxed React UI. No Node.
 |---:|---|---|
 | 2167 | `src/renderer/tabs/keyboard/MagneticSection.tsx` | MagneticSection |
 | 1609 | `src/renderer/components/common.tsx` | Tooltip, InfoDot, BatteryPill, Toggle, EditableNumber, Panel, Row, PaneHeader, TitleTabs, Segmented, Select, ColorField, +9 |
-| 1340 | `src/renderer/tabs/LightingTab.tsx` | LightingTab |
+| 1345 | `src/renderer/tabs/LightingTab.tsx` | LightingTab |
 | 897 | `src/renderer/components/KeyboardMap.tsx` | KeyRef, GAP_U, bakedGapOf, flickerTiming, legendIcon, KeyGauge, KeyboardMap |
+| 785 | `src/renderer/App.tsx` | App |
 | 778 | `src/renderer/tabs/keyboard/KeyModePanels.tsx` | ModeContext, ExperimentalTag, ModeRow, SnapTapPanel, TogglePanel, KeyChooser, ModTapPanel, DksPanel |
-| 776 | `src/renderer/App.tsx` | App |
 | 727 | `src/renderer/components/tooltipMediaData.ts` | TooltipAnimation, svgWords, localizeSvg, ANIMATIONS |
 | 714 | `src/renderer/tabs/lighting/effectPreview.ts` | PreviewBounds, PreviewParams, boardLevel, previewLevel, previewRgbCss, isStaticEffect, effectColor |
 | 687 | `src/renderer/screens/AutoSwitch.tsx` | AutoSwitchScreen |
 | 677 | `src/renderer/tabs/common.tsx` | TabProps, sd, ReadFailureRegistry, ReadFailureContext, useReadFailureRegistry, dropDeviceCache, useDeviceData, prefetchDeviceReads, useIsDev, isDevBuild, DevNote, useWrite, +9 |
-| 634 | `src/renderer/background/shaders/effects.ts` | SMOKE, FIRE, ELECTRICITY, LAVA, AURORA, NEBULA, LANDSCAPE, WATER, RAIN |
+| 633 | `src/renderer/background/shaders/effects.ts` | SMOKE, FIRE, ELECTRICITY, LAVA, AURORA, NEBULA, LANDSCAPE, WATER, RAIN |
 | 629 | `src/renderer/tabs/keyboard/KeyRemapSection.tsx` | KeyRemapSection |
 | 619 | `src/renderer/components/ProfileCompare.tsx` | ProfileCompare |
 | 594 | `src/renderer/tabs/keyboard/SwitchCrossSection.tsx` | SwitchCrossSection |
@@ -85,14 +87,14 @@ Sandboxed React UI. No Node.
 | 490 | `src/renderer/tabs/keyboard/ActuationTestSection.tsx` | ActuationTestSection |
 | 481 | `src/renderer/tabs/lighting/PerKeyPane.tsx` | PerKeyPane, PresetBoard |
 | 460 | `src/renderer/components/profileDiff.ts` | DiffRow, KeyBlock, blocksByKey, DiffUnit, FieldDiff, KeyNames, keyNames, diffField |
-| 443 | `src/renderer/screens/DeviceGrid.tsx` | DeviceGrid |
+| 452 | `src/renderer/screens/DeviceGrid.tsx` | DeviceGrid |
 | 443 | `src/renderer/state/store.ts` | Route, Tab, HOME_TAB, PairPhase, PairingRun, pairingBusy, useStore |
 | 401 | `src/renderer/tabs/keyboard/SwitchTravelStage.tsx` | MixedField, SwitchTravelStage |
 | 385 | `src/renderer/components/AppearanceMenu.tsx` | AppearanceMenu |
 | 384 | `src/renderer/colorUtil.ts` | hexToRgb, rgbToHex, readableTextOn, parseCssColor, LED_WHITE, emittedRgb, emittedCss, LitCap, litCap, SWATCH_HUES, SwatchHueName, COLOR_PRESET_ROWS, +2 |
 | 376 | `src/renderer/tabs/keyboard/keyRemapState.ts` | RemapLayer, FactoryBinding, factoryCode, factoryBinding, comboUsages, COMBO_MAX, heldModifiers, comboAction, isUnbound, isRemapped, resetCodeOf, quadAction, +9 |
 | 375 | `src/renderer/components/macro/MacroEditor.tsx` | MacroEditor |
-| 366 | `src/renderer/background/renderer.ts` | FrameParams, DrawResult, FrameSink, BackgroundRenderer, thumbnails |
+| 361 | `src/renderer/background/renderer.ts` | FrameParams, DrawResult, FrameSink, BackgroundRenderer, thumbnails |
 | 315 | `src/renderer/components/PersistentDeviceArt.tsx` | PersistentDeviceArt |
 | 311 | `src/renderer/screens/DeviceConfig.tsx` | DeviceConfig |
 | 302 | `src/renderer/tabs/keyboard/magneticModes.ts` | KeyRef, KeyMap, keyIdOf, ModeChoice, ToggleStyle, choiceOf, toggleStyleOf, toggleMode, ModeDef, MODE_DEFS, MT_HOLD_ZONE, MT_TAP_ZONE, +15 |
@@ -103,9 +105,10 @@ Sandboxed React UI. No Node.
 | 253 | `src/renderer/tabs/keyboard/dksGrid.ts` | DKS_POINTS, DksPoint, DksBar, barsOf, zoneOf, rowFires, DksChoice, choiceAt, choicesAt, withChoice, DksSpan, rowSpans, +5 |
 | 251 | `src/renderer/components/macro/MacroStepList.tsx` | MacroStepList |
 | 248 | `src/renderer/components/macro/macroUtils.ts` | GroupKind, MacroGroup, newUid, waitGroup, tapGroup, toGroups, fromGroups, encodedStepCount, groupsDuration, formatDuration, MOUSE_BUTTONS, DOM_BUTTON_VALUE, +3 |
+| 245 | `src/renderer/tabs/device/RestoreSection.tsx` | RestoreSection |
 | 241 | `src/renderer/components/ColorPickerField.tsx` | ColorPickerField |
 | 241 | `src/renderer/tabs/mouse/SensorSection.tsx` | SensorSection |
-| 237 | `src/renderer/background/layer.ts` | LayerSettings, SinkFactory, BackgroundLayerController |
+| 238 | `src/renderer/background/layer.ts` | LayerSettings, SinkFactory, BackgroundLayerController |
 | 233 | `src/renderer/components/usePortalPosition.ts` | AnchoredPlacement, AnchoredPosition, UseAnchoredPositionOptions, useAnchoredPosition, MIN_PANEL_HEIGHT, PlaceAnchoredInput, placeAnchored |
 | 233 | `src/renderer/tabs/lighting/useAmbientLighting.ts` | AmbientMode, useAmbientLighting |
 | 231 | `src/renderer/tabs/mouse/ButtonsSection.tsx` | ButtonsSection |
@@ -113,6 +116,7 @@ Sandboxed React UI. No Node.
 | 211 | `src/renderer/components/ColorPicker.tsx` | ColorPicker |
 | 204 | `src/renderer/tabs/keyboard/SwitchTypeSection.tsx` | SwitchTypeSection |
 | 204 | `src/renderer/tabs/lighting/EffectThumb.tsx` | EffectThumb |
+| 200 | `src/renderer/screens/Welcome.tsx` | LINUX_ACCESS_COMMANDS, Welcome |
 
 ## src/shared
 
@@ -120,20 +124,20 @@ Types, the IPC contract, key layouts, i18n. Imported by all three processes.
 
 | Lines | File | Exports |
 |---:|---|---|
-| 1323 | `src/shared/i18n/de.ts` | de |
-| 1310 | `src/shared/i18n/locales/ru.ts` | ru |
-| 1308 | `src/shared/i18n/es.ts` | es |
-| 1299 | `src/shared/i18n/en.ts` | en, MessageKey, Messages |
-| 1298 | `src/shared/i18n/locales/tr.ts` | tr |
-| 1291 | `src/shared/i18n/fr.ts` | fr |
-| 1290 | `src/shared/i18n/locales/ja.ts` | ja |
-| 1275 | `src/shared/i18n/locales/ar.ts` | ar |
-| 1274 | `src/shared/i18n/locales/ko.ts` | ko |
-| 1219 | `src/shared/i18n/locales/zh-CN.ts` | zhCN |
-| 1218 | `src/shared/i18n/locales/zh-TW.ts` | zhTW |
+| 1368 | `src/shared/i18n/de.ts` | de |
+| 1355 | `src/shared/i18n/locales/ru.ts` | ru |
+| 1353 | `src/shared/i18n/es.ts` | es |
+| 1344 | `src/shared/i18n/en.ts` | en, MessageKey, Messages |
+| 1343 | `src/shared/i18n/locales/tr.ts` | tr |
+| 1336 | `src/shared/i18n/fr.ts` | fr |
+| 1335 | `src/shared/i18n/locales/ja.ts` | ja |
+| 1319 | `src/shared/i18n/locales/ar.ts` | ar |
+| 1319 | `src/shared/i18n/locales/ko.ts` | ko |
+| 1260 | `src/shared/i18n/locales/zh-CN.ts` | zhCN |
+| 1258 | `src/shared/i18n/locales/zh-TW.ts` | zhTW |
+| 413 | `src/shared/ipc.ts` | Api, Events, IPC |
 | 406 | `src/shared/keyboard-fn-codes.ts` | CONSUMER_LABEL, CONSUMER_LABEL_KEY, CONSUMER_SHORT, LIGHTING_SHORT, ASSIGNABLE_QUADS, ASSIGNABLE_QUAD_KEY, LIGHTING_LABEL, LIGHTING_LABEL_KEY, SYSTEM_LABEL, SYSTEM_LABEL_KEY, isModifierUsage, DecodedQuad, +2 |
 | 404 | `src/shared/mouse-wire.ts` | companion, scalarBytes, rgbBytes, DPI_STEP, DPI_MIN, DPI_MAX, dpiToRegister16, registerToDpi16, dpiRegFromBytes, dpiRegBytes, withEnabledDpiStage, applicableDpiStages, +40 |
-| 392 | `src/shared/ipc.ts` | Api, Events, IPC |
 | 294 | `src/shared/keys.ts` | KeyDef, KeyGroup, KEY_GROUPS, KEY_DISABLED_CODE, ALL_KEYS, CODE_LABEL, normalizeUsage, labelForCode, hidUsageForBrowserCode |
 | 286 | `src/shared/lighting.ts` | KbLightEffect, KB_LIGHT_EFFECTS_TABLE, currentEffectLabel, KB_LIGHT_EFFECTS, KB_LIGHT_STEPS, KB_PERKEY_EFFECT_INDEX, kbEffect, SIDE_LIGHT_EFFECTS, sideEffectWire, sideEffectName, RAINBOW_EFFECTS |
 | 279 | `src/shared/types/profiles.ts` | DeviceProfileLink, ProfileIcon, ProfileTrigger, AppProfile, resolveLink, SwitchRule, SwitcherState, CurrentMode, SwitchApplication, ProfileField, PROFILE_FIELDS, profileFieldsFor, +2 |
@@ -141,6 +145,14 @@ Types, the IPC contract, key layouts, i18n. Imported by all three processes.
 | 221 | `src/shared/types/live.ts` | LiveDevice, FirmwareInfo, DeviceUi, MacroLimits, WriteResult, TravelStreamResult, LiveState |
 | 213 | `src/shared/keyboard-switches.ts` | MagneticSwitchModel, SWITCH_FACTORY_DEFAULT, SWITCH_CHOICES_DEFAULT, MAGNETIC_SWITCHES, switchModel, switchColor, switchChoices |
 | 202 | `src/shared/mouse-buttons.ts` | ButtonSubAction, ButtonActionDef, BUTTON_ACTIONS_TREE, BUTTON_ACTION_BY_KEY, V8_BUTTON_ACTION_KEYS, actionWireByte, actionKeyFromWire, encodeButtonRegionA |
+
+## src/web
+
+The browser edition (GitHub Pages, WebHID): the in-page host that replaces main + preload.
+
+| Lines | File | Exports |
+|---:|---|---|
+| 364 | `src/web/hid/node-hid-webhid.ts` | WebHidDeviceInfo, IMPLEMENTED, PATH_PREFIX, reportBytes, normalizeFeature, inputBytes, WebHidHandle, createNodeHidShim |
 
 ## scripts
 
@@ -153,7 +165,7 @@ Build helpers, protocol extraction, hardware probes.
 | 563 | `scripts/extract-qmktop-protocol.mjs` | _(none)_ |
 | 434 | `scripts/verify-he-writes.ts` | _(none)_ |
 | 313 | `scripts/dump-mouse-state.mjs` | _(none)_ |
-| 300 | `scripts/smoke-hid.mjs` | _(none)_ |
+| 311 | `scripts/smoke-hid.mjs` | _(none)_ |
 | 283 | `scripts/extract-vendor-protocol.mjs` | _(none)_ |
 | 281 | `scripts/probe-profile-scope.ts` | _(none)_ |
 | 279 | `scripts/identify-keyboard.mjs` | _(none)_ |

@@ -17,3 +17,21 @@
 export function hardenCsp(html: string): string {
   return html.replace(/connect-src[^;"]*/, "connect-src 'self'; form-action 'none'");
 }
+
+/**
+ * The same for the browser edition's page (src/web/index.html, built by
+ * vite.web.config.ts), one step stricter: `connect-src 'none'`. The published
+ * page loads its modules, styles and images under their own directives and
+ * its service worker under `worker-src`, so nothing it does is a connection —
+ * and GitHub Pages is a public origin, unlike the desktop's local files.
+ */
+export function hardenWebCsp(html: string): string {
+  // Scoped to the CSP meta tag's own `content` attribute: matching the bare
+  // directive name anywhere in the page rewrote an HTML comment that
+  // mentioned it and left the real policy untouched.
+  return html.replace(
+    /(http-equiv="Content-Security-Policy"\s+content=")([^"]*)(")/,
+    (_m, open: string, csp: string, close: string) =>
+      open + csp.replace(/connect-src[^;]*/, "connect-src 'none'; form-action 'none'") + close,
+  );
+}
