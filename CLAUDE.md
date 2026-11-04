@@ -229,8 +229,10 @@ echo/broadcast the same way is unconfirmed. If a report is rejected or misread
 
 `npm run build:web` → `out/web/`, published to
 `https://alexandrewillame.github.io/shark-deck/` by `.github/workflows/pages.yml`
-**when a GitHub Release is published** (not on every push). Chromium desktop
-only (WebHID).
+**when a GitHub Release is published** (not on every push), or by hand from
+the workflow's page. Chromium desktop only (WebHID). Releasing, CI and the
+repository settings Pages needs: [`docs/releasing.md`](docs/releasing.md) —
+maintainer notes, deliberately kept out of the README.
 
 - **What differs is the host, not the app.** `vite.web.config.ts` aliases
   `node-hid` to `src/web/hid/node-hid-webhid.ts`, so `transport.ts`, the drivers
