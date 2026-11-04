@@ -9,7 +9,7 @@ name: Pages
 # pressing Publish is. `workflow_dispatch` redeploys by hand (pick the tag in
 # the Run workflow dialog).
 #
-# One-time repository setup, by hand (see README, "On GitHub"):
+# One-time repository setup, by hand (see docs/releasing.md):
 #   Settings -> Pages -> Build and deployment -> Source: GitHub Actions
 #   Settings -> Environments -> github-pages -> deployment branches and tags:
 #     add the tag rule `v*` — by default only `main` may deploy, and a release

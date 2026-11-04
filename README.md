@@ -1,9 +1,22 @@
 <p align="center"><img src="docs/media/banner.jpg" alt="Shark Deck" width="100%"></p>
 
-# SharkDeck workspace
+<p align="center">
+  <a href="https://github.com/alexandrewillame/shark-deck/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/alexandrewillame/shark-deck?label=download"></a>
+  <a href="https://github.com/alexandrewillame/shark-deck/actions/workflows/build.yml"><img alt="Build" src="https://github.com/alexandrewillame/shark-deck/actions/workflows/build.yml/badge.svg"></a>
+  <img alt="Windows, macOS and Linux" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-0a0c10">
+  <a href="https://alexandrewillame.github.io/shark-deck/"><img alt="Also runs in the browser, over WebHID" src="https://img.shields.io/badge/browser-WebHID-0bb6a8"></a>
+  <img alt="Works offline, no telemetry" src="https://img.shields.io/badge/network-none%2C%20no%20telemetry-6d5cff">
+  <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue"></a>
+</p>
+
+# Shark Deck
 
 Open-source configurator for Attack Shark keyboards and mice — an auditable,
 offline replacement for the vendor's _Mouse Hub_ and _Driver v4_.
+
+**[Open it in your browser](https://alexandrewillame.github.io/shark-deck/)** ·
+[Download for Windows, macOS and Linux](https://github.com/alexandrewillame/shark-deck/releases/latest) ·
+[Report a problem](https://github.com/alexandrewillame/shark-deck/issues)
 
 ## Use it in your browser
 
@@ -33,10 +46,6 @@ the [platform support matrix](docs/platform-support.md#browser-edition-webhid).
 
 <p align="center"><img src="docs/media/walkthrough/tour-3-auto-switch.webp" alt="Shark Deck walkthrough: per-game auto-switching" width="800"></p>
 
-**Themes & languages:** animated backgrounds, colour palettes, eleven languages.
-
-<p align="center"><img src="docs/media/walkthrough/tour-4-themes.webp" alt="Shark Deck walkthrough: themes and languages" width="800"></p>
-
 | DPI & polling rate | Sensor & angle mode | Button remapping |
 |---|---|---|
 | ![](docs/media/screens/02-mouse-dpi-polling-sensor.png) | ![](docs/media/screens/13-mouse-sensor-angle-mode.png) | ![](docs/media/screens/03-mouse-button-remap.png) |
@@ -45,17 +54,9 @@ the [platform support matrix](docs/platform-support.md#browser-edition-webhid).
 | **Macro editor** | **Per-game auto-switching** | **Light theme** |
 | ![](docs/media/screens/08-macro-editor.png) | ![](docs/media/screens/09-auto-profile-switching.png) | ![](docs/media/screens/11-light-theme.png) |
 
-### Backgrounds
+**Themes & languages:** animated backgrounds, colour palettes, eleven languages.
 
-Nine animated backgrounds, shown here sped up; in the app they drift slowly.
-
-| Aurora | Electricity | Water |
-|---|---|---|
-| ![](docs/media/backgrounds/aurora.webp) | ![](docs/media/backgrounds/electricity.webp) | ![](docs/media/backgrounds/water.webp) |
-| **Rain** | **Fire** | **Nebula** |
-| ![](docs/media/backgrounds/rain.webp) | ![](docs/media/backgrounds/fire.webp) | ![](docs/media/backgrounds/nebula.webp) |
-| **Lava** | **Smoke** | **Landscape** |
-| ![](docs/media/backgrounds/lava.webp) | ![](docs/media/backgrounds/smoke.webp) | ![](docs/media/backgrounds/landscape.webp) |
+<p align="center"><img src="docs/media/walkthrough/tour-4-themes.webp" alt="Shark Deck walkthrough: themes and languages" width="800"></p>
 
 ## Where things are
 
@@ -109,32 +110,6 @@ unpacking the `winCodeSign` vendor archive, whose macOS symlinks used to
 require the symlink privilege. The old workaround is kept, unwired, as
 `npm run prep:wincodesign` — see [`app/README.md`](app/README.md).
 
-### On GitHub
-
-Every push runs the tests on Windows, macOS and Linux
-(`.github/workflows/ci.yml`). A push to `main` also builds the installers for
-all three, downloadable for two weeks from the run's page under **Actions**
-(`.github/workflows/build.yml`).
-
-To release, set the version in `app/package.json`, commit and push, then push
-a matching tag:
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-The tag builds all three platforms again and opens a **draft** release with
-every installer attached. Nothing is public until you check the draft on the
-repository's **Releases** page and press **Publish**.
-
-Publishing the release also deploys the browser edition to GitHub Pages
-(`.github/workflows/pages.yml`, after the tests pass); it can be redeployed by
-hand from that workflow's page under **Actions**. Two repository settings, once:
-**Settings → Pages → Source: GitHub Actions**, and under **Settings →
-Environments → github-pages**, allow deployments from tags matching `v*` (by
-default it accepts only `main`, and a release builds from its tag).
-
 ## Develop further
 
 - Architecture, conventions and the capability model: [`CLAUDE.md`](CLAUDE.md)
@@ -149,4 +124,10 @@ default it accepts only `main`, and a release builds from its tag).
 
 ## License
 
-GPL-3.0-or-later.
+Copyright © 2026 Alexandre Willame. Shark Deck is free software under the
+[GNU General Public License, version 3 or later](LICENSE): you may use, study,
+share and change it; versions you distribute must stay under the same license,
+with their source, and keep this copyright notice. It comes with no warranty.
+
+If you build on Shark Deck, please credit Alexandre Willame as its original
+author.
