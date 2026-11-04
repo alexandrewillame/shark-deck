@@ -37,15 +37,19 @@ export function registerServiceWorker(opts: {
           restartRequested = true;
           whenIdle(opts.writesInFlight, () => worker.postMessage('activate-update'));
         });
-      // Downloaded on an earlier visit and still waiting.
-      if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
-      reg.addEventListener('updatefound', () => {
-        const incoming = reg.installing;
+      const watch = (incoming: ServiceWorker | null) =>
         incoming?.addEventListener('statechange', () => {
           // No controller means this is the first install: nothing to update from.
           if (incoming.state === 'installed' && navigator.serviceWorker.controller) offer(incoming);
         });
-      });
+      // Downloaded on an earlier visit and still waiting.
+      if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+      // Already downloading: the browser checks for a newer worker as the page
+      // loads, so the one this visit found can be installing before this runs
+      // — its `updatefound` has fired already, and it would wait unoffered
+      // until the next visit.
+      watch(reg.installing);
+      reg.addEventListener('updatefound', () => watch(reg.installing));
       let lastCheck = Date.now();
       document.addEventListener('visibilitychange', () => {
         if (document.hidden || Date.now() - lastCheck < UPDATE_CHECK_MS) return;
