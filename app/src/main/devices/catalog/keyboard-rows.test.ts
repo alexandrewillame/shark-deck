@@ -30,20 +30,24 @@ describe('the generated keyboard registry', () => {
   });
 });
 
-describe.skipIf(!existsSync(V4))('the registry agrees with our own Driver v4 extraction', () => {
-  const v4 = (
-    JSON.parse(readFileSync(V4, 'utf8')) as {
-      id: number;
-      pid: number;
-      keyLayout: string | null;
-      layer: number | null;
-      magnetic: boolean;
-      hasSideLight: boolean;
-      screen: boolean;
-      company: string;
-    }[]
-  ).filter((d) => d.company === 'AttackShark');
+interface V4Device {
+  id: number;
+  pid: number;
+  keyLayout: string | null;
+  layer: number | null;
+  magnetic: boolean;
+  hasSideLight: boolean;
+  screen: boolean;
+  company: string;
+}
 
+// Read only when present: scripts/_raw is git-ignored, so CI never has it, and
+// `describe.skipIf` still runs its body to collect the tests.
+const v4: V4Device[] = existsSync(V4)
+  ? (JSON.parse(readFileSync(V4, 'utf8')) as V4Device[]).filter((d) => d.company === 'AttackShark')
+  : [];
+
+describe.skipIf(v4.length === 0)('the registry agrees with our own Driver v4 extraction', () => {
   it.each(v4.map((d) => [d.id, d] as const))('id %i', (_id, d) => {
     const r = KEYBOARD_ROWS.find((x) => x.id === d.id);
     expect(r, 'missing from the generated rows').toBeDefined();
