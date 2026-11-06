@@ -51,6 +51,7 @@ vi.mock('../store', () => ({
 }));
 
 import { DeviceManager } from './manager';
+import { isReadOnly } from './identity';
 import { virtualDescriptors } from './virtual';
 
 /** Drive one scan pass without waiting on the 2.5s timer chain. */
@@ -92,10 +93,15 @@ describe('developer mode through the scan loop', () => {
     for (const d of devices) {
       // DeviceConfig greys out its whole fieldset unless the device is online.
       expect(d.online, d.model).toBe(true);
-      expect(d.capabilities.length, d.model).toBeGreaterThan(0);
-      expect(d.hint, d.model).toBeTruthy();
       expect(mgr.getDescriptor(d.id)?.simulated, d.model).toBe(true);
       expect(mgr.getDriver(d.id), d.model).not.toBeNull();
+      if (isReadOnly(mgr.getDescriptor(d.id)!)) {
+        // The "not an Attack Shark device" card: shown, never configured.
+        expect(d.capabilities, d.model).toEqual([]);
+        continue;
+      }
+      expect(d.capabilities.length, d.model).toBeGreaterThan(0);
+      expect(d.hint, d.model).toBeTruthy();
     }
   });
 

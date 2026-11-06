@@ -4,7 +4,8 @@ import { type DksZone, EMPTY_DKS_ZONE } from '@shared/dks';
 import { KB_TRAVEL_RANGE } from '@shared/keyboard-travel';
 import { actionOfQuad, isModTapEntry, legacyModTapHold } from '@shared/key-zones';
 import type { TFunc } from '@shared/i18n';
-import { labelForCode, type KeyGroup } from '@shared/keys';
+import type { KeyGroup } from '@shared/keys';
+import { keyNameForCode } from '../../state/shortcuts';
 import type { KeyZoneBindings } from '@shared/types/keyboard-settings';
 import type { KeyBinding, KeyLayoutEntry } from '@shared/types/keys';
 import type { LiveDevice, WriteResult } from '@shared/types/live';
@@ -14,6 +15,8 @@ import { InfoLabel } from '../../components/InfoLabel';
 import { ListboxSelect, type ListboxOption } from '../../components/ListboxSelect';
 import { sd, useDeviceData } from '../common';
 import { useT } from '../../state/i18n';
+import { usePendingChange } from '../../state/leaveGuard';
+import { factoryCode } from './keyRemapState';
 import { boardKeyGroups, keyForUsage, usageOf } from './boardKeys';
 import {
   DKS_POINTS,
@@ -75,9 +78,18 @@ export interface ModeContext {
   labelOf: (k: KeyRef) => string;
   colorOf: (k: KeyRef) => string | undefined;
   /** Write a plan: the board shows it at once, then the keyboard gets it. */
-  applyPlan: (label: string, plan: Plan) => Promise<unknown>;
+  /** Resolves the write's result, or nothing when the plan was empty. */
+  applyPlan: (label: string, plan: Plan) => Promise<WriteResult | void>;
   /** Any other write, reported like every write on this tab. */
   write: (label: string, fn: () => Promise<WriteResult>) => Promise<WriteResult>;
+}
+
+/** The panel's key by what it types — "Caps Lock", as Remap names it — for
+ *  the leave prompt (state/leaveGuard.ts). */
+function keyNameOf(ctx: ModeContext): string {
+  const entry = ctx.layout.find((e) => e.row === ctx.anchor.row && e.col === ctx.anchor.col);
+  const code = factoryCode(entry);
+  return code ? keyNameForCode(code) : ctx.labelOf(ctx.anchor);
 }
 
 /** The tag on anything not yet confirmed on hardware. `bare` inside a list
@@ -354,7 +366,7 @@ export function KeyChooser({
     };
   }, [open]);
 
-  const name = value ? labelForCode(value) : '';
+  const name = value ? keyNameForCode(value) : '';
   const choose = (code: string | null) => {
     onChange(code);
     setOpen(false);
@@ -417,7 +429,8 @@ export function KeyChooser({
  */
 function tapCap(tap: string, binding: KeyBinding | undefined, color: string | undefined) {
   const usage = /^[0-9a-f]{1,4}$/i.test(tap) ? parseInt(tap, 16) : null;
-  const name = usage !== null ? labelForCode(tap) : (binding?.shortLabel ?? binding?.label ?? tap);
+  const name =
+    usage !== null ? keyNameForCode(tap) : (binding?.shortLabel ?? binding?.label ?? tap);
   return (
     <KeyCap
       label={name}
@@ -473,22 +486,34 @@ export function ModTapPanel({
     if (recorded) setHold((h) => h ?? recorded);
   }, [recorded]);
 
-  const apply = async () => {
-    if (!hold || !tap || ctx.slot === null) return;
+  /** Resolves whether both writes landed. */
+  const apply = async (): Promise<boolean> => {
+    if (!hold || !tap || ctx.slot === null) return false;
     const zonesOut: Array<string | null> = [];
     zonesOut[MT_HOLD_ZONE] = hold;
     zonesOut[MT_TAP_ZONE] = tap;
     const r = await ctx.write(t('act.mt.writeKeys'), () =>
       sd.setKeyZoneBindings(ctx.device.id, ctx.slot!, zonesOut),
     );
-    if (!r.ok) return;
-    await ctx.applyPlan(
+    if (!r.ok) return false;
+    const plan = await ctx.applyPlan(
       t('act.mode.mt'),
       planModeChange(ctx.map, [ctx.anchor], 'mt').map((k) => ({ ...k, mtHoldMs: ms })),
     );
     reloadZones();
     onDone();
+    return plan?.ok !== false;
   };
+
+  // A hold chosen and not applied — a new mod-tap key, or a change to one —
+  // goes with the selection or the tab, so leaving asks (state/leaveGuard.ts).
+  usePendingChange(ctx.device.id, {
+    dirty: draft
+      ? hold !== null
+      : hold !== null && (hold !== recorded || ms !== (me?.mtHoldMs ?? MT_HOLD.default)),
+    label: () => t('leave.what.mode', { mode: t('act.mode.mt'), key: keyNameOf(ctx) }),
+    commit: hold && tap && ctx.slot !== null ? apply : undefined,
+  });
 
   return (
     <>
@@ -648,15 +673,16 @@ export function DksPanel({
     setRow(row, (z) => (!code ? { ...EMPTY_DKS_ZONE } : rowFires(z) ? z : seedRow(row)));
   };
 
-  const apply = async () => {
-    if (ctx.slot === null) return;
+  /** Resolves whether both writes landed. */
+  const apply = async (): Promise<boolean> => {
+    if (ctx.slot === null) return false;
     // Bindings first, then the zone flags — the vendor's own order, and the
     // likely reason a bare zone-flag write does nothing on this firmware.
     const r = await ctx.write(t('act.dks.writeActions'), () =>
       sd.setKeyZoneBindings(ctx.device.id, ctx.slot!, [null, ...actions.map((a) => a ?? '')]),
     );
-    if (!r.ok) return;
-    await ctx.applyPlan(
+    if (!r.ok) return false;
+    const plan = await ctx.applyPlan(
       t('act.dks.writeMode'),
       planModeChange(ctx.map, [ctx.anchor], 'dks').map((k) => ({
         ...k,
@@ -666,7 +692,23 @@ export function DksPanel({
     );
     reloadZones();
     onDone();
+    return plan?.ok !== false;
   };
+
+  // A key just turned DKS here, or one whose rows, actions or point were
+  // changed, is lost with the selection or the tab — so leaving asks
+  // (state/leaveGuard.ts). Compared against what the key opened on.
+  const openedRows = me?.mode === 'dks' && me.dksZones?.length === 4 ? me.dksZones : null;
+  const openedActions = recorded ? [1, 2, 3].map((z) => recorded[z] || null) : [null, null, null];
+  usePendingChange(ctx.device.id, {
+    dirty:
+      draft ||
+      point !== (me?.dksPointMm ?? DKS_DEFAULT_POINT_MM) ||
+      (openedRows !== null && JSON.stringify(rows) !== JSON.stringify(openedRows)) ||
+      JSON.stringify(actions) !== JSON.stringify(openedActions),
+    label: () => t('leave.what.mode', { mode: t('act.mode.dks'), key: keyNameOf(ctx) }),
+    commit: ctx.slot !== null ? apply : undefined,
+  });
 
   return (
     <>

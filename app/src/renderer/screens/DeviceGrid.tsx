@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
 import { useStore } from '../state/store';
 import { useT } from '../state/i18n';
-import { slotLabel } from '../state/ui';
+import { deviceName, identityHint, slotLabel } from '../state/ui';
 import { DeviceArt } from '../components/DeviceArt';
 import { ArtAnchor, ArtAnchorContext, type ArtMode, type ArtRect } from '../components/ArtAnchor';
 import { ColorPicker } from '../components/ColorPicker';
@@ -74,6 +74,7 @@ function Card({
   const flightInProgress =
     activeTabId === 'home' && artFlight?.deviceId === d.id && !artFlight.landed;
   const t = useT();
+  const name = deviceName(d, t);
   const clickable = d.online || d.kind === 'keyboard' || d.kind === 'mouse';
   const connIcon = CONNECTION_ICON[d.connection];
   const connTipKey = CONNECTION_TIP_KEY[d.connection];
@@ -153,7 +154,7 @@ function Card({
       // button for the keyboard too — it was a bare div no key could reach.
       role="button"
       tabIndex={clickable ? 0 : -1}
-      aria-label={d.displayName}
+      aria-label={name}
       aria-disabled={!clickable || undefined}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
@@ -201,7 +202,7 @@ function Card({
               <DeviceArt
                 kind={d.kind}
                 art={d.art}
-                model={d.model}
+                artKey={d.ui.artKey}
                 colorVariant={l.variant}
                 layout={d.ui.keyMatrix?.layout}
               />
@@ -221,7 +222,7 @@ function Card({
           is online competes with the name for attention. */}
       <div className="card-body">
         <Tooltip text={d.online ? t('status.online.tip') : t('status.offline.tip')}>
-          <h3 className="card-name">{d.displayName}</h3>
+          <h3 className="card-name">{name}</h3>
         </Tooltip>
 
         <div className="meta">
@@ -264,7 +265,7 @@ function Card({
         {/* Always rendered (even empty) so a stretched row-mate's extra height
             has somewhere to go — see .card-hint's flex:1 in styles.css. */}
         <div className="card-hint" style={{ color: d.online ? 'var(--amber)' : 'var(--text-mut)' }}>
-          {d.hint ?? ''}
+          {d.hint ?? identityHint(d, t) ?? ''}
         </div>
       </div>
     </div>

@@ -1,156 +1,137 @@
 import type { DeviceDescriptor } from '@shared/types/device';
-import { ATTACK_SHARK_V8, CATALOG } from './catalog';
-import { COMPX_VENDOR_CONFIG_PIDS, REPORT_RATE_HINT } from './catalog/known-pids';
-import { ANSI_75 } from './layouts';
+import { HUB_CABLE_PIDS } from './catalog/hub-mice';
+import { JXC_VID, jxcDescriptorFor } from './catalog/jxc-mice';
+import { BEKEN_VID, bekenDescriptorFor } from './catalog/beken-mice';
 
-const COMPX_VID = 0x3151;
+/** The ROYUAN / Compx keyboard chips (and the GearHub mice on them). */
+export const ROYUAN_VIDS: readonly number[] = [0x3151, 0x39ab];
+
+/** Relay targets a ROYUAN receiver selects with `0xF6`. */
+export const RELAY_TARGET = { keyboard: 0x0a, mouse: 0x05 } as const;
+
+/**
+ * ROYUAN endpoints known to be a 2.4 GHz receiver, and what sits behind it.
+ * A receiver does not answer the device's commands itself; it carries them
+ * (hid/transport.ts). 0x4011 relays a keyboard (sharkfin, on an X86; OpenRGB
+ * #4074 for the K86); 0x402D a GearHub mouse (OpenMouse, on an R2).
+ * provenance: ported-from-vendor. A receiver not listed here is treated as a
+ * device, and a model that answers nothing stays "Identifying…".
+ */
+export const ROYUAN_RECEIVERS: Readonly<Record<number, 'keyboard' | 'mouse'>> = {
+  0x4011: 'keyboard',
+  0x402d: 'mouse',
+};
+
+/** ROYUAN cable PIDs that are mice (GearHub-V5), not keyboards. */
+export const ROYUAN_MOUSE_PIDS: ReadonlySet<number> = new Set([0x4026, 0x402d]);
+
+/** The Compx 8K dongle family — the V8's protocol ("MOUSE HUB"). */
 export const COMPX_8K_DONGLE_VID = 0x3554;
 
-/** Resolve a connected VID/PID to a descriptor, exact match first. */
+/**
+ * Which protocol family a connected endpoint speaks — and nothing more.
+ *
+ * VID/PID cannot say WHICH device this is: ~99 boards of several brands share
+ * 3151:5029, and 3554:F517 is both the V8's dongle and another brand's mouse.
+ * So every device is attached `pending`, with a driver that sends nothing but
+ * its family's identify command, and main/devices/identity.ts decides what it
+ * is from the answer (see the manager's `applyIdentity`). Null = not a family
+ * Shark Deck speaks.
+ */
 export function resolveDescriptor(vid: number, pid: number): DeviceDescriptor | null {
-  const exact = CATALOG.find((d) => d.vid === vid && d.pid === pid);
-  if (exact) return exact;
-
-  // Known Compx keyboard the vendor app recognises but we have no exact model
-  // for yet: expose a generic magnetic-keyboard descriptor so it is still
-  // configurable. Everything is provenance:inferred and backed up before write.
-  if (vid === COMPX_VID && COMPX_VENDOR_CONFIG_PIDS.includes(pid)) {
-    return genericCompxKeyboard(pid);
-  }
-
-  // Unknown Compx 8K wireless dongle (mouse side) — treat as a V8-family mouse.
-  if (vid === COMPX_8K_DONGLE_VID) {
-    return genericCompxMouse(pid);
-  }
-
+  if (ROYUAN_VIDS.includes(vid)) return provisionalRoyuan(vid, pid);
+  if (vid === COMPX_8K_DONGLE_VID) return provisionalHub(pid);
+  // The JXC firmware has no model-id read: its PID is its identity.
+  if (vid === JXC_VID) return jxcDescriptorFor(pid);
+  // Beken: named cards only, no driver (catalog/beken-mice.ts).
+  if (vid === BEKEN_VID) return bekenDescriptorFor(pid);
   return null;
 }
 
 /**
- * Correct a VID/PID resolution using the model id the firmware reports.
- *
- * VID/PID does not identify these boards: ~99 keyboards share
- * `0x3151:0x5029`, and the vendor tools disambiguate on the model id in the
- * `GET_USB_VERSION` reply. Concretely, an R86PROHE (vendor ids 2793 / 2982,
- * key layout `Common89_SG8967`) resolves by PID to the **R85HE** descriptor
- * (id 3123, `ANSI_79_SG9047`) — a different layout and key count, and since
- * every per-key magnetic/lighting/remap write is addressed by matrix `slot`,
- * those writes would land on the wrong keys.
- *
- * Returns the better descriptor, or null when the current one is already right
- * or nothing better is known (the common case). A mismatch with no catalogue
- * entry to switch to is reported separately by `modelIdConflicts` so the caller
- * can warn instead of silently trusting the wrong layout.
+ * A ROYUAN endpoint before it has identified. The model slug is the family,
+ * not the PID, so the entry key (model + serial) is the same on every
+ * endpoint of one device.
  */
-export function resolveModelId(
-  current: DeviceDescriptor,
-  modelId: number,
-): DeviceDescriptor | null {
-  if (!modelId || modelId === 0xffffffff) return null;
-  if (current.modelId === modelId) return null;
-  const better = CATALOG.find((d) => d.modelId === modelId);
-  if (!better || better.model === current.model) return null;
-  return better;
-}
-
-/**
- * True when the device reports a model id that contradicts the descriptor we
- * resolved by VID/PID and no catalogue entry claims that id — i.e. this is a
- * board we do not actually model, wearing another model's layout.
- */
-export function modelIdConflicts(current: DeviceDescriptor, modelId: number): boolean {
-  if (!modelId || modelId === 0xffffffff) return false;
-  if (current.modelId === undefined) return false;
-  return current.modelId !== modelId && !CATALOG.some((d) => d.modelId === modelId);
-}
-
-/**
- * Unknown Compx 8K wireless dongle (mouse side): the V8 descriptor with the
- * PID swapped and demoted to `inferred`. Exported so developer mode can build
- * the same synthetic family without re-deriving it — see devices/virtual.ts.
- */
-export function genericCompxMouse(pid: number): DeviceDescriptor {
+export function provisionalRoyuan(vid: number, pid: number): DeviceDescriptor {
+  // The receiver and mouse PIDs are 0x3151's; another VID's are its own.
+  const ours = vid === 0x3151;
+  const behind = ours ? ROYUAN_RECEIVERS[pid] : undefined;
   return {
-    ...ATTACK_SHARK_V8,
-    model: `compx-mouse-${pid.toString(16)}`,
-    displayName: 'Attack Shark Mouse',
-    provenance: 'inferred',
-    pid,
-  };
-}
-
-/** Exported for the same reason as `genericCompxMouse`. */
-export function genericCompxKeyboard(pid: number): DeviceDescriptor {
-  return {
-    model: `compx-keyboard-${pid.toString(16)}`,
-    displayName: 'Attack Shark Keyboard',
-    vendor: 'Attack Shark',
-    kind: 'keyboard',
-    vid: COMPX_VID,
+    model: 'royuan',
+    displayName: 'Identifying…',
+    vendor: '',
+    kind: ours && ROYUAN_MOUSE_PIDS.has(pid) ? 'mouse' : 'keyboard',
+    ...(behind ? { relay: { target: RELAY_TARGET[behind] } } : {}),
+    vid,
     pid,
     usagePage: 0xffff,
     usage: 0x02,
     reportLength: 65,
     transport: 'feature-report',
-    // `compx-fea` (checksum at byte 2, `(0xFF - Sigma) & 0xFF`) is the scheme
-    // VERIFIED against the real R85HE — the same `compx-keyboard` driver family
-    // this descriptor uses. `bit7` was the pre-capture reconstruction the
-    // firmware is known to reject outright (see hid/checksum.ts), so a generic
-    // keyboard signed with it enumerated, showed a card, and then did nothing.
     checksum: 'compx-fea',
-    driver: 'compx-keyboard',
+    driver: 'royuan-identify',
     provenance: 'inferred',
     art: null,
-    capabilities: [
-      // Same SET_PROFILE/GET_PROFILE mechanism as the R85HE - see the
-      // comment on `profiles` in catalog/r85he.ts.
-      'profiles',
-      'keyRemap',
-      'fnLayer',
-      'debounce',
-      'perKeyLighting',
-      'sideLighting',
-      'pollRate',
-      'macros',
-      'firmwareUpdate',
-      'restore',
-      'autoSwitch',
-    ],
-    spec: {
-      profileCount: 4,
-      pollRates: REPORT_RATE_HINT[pid]
-        ? [125, 250, 500, 1000, REPORT_RATE_HINT[pid]!]
-        : [125, 250, 500, 1000],
-      keyMatrix: { rows: 6, cols: 16, layout: ANSI_75 },
-      lighting: { zones: ['per-key', 'side'], perKey: true },
-    },
+    identity: 'pending',
+    capabilities: [],
+    spec: {},
   };
+}
+
+/** A Compx Hub endpoint (dongle or cable) before it has identified. */
+export function provisionalHub(pid: number): DeviceDescriptor {
+  return {
+    model: 'compx-hub',
+    displayName: 'Identifying…',
+    vendor: '',
+    kind: 'mouse',
+    vid: COMPX_8K_DONGLE_VID,
+    pid,
+    usagePage: 0xff02,
+    usage: 0x02,
+    reportLength: 17,
+    transport: 'output-report',
+    checksum: 'shark-sum',
+    driver: 'hub-identify',
+    provenance: 'inferred',
+    art: null,
+    identity: 'pending',
+    // The cable endpoint wins over the receiver when both enumerate (the
+    // mouse stops talking to its dongle once the cable is in); the identify
+    // reply's link type confirms it once the mouse answers.
+    ...(HUB_CABLE_PIDS.has(pid) ? { wired: true } : {}),
+    capabilities: [],
+    spec: {},
+  };
+}
+
+/**
+ * Does one device of this family enumerate on more than one endpoint? A Hub
+ * mouse is its receiver AND its cable, under one serial and one memory, so
+ * where no serial is reported (WebHID) its endpoints are keyed by family and
+ * become one card. A ROYUAN board is one endpoint: keying it by family would
+ * fold two different keyboards into one card.
+ */
+export function spansEndpoints(d: DeviceDescriptor): boolean {
+  return d.vid === COMPX_8K_DONGLE_VID || d.vid === JXC_VID;
 }
 
 /** Every VID we should enumerate at startup. */
 export function knownVendorIds(): number[] {
-  return Array.from(new Set([COMPX_VID, COMPX_8K_DONGLE_VID, ...CATALOG.map((d) => d.vid)]));
+  return [...ROYUAN_VIDS, COMPX_8K_DONGLE_VID, JXC_VID, BEKEN_VID];
 }
 
 /**
  * The browser edition's device-picker filters (WebHID `requestDevice`): one
- * per vendor id + config usage page `resolveDescriptor` can attach — every
- * catalog model, plus the two generic families, which match ANY product id of
- * their vendor. Filtering on the vendor-defined page rather than the VID alone
- * also keeps the picker from offering a device's keyboard or mouse interface,
- * which Chromium would refuse to talk to anyway.
+ * per vendor id + vendor-defined config usage page. Filtering on the usage
+ * page rather than the VID alone keeps the picker from offering a device's
+ * keyboard or mouse interface, which Chromium would refuse to talk to anyway.
  */
 export function hidRequestFilters(): { vendorId: number; usagePage: number }[] {
-  const all = [
-    ...CATALOG.map((d) => ({ vendorId: d.vid, usagePage: d.usagePage })),
-    { vendorId: COMPX_VID, usagePage: genericCompxKeyboard(0).usagePage },
-    { vendorId: COMPX_8K_DONGLE_VID, usagePage: genericCompxMouse(0).usagePage },
+  return [
+    ...ROYUAN_VIDS.map((vendorId) => ({ vendorId, usagePage: 0xffff })),
+    { vendorId: COMPX_8K_DONGLE_VID, usagePage: 0xff02 },
+    { vendorId: JXC_VID, usagePage: 0xffff },
   ];
-  const seen = new Set<string>();
-  return all.filter((f) => {
-    const key = `${f.vendorId}:${f.usagePage}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
 }

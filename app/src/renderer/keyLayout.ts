@@ -15,12 +15,17 @@ export function slotOf(
   k: { row: number; col: number },
 ): number | null {
   const entry = layout?.find((e) => e.row === k.row && e.col === k.col);
-  if (!entry) return null;
-  return entry.slot ?? layout!.indexOf(entry);
+  // No array-position fallback: a key without a confirmed slot is not
+  // addressable at all. Guessing its slot from where it sits in the drawing is
+  // exactly how a per-key write lands on the wrong key (the generic layouts
+  // and the drawing-only vendor layouts carry no slots).
+  return entry?.slot ?? null;
 }
 
 export function bySlot(layout: KeyLayoutEntry[] | undefined): Map<number, KeyLayoutEntry> {
   const m = new Map<number, KeyLayoutEntry>();
-  layout?.forEach((e, i) => m.set(e.slot ?? i, e));
+  layout?.forEach((e) => {
+    if (e.slot !== undefined) m.set(e.slot, e);
+  });
   return m;
 }

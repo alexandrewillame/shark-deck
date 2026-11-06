@@ -81,8 +81,14 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE);
+      // ignoreVary: this cache holds only the build's own files, so a server's
+      // `Vary` header has nothing to choose between — and `Vary: Origin` (Vite's
+      // preview server sends it, a CORS-enabled host would) made every
+      // `crossorigin` request miss: the module script and the stylesheet, which
+      // the browser sends with an Origin header. Offline, the page came up blank.
       const hit = await cache.match(request.mode === 'navigate' ? SHELL : request, {
         ignoreSearch: true,
+        ignoreVary: true,
       });
       return hit ?? fetch(request);
     })(),

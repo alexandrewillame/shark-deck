@@ -1,4 +1,5 @@
 import type { KeyboardOptions } from '@shared/types/keyboard-settings';
+import type { IdentityKey } from '../identity-key';
 import type { KeyBinding } from '@shared/types/keys';
 import type {
   LightingSettings,
@@ -9,7 +10,7 @@ import type {
 import type { FirmwareInfo, WriteResult } from '@shared/types/live';
 import type { Macro } from '@shared/types/macros';
 import type { PowerSettings } from '@shared/types/mouse-settings';
-import { Driver, delay, fmtVersion } from './base';
+import { Driver, delay, fmtVersion, type BackupPolicy } from './base';
 import { toHex } from '../../hid/frame';
 import {
   KB_LIGHT_EFFECTS,
@@ -457,6 +458,25 @@ export class CompxKeyboard extends Driver {
    * `GET_RF_VERSION` returns nothing on a wired board. `rejectEcho` guards
    * against Windows handing back our own zero-padded query.
    */
+  /**
+   * Identify: the vendor model id in the `GET_USB_VERSION` reply, bytes
+   * [2..3] LE — `verified-capture` (3123 on the R85HE). The same opcode on
+   * both ROYUAN command sets (gen2 and yc500), so it is the one frame that is
+   * safe to send before the family is known.
+   */
+  override async identify(): Promise<IdentityKey | null> {
+    const usb = await this.ch.request(
+      this.frame(KB_CMD.GET_USB_VERSION),
+      KB_CMD.GET_USB_VERSION,
+      2,
+      6,
+      true,
+    );
+    if (!usb) return null;
+    const modelId = ((usb[3] ?? 0) << 8) | (usb[2] ?? 0);
+    return modelId && modelId !== 0xffff ? { family: 'royuan', modelId } : null;
+  }
+
   override async getFirmware(): Promise<FirmwareInfo & { modelId?: number }> {
     const usb = await this.ch.request(
       this.frame(KB_CMD.GET_USB_VERSION),
@@ -1487,7 +1507,14 @@ export class CompxKeyboard extends Driver {
   }
 
   override async restoreDefaults(): Promise<WriteResult> {
+    if (this.relayed) return this.notSupported('A factory reset over the receiver (use the cable)');
     return this.writeVerified(KB_CMD.SET_RESET, [0x01]);
+  }
+
+  /** A board on its cable reports no battery; over the receiver, the receiver does. */
+  override async getBattery(): Promise<{ level: number | null; charging: boolean }> {
+    if (!this.relayed) return { level: null, charging: false };
+    return { level: await this.relayBattery('keyboard'), charging: false };
   }
 
   protected override backupCommands(): number[] {
@@ -1510,6 +1537,14 @@ export class CompxKeyboard extends Driver {
       KB_CMD.GET_KBOPTION,
       KB_CMD.GET_SLEEPTIME,
     ];
+  }
+
+  /**
+   * The base key matrix is what a restore puts back, so a backup without it
+   * is no backup. (The Fn layer and the rest are taken when they answer.)
+   */
+  override backupPolicy(): BackupPolicy {
+    return { kind: 'full', required: ['keymatrix_base'] };
   }
 
   override async backup(): Promise<Record<string, string>> {

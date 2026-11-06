@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { KEY_GROUPS, hidUsageForBrowserCode, normalizeUsage, type KeyGroup } from '@shared/keys';
 import { Row } from '../../components/common';
 import { useT } from '../../state/i18n';
+import { keyName } from '../../state/shortcuts';
 import { keyFace } from './remapKeyFace';
 
 /**
@@ -75,8 +76,9 @@ export function KeyPicker({
             {g.keys.map((k) => {
               const on = isOn(k.code);
               // A media or launcher key is named for what it does, and that
-              // name is translated; a key legend stays as printed.
-              const name = k.labelKey ? t(k.labelKey) : k.label;
+              // name is translated; a key legend stays as printed — but for
+              // Win and Alt, which a Mac calls ⌘ and ⌥.
+              const name = k.labelKey ? t(k.labelKey) : keyName(k.code, k.label);
               return (
                 <button
                   key={k.code + k.label}

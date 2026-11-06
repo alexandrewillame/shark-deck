@@ -56,6 +56,24 @@ The browser edition reaches these same devices through Chromium's WebHID
 instead of node-hid. What that changes on the wire — and what has been seen on
 real hardware — is in [webhid.md](webhid.md).
 
+## Device families
+
+VID/PID names a protocol family, never a model: `3151:5029` is ~99 boards of
+several brands, `3554:F517` the V8's dongle and another brand's mouse. A
+device attaches `pending`, is sent nothing but its family's identify command,
+and is bound to a model only from the answer (`app/src/main/devices/registry.ts`,
+`identity.ts`). Another brand's device gets a read-only card.
+
+| Family | VID | Identified by | Notes |
+|---|---|---|---|
+| Compx "MOUSE HUB" (V8 and its successors) | 3554 | identify `0x01`: cid / mid / link | this page, below |
+| ROYUAN keyboards, gen2 | 3151, 39AB | `0x8F` model id + the registry row | [keyboard-compx.md](keyboard-compx.md) |
+| ROYUAN keyboards, yc500 | 3151 | the same, family from the row | [keyboard-yc500.md](keyboard-yc500.md) |
+| GearHub-V5 mice | 3151 | `0x8F` device id | [mouse-gearhub.md](mouse-gearhub.md) |
+| ROYUAN 2.4 GHz receivers | 3151 | their PID | [receiver-relay.md](receiver-relay.md) |
+| JXC mice | 373E | their PID (no model read) | [mouse-jxc.md](mouse-jxc.md) |
+| Beken mice | 1D57 | their PID — shown, not driven | [mouse-beken.md](mouse-beken.md) |
+
 ## Mouse — Compx 8K dongle (V8), `3554:F517`
 
 Full detail + provenance: [`../reverse-engineering/FINDINGS.md`](../reverse-engineering/FINDINGS.md).
@@ -136,8 +154,13 @@ replies included — `session-v8.jsonl`).
   (hardware-probed 2026-09-07): selectors `00`/`01` echo the query, `02`–`05`
   answer the generic ACK. Its wire-level sibling `CS_UsbServer_ReadVersion`
   came back empty in the capture too. Do not decode it.
-- `08 01 00 00 00 08 <4 bytes>` — session handshake on connect/pair/plug. Reply
-  tail `7c 05 05` is constant. SharkDeck omits it and still works.
+- `08 01 00 00 00 08 <4 bytes>` — **identify**, sent on connect/pair/plug. The
+  reply `08 01 00 00 00 08 <nonce> 7c 05 05 …` is cid / mid / link: `7c` = 124,
+  Attack Shark; `05` = mid 5, the V8; `05` = link 5, 8K wireless (3 = wired 8K).
+  `verified-capture` for the frame; the meanings are `ported-from-vendor` (the
+  Hub's model table). Shark Deck sends it before anything else to every
+  `3554` endpoint and drives only cid 124 — `3554:F517` is also another
+  brand's mouse (`catalog/hub-mice.ts`, `identity.ts`).
 - `08 15` / `08 17` / `08 19` — config reads whose meaning is still open
   (`0x14`/`0x15` are the DPI-stage colour table; `0x19`'s payload is at byte
   2). `0x2D` used to be listed here; it is the receiver-LED GET above, and

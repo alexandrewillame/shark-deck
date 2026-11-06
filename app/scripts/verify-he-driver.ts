@@ -14,7 +14,7 @@ import { enumerate, HidChannel } from '../src/main/hid/transport';
 import { ATTACK_SHARK_R85HE } from '../src/main/devices/catalog/r85he';
 import { KB_TRAVEL_RANGE } from '../src/shared/keyboard-travel';
 import { CompxHeKeyboard } from '../src/main/devices/drivers/compx-he-keyboard';
-import { resolveModelId, modelIdConflicts } from '../src/main/devices/registry';
+import { resolveIdentity } from '../src/main/devices/identity';
 
 async function main() {
   const cands = (await enumerate()).filter(
@@ -42,8 +42,11 @@ async function main() {
   const fw = await drv.getFirmware();
   console.log(`firmware ${fw.device}  modelId ${(fw as { modelId?: number }).modelId}`);
   const id = (fw as { modelId?: number }).modelId ?? 0;
-  console.log(`  resolveModelId -> ${resolveModelId(d, id)?.model ?? '(no change)'}`);
-  console.log(`  modelIdConflicts -> ${modelIdConflicts(d, id)}`);
+  const resolved = resolveIdentity(
+    { vid: cand.vendorId, pid: cand.productId },
+    { family: 'royuan', modelId: id },
+  );
+  console.log(`  resolveIdentity -> ${resolved.model} (${resolved.identity ?? 'exact'})`);
 
   // KBOPTION: read, then write back the IDENTICAL values. A no-op on the
   // device, but it exercises the SET frame and the read-back comparison.

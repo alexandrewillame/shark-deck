@@ -7,10 +7,8 @@ import {
   BrowserWindow,
   Tray,
   Menu,
-  desktopCapturer,
   nativeImage,
   nativeTheme,
-  session,
   shell,
   type NativeImage,
   type BrowserWindowConstructorOptions,
@@ -19,10 +17,12 @@ import {
 import path from 'node:path';
 import { getT } from '@shared/i18n';
 import { installCrashReporter, reportFatalBootstrap } from './crash';
-import { registerIpc, wireWindowChrome } from './ipc';
+import { registerIpc, requestQuitConfirmation, wireWindowChrome } from './ipc';
+import { allowQuit, shouldAskBeforeQuit } from './quitGuard';
 import { deviceManager } from './devices/manager';
 import { switcher } from './profiles/switcher';
-import { captureArmed, stopAllAmbient } from './lighting/ambient';
+import { stopAllAmbient } from './lighting/ambient';
+import { installDisplayMediaHandler } from './lighting/displayMedia';
 import { getSettings, getSettingsSync, setSettings, settingsEvents } from './settings';
 import { ensureDirs } from './store';
 import {
@@ -123,6 +123,20 @@ function showMainWindow(): void {
   }
 }
 
+/**
+ * Hold a quit while the renderer reports a change nobody applied: bring the
+ * window up and let it ask (see quitGuard.ts). False means there is nothing to
+ * hold, or nothing to ask with, so the quit goes ahead.
+ */
+function holdQuitForPrompt(): boolean {
+  if (!shouldAskBeforeQuit()) return false;
+  const w = getWindow();
+  if (!w) return false;
+  showMainWindow();
+  requestQuitConfirmation(w);
+  return true;
+}
+
 /** Window ground colour behind the app, matched to the active theme mode. */
 function groundColor(): string {
   const s = getSettingsSync();
@@ -148,56 +162,6 @@ function windowChrome(): BrowserWindowConstructorOptions {
     return { frame: true, titleBarStyle: 'hidden', trafficLightPosition: { x: 14, y: 14 } };
   }
   return { frame: false };
-}
-
-/**
- * Answer `getDisplayMedia()` for the Screen Colour / Music lighting effects.
- *
- * Electron denies display capture outright unless a handler is installed, and
- * the handler is process-wide — once present it answers ANY such call from
- * any renderer, handing over the user's screen. So it is gated on
- * `captureArmed()`: unless an ambient lighting session is actually running,
- * every request is denied. Nothing else in this app calls `getDisplayMedia`,
- * and the CSP means no third-party script is running to try.
- *
- * `audio: 'loopback'` is what makes the Music effect possible — system audio,
- * not a microphone. It is a Windows capability; elsewhere the stream comes
- * back video-only and the renderer says why (see useAmbientLighting).
- *
- * The video source is the primary screen, chosen here rather than through the
- * system picker: the point of the effect is "match my screen", and making
- * someone pick a window every time they select it would be absurd.
- */
-function installDisplayMediaHandler(): void {
-  session.defaultSession.setDisplayMediaRequestHandler(
-    (_request, callback) => {
-      if (!captureArmed()) {
-        // Deny. An empty payload is how this API says no.
-        callback({});
-        return;
-      }
-      desktopCapturer
-        .getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } })
-        .then((sources) => {
-          const screenSource = sources[0];
-          if (!screenSource) {
-            callback({});
-            return;
-          }
-          // System audio only where Electron can capture it (Windows). Offered
-          // elsewhere, it could fail the whole capture — Screen Colour with it.
-          callback(
-            process.platform === 'win32'
-              ? { video: screenSource, audio: 'loopback' }
-              : { video: screenSource },
-          );
-        })
-        .catch(() => callback({}));
-    },
-    // The app picks the screen itself (see above), so Electron must not put
-    // the OS picker in front of the user on every start.
-    { useSystemPicker: false },
-  );
 }
 
 function createWindow(): void {
@@ -284,8 +248,14 @@ function createWindow(): void {
     if (trayReady && getSettingsSync().minimizeToTray) {
       e.preventDefault();
       getWindow()?.hide();
+      return;
     }
+    // Closing for real, which quits (see 'closed'): a change nobody applied
+    // is asked about first.
+    if (holdQuitForPrompt()) e.preventDefault();
   });
+  // A Windows session that is ending does not wait for a prompt.
+  mainWindow.on('session-end', () => allowQuit());
 
   // Clear the reference as soon as the window is really gone, so nothing ever
   // calls a method on a destroyed BrowserWindow (this was the crash).
@@ -343,7 +313,10 @@ async function createTray(): Promise<void> {
     tray = new Tray(trayIcon());
     trayReady = true;
     tray.setToolTip('Shark Deck');
-    tray.on('click', () => showMainWindow());
+    // macOS: a click on a menu-bar item opens its menu (setContextMenu below),
+    // whose first item is Open. Also showing the window on that click brought
+    // it up behind the open menu — even when the click was on the way to Quit.
+    if (process.platform !== 'darwin') tray.on('click', () => showMainWindow());
 
     const rebuild = () => {
       const t = getT(getSettingsSync().language);
@@ -436,6 +409,9 @@ function buildAppMenu(): void {
   }
   const t = getT(getSettingsSync().language);
   const name = 'Shark Deck';
+  // About took its name from the bundle (CFBundleName), which must stay
+  // "SharkDeck" — see electron-builder.yml's mac.extendInfo.
+  app.setAboutPanelOptions({ applicationName: name });
   const template: MenuItemConstructorOptions[] = [
     {
       label: name,
@@ -468,6 +444,12 @@ function buildAppMenu(): void {
       submenu: [
         { role: 'minimize', label: t('menu.minimize') },
         { role: 'zoom', label: t('menu.zoom') },
+        // With no item holding a shortcut, only the green button reached full
+        // screen (the topbar adapts to it — App.tsx). The role's own shortcut
+        // is Apple's fn-F (macOS 15+); the hidden twin answers ⌃⌘F, the one
+        // older Macs and most apps still use.
+        { role: 'togglefullscreen', label: t('menu.fullScreen') },
+        { role: 'togglefullscreen', accelerator: 'Control+Command+F', visible: false },
         { type: 'separator' },
         { role: 'close', label: t('menu.close') },
         { type: 'separator' },
@@ -569,7 +551,14 @@ if (!app.requestSingleInstanceLock()) {
     if (!trayReady) app.quit();
   });
 
-  app.on('before-quit', () => {
+  app.on('before-quit', (e) => {
+    // The tray's Exit set the flag before calling app.quit(); a held quit is
+    // not quitting, or the next close would skip hiding to the tray.
+    if (holdQuitForPrompt()) {
+      e.preventDefault();
+      appFlags.isQuitting = false;
+      return;
+    }
     appFlags.isQuitting = true;
     if (cleanedUp) return;
     cleanedUp = true;

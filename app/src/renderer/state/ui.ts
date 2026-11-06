@@ -17,3 +17,36 @@ export function slotLabel(
 ): string {
   return device.profileNames?.[slot] ?? t('onboard.slot', { n: slot });
 }
+
+/**
+ * The name a device is shown under. Until it has said what it is, and for a
+ * device Shark Deck leaves alone (another brand's, or a model no table
+ * knows), the descriptor carries an English placeholder; this swaps in the
+ * localized one. An Attack Shark model, supported or not, keeps its own name.
+ */
+export function deviceName(d: Pick<LiveDevice, 'displayName' | 'ui'>, t: TFunc): string {
+  switch (d.ui.identity) {
+    case 'pending':
+      return t('identity.pending.name');
+    case 'foreign':
+      return t('identity.foreign.name');
+    case 'unknown':
+      return t('identity.unknown.name');
+    default:
+      return d.displayName;
+  }
+}
+
+/** The card's one-line note for a device Shark Deck does not configure, else null. */
+export function identityHint(d: Pick<LiveDevice, 'ui'>, t: TFunc): string | null {
+  switch (d.ui.identity) {
+    case 'foreign':
+      return t('identity.foreign.hint');
+    case 'unknown':
+      return t('identity.unknown.hint');
+    case 'unsupported':
+      return t('identity.unsupported.hint');
+    default:
+      return null;
+  }
+}

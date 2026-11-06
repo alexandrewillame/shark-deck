@@ -1,126 +1,181 @@
 import { describe, expect, it } from 'vitest';
 import { ATTACK_SHARK_R85HE } from './catalog/r85he';
 import { ATTACK_SHARK_V8, ATTACK_SHARK_V8_WIRED } from './catalog/v8';
-import { CATALOG } from './catalog';
-import {
-  genericCompxKeyboard,
-  genericCompxMouse,
-  hidRequestFilters,
-  knownVendorIds,
-  modelIdConflicts,
-  resolveDescriptor,
-  resolveModelId,
-} from './registry';
+import { KEYBOARDS } from './catalog/keyboards';
+import { hidRequestFilters, knownVendorIds, resolveDescriptor } from './registry';
+import { resolveIdentity } from './identity';
+import { deviceUi } from './deviceUi';
 
 /**
- * VID/PID does not identify a ROYUAN keyboard. ~99 models share
- * `0x3151:0x5029`; the vendor tools disambiguate on the model id in the
- * `GET_USB_VERSION` reply. Since every per-key magnetic/lighting/remap write is
- * addressed by matrix `slot`, resolving to the wrong model means writing to the
- * wrong keys — so this is a correctness guard, not a cosmetic one.
- *
- * Known ids: R85HE 3123 (verified from hardware), R86PROHE 2793 (0x5030,
- * screen variant) and 2982 (0x5029) — both `Common89_SG8967`, neither modelled
- * yet.
+ * VID/PID names a protocol family, never a device. ~99 boards of several
+ * brands share 3151:5029, and 3554:F517 is both the V8's dongle and another
+ * brand's mouse. Since every per-key write is addressed by slot, resolving to
+ * the wrong model writes to the wrong keys — and resolving another brand's
+ * device to an Attack Shark one writes our settings into it. So a device is
+ * attached `pending` and bound only from what its firmware says it is.
  */
-const R86PROHE_ID = 2982;
 
-describe('resolveDescriptor (VID/PID)', () => {
-  it('resolves the R85HE exactly', () => {
-    expect(resolveDescriptor(0x3151, 0x5029)?.model).toBe(ATTACK_SHARK_R85HE.model);
+describe('resolveDescriptor (VID/PID -> family, pending)', () => {
+  it('attaches every ROYUAN endpoint pending, whatever its PID', () => {
+    for (const [vid, pid] of [
+      [0x3151, 0x5029],
+      [0x3151, 0x5030],
+      [0x39ab, 0x9016],
+    ] as const) {
+      const d = resolveDescriptor(vid, pid)!;
+      expect(d.identity).toBe('pending');
+      expect(d.capabilities).toEqual([]);
+      expect(d.driver).toBe('royuan-identify');
+      expect([d.vid, d.pid]).toEqual([vid, pid]);
+    }
   });
 
-  it('resolves an unknown-but-known-PID Compx keyboard generically', () => {
-    // 0x5030 is in COMPX_VENDOR_CONFIG_PIDS but has no catalogue entry
-    expect(resolveDescriptor(0x3151, 0x5030)?.model).toBe(genericCompxKeyboard(0x5030).model);
+  it('attaches every Hub endpoint pending, the cable marked as such', () => {
+    const dongle = resolveDescriptor(0x3554, 0xf517)!;
+    const cable = resolveDescriptor(0x3554, 0xf515)!;
+    for (const d of [dongle, cable]) {
+      expect(d.identity).toBe('pending');
+      expect(d.driver).toBe('hub-identify');
+      expect(d.capabilities).toEqual([]);
+    }
+    // the cable still wins over the receiver when both enumerate
+    expect(dongle.wired).toBeUndefined();
+    expect(cable.wired).toBe(true);
+    // one family slug across endpoints, so dongle + cable stay one card
+    expect(dongle.model).toBe(cable.model);
   });
 
   it('returns null for an unrelated device', () => {
     expect(resolveDescriptor(0x1234, 0x5678)).toBeNull();
   });
+});
 
-  /**
-   * The V8 has two endpoints on the SAME vendor id — 0xF517 through its 8K
-   * dongle and 0xF515 over USB-C (confirmed on hardware, same serial, same
-   * vendor collection, same protocol). Before the wired entry existed, the
-   * cabled mouse fell through to `genericCompxMouse` and showed up as an
-   * unnamed "Attack Shark Mouse" that claimed to be wireless.
-   */
-  it('resolves both V8 endpoints to the V8, not to a generic mouse', () => {
-    for (const pid of [0xf517, 0xf515]) {
-      const d = resolveDescriptor(0x3554, pid)!;
-      expect(d, pid.toString(16)).not.toBeNull();
-      expect(d.provenance).toBe('verified-capture');
-      expect(d.displayName).toBe('Attack Shark V8');
-      // One model string across both, so the per-model stores (profile names,
-      // colour pick, backups) follow the mouse rather than the cable.
-      expect(d.model).toBe(ATTACK_SHARK_V8.model);
-      expect(d.pid).toBe(pid);
-    }
-    expect(ATTACK_SHARK_V8_WIRED.pid).toBe(0xf515);
+describe('resolveIdentity (what the firmware says)', () => {
+  it('binds the R85HE to its hand-verified descriptor', () => {
+    const d = resolveIdentity({ vid: 0x3151, pid: 0x5029 }, { family: 'royuan', modelId: 3123 });
+    expect(d).toBe(ATTACK_SHARK_R85HE);
   });
 
-  it('marks only the USB-C endpoint as wired', () => {
-    expect(resolveDescriptor(0x3554, 0xf517)?.wired).toBeUndefined();
-    expect(resolveDescriptor(0x3554, 0xf515)?.wired).toBe(true);
+  it('binds a board that shares the R85HE PID to its own model', () => {
+    // An R86 PRO HE on 3151:5029 used to wear the R85HE's 79-key layout.
+    const d = resolveIdentity({ vid: 0x3151, pid: 0x5029 }, { family: 'royuan', modelId: 2982 });
+    expect(d.displayName).toBe('Attack Shark R86 PRO HE');
+    expect(d.modelId).toBe(2982);
+    expect(d.identity).toBe('exact');
   });
 
-  it('drops the receiver-only capabilities from the wired variant', () => {
-    // No dongle attached means nothing to pair with, no receiver LEDs to set
-    // and no RF long-range mode.
-    const wired = resolveDescriptor(0x3554, 0xf515)!;
+  it('binds to the endpoint the device actually came in on', () => {
+    // 2370 is registered on 502F; the same board over another endpoint keeps
+    // that endpoint's ids.
+    const d = resolveIdentity({ vid: 0x3151, pid: 0x4011 }, { family: 'royuan', modelId: 2370 });
+    expect([d.vid, d.pid]).toEqual([0x3151, 0x4011]);
+  });
+
+  it('gives another brand a read-only card, never a descriptor that writes', () => {
+    // 2498 is a rongyuan board (qmk.top's GK6940GW)
+    const d = resolveIdentity({ vid: 0x3151, pid: 0x502f }, { family: 'royuan', modelId: 2498 });
+    expect(d.identity).toBe('foreign');
+    expect(d.capabilities).toEqual([]);
+    expect(d.driver).toBe('no-io');
+  });
+
+  it('gives an id no table knows a read-only card', () => {
+    const d = resolveIdentity({ vid: 0x3151, pid: 0x5029 }, { family: 'royuan', modelId: 65000 });
+    expect(d.identity).toBe('unknown');
+    expect(d.identityNote).toContain('65000');
+    expect(d.driver).toBe('no-io');
+  });
+
+  it('identifies the V8 from the reply our capture recorded (cid 124, mid 5)', () => {
+    expect(
+      resolveIdentity(
+        { vid: 0x3554, pid: 0xf517 },
+        { family: 'compx-hub', cid: 124, mid: 5, link: 5 },
+      ),
+    ).toBe(ATTACK_SHARK_V8);
+    // the same mouse on its cable (link 3: wired 8K)
+    const wired = resolveIdentity(
+      { vid: 0x3554, pid: 0xf515 },
+      { family: 'compx-hub', cid: 124, mid: 5, link: 3 },
+    );
+    expect(wired).toBe(ATTACK_SHARK_V8_WIRED);
     for (const cap of ['receiverLed', 'pairing', 'longDistanceMode'] as const) {
       expect(wired.capabilities, cap).not.toContain(cap);
-      expect(ATTACK_SHARK_V8.capabilities, cap).toContain(cap);
-    }
-    // …but it is still the same mouse otherwise.
-    for (const cap of ['dpi', 'pollRate', 'dpiIndicatorLed', 'buttonRemap', 'macros'] as const) {
-      expect(wired.capabilities, cap).toContain(cap);
     }
   });
 
-  it('still falls back to a generic mouse for an unknown PID on the dongle vendor', () => {
-    expect(resolveDescriptor(0x3554, 0x1234)?.provenance).toBe('inferred');
+  it('rejects another brand on the V8 dongle PID', () => {
+    const d = resolveIdentity(
+      { vid: 0x3554, pid: 0xf517 },
+      { family: 'compx-hub', cid: 7, mid: 2, link: 5 },
+    );
+    expect(d.identity).toBe('foreign');
+    expect(d.capabilities).toEqual([]);
+  });
+
+  it('offers no poll rate the link cannot carry', () => {
+    // link 0: a 1K receiver
+    const slow = resolveIdentity(
+      { vid: 0x3554, pid: 0xf517 },
+      { family: 'compx-hub', cid: 124, mid: 11, link: 0 },
+    );
+    expect(Math.max(...slow.spec.pollRates!)).toBe(1000);
+    // the 8K link leaves the full list (and the V8 its own descriptor)
+    const fast = resolveIdentity(
+      { vid: 0x3554, pid: 0xf517 },
+      { family: 'compx-hub', cid: 124, mid: 11, link: 5 },
+    );
+    expect(Math.max(...fast.spec.pollRates!)).toBe(8000);
+  });
+
+  it('gives a PAW3955 mouse its own DPI records and 15 macro slots', () => {
+    const d = resolveIdentity(
+      { vid: 0x3554, pid: 0xf517 },
+      { family: 'compx-hub', cid: 124, mid: 20, link: 5 },
+    );
+    expect(d.displayName).toBe('Attack Shark F1 AIR');
+    expect(d.spec.dpi?.codec).toBe('paw3955');
+    expect(deviceUi(d).macroLimits?.slots).toBe(15);
+    expect(deviceUi(ATTACK_SHARK_V8).macroLimits?.slots).toBe(16);
+    // no coarser band on either: every UI step is a record the sensor stores
+    expect(deviceUi(ATTACK_SHARK_V8).dpiRange?.coarseAbove).toBeUndefined();
+    expect(deviceUi(d).dpiRange?.coarseAbove).toBeUndefined();
+  });
+
+  it('names an Attack Shark mouse of an unnamed model by its sensor class', () => {
+    const d = resolveIdentity(
+      { vid: 0x3554, pid: 0xfb44 },
+      { family: 'compx-hub', cid: 124, mid: 13, link: 5 },
+    );
+    expect(d.identity).toBe('class');
+    expect(d.spec.dpi?.codec).toBe('paw3955');
+    expect(d.spec.dpi?.max).toBe(52000);
+    // extras no store page confirms for the class stay off
+    for (const cap of ['receiverLed', 'highFpsScan', 'longDistanceMode', 'angleMode'] as const) {
+      expect(d.capabilities, cap).not.toContain(cap);
+    }
   });
 });
 
-describe('resolveModelId', () => {
-  it('leaves a descriptor alone when the id already matches', () => {
-    expect(resolveModelId(ATTACK_SHARK_R85HE, 3123)).toBeNull();
-  });
-
-  it('ignores a zero / unread model id', () => {
-    expect(resolveModelId(ATTACK_SHARK_R85HE, 0)).toBeNull();
-  });
-
-  it('ignores the 0xFFFFFFFF "unknown" sentinel', () => {
-    expect(resolveModelId(ATTACK_SHARK_R85HE, 0xffffffff)).toBeNull();
-  });
-
-  it('does not invent a descriptor for a model we do not carry', () => {
-    // An R86PROHE shares the R85HE's PID. We have no descriptor for it, so
-    // there is nothing to switch to — but it must be reported as a conflict
-    // rather than silently keeping the R85HE's 79-key layout.
-    expect(resolveModelId(ATTACK_SHARK_R85HE, R86PROHE_ID)).toBeNull();
-    expect(modelIdConflicts(ATTACK_SHARK_R85HE, R86PROHE_ID)).toBe(true);
-  });
-
-  it('does not flag a conflict for a descriptor with no known model id', () => {
-    // The generic fallback never claims an id, so any device may legitimately
-    // be wearing it.
-    expect(modelIdConflicts(genericCompxKeyboard(0x5030), R86PROHE_ID)).toBe(false);
-  });
-
-  it('does not flag a conflict when the id matches', () => {
-    expect(modelIdConflicts(ATTACK_SHARK_R85HE, 3123)).toBe(false);
-  });
-});
-
-describe('the R85HE descriptor', () => {
-  it('carries the model id its firmware actually reports', () => {
-    // 0x0c33, read off a real R85HE (fw v5.11) — see
-    // docs/reverse-engineering/r85he-identify.json
+describe('the keyboard catalogue', () => {
+  it('carries the R85HE under the model id its firmware reports', () => {
+    // 0x0c33, read off a real R85HE (fw v5.11)
     expect(ATTACK_SHARK_R85HE.modelId).toBe(0x0c33);
+    expect(KEYBOARDS.find((d) => d.modelId === 3123)).toBe(ATTACK_SHARK_R85HE);
+  });
+});
+
+describe('the Beken mice', () => {
+  it('get a named card where the PID is their own, and nothing is ever driven', () => {
+    const x11 = resolveDescriptor(0x1d57, 0xfa55)!;
+    expect(x11.displayName).toBe('Attack Shark X11');
+    expect(x11.identity).toBe('unsupported');
+    expect(x11.driver).toBe('no-io');
+    expect(x11.capabilities).toEqual([]);
+  });
+
+  it('leave the receiver several brands share alone', () => {
+    expect(resolveDescriptor(0x1d57, 0xfa60)).toBeNull();
   });
 });
 
@@ -129,16 +184,9 @@ describe('hidRequestFilters (the browser edition device picker)', () => {
   const covers = (vid: number, page: number) =>
     filters.some((f) => f.vendorId === vid && f.usagePage === page);
 
-  it('offers every catalog model by vendor id and config usage page', () => {
-    for (const d of CATALOG) expect(covers(d.vid, d.usagePage), d.model).toBe(true);
-  });
-
-  it('offers the generic families for any product id', () => {
-    for (const pid of [0x0001, 0x5555, 0xfffe]) {
-      for (const d of [genericCompxKeyboard(pid), genericCompxMouse(pid)]) {
-        expect(covers(d.vid, d.usagePage), d.model).toBe(true);
-      }
-    }
+  it('offers every family by vendor id and config usage page', () => {
+    for (const vid of [0x3151, 0x39ab]) expect(covers(vid, 0xffff)).toBe(true);
+    expect(covers(0x3554, 0xff02)).toBe(true);
   });
 
   it('asks only for vendor-defined pages, from vendors the scan enumerates, without repeats', () => {

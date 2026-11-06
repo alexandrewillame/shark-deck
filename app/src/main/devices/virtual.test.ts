@@ -3,6 +3,9 @@ import type { Capability } from '@shared/types/capability';
 import type { DeviceDescriptor } from '@shared/types/device';
 import { CAPABILITY_META } from '@shared/capabilities';
 import { CATALOG } from './catalog';
+import { hubMouseRoster } from './catalog/hub-mice';
+import { KEYBOARDS } from './catalog/keyboards';
+import { isReadOnly } from './identity';
 import { VirtualDriver, virtualDescriptors } from './virtual';
 
 /**
@@ -120,19 +123,48 @@ describe('the capability read map is exhaustive', () => {
 describe('virtualDescriptors()', () => {
   const all = virtualDescriptors();
 
-  it('covers every catalog model plus both synthetic families', () => {
+  it('covers every catalog model', () => {
     for (const c of CATALOG) {
       expect(
         all.some((d) => d.model === c.model),
         c.model,
       ).toBe(true);
     }
-    // the two `inferred` fallbacks in registry.ts
-    expect(all.some((d) => d.driver === 'compx-keyboard' && d.provenance === 'inferred')).toBe(
-      true,
+  });
+
+  it('covers every Hub mouse name and sensor class', () => {
+    for (const h of hubMouseRoster()) {
+      expect(
+        all.some((d) => d.model === h.model),
+        h.model,
+      ).toBe(true);
+    }
+    expect(all.some((d) => d.kind === 'mouse' && d.identity === 'class')).toBe(true);
+  });
+
+  it('collapses the keyboard catalogue to the menus it actually produces', () => {
+    const boards = all.filter(
+      (d) => d.kind === 'keyboard' && !CATALOG.some((c) => c.model === d.model),
     );
-    expect(all.some((d) => d.kind === 'mouse' && d.provenance === 'inferred')).toBe(true);
-    expect(all.length).toBe(CATALOG.length + 2);
+    // one card per shape, not one per model id
+    expect(boards.length).toBeGreaterThan(3);
+    expect(boards.length).toBeLessThan(KEYBOARDS.length / 2);
+    // both kinds of board: a known layout (per-key menus) and none (whole-board only)
+    const status = new Set(all.map((d) => d.spec.keyMatrix?.layoutStatus).filter(Boolean));
+    expect(status.has('none')).toBe(true);
+    expect(status.has('certain') || status.has('verified')).toBe(true);
+    // a model whose command set has no driver yet is a read-only card on real
+    // hardware, so it has no menus to simulate
+    expect(all.some((d) => d.identity === 'unsupported')).toBe(false);
+  });
+
+  it('includes a read-only card that exposes nothing', () => {
+    const ro = all.filter((d) => isReadOnly(d));
+    expect(ro.length).toBeGreaterThan(0);
+    for (const d of ro) {
+      expect(d.capabilities, d.model).toEqual([]);
+      expect(d.driver, d.model).toBe('no-io');
+    }
   });
 
   it('tags every descriptor simulated — the flag every write guard keys on', () => {

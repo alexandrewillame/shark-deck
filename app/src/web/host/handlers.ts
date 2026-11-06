@@ -140,4 +140,8 @@ export const browserHandlers = {
   windowIsMaximized: async () => false,
   windowStartDrag: async () => {},
   windowEndDrag: async () => {},
+
+  // No quit to hold: a page asks through `beforeunload` (renderer/state/leaveGuard.ts).
+  setPendingChanges: async (_pending: boolean) => {},
+  quitApp: async () => {},
 } satisfies { [K in HostMethods]: Handler };

@@ -18,8 +18,8 @@ const DEFAULTS: AppSettings = {
   palette: 'shark-cyan',
   themeMode: 'dark',
   // The look a newcomer meets, on the desktop and in the browser alike: the
-  // Nebula background in the default palette's colours (Shark Cyan).
-  background: 'nebula',
+  // Smoke background in the default palette's colours (Shark Cyan).
+  background: 'smoke',
   backgroundPalette: true,
   backgroundIntensity: BACKGROUND_INTENSITY_DEFAULT,
   pollSeconds: 2,

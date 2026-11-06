@@ -30,7 +30,11 @@ import { KB_TRAVEL_RANGE } from '@shared/keyboard-travel';
 import { SWITCH_FACTORY_DEFAULT } from '@shared/keyboard-switches';
 import { applicableDpiStages, clampActiveDpiStage } from '@shared/mouse-wire';
 import { CATALOG } from './catalog';
-import { genericCompxKeyboard, genericCompxMouse } from './registry';
+import { KEYBOARDS } from './catalog/keyboards';
+import { hubMouseRoster } from './catalog/hub-mice';
+import { GEARHUB_MICE } from './catalog/gearhub-mice';
+import { jxcMouseRoster } from './catalog/jxc-mice';
+import { readOnly } from './identity';
 import { Driver, type MagneticWriteOpts, type TravelSample } from './drivers/base';
 import { decodeQuad, quadFor } from './drivers/compx-keyboard';
 import { MT_HOLD_ZONE, MT_TAP_ZONE, isModTapEntry } from '@shared/key-zones';
@@ -52,14 +56,9 @@ import { MT_HOLD_ZONE, MT_TAP_ZONE, isModTapEntry } from '@shared/key-zones';
  * ipc.ts and manager.ts check before persisting anything.
  */
 
-/**
- * A representative PID for each synthetic family in registry.ts. Both are
- * arbitrary picks whose only job is to exercise the *inferred* descriptor
- * path; `0x5002` is deliberately one with no `REPORT_RATE_HINT` entry, so the
- * generic keyboard falls back to the default [125,250,500,1000] poll rates.
- */
-const SIM_GENERIC_KEYBOARD_PID = 0x5002;
-const SIM_GENERIC_MOUSE_PID = 0xf519;
+/** The endpoint the simulated read-only card claims (another brand's mouse on a Hub PID). */
+const SIM_FOREIGN_VID = 0x3554;
+const SIM_FOREIGN_PID = 0xf5f6;
 
 /** How long a simulated pairing "takes" — long enough for the pane to show
  *  its in-progress state, short enough not to test the operator's patience. */
@@ -68,16 +67,63 @@ const VIRTUAL_PAIR_MS = 4_000;
 /**
  * One descriptor per distinct device shape the app can render:
  *  - every hand-authored `CATALOG` model (so a new catalog file automatically
- *    gains a simulated card — there is no second list to maintain), and
- *  - one instance of each synthetic fallback family, built by registry.ts's
- *    own builders so the simulated cards stay honest as those evolve.
+ *    gains a simulated card — there is no second list to maintain);
+ *  - one keyboard per distinct shape in the generated catalogue (driver,
+ *    capabilities, key layout, wireless, magnetic limits) — ~80 model ids
+ *    collapse to the handful of menus they actually produce;
+ *  - every Hub mouse name and sensor class (catalog/hub-mice.ts);
+ *  - a read-only card, as another brand's device on the same chip shows.
  */
 export function virtualDescriptors(): DeviceDescriptor[] {
+  const seen = new Set(CATALOG.map((d) => d.model));
+  const shapes = new Set<string>();
+  const layoutIds = new Map<unknown, number>();
+  const shapeOf = (d: DeviceDescriptor) => {
+    const km = d.spec.keyMatrix;
+    // A layout Shark Deck addresses key by key is drawn and written per key,
+    // so each is its own shape; a geometry-only drawing changes no menu.
+    const addressed = km?.layout && km.layoutStatus !== 'none' ? km.layout : null;
+    if (addressed && !layoutIds.has(addressed)) layoutIds.set(addressed, layoutIds.size);
+    const mag = d.spec.magnetic;
+    return JSON.stringify([
+      d.driver,
+      [...d.capabilities].sort(),
+      km?.layoutStatus,
+      addressed ? layoutIds.get(addressed) : null,
+      !!d.spec.wireless,
+      d.spec.lighting?.zones,
+      // which travel controls exist, not their exact bounds
+      mag ? [Object.keys(mag.ranges ?? {}).sort(), !!mag.deadZoneTop] : null,
+    ]);
+  };
+  const keyboards = KEYBOARDS.filter((d) => {
+    if (seen.has(d.model) || d.identity === 'unsupported') return false;
+    const shape = shapeOf(d);
+    if (shapes.has(shape)) return false;
+    shapes.add(shape);
+    return true;
+  });
+  const foreign: DeviceDescriptor = {
+    ...readOnly(
+      { vid: SIM_FOREIGN_VID, pid: SIM_FOREIGN_PID },
+      'mouse',
+      'foreign',
+      'vendor 7, model 2',
+    ),
+    model: 'simulated-foreign-mouse',
+  };
+  const gearhub = [...new Map([...GEARHUB_MICE.values()].map((d) => [d.model, d])).values()];
   return [
     ...CATALOG,
-    genericCompxKeyboard(SIM_GENERIC_KEYBOARD_PID),
-    genericCompxMouse(SIM_GENERIC_MOUSE_PID),
-  ].map((d) => ({ ...d, simulated: true as const }));
+    ...keyboards,
+    ...hubMouseRoster(),
+    ...gearhub,
+    ...jxcMouseRoster(),
+    foreign,
+  ].map((d) => ({
+    ...d,
+    simulated: true as const,
+  }));
 }
 
 /** In-memory stand-in for everything the wire protocol would hold. */

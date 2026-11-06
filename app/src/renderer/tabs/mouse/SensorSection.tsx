@@ -16,6 +16,7 @@ import { useT } from '../../state/i18n';
 import { ANGLE_RANGE } from '@shared/mouse-wire';
 import type { SensorSettings } from '@shared/types/mouse-settings';
 import { InfoLabel } from '../../components/InfoLabel';
+import { Gated } from '../../components/Gated';
 
 // ---------------------------------------------------------------- sensor
 export function SensorSection({ device }: TabProps) {
@@ -28,7 +29,6 @@ export function SensorSection({ device }: TabProps) {
     'sensor',
   );
   const { queue, flush, commit } = useAutoWrite(250, { deviceId: device.id });
-  const caps = device.capabilities;
   const lodOptions = device.ui.lodOptions ?? [];
   const d = data ?? {};
   // Remembers the last non-zero angle so toggling the mode off-and-back-on
@@ -61,71 +61,79 @@ export function SensorSection({ device }: TabProps) {
   return (
     <Panel title={t('sensor.title')}>
       {firstLoad && <Loading />}
-      {!loading && lodOptions.length > 0 && (
-        <Row
-          label={
-            <InfoLabel
-              label={t('sensor.lod')}
-              text={t('sensor.lod.hint')}
-              media={<LiftOffDistanceMedia />}
+      {!loading && (
+        <Gated id="sensor.lod" device={device}>
+          <Row
+            label={
+              <InfoLabel
+                label={t('sensor.lod')}
+                text={t('sensor.lod.hint')}
+                media={<LiftOffDistanceMedia />}
+              />
+            }
+            hint={t('sensor.lod.short')}
+          >
+            <Segmented
+              value={d.lod ?? lodOptions[0]!.wire}
+              options={lodOptions.map((o) => ({ value: o.wire, label: `${o.mm} mm` }))}
+              onChange={(v) => set({ lod: v })}
             />
-          }
-          hint={t('sensor.lod.short')}
-        >
-          <Segmented
-            value={d.lod ?? lodOptions[0]!.wire}
-            options={lodOptions.map((o) => ({ value: o.wire, label: `${o.mm} mm` }))}
-            onChange={(v) => set({ lod: v })}
-          />
-        </Row>
+          </Row>
+        </Gated>
       )}
-      {!loading && device.ui.sensorModes && (
-        <Row
-          label={
-            <InfoLabel
-              label={t('sensor.mode')}
-              text={t('sensor.mode.tooltip')}
-              media={<SensorModeMedia />}
+      {!loading && (
+        <Gated id="sensor.mode" device={device}>
+          <Row
+            label={
+              <InfoLabel
+                label={t('sensor.mode')}
+                text={t('sensor.mode.tooltip')}
+                media={<SensorModeMedia />}
+              />
+            }
+            hint={t('sensor.mode.hint')}
+          >
+            <Segmented
+              value={d.sensorMode ?? 0}
+              options={[
+                { value: 0, label: t('sensor.mode.lp') },
+                { value: 1, label: t('sensor.mode.hp') },
+              ]}
+              onChange={(v) => set({ sensorMode: v })}
             />
-          }
-          hint={t('sensor.mode.hint')}
-        >
-          <Segmented
-            value={d.sensorMode ?? 0}
-            options={[
-              { value: 0, label: t('sensor.mode.lp') },
-              { value: 1, label: t('sensor.mode.hp') },
-            ]}
-            onChange={(v) => set({ sensorMode: v })}
-          />
-        </Row>
+          </Row>
+        </Gated>
       )}
       {!loading && (
         <>
-          <Row
-            label={
-              <InfoLabel
-                label={t('sensor.motionSync')}
-                text={t('sensor.motionSync.hint')}
-                media={<MotionSyncMedia />}
-              />
-            }
-            hint={t('sensor.motionSync.short')}
-          >
-            <Toggle on={!!d.motionSync} onChange={(v) => set({ motionSync: v })} />
-          </Row>
-          <Row
-            label={
-              <InfoLabel
-                label={t('sensor.angleSnap')}
-                text={t('sensor.angleSnap.hint')}
-                media={<AngleSnappingMedia />}
-              />
-            }
-            hint={t('sensor.angleSnap.short')}
-          >
-            <Toggle on={!!d.angleSnapping} onChange={(v) => set({ angleSnapping: v })} />
-          </Row>
+          <Gated id="sensor.motionSync" device={device}>
+            <Row
+              label={
+                <InfoLabel
+                  label={t('sensor.motionSync')}
+                  text={t('sensor.motionSync.hint')}
+                  media={<MotionSyncMedia />}
+                />
+              }
+              hint={t('sensor.motionSync.short')}
+            >
+              <Toggle on={!!d.motionSync} onChange={(v) => set({ motionSync: v })} />
+            </Row>
+          </Gated>
+          <Gated id="sensor.angleSnap" device={device}>
+            <Row
+              label={
+                <InfoLabel
+                  label={t('sensor.angleSnap')}
+                  text={t('sensor.angleSnap.hint')}
+                  media={<AngleSnappingMedia />}
+                />
+              }
+              hint={t('sensor.angleSnap.short')}
+            >
+              <Toggle on={!!d.angleSnapping} onChange={(v) => set({ angleSnapping: v })} />
+            </Row>
+          </Gated>
 
           {/* Same left-label/right-control shape as every other row here,
               with an enable toggle on the right like the others — the
@@ -137,7 +145,7 @@ export function SensorSection({ device }: TabProps) {
               between the toggle and its diagram — the separator belongs
               after the whole group instead, right before Ripple control
               (see `.angle-mode-fieldset`'s own border-bottom below). */}
-          {caps.includes('angleMode') && (
+          <Gated id="sensor.angleMode" device={device}>
             <>
               <Row
                 className="no-border"
@@ -189,21 +197,23 @@ export function SensorSection({ device }: TabProps) {
                 </div>
               </fieldset>
             </>
-          )}
+          </Gated>
 
-          <Row
-            label={
-              <InfoLabel
-                label={t('sensor.ripple')}
-                text={t('sensor.ripple.hint')}
-                media={<RippleControlMedia />}
-              />
-            }
-            hint={t('sensor.ripple.short')}
-          >
-            <Toggle on={!!d.rippleControl} onChange={(v) => set({ rippleControl: v })} />
-          </Row>
-          {caps.includes('highFpsScan') && (
+          <Gated id="sensor.ripple" device={device}>
+            <Row
+              label={
+                <InfoLabel
+                  label={t('sensor.ripple')}
+                  text={t('sensor.ripple.hint')}
+                  media={<RippleControlMedia />}
+                />
+              }
+              hint={t('sensor.ripple.short')}
+            >
+              <Toggle on={!!d.rippleControl} onChange={(v) => set({ rippleControl: v })} />
+            </Row>
+          </Gated>
+          <Gated id="sensor.highFps" device={device}>
             <Row
               label={
                 <InfoLabel
@@ -216,8 +226,8 @@ export function SensorSection({ device }: TabProps) {
             >
               <Toggle on={!!d.highFpsScan} onChange={(v) => set({ highFpsScan: v })} />
             </Row>
-          )}
-          {caps.includes('longDistanceMode') && (
+          </Gated>
+          <Gated id="sensor.longRange" device={device}>
             <Row
               label={
                 <InfoLabel
@@ -230,7 +240,7 @@ export function SensorSection({ device }: TabProps) {
             >
               <Toggle on={!!d.longDistanceMode} onChange={(v) => set({ longDistanceMode: v })} />
             </Row>
-          )}
+          </Gated>
         </>
       )}
     </Panel>

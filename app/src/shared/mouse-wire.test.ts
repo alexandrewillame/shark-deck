@@ -3,10 +3,11 @@ import {
   companion,
   scalarBytes,
   rgbBytes,
-  dpiRegBytes,
-  dpiRegFromBytes,
-  dpiToRegister16,
-  registerToDpi16,
+  DPI_CODECS,
+  hubMacroSlots,
+  V8_MACRO_BASE,
+  V8_MACRO_STRIDE,
+  v8MacroOffset,
   v8ButtonOffset,
   V8_BUTTON_SLOT_ORDER,
   sleepSecToWire,
@@ -46,14 +47,16 @@ describe('rgbBytes', () => {
   });
 });
 
-describe('DPI register — decoded from session-v8-verify.jsonl (reg = dpi/50 - 1)', () => {
-  it('round-trips across the range', () => {
-    for (const dpi of [50, 400, 800, 1600, 6400, 12800, 20000, 26000, 42000]) {
-      expect(registerToDpi16(dpiToRegister16(dpi))).toBe(dpi);
+describe('PAW3950 DPI records (the V8) — decoded from session-v8-verify.jsonl', () => {
+  const c = DPI_CODECS.paw3950;
+  it('round-trips every 50 DPI across the range', () => {
+    for (const dpi of [50, 400, 800, 1600, 6400, 12800, 20000, 26000, 30000, 30050, 42000]) {
+      expect(c.decode(c.encode(dpi))).toBe(dpi);
     }
   });
   // Every vector below is the settled `08 07 00 00 0c 04 …` payload the vendor
-  // Hub wrote for that exact DPI (verify capture; 6400 landed on 6350).
+  // Hub wrote for that exact DPI (verify capture; 6400 landed on 6350). They
+  // must never change: this is the range our own capture verified.
   it.each([
     [400, [0x07, 0x07, 0x00, 0x47]],
     [800, [0x0f, 0x0f, 0x00, 0x37]],
@@ -64,16 +67,58 @@ describe('DPI register — decoded from session-v8-verify.jsonl (reg = dpi/50 - 
     [20000, [0x8f, 0x8f, 0x44, 0xf3]],
     [25950, [0x06, 0x06, 0x88, 0xc1]],
   ])('%d DPI -> %j', (dpi, bytes) => {
-    expect(dpiRegBytes(dpi)).toEqual(bytes);
+    expect(c.encode(dpi)).toEqual(bytes);
   });
-  it('recovers the register from a captured [lo, lo, hi] triple', () => {
-    expect(registerToDpi16(dpiRegFromBytes(0x8f, 0x44))).toBe(20000);
-    expect(registerToDpi16(dpiRegFromBytes(0x06, 0x88))).toBe(25950);
-    expect(registerToDpi16(dpiRegFromBytes(0xff, 0x00))).toBe(12800);
+  it('carries the same rule on above 30000 DPI (inferred)', () => {
+    // 42000 / 50 - 1 = 839 = 0x347: lo 0x47, bits 8-9 = 3 -> 0xcc, no doubling bits
+    expect(c.encode(42000)).toEqual([0x47, 0x47, 0xcc, 0xfb]);
+    expect(c.decode([0x47, 0x47, 0xcc, 0xfb])).toBe(42000);
+    // the third-party client's doubled record is not used: its doubling bits
+    // are ignored, so it reads as half (dpi/100 - 1 = 419 -> 21000)
+    expect(c.decode([0xa3, 0xa3, 0x55, 0xba])).toBe(21000);
+  });
+  it('reads the captured records back', () => {
+    expect(c.decode([0x8f, 0x8f, 0x44])).toBe(20000);
+    expect(c.decode([0x06, 0x06, 0x88])).toBe(25950);
+    expect(c.decode([0xff, 0xff, 0x00])).toBe(12800);
   });
   it('clamps to the 50–42000 DPI range', () => {
-    expect(registerToDpi16(dpiToRegister16(1))).toBe(50);
-    expect(registerToDpi16(dpiToRegister16(999999))).toBe(42000);
+    expect(c.decode(c.encode(1))).toBe(50);
+    expect(c.decode(c.encode(999999))).toBe(42000);
+  });
+  it('lives in region A, where the V8 driver has always written it', () => {
+    expect(c.offset).toBe(V8_BLOCK.DPI_STAGE_REG);
+    expect(c.stride).toBe(V8_BLOCK.DPI_STAGE_REG_STRIDE);
+  });
+});
+
+describe('PAW3955 DPI records (ported-from-vendor, never on our hardware)', () => {
+  const c = DPI_CODECS.paw3955;
+  const range = { min: 50, max: 60000 };
+  it('stores dpi - 1 in 16 bits, X then Y, up to 42000', () => {
+    // 1600 - 1 = 1599 = 0x063f
+    const r = c.encode(1600, range);
+    expect(r.slice(0, 5)).toEqual([0x3f, 0x06, 0x3f, 0x06, 0x00]);
+    expect(r[5]).toBe(companion(0x3f, 0x06, 0x3f, 0x06, 0x00));
+  });
+  it('halves and flags the value above 42000', () => {
+    // 60000 / 2 - 1 = 29999 = 0x752f, doubling bits 0x11
+    expect(c.encode(60000, range).slice(0, 5)).toEqual([0x2f, 0x75, 0x2f, 0x75, 0x11]);
+  });
+  it('round-trips every 50 DPI it is offered', () => {
+    for (let dpi = 50; dpi <= 60000; dpi += 50) expect(c.decode(c.encode(dpi, range))).toBe(dpi);
+  });
+  it('clamps into the model range', () => {
+    expect(c.decode(c.encode(70000, { min: 50, max: 52000 }))).toBe(52000);
+  });
+  it('sits where the V8 layout puts its 16th macro slot, so a PAW3955 mouse gets 15', () => {
+    expect(v8MacroOffset(15)).toBe(c.offset);
+    expect(hubMacroSlots('paw3955')).toBe(15);
+    expect(V8_MACRO_BASE + hubMacroSlots('paw3955') * V8_MACRO_STRIDE).toBeLessThanOrEqual(
+      c.offset,
+    );
+    expect(hubMacroSlots('paw3950')).toBe(16);
+    expect(hubMacroSlots(undefined)).toBe(16);
   });
 });
 

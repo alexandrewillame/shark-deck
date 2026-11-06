@@ -13,6 +13,9 @@ import type {
   SensorSettings,
 } from '@shared/types/mouse-settings';
 import { Driver, fmtVersion } from './base';
+import type { IdentityKey } from '../identity-key';
+import type { BackupPolicy } from './base';
+import type { Capability } from '@shared/types/capability';
 import type { HidChannel } from '../../hid/transport';
 import { toHex } from '../../hid/frame';
 import { pollRateFromWire, pollRateToWire, DPI_STAGE_COLORS } from '@shared/mouse-options';
@@ -24,13 +27,11 @@ import {
   companion,
   scalarBytes,
   rgbBytes,
-  dpiRegBytes,
-  dpiRegFromBytes,
-  registerToDpi16,
+  dpiCodecFor,
+  hubMacroSlots,
   v8ButtonOffset,
   v8ButtonExtOffset,
   v8MacroOffset,
-  V8_MACRO_SLOTS,
   V8_MACRO_STRIDE,
   RX_LED_COUNT,
   RX_LED_VALUES,
@@ -104,6 +105,23 @@ export class CompxMouse8K extends Driver {
   private currentSlot = 1;
 
   lastAwake: boolean | null = null;
+
+  /**
+   * Identify (0x01) — cid / mid / link, see V8_CMD.IDENTIFY. The nonce is
+   * echoed back; a reply whose status byte is not 0 is the dongle's generic
+   * ACK, not the mouse's answer.
+   */
+  override async identify(): Promise<IdentityKey | null> {
+    const nonce = [0, 1, 2, 3].map(() => Math.floor(Math.random() * 256));
+    const reply = await this.ch.request(
+      this.frame(V8_CMD.IDENTIFY, [0x00, 0x00, 0x00, 0x08, ...nonce]),
+      V8_CMD.IDENTIFY,
+      3,
+      6,
+    );
+    if (!reply || reply.length < 13 || (reply[2] ?? 1) !== 0x00) return null;
+    return { family: 'compx-hub', cid: reply[10]!, mid: reply[11]!, link: reply[12]! };
+  }
 
   // — verified reads --------------------------------------------------
   override async getActiveProfile(): Promise<number | null> {
@@ -467,28 +485,56 @@ export class CompxMouse8K extends Driver {
     return this.fieldByte(offset);
   }
 
+  /** This mouse's sensor's DPI record format (shared/mouse-wire.ts). */
+  private dpiCodec() {
+    return dpiCodecFor(this.d.spec.dpi?.codec);
+  }
+
+  /** Macro slots this mouse has — 15 where the DPI records end region C. */
+  private get macroSlots(): number {
+    return hubMacroSlots(this.d.spec.dpi?.codec);
+  }
+
+  /**
+   * The first `count` stages' DPI records: from the region-A snapshot where
+   * the sensor keeps them there (PAW3950, 0x0C), else one read of the
+   * sensor's own block (PAW3955, 0x1B00 — outside region A).
+   */
+  private async dpiRecords(count: number): Promise<(Uint8Array | null)[]> {
+    const c = this.dpiCodec();
+    if (c.offset + c.stride * count <= V8_PROFILE_DUMP_LEN) {
+      const out: (Uint8Array | null)[] = [];
+      for (let i = 0; i < count; i++)
+        out.push(await this.fieldBytes(c.offset + i * c.stride, c.len));
+      return out;
+    }
+    const block = await this.readBlock(c.offset, c.stride * count);
+    return Array.from({ length: count }, (_, i) =>
+      block ? block.subarray(i * c.stride, i * c.stride + c.len) : null,
+    );
+  }
+
   // — DPI stages ------------------------------------------------
   override async readDpiStages(): Promise<DpiStage[] | null> {
     const countByte = await this.fieldBytes(V8_BLOCK.DPI_STAGE_COUNT, 1);
     if (!countByte) return null;
     const max = this.d.spec.dpi?.stages ?? 6;
     const count = Math.min(Math.max(countByte[0] || max, 1), max);
-    const step = this.d.spec.dpi?.step ?? 50;
+    const codec = this.dpiCodec();
+    const records = await this.dpiRecords(count);
     const stages: DpiStage[] = [];
     for (let i = 0; i < count; i++) {
-      const reg = await this.fieldBytes(
-        V8_BLOCK.DPI_STAGE_REG + i * V8_BLOCK.DPI_STAGE_REG_STRIDE,
-        3,
-      );
+      const rec = records[i];
       const col = await this.fieldBytes(
         V8_BLOCK.DPI_STAGE_COLOR + i * V8_BLOCK.DPI_STAGE_COLOR_STRIDE,
         3,
       );
       const fallback = DPI_STAGE_COLORS[i] ?? [61, 248, 232];
-      const reg16 = reg ? dpiRegFromBytes(reg[0] ?? 0, reg[2] ?? 0) : 0;
       stages.push({
         index: i,
-        dpi: registerToDpi16(reg16, step),
+        // An unreadable record reads as the all-zero one, as it always has
+        // (50 DPI on the PAW3950).
+        dpi: codec.decode(rec ?? [0, 0, 0, 0, 0, 0]),
         color: col
           ? [col[0] ?? fallback[0], col[1] ?? fallback[1], col[2] ?? fallback[2]]
           : fallback,
@@ -502,7 +548,8 @@ export class CompxMouse8K extends Driver {
   }
 
   override async setDpiStages(stages: DpiStage[]): Promise<WriteResult> {
-    const step = this.d.spec.dpi?.step ?? 50;
+    const codec = this.dpiCodec();
+    const range = { min: this.d.spec.dpi?.min ?? 50, max: this.d.spec.dpi?.max ?? 42000 };
     const results: WriteResult[] = [];
     // Region A has no per-stage disable — DPI_STAGE_COUNT (0x02) alone decides
     // which slots the mouse cycles. So a disabled stage has to be *dropped*
@@ -520,10 +567,7 @@ export class CompxMouse8K extends Driver {
       const s = live[i]!;
       await this.writeSetting(V8_BLOCK.ACTIVE_DPI_STAGE, scalarBytes(i));
       results.push(
-        await this.writeSetting(
-          V8_BLOCK.DPI_STAGE_REG + i * V8_BLOCK.DPI_STAGE_REG_STRIDE,
-          dpiRegBytes(s.dpi, step),
-        ),
+        await this.writeSetting(codec.offset + i * codec.stride, codec.encode(s.dpi, range)),
       );
       results.push(
         await this.writeSetting(
@@ -600,7 +644,18 @@ export class CompxMouse8K extends Driver {
     return this.writeSetting(V8_BLOCK.POLL_RATE, scalarBytes(pollRateToWire(hz)));
   }
 
+  /** Does this model declare the capability? (Hub mice share one driver.) */
+  private has(c: Capability): boolean {
+    return this.d.capabilities.includes(c);
+  }
+
   // — sensor (each toggle its own offset; long-range is command 0x16) —
+  /**
+   * Only the fields this model declares are read or written. Every Hub mouse
+   * lays region A out alike, but a field it does not have is not a setting to
+   * show or replay — and long range is its own command (0x16), seen only on
+   * the V8: another Hub mouse is never sent it.
+   */
   override async readSensor(): Promise<SensorSettings | null> {
     const motion = await this.readScalar(V8_BLOCK.MOTION_SYNC);
     if (motion === null) return null;
@@ -612,30 +667,53 @@ export class CompxMouse8K extends Driver {
       this.readScalar(V8_BLOCK.SENSOR_MODE),
       this.readScalar(V8_BLOCK.ANGLE_DEGREES),
     ]);
-    const longReply = await this.ch.request(
-      this.frame(V8_CMD.LONG_RANGE, [0x00, 0x00, 0x00, 0x0a]),
-      V8_CMD.LONG_RANGE,
-      2,
-      6,
-    );
+    const longReply = this.has('longDistanceMode')
+      ? await this.ch.request(
+          this.frame(V8_CMD.LONG_RANGE, [0x00, 0x00, 0x00, 0x0a]),
+          V8_CMD.LONG_RANGE,
+          2,
+          6,
+        )
+      : null;
     // angleMode is DERIVED, not its own bit — the vendor Hub has no toggle
     // for it, only a slider, and "off" just means 0°.
-    const angleDegrees = angleWire === null ? undefined : angleFromWire(angleWire);
+    const angleDegrees =
+      angleWire === null || !this.has('angleMode') ? undefined : angleFromWire(angleWire);
+    const only = <T>(c: Capability, v: T): T | undefined => (this.has(c) ? v : undefined);
     return {
-      motionSync: !!motion,
-      angleSnapping: !!angleSnap,
-      rippleControl: !!ripple,
-      highFpsScan: !!highFps,
+      motionSync: only('motionSync', !!motion),
+      angleSnapping: only('angleSnapping', !!angleSnap),
+      rippleControl: only('rippleControl', !!ripple),
+      highFpsScan: only('highFpsScan', !!highFps),
       longDistanceMode: longReply ? (longReply[6] ?? 0) > 0 : undefined,
-      sensorMode: mode ?? undefined,
-      lod: lod ?? undefined,
+      sensorMode: only('sensorMode', mode ?? undefined),
+      lod: only('lod', lod ?? undefined),
       angleDegrees,
       angleMode: angleDegrees !== undefined ? angleDegrees !== 0 : undefined,
     };
   }
 
-  override async setSensor(s: SensorSettings): Promise<WriteResult> {
+  override async setSensor(input: SensorSettings): Promise<WriteResult> {
+    // A profile saved on another model can carry fields this one lacks.
+    const s: SensorSettings = {
+      ...input,
+      motionSync: this.has('motionSync') ? input.motionSync : undefined,
+      angleSnapping: this.has('angleSnapping') ? input.angleSnapping : undefined,
+      rippleControl: this.has('rippleControl') ? input.rippleControl : undefined,
+      highFpsScan: this.has('highFpsScan') ? input.highFpsScan : undefined,
+      sensorMode: this.has('sensorMode') ? input.sensorMode : undefined,
+      lod: this.has('lod') && this.lodAllowed(input.lod) ? input.lod : undefined,
+      angleDegrees: this.has('angleMode') ? input.angleDegrees : undefined,
+      longDistanceMode: this.has('longDistanceMode') ? input.longDistanceMode : undefined,
+    };
     const results: WriteResult[] = [];
+    if (input.lod !== undefined && s.lod === undefined && this.has('lod')) {
+      results.push({
+        ok: false,
+        verified: 'unverified',
+        error: `lift-off code ${input.lod} is not one this sensor has`,
+      });
+    }
     if (s.motionSync !== undefined)
       results.push(
         await this.writeSetting(V8_BLOCK.MOTION_SYNC, scalarBytes(s.motionSync ? 1 : 0)),
@@ -671,6 +749,13 @@ export class CompxMouse8K extends Driver {
       }
     }
     return results.length ? worst(results) : { ok: true, verified: 'unverified' };
+  }
+
+  /** A lift-off code from this sensor's own list (spec.lodOptions). */
+  private lodAllowed(wire: number | undefined): boolean {
+    if (wire === undefined) return false;
+    const opts = this.d.spec.lodOptions;
+    return !opts || opts.some((o) => o.wire === wire);
   }
 
   // — key-response-time (debounce) ---------------------------
@@ -957,10 +1042,10 @@ export class CompxMouse8K extends Driver {
     return { linked: bat.millivolts !== null };
   }
 
-  // — macros (region C, 16 slots of 0x180 — layout inferred) -------
+  // — macros (region C, 16 slots of 0x180 — 15 on a PAW3955 — layout inferred) -------
   override async readMacros(): Promise<Macro[]> {
     const out: Macro[] = [];
-    for (let slot = 0; slot < V8_MACRO_SLOTS; slot++) {
+    for (let slot = 0; slot < this.macroSlots; slot++) {
       const buf = await this.readBlock(
         v8MacroOffset(slot),
         Math.min(MOUSE_MACRO_MAX_BYTES, V8_MACRO_STRIDE),
@@ -976,7 +1061,7 @@ export class CompxMouse8K extends Driver {
   override async saveMacro(m: Macro): Promise<WriteResult> {
     // pick the slot the macro already occupies, else the first empty one
     let target = -1;
-    for (let slot = 0; slot < V8_MACRO_SLOTS; slot++) {
+    for (let slot = 0; slot < this.macroSlots; slot++) {
       const buf = await this.readBlock(v8MacroOffset(slot), 16);
       if (!buf) continue;
       if (buf.every((b) => b === 0x00 || b === 0xff)) {
@@ -998,7 +1083,7 @@ export class CompxMouse8K extends Driver {
     const slot = Number(mm[1]);
     // `writeSetting` masks the offset to 16 bits, so an out-of-range slot would
     // wrap and zero 16 bytes at an arbitrary device address.
-    if (!Number.isInteger(slot) || slot < 0 || slot >= V8_MACRO_SLOTS) {
+    if (!Number.isInteger(slot) || slot < 0 || slot >= this.macroSlots) {
       return { ok: false, verified: 'unverified', error: `macro slot out of range: ${slot}` };
     }
     return this.writeSetting(v8MacroOffset(slot), new Array(16).fill(0));
@@ -1022,6 +1107,30 @@ export class CompxMouse8K extends Driver {
     return [];
   }
 
+  /**
+   * Every onboard profile's region-A block — and, where the sensor keeps its
+   * DPI records outside it (the PAW3955), those too. A backup missing one
+   * cannot put that profile back, so the write waits until all are read.
+   */
+  override backupPolicy(): BackupPolicy {
+    const n = this.d.spec.profileCount ?? 4;
+    const slots = Array.from({ length: n }, (_, i) => i + 1);
+    return {
+      kind: 'full',
+      required: [
+        ...slots.map((s) => `profile${s}`),
+        ...(this.outsideRegionA() ? slots.map((s) => `dpi${s}`) : []),
+      ],
+    };
+  }
+
+  /** The DPI records' span when the sensor keeps them outside region A. */
+  private outsideRegionA(): { offset: number; length: number } | null {
+    const c = this.dpiCodec();
+    const length = c.stride * (this.d.spec.dpi?.stages ?? 6);
+    return c.offset >= V8_PROFILE_DUMP_LEN ? { offset: c.offset, length } : null;
+  }
+
   override async backup(): Promise<Record<string, string>> {
     const out: Record<string, string> = { schema: '2' };
     const slots = this.d.spec.profileCount ?? 4;
@@ -1031,6 +1140,14 @@ export class CompxMouse8K extends Driver {
       if (!switched.ok) continue;
       const block = await this.readBlock(0, V8_PROFILE_DUMP_LEN);
       if (block) out[`profile${s}`] = toHex(block);
+      // A sensor whose DPI records live outside region A (the PAW3955's
+      // 0x1B00) gets them saved beside it, or a restore would bring back
+      // everything but the DPI.
+      const dpi = this.outsideRegionA();
+      if (dpi) {
+        const recs = await this.readBlock(dpi.offset, dpi.length);
+        if (recs) out[`dpi${s}`] = toHex(recs);
+      }
     }
     if (savedSlot >= 1) await this.setActiveProfile(savedSlot);
     const rx = await this.readReceiverLed();
@@ -1066,6 +1183,20 @@ export class CompxMouse8K extends Driver {
         }
         const switched = await this.setActiveProfile(Number(pm[1]));
         if (switched.ok) results.push(await this.writeSetting(0, bytes));
+      } else if (/^dpi\d+$/.test(name)) {
+        const dpi = this.outsideRegionA();
+        const bytes = parseHexBytes(value);
+        // Only onto a mouse that keeps its DPI there, and only a whole block.
+        if (!dpi || !bytes || bytes.length !== dpi.length) {
+          results.push({
+            ok: false,
+            verified: 'unverified',
+            error: `backup block "${name}" does not fit this mouse`,
+          });
+          continue;
+        }
+        const switched = await this.setActiveProfile(Number(name.slice(3)));
+        if (switched.ok) results.push(await this.writeSetting(dpi.offset, bytes));
       } else if (name === 'receiverLed' && schema >= 2) {
         try {
           results.push(await this.setReceiverLed(JSON.parse(value)));

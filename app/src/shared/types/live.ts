@@ -10,7 +10,10 @@ import type {
   ConnectionType,
   DeviceColorVariant,
   DeviceKind,
+  IdentityStatus,
+  LayoutStatus,
   LodOption,
+  MagneticSpec,
   Provenance,
 } from './device';
 import type { KeyLayoutEntry } from './keys';
@@ -84,6 +87,12 @@ export interface LiveDevice {
   hint: string | null;
   /** true once a full config backup exists on disk for this endpoint */
   hasBackup: boolean;
+  /**
+   * Present while the device waits for the user's one-time OK before its
+   * first write: it cannot report `unreadable` back, so a backup cannot hold
+   * them (drivers/base.ts `BackupPolicy`). Cleared by `acknowledgeNoBackup`.
+   */
+  backupWaiver?: { unreadable: Capability[] };
   /** renderer-facing slice of the static spec — see DeviceUi */
   ui: DeviceUi;
 }
@@ -111,12 +120,33 @@ export interface FirmwareInfo {
 export interface DeviceUi {
   profileCount: number;
   pollRates: number[];
-  dpiRange?: { min: number; max: number; step: number; stages: number };
+  dpiRange?: {
+    min: number;
+    max: number;
+    step: number;
+    stages: number;
+    colorPerStage?: boolean;
+    /** above `dpi`, the sensor only stores multiples of `step` */
+    coarseAbove?: { dpi: number; step: number };
+  };
   buttons?: number;
   /** physical position per button, for the graphical picker — absent (or a
    *  model with `buttons` but no map) falls back to the numbered-list UI. */
   buttonMap?: ButtonMapEntry[];
-  keyMatrix?: { rows: number; cols: number; layout?: KeyLayoutEntry[] };
+  keyMatrix?: {
+    rows: number;
+    cols: number;
+    layout?: KeyLayoutEntry[];
+    layoutStatus?: LayoutStatus;
+  };
+  /** magnetic-switch limits (absent parts fall back to KB_TRAVEL_RANGE) */
+  magnetic?: MagneticSpec;
+  /** debounce choices in ms, when the model narrows the generic presets */
+  debouncePresets?: number[];
+  /** how the device was identified; absent = a named model (see IdentityStatus) */
+  identity?: IdentityStatus;
+  /** for a read-only card: what the device said it is */
+  identityNote?: string;
   /** switch models this board offers, stock switch first (replaceableSwitches) */
   supportedSwitches?: number[];
   lightZones: string[];
@@ -139,6 +169,8 @@ export interface DeviceUi {
   bodyLightZones?: string[];
   /** cosmetic colour/edition photos available for this model, empty if none */
   colorVariants: DeviceColorVariant[];
+  /** the photo set (shared/device-art.ts): `DeviceDescriptor.artKey`, else the model */
+  artKey: string;
   /** onboard macro-slot limits, so the macro editor can show a capacity meter
    *  without the renderer knowing anything about either wire format. Absent on
    *  models without the `macros` capability. `delaysConsumeSteps` is the one

@@ -95,6 +95,39 @@
   flex: none;
 }
 
+/* The one-time "these settings can't be backed up" question
+ * (components/BackupWaiverBanner.tsx). Amber like the card hints: it is a
+ * caution to read before the menus unlock, not an error. */
+.waiver-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--amber);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  color: var(--text);
+  font-size: var(--fs-sm);
+}
+.waiver-banner > svg {
+  flex: none;
+  color: var(--amber);
+  margin-top: 2px;
+}
+.waiver-banner .waiver-text {
+  flex: 1;
+  min-width: 0;
+}
+.waiver-banner .waiver-text p {
+  margin: 4px 0 0;
+  color: var(--text-dim);
+}
+.waiver-banner .btn {
+  flex: none;
+  align-self: center;
+}
+
 /* ---- "the device is being written to" block ------------------------------
  * Covers the device config menu only (see BusyOverlay in tabs/common.tsx) —
  * never the title bar or the tab strip, so a write that never returns cannot

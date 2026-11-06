@@ -76,10 +76,19 @@ export const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
  *  gestures; this is the same rule for the plain number field, applied on
  *  blur rather than every keystroke so typing isn't fought mid-edit. Falls
  *  back to `rng.min` for a non-finite draft (e.g. the field was left on a
- *  bare "-" or emptied), rather than propagating NaN into a device write. */
-export function snapDpi(value: number, rng: { min: number; max: number; step: number }): number {
+ *  bare "-" or emptied), rather than propagating NaN into a device write.
+ *  Past `coarseAbove` the grid is the sensor's coarser one (where a sensor
+ *  stores only every few steps), so what is shown is what is stored. */
+export function snapDpi(
+  value: number,
+  rng: { min: number; max: number; step: number; coarseAbove?: { dpi: number; step: number } },
+): number {
   if (!Number.isFinite(value)) return rng.min;
-  const stepped = Math.round(value / rng.step) * rng.step;
+  let stepped = Math.round(value / rng.step) * rng.step;
+  const coarse = rng.coarseAbove;
+  if (coarse && stepped > coarse.dpi) {
+    stepped = Math.max(coarse.dpi + coarse.step, Math.round(stepped / coarse.step) * coarse.step);
+  }
   return Math.min(rng.max, Math.max(rng.min, stepped));
 }
 

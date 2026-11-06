@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { DeviceColorVariant } from '@shared/types/device';
-import type { MessageKey } from '@shared/i18n';
+import type { MessageKey, TFunc } from '@shared/i18n';
 import { Tooltip } from './common';
 import { useAnchoredPosition } from './usePortalPosition';
 import { useT } from '../state/i18n';
@@ -30,6 +30,11 @@ import { sd } from '../state/bridge';
  * the current swatch; arrow keys preview and Escape closes. It used to open on
  * hover alone, so the colour could not be changed without a mouse.
  */
+/** A colour's name: translated for a plain colour, as the store writes it for an edition. */
+export function variantLabel(v: DeviceColorVariant, t: TFunc): string {
+  return v.labelKey ? t(v.labelKey as MessageKey) : (v.label ?? v.id);
+}
+
 export function ColorPicker({
   model,
   current,
@@ -187,11 +192,11 @@ export function ColorPicker({
             }}
           >
             {variants.map((v) => (
-              <Tooltip key={v.id} text={t(v.labelKey as MessageKey)}>
+              <Tooltip key={v.id} text={variantLabel(v, t)}>
                 <button
                   className={`color-picker-swatch-btn ${v.id === current ? 'active' : ''}`}
                   style={{ background: v.swatch }}
-                  aria-label={t(v.labelKey as MessageKey)}
+                  aria-label={variantLabel(v, t)}
                   aria-pressed={v.id === current}
                   onMouseEnter={() => onPreview?.(v.id)}
                   onFocus={() => {

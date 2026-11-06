@@ -16,18 +16,18 @@ import { enumerate, findVendorCollection, HidChannel, lastHidError } from '../hi
 import type { HidCandidate } from '../hid/transport';
 import type { DpiStage } from '@shared/types/mouse-settings';
 import type { MagneticKeySettings } from '@shared/types/keyboard-settings';
-import {
-  COMPX_8K_DONGLE_VID,
-  knownVendorIds,
-  modelIdConflicts,
-  resolveDescriptor,
-  resolveModelId,
-} from './registry';
+import { COMPX_8K_DONGLE_VID, knownVendorIds, resolveDescriptor, spansEndpoints } from './registry';
+import { isReadOnly, resolveIdentity } from './identity';
+import { colorVariantsOf } from '@shared/device-art';
+import { layoutAgreement, layoutHolds } from './layout-check';
+import type { IdentityKey } from './identity-key';
 import { Emitter } from '../emitter';
 import { createDriver, Driver } from './drivers';
+import { BACKUP_META_BLOCKS, type BackupPolicy } from './drivers/base';
 import { VirtualDriver, virtualDescriptors } from './virtual';
 import { frameLog } from '../diagnostics';
-import { listBackupFiles, writeBackup } from '../store';
+import { listBackupFiles, readBackup, writeBackup } from '../store';
+import { hasBackupWaiver, recordBackupWaiver } from './backupWaivers';
 import { getOnboardProfileNames, renameOnboardProfile } from './profileNames';
 import { getDeviceColor, setDeviceColor } from './colors';
 import { deviceStateFor } from './deviceState';
@@ -39,8 +39,8 @@ interface Entry {
   driver: Driver;
   live: LiveDevice;
   lastBatteryPoll: number;
-  /** true once the firmware's model id has been checked against the descriptor */
-  modelIdChecked?: boolean;
+  /** An imported layout has been held to the board's own keymap (see checkLayout). */
+  layoutChecked?: boolean;
   /** firmware read-back attempts so far, before falling back to slow retry */
   fwAttempts: number;
   /** last firmware attempt timestamp, once past FW_MAX_ATTEMPTS */
@@ -172,7 +172,7 @@ const LIVE_WRITE_QUIET_MS = 750;
  * explicit pick overwrites the stale value on disk.
  */
 function resolveColorVariant(descriptor: DeviceDescriptor, stored: string | null): string | null {
-  const variants = descriptor.colorVariants ?? [];
+  const variants = colorVariantsOf(descriptor);
   if (stored && variants.some((v) => v.id === stored)) return stored;
   return variants[0]?.id ?? null;
 }
@@ -206,12 +206,14 @@ export interface ManagerConfig {
   os: string;
   /**
    * How a device that reports no USB serial is keyed. `'path'` keys it by its
-   * endpoint (the desktop; the R85HE reports an empty serial). `'model'` keys
-   * it by model — for WebHID, which exposes no serial at all, so the V8's
-   * dongle and cable still collapse into one card through the cable-preferred
-   * handover in `scan()`.
+   * endpoint (the desktop; the R85HE reports an empty serial). `'family'`
+   * keys a family whose devices span two endpoints (registry.ts
+   * `spansEndpoints` — the Hub mice) by that family — for WebHID, which
+   * exposes no serial at all, so the V8's dongle and cable still collapse into
+   * one card through the cable-preferred handover in `scan()`. Every other
+   * family stays on its endpoint key.
    */
-  serialless: 'path' | 'model';
+  serialless: 'path' | 'family';
 }
 
 const DEFAULT_CONFIG: ManagerConfig = {
@@ -464,7 +466,23 @@ export class DeviceManager extends Emitter {
     this.emitChanged();
   }
 
-  /** Take a one-time full backup before the first write to a device. */
+  /**
+   * The backup CLAUDE.md invariant #1 asks for, before any write reaches a
+   * device. What it must hold is the driver's `backupPolicy()`:
+   *
+   *  - the newest stored backup of this model counts only if it holds every
+   *    block the policy requires — an older one taken before a policy asked
+   *    for them is replaced by a fresh one, once;
+   *  - a fresh one counts only if it holds every required block (`full`) and
+   *    at least one real setting — never its meta blocks alone. The V8's
+   *    always carried `schema` and `firmware`, so it used to "succeed" with
+   *    nothing read at all, against a mouse that was asleep;
+   *  - a `partial` device, which cannot report some settings, also needs the
+   *    user's one-time OK per model + firmware (`acknowledgeNoBackup`).
+   *
+   * Nothing is written to a pending or read-only device, so neither is backed
+   * up: a file would be named for its family, or for another brand's device.
+   */
   async ensureBackup(deviceId: string): Promise<boolean> {
     const e = this.entries.get(deviceId);
     if (!e) return false;
@@ -473,21 +491,86 @@ export class DeviceManager extends Emitter {
     // hardware of this model. (VirtualDriver.backup() returns no blocks, so
     // this is belt-and-braces, but it should not depend on that.)
     if (e.descriptor.simulated) return false;
-    const existing = await listBackupFiles(e.descriptor.model);
-    if (existing.length > 0) {
+    if (e.descriptor.identity === 'pending' || isReadOnly(e.descriptor)) return false;
+    const policy = e.driver.backupPolicy();
+    const model = e.descriptor.model;
+    if (await this.storedBackupCovers(model, policy)) {
       e.live.hasBackup = true;
-      return true;
+    } else {
+      try {
+        const blocks = await e.driver.backup();
+        const settings = Object.keys(blocks).filter((k) => !BACKUP_META_BLOCKS.has(k));
+        if (!settings.length) return false;
+        if (policy.kind === 'full' && policy.required.some((b) => !(b in blocks))) return false;
+        blocks.identity = JSON.stringify({
+          model,
+          vid: e.descriptor.vid,
+          pid: e.descriptor.pid,
+          identity: e.descriptor.identity ?? 'exact',
+          ...(e.descriptor.modelId !== undefined ? { modelId: e.descriptor.modelId } : {}),
+        });
+        if (policy.kind === 'partial') blocks.unreadable = JSON.stringify(policy.unreadable ?? []);
+        const file = await writeBackup(model, e.channel.deviceKey, blocks);
+        this.coveredBackups.set(model, file);
+        e.live.hasBackup = true;
+        this.emitChanged();
+      } catch {
+        return false;
+      }
     }
-    try {
-      const blocks = await e.driver.backup();
-      if (Object.keys(blocks).length === 0) return false;
-      await writeBackup(e.descriptor.model, e.channel.deviceKey, blocks);
-      e.live.hasBackup = true;
+    return policy.kind === 'partial' ? this.waived(e) : true;
+  }
+
+  /** model -> the stored backup already found to hold what its policy requires. */
+  private readonly coveredBackups = new Map<string, string>();
+
+  private async storedBackupCovers(model: string, policy: BackupPolicy): Promise<boolean> {
+    const files = await listBackupFiles(model);
+    const newest = files[0];
+    if (!newest) return false;
+    // A partial device's required blocks are taken when it answers; any
+    // backup of it is the best there is.
+    if (policy.kind === 'partial' || !policy.required.length) return true;
+    if (this.coveredBackups.get(model) === newest) return true;
+    const b = await readBackup(newest);
+    const ok = !!b && policy.required.every((r) => r in (b.blocks ?? {}));
+    if (ok) this.coveredBackups.set(model, newest);
+    return ok;
+  }
+
+  /** The firmware a waiver is kept against — read once if nothing has yet. */
+  private async waiverFirmware(e: Entry): Promise<string | null> {
+    if (!e.live.firmware?.device) {
+      const fw = await e.driver.getFirmware().catch(() => null);
+      if (fw) e.live.firmware = fw;
+    }
+    return e.live.firmware?.device ?? null;
+  }
+
+  /**
+   * Has the user OK'd writing to this partial device? Keeps
+   * `live.backupWaiver` in step, which is what puts the confirmation on screen.
+   */
+  private async waived(e: Entry): Promise<boolean> {
+    const policy = e.driver.backupPolicy();
+    const ok =
+      policy.kind !== 'partial' ||
+      (await hasBackupWaiver(e.descriptor.model, await this.waiverFirmware(e)));
+    const want = ok ? undefined : { unreadable: policy.unreadable ?? [] };
+    if (JSON.stringify(e.live.backupWaiver) !== JSON.stringify(want)) {
+      e.live.backupWaiver = want;
       this.emitChanged();
-      return true;
-    } catch {
-      return false;
     }
+    return ok;
+  }
+
+  /** The user's OK for a partial device (see `ensureBackup`), per model + firmware. */
+  async acknowledgeNoBackup(deviceId: string): Promise<void> {
+    const e = this.entries.get(deviceId);
+    if (!e || e.descriptor.simulated) return;
+    if (e.driver.backupPolicy().kind !== 'partial') return;
+    await recordBackupWaiver(e.descriptor.model, await this.waiverFirmware(e));
+    await this.waived(e);
   }
 
   /**
@@ -505,15 +588,21 @@ export class DeviceManager extends Emitter {
    * correlate on, so it keeps the path-based key and is unaffected. Two
    * physically distinct units reporting the SAME serial would merge.
    *
+   * The key is taken before the device has identified, so `descriptor` is
+   * always the family's provisional one (registry.ts) and `model` is the
+   * family slug — which is what lets the dongle and the cable meet on one key
+   * before either has said what it is. It never changes after
+   * identification: the renderer's open tab is keyed on it.
+   *
    * Under WebHID nothing has a serial, so the browser edition keys serial-less
-   * devices by model instead (`serialless: 'model'`), which merges the V8's
-   * two endpoints the same way. The cost is that two identical units would
-   * share one card — and `findVendorCollection` only ever attaches the first
-   * unit of a VID/PID anyway, on either host.
+   * Hub mice by family instead (`serialless: 'family'`), which merges the V8's
+   * two endpoints the same way. The cost is that two Hub mice would share one
+   * card — and `findVendorCollection` only ever attaches the first unit of a
+   * VID/PID anyway, on either host.
    */
   private key(descriptor: DeviceDescriptor, serial: string, path: string): string {
     if (serial) return `${descriptor.model}:${serial}`;
-    if (this.config.serialless === 'model') return descriptor.model;
+    if (this.config.serialless === 'family' && spansEndpoints(descriptor)) return descriptor.model;
     return pathKey(descriptor, path);
   }
 
@@ -549,6 +638,7 @@ export class DeviceManager extends Emitter {
     entry.pingMisses = 0;
     entry.permissionError = false;
     entry.wedges = 0;
+    entry.layoutChecked = false;
     // The endpoint decides connection/wireless/capabilities/ui; everything the
     // device itself told us carries across, so the card doesn't blank out.
     const fresh = await this.newLiveDevice(id, descriptor);
@@ -580,47 +670,43 @@ export class DeviceManager extends Emitter {
   /** The renderer-facing snapshot for a freshly-attached device. Shared by the
    *  real scan path and developer mode so the two cannot drift. */
   /**
-   * Re-resolve an attached device once its firmware tells us what it actually
-   * is, and swap the descriptor if VID/PID got it wrong.
+   * Bind a device to what it said it is (see identity.ts).
    *
-   * Runs at most once per entry (`modelIdChecked`). The driver is rebuilt on
-   * the SAME channel because `descriptor.driver` may differ between the two
-   * models, and the live device is rebuilt for its static fields with the
-   * runtime state carried across so the card does not blink offline.
+   * Every device is attached `pending` (registry.ts): VID/PID names only its
+   * protocol family. This runs on its first identify answer — and again after
+   * an endpoint change, since the cable and the receiver each have to answer
+   * for themselves. The driver is rebuilt on the SAME channel (the family's
+   * transport does not change), and the live device is rebuilt for its static
+   * fields with the runtime state carried across so the card does not blink.
    */
-  private async applyModelId(e: Entry, modelId: number): Promise<void> {
-    if (e.modelIdChecked) return;
-    e.modelIdChecked = true;
-
-    if (modelIdConflicts(e.descriptor, modelId)) {
-      // Known-wrong but nothing better to switch to: say so rather than let the
-      // UI present another model's key layout as fact.
-      this.emit('write:warning', {
-        deviceId: e.live.id,
-        message:
-          `This keyboard reports model id ${modelId}, but it is attached as ` +
-          `"${e.descriptor.displayName}" (id ${e.descriptor.modelId}) because they share a USB id. ` +
-          `Per-key settings may address the wrong keys.`,
-      });
-      return;
-    }
-
-    const better = resolveModelId(e.descriptor, modelId);
-    if (!better) return;
-
+  private async applyIdentity(e: Entry, key: IdentityKey): Promise<void> {
     const prev = e.live;
-    e.descriptor = better;
+    let next = resolveIdentity({ vid: e.descriptor.vid, pid: e.descriptor.pid }, key);
+    const readOnly = isReadOnly(next);
+    // A read-only card keeps the endpoint's cable flag: without it the cable
+    // would "win" over the card it already is on every scan, and re-identify.
+    // (An identified mouse takes it from its link type instead.)
+    if (readOnly && e.descriptor.wired) next = { ...next, wired: true };
+    // Over a receiver: the channel already relays; the descriptor says so, and
+    // what needs the cable (a factory reset) is not offered.
+    if (e.descriptor.relay && !readOnly) {
+      next = {
+        ...next,
+        relay: e.descriptor.relay,
+        capabilities: next.capabilities.filter((c) => c !== 'restore'),
+      };
+    }
+    e.descriptor = next;
     e.driver = createDriver({
-      descriptor: better,
+      descriptor: next,
       channel: e.channel,
       onWarning: (message) => this.emit('write:warning', { deviceId: prev.id, message }),
-      state: deviceStateFor(better.model),
+      state: deviceStateFor(next.model),
     });
-    const live = await this.newLiveDevice(prev.id, better);
-    // carry runtime state across the swap
+    const live = await this.newLiveDevice(prev.id, next);
     e.live = {
       ...live,
-      online: prev.online,
+      online: true,
       battery: prev.battery,
       charging: prev.charging,
       batteryRaw: prev.batteryRaw,
@@ -631,8 +717,61 @@ export class DeviceManager extends Emitter {
       pollRate: prev.pollRate,
       firmware: prev.firmware,
       connection: prev.connection,
-      wireless: prev.wireless,
+      wireless: readOnly ? false : live.wireless,
     };
+    e.fwAttempts = 0;
+    e.lastFwAttempt = 0;
+    e.liveStages = null;
+    e.liveProbed = false;
+    e.liveUnsupported = false;
+    e.layoutChecked = false;
+    // A read-only device keeps its card and nothing else: release the handle
+    // so its own software can have it. `scan()` never reopens it while the
+    // device stays attached, so it is asked what it is once per plug-in.
+    if (readOnly) await e.channel.close();
+    // A device a backup cannot fully cover asks for its OK up front, so the
+    // question comes when its menus open rather than as a refused write.
+    else if (!next.simulated && e.driver.backupPolicy().kind === 'partial') await this.waived(e);
+  }
+
+  /**
+   * Hold a layout imported as `certain` to the board's own keymap, once per
+   * attach (devices/layout-check.ts). Every per-key write is addressed by the
+   * layout's slots, and one model id can ship on more than one PCB: a board
+   * that does not bear its layout out keeps whole-board settings only — the
+   * same menus as a board with no layout at all, gated by `layoutStatus`.
+   * A hand-verified layout (the R85HE's) is not re-checked.
+   */
+  private async checkLayout(e: Entry): Promise<void> {
+    const d = e.descriptor;
+    const km = d.spec.keyMatrix;
+    if (d.simulated || d.kind !== 'keyboard' || km?.layoutStatus !== 'certain' || !km.layout) {
+      e.layoutChecked = true;
+      return;
+    }
+    const base = await e.driver.readKeyBindings('base');
+    if (!base) return; // asked again on a later pass
+    e.layoutChecked = true;
+    const a = layoutAgreement(km.layout, base);
+    if (layoutHolds(a)) return;
+    frameLog.push({
+      deviceId: e.live.id,
+      dir: 'rx',
+      hex: '',
+      note: `layout check: ${a.agree} of ${a.checked} keys agree with the imported layout — per-key settings off for this board`,
+    });
+    const next: DeviceDescriptor = {
+      ...d,
+      spec: { ...d.spec, keyMatrix: { ...km, layoutStatus: 'none' } },
+    };
+    e.descriptor = next;
+    e.driver = createDriver({
+      descriptor: next,
+      channel: e.channel,
+      onWarning: (message) => this.emit('write:warning', { deviceId: e.live.id, message }),
+      state: deviceStateFor(next.model),
+    });
+    e.live = { ...e.live, ui: deviceUi(next) };
   }
 
   private async newLiveDevice(id: string, descriptor: DeviceDescriptor): Promise<LiveDevice> {
@@ -649,12 +788,16 @@ export class DeviceManager extends Emitter {
       // 2.4 GHz device with a battery pill it has no battery for.
       connection: descriptor.wired
         ? 'usb'
-        : descriptor.vid === COMPX_8K_DONGLE_VID
+        : descriptor.vid === COMPX_8K_DONGLE_VID || descriptor.relay
           ? '2.4g'
           : 'usb',
-      wireless: descriptor.wired
-        ? false
-        : descriptor.kind === 'mouse' || descriptor.vid === COMPX_8K_DONGLE_VID,
+      // A read-only card reads nothing, battery included: no pill to show.
+      wireless:
+        descriptor.wired || isReadOnly(descriptor)
+          ? false
+          : descriptor.kind === 'mouse' ||
+            descriptor.vid === COMPX_8K_DONGLE_VID ||
+            !!descriptor.relay,
       online: false,
       // Set on the first refresh, once a liveness probe has actually run.
       receiverOnline: false,
@@ -697,6 +840,9 @@ export class DeviceManager extends Emitter {
         // matches the drivers' own `settleMs`. The output-report path is
         // natively bounded and stays unpaced.
         requestPaceMs: descriptor.transport === 'feature-report' ? 30 : 0,
+        // A receiver carries the device's packets; the channel runs its
+        // handshake around every one (hid/transport.ts).
+        ...(descriptor.relay ? { relay: descriptor.relay } : {}),
       },
     );
   }
@@ -826,7 +972,14 @@ export class DeviceManager extends Emitter {
       // the collection we just enumerated. This is how a device that stopped
       // answering — and had its handle released by `refreshEntry` — comes back
       // without the entry (and its card) ever disappearing.
-      if (existing?.channel.isDisposed() && this.mayReopen(existing)) {
+      //
+      // Not for a read-only card: its handle was released on purpose and it
+      // has nothing more to say until it is unplugged (which prunes it).
+      if (
+        existing?.channel.isDisposed() &&
+        !isReadOnly(existing.descriptor) &&
+        this.mayReopen(existing)
+      ) {
         // Rebuild against the collection we just enumerated — which may be a
         // DIFFERENT endpoint than the one that died (unplug the cable and the
         // dongle is what is left), so adopt its descriptor too rather than
@@ -986,6 +1139,45 @@ export class DeviceManager extends Emitter {
     // (`profileNames`, `firmware`, …) with the live copy, so an in-place
     // nested mutation would be invisible to the JSON diff at the end.
     const prev = JSON.stringify(e.live);
+    if (isReadOnly(e.descriptor)) {
+      // Nothing to read or write: the card stays as identified.
+      e.live.online = true;
+      return JSON.stringify(e.live) !== prev;
+    }
+    if (e.descriptor.identity === 'pending') {
+      // Nothing but identify until the device says what it is — the
+      // families' other opcodes are not safe to send blind (drivers/identify.ts).
+      try {
+        const key = await e.driver.identify();
+        if (key) {
+          e.pingMisses = 0;
+          e.wedges = 0;
+          e.permissionError = false;
+          await this.applyIdentity(e, key);
+        } else {
+          e.pingMisses++;
+          e.live.online = e.pingMisses < PING_MISS_THRESHOLD && e.live.online;
+        }
+      } catch (err) {
+        e.pingMisses++;
+        if (looksLikePermissionError(err)) e.permissionError = true;
+      }
+      if (e.descriptor.identity === 'pending' || isReadOnly(e.descriptor)) {
+        e.live.hint = isReadOnly(e.descriptor)
+          ? null
+          : hint(
+              this.config,
+              e.live.kind,
+              e.live.online,
+              e.live.wireless,
+              e.live.battery,
+              e.descriptor.provenance,
+              e.permissionError,
+              e.descriptor.simulated,
+            );
+        return JSON.stringify(e.live) !== prev;
+      }
+    }
     try {
       // `ping()` is a driver-chosen liveness probe (defaults to a profile
       // read, but the V8 mouse overrides it — see CompxMouse8K.ping — because
@@ -1019,6 +1211,7 @@ export class DeviceManager extends Emitter {
           e.live.activeDpi = null;
         }
         e.live.activeProfile = profile ?? e.live.activeProfile;
+        if (!e.layoutChecked) await this.checkLayout(e);
       }
 
       const now = Date.now();
@@ -1052,11 +1245,6 @@ export class DeviceManager extends Emitter {
         if (fw && (fw.device !== null || fw.receiver !== null)) {
           e.live.firmware = fw;
         }
-        // VID/PID cannot tell these boards apart; the firmware's model id can.
-        // Do this only once a version actually came back, so a mid-wake read
-        // returning 0 never triggers a swap.
-        const modelId = (fw as { modelId?: number } | null)?.modelId ?? 0;
-        if (modelId) await this.applyModelId(e, modelId);
         // A keyboard is "wireless" only once it has answered GET_RF_VERSION.
         if (e.descriptor.kind === 'keyboard' && fw) {
           e.live.wireless = (fw.receiverRaw ?? 0) > 0;

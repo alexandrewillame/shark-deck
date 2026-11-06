@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type MutableRefObject, useEffect, useRef, useState } from 'react';
 import type { KeyLayoutEntry } from '@shared/types/keys';
 import type { PerKeyColor, PerKeyLightingPreset } from '@shared/types/lighting';
 import { KB_LIGHT_STEPS } from '@shared/lighting';
@@ -38,8 +38,11 @@ export function PerKeyPane({
   editor,
   showing,
   onApplied,
+  applyRef,
 }: TabProps & {
   editor: PerKeyEditor;
+  /** Filled with this pane's Apply while it is mounted. */
+  applyRef: MutableRefObject<(() => Promise<boolean>) | null>;
   /** A successful write: the board's main effect is now the per-key layer at
    *  this brightness. */
   onApplied: (brightness: number) => void;
@@ -145,17 +148,20 @@ export function PerKeyPane({
     reload();
   };
 
-  const apply = async () => {
+  /** Resolves whether the board took it. */
+  const apply = async (): Promise<boolean> => {
     setApplying(true);
     const sent = colors;
     const b = brightness;
+    let ok = false;
     // Seven chunked colour frames — by far the slowest thing this tab does.
     await whileBusy(t('busy.lighting'), async () => {
       const r = await run(t('light.apply'), () =>
         sd.setPerKeyLighting(device.id, asKeys(sent), { brightness: b }),
       );
+      ok = r.ok;
       if (r.ok) {
-        history.markSaved(sent);
+        editor.noteApplied(sent);
         onApplied(b);
       }
     });
@@ -163,7 +169,15 @@ export function PerKeyPane({
     // Read back rather than trust the write — quietly: it is not a change the
     // user made, so it is no undo step.
     reload();
+    return ok;
   };
+  // The leave prompt's "Apply and leave" (MainLightingPane holds the editor).
+  useEffect(() => {
+    applyRef.current = apply;
+    return () => {
+      applyRef.current = null;
+    };
+  });
 
   const fillAll = () => {
     if (!layout) return;

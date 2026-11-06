@@ -1350,25 +1350,34 @@ const FOCUSABLE =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
- * The frame both confirm dialogs are drawn in — and what makes them dialogs
- * for everyone, not only for a mouse.
+ * The frame the confirm dialogs are drawn in (ConfirmDialog here, the leave
+ * prompt in LeaveDialog.tsx) — and what makes them dialogs for everyone, not
+ * only for a mouse.
  *
  * They were a box over a scrim and nothing more: Escape did nothing, focus
  * stayed on the page behind (so Tab walked off under the scrim, and a screen
  * reader never learned a question had been asked), and no element said it was
  * a dialog. Now it is a labelled modal dialog; focus moves to its FIRST
- * button, which is Cancel in every caller — the safe answer to an accidental
- * Enter on "reset every key" — stays inside it, and goes back where it was
- * when the dialog closes. Escape and a click on the scrim both cancel.
+ * button, which is the safe answer in every caller (Cancel, Keep editing) —
+ * so an accidental Enter on "reset every key" does nothing — stays inside it,
+ * and goes back where it was when the dialog closes. Escape and a click on
+ * the scrim both cancel.
+ *
+ * `detail` goes under the body (the leave prompt's list of changes);
+ * `className` is added to `.modal`.
  */
-function ModalFrame({
+export function ModalFrame({
   title,
   body,
+  detail,
+  className,
   onCancel,
   children,
 }: {
   title: string;
   body?: string;
+  detail?: ReactNode;
+  className?: string;
   onCancel: () => void;
   children: ReactNode;
 }) {
@@ -1410,7 +1419,7 @@ function ModalFrame({
     <div className="modal-scrim" onMouseDown={() => cancel.current()}>
       <div
         ref={box}
-        className="modal"
+        className={className ? `modal ${className}` : 'modal'}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -1418,6 +1427,7 @@ function ModalFrame({
       >
         <h4 id={titleId}>{title}</h4>
         {body && <p>{body}</p>}
+        {detail}
         <div className="modal-actions">{children}</div>
       </div>
     </div>,
@@ -1444,44 +1454,6 @@ export function ConfirmDialog({
       </button>
       <button className="btn primary" onClick={() => onResolve(true)}>
         {confirmLabel ?? t('common.ok')}
-      </button>
-    </ModalFrame>
-  );
-}
-
-/**
- * The three-way version of ConfirmDialog, for leaving an editor with unsaved
- * work: Save, Discard, or stay put.
- *
- * A separate component rather than a fourth button on ConfirmDialog — a
- * two-button confirm that silently gained a third option would change what
- * every existing caller's dialog looks like. Dismissing (scrim or Cancel)
- * resolves 'cancel', so the safe answer is always the accidental one.
- */
-export function SaveDiscardDialog({
-  title,
-  body,
-  saveLabel,
-  discardLabel,
-  onResolve,
-}: {
-  title: string;
-  body?: string;
-  saveLabel: string;
-  discardLabel: string;
-  onResolve: (choice: 'save' | 'discard' | 'cancel') => void;
-}) {
-  const t = useT();
-  return (
-    <ModalFrame title={title} body={body} onCancel={() => onResolve('cancel')}>
-      <button className="btn" onClick={() => onResolve('cancel')}>
-        {t('common.cancel')}
-      </button>
-      <button className="btn danger" onClick={() => onResolve('discard')}>
-        {discardLabel}
-      </button>
-      <button className="btn primary" onClick={() => onResolve('save')}>
-        {saveLabel}
       </button>
     </ModalFrame>
   );

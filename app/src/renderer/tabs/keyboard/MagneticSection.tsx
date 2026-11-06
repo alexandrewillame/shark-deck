@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { KeyGroup, MagneticKeySettings } from '@shared/types/keyboard-settings';
 import type { KeyLayoutEntry } from '@shared/types/keys';
+import type { WriteResult } from '@shared/types/live';
 import { ConfirmDialog, Panel, Row, Segmented, Tooltip } from '../../components/common';
 import { RapidTriggerMedia, GlobalActuationMedia } from '../../components/tooltipMedia';
 import { KeyboardMap, type KeyGauge, type KeyRef } from '../../components/KeyboardMap';
@@ -62,7 +63,9 @@ import {
   withBaseName,
 } from './useKeyGroups';
 import { useT } from '../../state/i18n';
-import { KB_TRAVEL_RANGE } from '@shared/keyboard-travel';
+import { NAVIGATION_SURFACES } from '../../state/leaveGuard';
+import { KB_TRAVEL_RANGE, travelRangesFor } from '@shared/keyboard-travel';
+import { gate } from '@shared/menuGates';
 import type { LightingSettings } from '@shared/types/lighting';
 
 /**
@@ -1223,7 +1226,7 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
    * of a snap-tap pair land together and the driver can refuse a pair that
    * disagrees with itself.
    */
-  const applyPlan = async (label: string, plan: Plan) => {
+  const applyPlan = async (label: string, plan: Plan): Promise<WriteResult | void> => {
     if (!plan.length) return;
     const before = byKeyRef.current;
     const next = { ...byKeyRef.current };
@@ -1231,7 +1234,7 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
     byKeyRef.current = next;
     setByKey(next);
     heldRef.current = null;
-    await commit(label, () => writeKeys(plan, before));
+    return commit(label, () => writeKeys(plan, before));
   };
 
   /**
@@ -1492,6 +1495,9 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
   };
 
   useEffect(() => {
+    // Only while this tab is on screen: it stays mounted behind every other
+    // tab, and a click on Home is not about this board.
+    if (!onScreen) return;
     const onDown = (e: PointerEvent) => {
       // A modifier means "add to what I have" everywhere on this tab —
       // shift/ctrl-drag rubber-bands a block and ADDS it (see `onMarquee`), and
@@ -1500,11 +1506,14 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
       if (e.shiftKey || e.ctrlKey || e.metaKey) return;
       const el = e.target as HTMLElement | null;
       if (!el || el.closest(KEEPS_SELECTION)) return;
+      // Navigating, or answering a dialog by its backdrop: the selection — and
+      // a mod-tap or DKS panel waiting on it — is the leave prompt's business.
+      if (el.closest(NAVIGATION_SURFACES)) return;
       setSel((prev) => (prev.size ? new Set<string>() : prev));
     };
     window.addEventListener('pointerdown', onDown);
     return () => window.removeEventListener('pointerdown', onDown);
-  }, []);
+  }, [onScreen]);
 
   const onSelect = (k: KeyRef) => {
     // A click is a request to watch: a stream that was lost gets another try.
@@ -1833,7 +1842,7 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
                 // The slider's OWN max, not a hand-copied 4. The comment claimed
                 // they matched; the slider's is 3.4, so every gauge drew its fill
                 // and ticks ~15% short of where the value actually sat.
-                const max = KB_TRAVEL_RANGE.travel.max;
+                const max = travelRangesFor(device.ui.magnetic).travel.max;
                 const pct = (mm: number) => Math.max(0, Math.min(100, (mm / max) * 100));
                 const gauge: KeyGauge = {
                   fillPct: pct(ks.actuationMm),
@@ -2039,6 +2048,8 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
                   onRtReleaseChange={(v, live) => patch({ rtReleaseMm: v }, live)}
                   deadZoneMm={stageKey?.deadZoneMm}
                   deadZoneBottomMm={stageKey?.deadZoneBottomMm}
+                  ranges={travelRangesFor(device.ui.magnetic)}
+                  showTopDeadZone={gate('act.deadZoneTop', device)}
                   liveMm={
                     live && layout && stageRef
                       ? (liveBySlot[slotOf(layout, stageRef) ?? -1] ?? null)

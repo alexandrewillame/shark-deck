@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { labelForCode, normalizeUsage } from '@shared/keys';
 import { useStore, HOME_TAB } from './store';
 
 /**
@@ -75,6 +76,27 @@ export function isSubmitEnter(e: {
 export function modKeyLabel(): string {
   return isMacUi() ? '⌘' : 'Ctrl+';
 }
+
+/**
+ * The HID usages a PC keyboard prints Win and Alt on are the keys a Mac calls
+ * ⌘ and ⌥ — the same usages, so a macro recorded on a Mac with ⌘ held came
+ * back as "Left Win". A board's own drawing keeps its keycap legends.
+ */
+const MAC_KEY_NAMES: Record<string, string> = {
+  e2: 'Left ⌥',
+  e3: 'Left ⌘',
+  e6: 'Right ⌥',
+  e7: 'Right ⌘',
+};
+
+/** A key's name as this platform says it: `label` everywhere but those four
+ *  on a Mac. */
+export function keyName(code: string, label: string): string {
+  return (isMacUi() && MAC_KEY_NAMES[normalizeUsage(code)]) || label;
+}
+
+/** `labelForCode`, as this platform says it. */
+export const keyNameForCode = (code: string): string => keyName(code, labelForCode(code));
 
 /**
  * Is the platform's command modifier down — ⌘ on macOS, Ctrl elsewhere?

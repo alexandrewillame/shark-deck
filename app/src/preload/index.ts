@@ -104,6 +104,7 @@ const api: Api = {
   setLiveWatch: (id, on) => invoke('setLiveWatch', id, on),
 
   backupNow: (id) => invoke('backupNow', id),
+  acknowledgeNoBackup: (id) => invoke('acknowledgeNoBackup', id),
   listBackups: (id) => invoke('listBackups', id),
   restoreBackup: (id, file) => invoke('restoreBackup', id, file),
   deleteBackup: (id, file) => invoke('deleteBackup', id, file),
@@ -139,6 +140,9 @@ const api: Api = {
   windowIsMaximized: () => invoke('windowIsMaximized'),
   windowStartDrag: () => invoke('windowStartDrag'),
   windowEndDrag: () => invoke('windowEndDrag'),
+
+  setPendingChanges: (pending) => invoke('setPendingChanges', pending),
+  quitApp: () => invoke('quitApp'),
 
   getFrameLog: () => invoke('getFrameLog'),
   clearFrameLog: () => invoke('clearFrameLog'),

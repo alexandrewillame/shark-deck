@@ -18,6 +18,22 @@ offline replacement for the vendor's _Mouse Hub_ and _Driver v4_.
 [Download for Windows, macOS and Linux](https://github.com/alexandrewillame/shark-deck/releases/latest) ·
 [Report a problem](https://github.com/alexandrewillame/shark-deck/issues)
 
+## Supported devices
+
+Shark Deck recognises each device from what its firmware reports, not from its
+USB id, and shows only the settings that model has. The R85HE keyboard and the
+V8 mouse are checked on hardware. The rest are driven from protocol
+documentation and not yet checked on a device: about 80 Attack Shark keyboards
+(R, X and K series, magnetic and mechanical) and the X11 ULTRA, F1 AIR, X8,
+V5, R11 ULTRA, RS3/RS6 ULTRA, V2 AIR, MEGA B2, R5 TURBO, R2, R3, X3 PRO, R5 ULTRA,
+R6 and R8 mice. Every change is read back, and a backup is taken first. The
+Beken-based mice (X11, X3, X6, X8, G3, V3, V6 families, R1, X1) are recognised
+but not configurable yet. The full list, model by model:
+[docs/devices/attack-shark-lineup.md](docs/devices/attack-shark-lineup.md).
+
+Another brand's device on the same chip gets a "Not an Attack Shark device"
+card and is never written to.
+
 ## Use it in your browser
 
 **[alexandrewillame.github.io/shark-deck](https://alexandrewillame.github.io/shark-deck/)**

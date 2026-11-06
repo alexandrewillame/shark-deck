@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { labelForCode } from '@shared/keys';
 import { Icon, type IconName } from '../icons';
 import { useT } from '../../state/i18n';
+import { keyNameForCode } from '../../state/shortcuts';
 import { MOUSE_BUTTONS, type MacroGroup } from './macroUtils';
 
 type T = ReturnType<typeof useT>;
@@ -18,7 +18,7 @@ export function groupSummary(
   const target =
     g.type === 'mouse'
       ? t(MOUSE_BUTTONS.find((b) => b.value === Number(g.value))?.labelKey ?? 'macro.mouse.left')
-      : labelForCode(String(g.value ?? ''));
+      : keyNameForCode(String(g.value ?? ''));
   return {
     icon: g.type === 'mouse' ? 'mouse' : 'keyboard',
     kind: t(

@@ -12,6 +12,22 @@ export type ConnectionType = 'usb' | 'bt' | '2.4g' | 'unknown';
 
 export type Provenance = 'verified-capture' | 'ported-from-vendor' | 'inferred';
 
+/**
+ * How a device came to be attached as its descriptor. VID/PID cannot tell
+ * these devices apart (~99 boards share 3151:5029; another brand's mouse uses
+ * the V8's 3554:F517), so each is first attached `pending` and asked what it
+ * is (see main/devices/identity.ts):
+ * - `pending`: nothing but the identify command is sent until it answers;
+ * - `exact`: a named Attack Shark model;
+ * - `class`: an Attack Shark device whose exact model is not named yet (a
+ *   Hub mouse known only by its sensor class) — the settings that class shares;
+ * - `unsupported`: an Attack Shark model whose command set has no driver yet;
+ * - `foreign`: another brand on the same chip;
+ * - `unknown`: an id in no table.
+ * The last three are read-only cards: nothing is read or written.
+ */
+export type IdentityStatus = 'pending' | 'exact' | 'class' | 'unsupported' | 'foreign' | 'unknown';
+
 /** Static, code-defined description of a supported model. */
 export interface DeviceDescriptor {
   /** stable slug, e.g. "attack-shark-v8" */
@@ -65,10 +81,26 @@ export interface DeviceDescriptor {
    * `CompxMouse8K.getFirmware`.
    */
   wired?: boolean;
+  /**
+   * This endpoint is a 2.4 GHz receiver that carries the device's packets
+   * (hid/transport.ts `relaySendUnlocked`): `target` 0x0A keyboard, 0x05 mouse.
+   * Set from the receiver's PID (registry.ts) and kept through identification.
+   */
+  relay?: { target: number };
   /** relative art path under assets/devices, or null for the generic silhouette */
   art: string | null;
   /** cosmetic colour/edition photos available for this model, if any — see DeviceColorVariant */
   colorVariants?: DeviceColorVariant[];
+  /** absent = `exact` (a hand-written catalog entry) — see IdentityStatus */
+  identity?: IdentityStatus;
+  /** for a read-only card: what the device said it is (brand, model id) */
+  identityNote?: string;
+  /**
+   * Which photo set (`assets/devices/manifest.json`) this model shows. One
+   * product often spans several firmware model ids (the X68 HE is 2270, 2472
+   * and 2902), and they share one set of photos. Absent = `model`.
+   */
+  artKey?: string;
   /**
    * True only for descriptors synthesised by developer mode (see
    * main/devices/virtual.ts) — never a real device. Every path that would
@@ -103,18 +135,79 @@ export type ChecksumScheme = 'shark-sum' | 'bit7' | 'bit8' | 'compx-fea' | 'none
 export interface DeviceColorVariant {
   /** stable slug matched against deviceArtAssets.ts, e.g. "black" */
   id: string;
-  labelKey: string;
+  /** a translated label; absent for an edition name, shown as `label` */
+  labelKey?: string;
+  /** the store's own name for an edition ("Ice Ninja"), shown as written */
+  label?: string;
   /** CSS colour/gradient for the picker swatch */
   swatch: string;
 }
 
+/**
+ * How far a board's key layout can be trusted to address keys:
+ * - `verified`: slots confirmed against this model on real hardware (R85HE);
+ * - `certain`: every key carries a firmware slot from the vendor's own data,
+ *   re-checked against the board's keymap before the first per-key write;
+ * - `none`: drawing only — no per-key settings are offered.
+ */
+export type LayoutStatus = 'verified' | 'certain' | 'none';
+
+/** One settable travel range in millimetres (see shared/keyboard-travel.ts). */
+export interface TravelRangeSpec {
+  min: number;
+  max: number;
+  step: number;
+  default: number;
+}
+
+/** Per-model magnetic-switch limits; anything absent falls back to KB_TRAVEL_RANGE. */
+export interface MagneticSpec {
+  ranges?: Partial<Record<'travel' | 'rt' | 'deadzone', TravelRangeSpec>>;
+  /** the top dead zone (magnetism page 251) — the vendor marks it "only if supported" */
+  deadZoneTop?: boolean;
+}
+
 export interface DeviceSpec {
   profileCount?: number;
-  dpi?: { min: number; max: number; step: number; stages: number; sensor?: string };
+  /**
+   * The onboard profile byte counts in steps of this: a magnetic yc500 board
+   * (the K85 1466) stores profile * 4 + sublayer. 1 when absent.
+   */
+  profileByteStride?: number;
+  dpi?: {
+    min: number;
+    max: number;
+    step: number;
+    stages: number;
+    sensor?: string;
+    /**
+     * How a Hub mouse stores its DPI stages: `paw3950` — four-byte records at
+     * region-A 0x0C (the V8's); `paw3955` — six-byte records at 0x1B00.
+     * Absent = `paw3950`.
+     */
+    codec?: 'paw3950' | 'paw3955';
+    /** each DPI stage carries its own indicator colour */
+    colorPerStage?: boolean;
+  };
   pollRates?: number[]; // Hz
   buttons?: number;
   /** keyboard physical layout for the interactive map */
-  keyMatrix?: { rows: number; cols: number; layout?: KeyLayoutEntry[] };
+  keyMatrix?: {
+    rows: number;
+    cols: number;
+    layout?: KeyLayoutEntry[];
+    /** absent = `verified` when every key has a slot, else `none` */
+    layoutStatus?: LayoutStatus;
+  };
+  /** magnetic-switch limits for this board */
+  magnetic?: MagneticSpec;
+  /** a keyboard that also runs on a battery over 2.4 GHz / Bluetooth (mice
+   *  are wireless unless `wired`) */
+  wireless?: boolean;
+  /** sleep-timer choices in seconds (0 = never); absent = the vendor's mouse presets */
+  sleepPresets?: number[];
+  /** debounce choices in ms; absent = the generic presets */
+  debouncePresets?: number[];
   /** Magnetic switch model ids this board can be told it has, in the order the
    *  picker should offer them — see shared/keyboard-switches.ts. The first is
    *  the model's stock switch, which is also what a stored 0 resolves to.

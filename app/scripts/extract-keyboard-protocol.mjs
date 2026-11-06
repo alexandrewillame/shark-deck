@@ -309,6 +309,39 @@ function extractR85heMatrix() {
   return { chunkFile, defaultMatrix, defaultFnMatrix, defaultFnMacMatrix, slots };
 }
 
+/**
+ * Every Attack Shark board's factory key matrix, keyed by vendor model id —
+ * the same `defaultMatrix` lookup as `extractR85heMatrix`, for each row of
+ * the device table. A board's slot map is what per-key writes need, so with
+ * these an importer can promote a drawing-only layout to an addressable one
+ * (match each key's `matrixEntry` to its one slot, as
+ * src/main/devices/catalog/sharkfin-convert.ts `convertLayout` does).
+ * Boards whose chunk is not found are listed, not guessed.
+ */
+function extractAllMatrices(devices) {
+  const out = {};
+  const missing = [];
+  for (const d of devices.filter((x) => x.company === 'AttackShark' && x.name)) {
+    const chunkFile = findModelChunk(d.name);
+    if (!chunkFile) {
+      missing.push(`${d.id} ${d.name}`);
+      continue;
+    }
+    const m = readJs(chunkFile).match(/defaultMatrix=\[([0-9,]+)\]/);
+    if (!m) {
+      missing.push(`${d.id} ${d.name} (no defaultMatrix in ${chunkFile})`);
+      continue;
+    }
+    out[d.id] = {
+      name: d.name,
+      keyLayout: d.keyLayout,
+      chunkFile,
+      defaultMatrix: m[1].split(',').map(Number),
+    };
+  }
+  return { matrices: out, missing };
+}
+
 // ---------------------------------------------------------------------------
 // 5. R85HE UI grid  (chunk keyboard_79_sg9047_keymappings_ui_info)
 // ---------------------------------------------------------------------------
@@ -554,6 +587,12 @@ try {
   dump('kb-magnetism.json', magnetism);
   dump('kb-grpc.json', proto);
   if (layout) dump('kb-r85he-layout.json', layout);
+  const all = extractAllMatrices(devices);
+  dump('kb-matrices.json', all.matrices);
+  console.log(
+    `model matrices:   ${Object.keys(all.matrices).length} Attack Shark boards` +
+      (all.missing.length ? `, not found: ${all.missing.join('; ')}` : ''),
+  );
 
   writeKeyboardOptionsTs(lighting, magnetism, cmds);
   writeProto(proto);

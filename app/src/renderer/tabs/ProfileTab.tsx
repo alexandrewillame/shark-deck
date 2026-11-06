@@ -1,4 +1,4 @@
-import { hasAny } from '@shared/capabilities';
+import { Gated } from '../components/Gated';
 import { HeroPane, type TabProps } from './common';
 import { useT } from '../state/i18n';
 import { DebounceSection } from './mouse/DebounceSection';
@@ -35,7 +35,6 @@ import { SensorSection } from './mouse/SensorSection';
  */
 export function ProfileTab({ device }: TabProps) {
   const t = useT();
-  const caps = device.capabilities;
   const isKeyboard = device.kind === 'keyboard';
   return (
     <HeroPane
@@ -45,29 +44,44 @@ export function ProfileTab({ device }: TabProps) {
     >
       {!isKeyboard && (
         <>
-          {caps.includes('dpi') && <DpiSection device={device} />}
-          {caps.includes('pollRate') && <PollRateSection device={device} />}
-          {hasAny(caps, [
-            'sensorTuning',
-            'motionSync',
-            'lod',
-            'highFpsScan',
-            'longDistanceMode',
-            'sensorMode',
-          ]) && <SensorSection device={device} />}
-          {caps.includes('mouseDebounce') && <DebounceSection device={device} />}
-          {caps.includes('perfMode') && <PerformanceSection device={device} />}
-          {caps.includes('dpiDynamic') && <DpiDynamicSection device={device} />}
+          <Gated id="dpi.section" device={device}>
+            <DpiSection device={device} />
+          </Gated>
+          <Gated id="poll.section" device={device}>
+            <PollRateSection device={device} />
+          </Gated>
+          <Gated id="sensor.section" device={device}>
+            <SensorSection device={device} />
+          </Gated>
+          <Gated id="debounce.mouse" device={device}>
+            <DebounceSection device={device} />
+          </Gated>
+          <Gated id="perf.section" device={device}>
+            <PerformanceSection device={device} />
+          </Gated>
+          <Gated id="dpiDynamic.section" device={device}>
+            <DpiDynamicSection device={device} />
+          </Gated>
         </>
       )}
 
-      {isKeyboard && caps.includes('keyboardOptions') && (
-        <KeyboardFnLayoutSection device={device} />
+      {isKeyboard && (
+        <>
+          <Gated id="kb.fnLayout" device={device}>
+            <KeyboardFnLayoutSection device={device} />
+          </Gated>
+          <Gated id="poll.section" device={device}>
+            <PollRateSection device={device} />
+          </Gated>
+          <Gated id="debounce.keyboard" device={device}>
+            <DebounceSection device={device} />
+          </Gated>
+        </>
       )}
-      {isKeyboard && caps.includes('pollRate') && <PollRateSection device={device} />}
-      {isKeyboard && caps.includes('debounce') && <DebounceSection device={device} />}
 
-      {device.wireless && caps.includes('sleepTimer') && <PowerSection device={device} />}
+      <Gated id="power.section" device={device}>
+        <PowerSection device={device} />
+      </Gated>
     </HeroPane>
   );
 }

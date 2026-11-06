@@ -17,7 +17,7 @@
  */
 import HID from 'node-hid';
 import type { ChecksumScheme } from '@shared/types/device';
-import { toHex } from './frame';
+import { buildFrame, toHex } from './frame';
 import { compxFeaCkIndex, verifyChecksum } from './checksum';
 
 export interface HidCandidate {
@@ -225,6 +225,31 @@ const OP_TIMEOUT_SLACK_MS = 500;
  */
 const FEATURE_MAX_POLL_READS = 2;
 
+/** Receiver relay opcodes (see `relaySendUnlocked`). */
+const RELAY_STATUS = 0xf7;
+const RELAY_SELECT = 0xf6;
+const RELAY_RELEASE = 0xfc;
+const RELAY_POLL_MS = 25;
+/** sharkfin allows 500 ms to send and 1000 ms to read; the vendor polls 5 x 100 ms. */
+const RELAY_SEND_DEADLINE_MS = 500;
+const RELAY_REPLY_DEADLINE_MS = 1000;
+
+export interface RelayStatus {
+  replyWaiting: boolean;
+  keyboardBattery: number;
+  mouseBattery: number;
+  keyboardOnline: boolean;
+  mouseOnline: boolean;
+  ready: boolean;
+  /** 1 keyboard, 2 mouse, 3 both */
+  paired: number;
+}
+
+/** A receiver frame: the same feature-report shape and `compx-fea` checksum as the devices'. */
+function relayFrame(command: number, args: number[], len: number): Uint8Array {
+  return buildFrame({ reportId: 0, command, args, reportLength: len, checksum: 'compx-fea' });
+}
+
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 export class HidChannel {
@@ -265,6 +290,13 @@ export class HidChannel {
       opTimeoutMs?: number;
       /** Delay between the reads of one `request()` attempt, feature-report mode only. */
       requestPaceMs?: number;
+      /**
+       * This endpoint is a ROYUAN 2.4 GHz receiver relaying to a device behind
+       * it: every packet goes through the receiver's handshake (see
+       * `relaySendUnlocked`). `target` is 0x0A for a keyboard, 0x05 for a mouse.
+       * Absent, every path below is byte-for-byte what it was.
+       */
+      relay?: { target: number };
     } = {},
   ) {
     this.key = candidate.serialNumber || candidate.path;
@@ -453,6 +485,11 @@ export class HidChannel {
   }
 
   private async writeUnlocked(frame: Uint8Array): Promise<void> {
+    if (this.opts.relay) return this.relaySendUnlocked(frame, this.opts.relay.target);
+    return this.rawWriteUnlocked(frame);
+  }
+
+  private async rawWriteUnlocked(frame: Uint8Array): Promise<void> {
     const dev = await this.ensureOpen();
     const bytes = Array.from(frame);
     if (this.mode === 'feature-report') {
@@ -464,6 +501,97 @@ export class HidChannel {
   }
 
   private async readUnlocked(timeoutMs = 250, featureLen = 65): Promise<Uint8Array | null> {
+    if (this.opts.relay) return this.relayReceiveUnlocked(timeoutMs, featureLen);
+    return this.rawReadUnlocked(timeoutMs, featureLen);
+  }
+
+  // — 2.4 GHz receiver relay ---------------------------------------------------
+  //
+  // A ROYUAN receiver does not answer the device's own commands: it carries
+  // them. The sequence, as sharkfin's protocol notes and the GearHub mouse
+  // tools document it (and the vendor app runs it, ~100 ms per round trip):
+  //
+  //   1. poll status 0xF7 until byte 5 = 1 (the receiver accepts a packet);
+  //   2. select the target: [0xF6, 0x0A] keyboard, [0xF6, 0x05] mouse —
+  //      skipping it drops the packet;
+  //   3. send the device's packet unchanged, opcode and checksum included;
+  //   4. poll 0xF7 until byte 0 = 1 (a reply is waiting);
+  //   5. release it with 0xFC, then read the feature report as usual.
+  //
+  // Status reply bytes: 0 reply waiting, 1 keyboard battery %, 2 mouse
+  // battery %, 3 / 4 keyboard / mouse link (0 = online), 5 ready, 6 what is
+  // paired (1 keyboard, 2 mouse, 3 both).
+  //
+  // provenance: ported-from-vendor (sharkfin PROTOCOL.md "2.4 GHz receiver",
+  // tested there on an X86; OpenMouse's GearHub driver, on an R2). Nothing
+  // here has been on our hardware: `inferred` until it has.
+
+  /** One status frame, raw (no relay): the parsed reply, or null. */
+  private async relayStatusUnlocked(featureLen = 65): Promise<RelayStatus | null> {
+    await this.rawWriteUnlocked(relayFrame(RELAY_STATUS, [], featureLen));
+    const r = await this.rawReadUnlocked(120, featureLen);
+    if (!r || r.length < 8) return null;
+    const b = (i: number) => r[1 + i] ?? 0;
+    return {
+      replyWaiting: b(0) === 1,
+      keyboardBattery: b(1),
+      mouseBattery: b(2),
+      keyboardOnline: b(3) === 0,
+      mouseOnline: b(4) === 0,
+      ready: b(5) === 1,
+      paired: b(6),
+    };
+  }
+
+  /** Poll status until `want` holds, or the deadline passes. */
+  private async relayWaitUnlocked(
+    want: (s: RelayStatus) => boolean,
+    deadlineMs: number,
+    featureLen = 65,
+  ): Promise<RelayStatus | null> {
+    const until = Date.now() + deadlineMs;
+    do {
+      const s = await this.relayStatusUnlocked(featureLen);
+      if (s && want(s)) return s;
+      await sleep(RELAY_POLL_MS);
+    } while (Date.now() < until);
+    return null;
+  }
+
+  private async relaySendUnlocked(frame: Uint8Array, target: number): Promise<void> {
+    const len = frame.length;
+    if (!(await this.relayWaitUnlocked((s) => s.ready, RELAY_SEND_DEADLINE_MS, len))) {
+      throw new Error('the receiver did not take the packet (device asleep or out of range?)');
+    }
+    await this.rawWriteUnlocked(relayFrame(RELAY_SELECT, [target], len));
+    await this.rawWriteUnlocked(frame);
+  }
+
+  private async relayReceiveUnlocked(
+    timeoutMs: number,
+    featureLen: number,
+  ): Promise<Uint8Array | null> {
+    const waited = await this.relayWaitUnlocked(
+      (s) => s.replyWaiting,
+      Math.max(timeoutMs, RELAY_REPLY_DEADLINE_MS),
+      featureLen,
+    );
+    if (!waited) return null;
+    await this.rawWriteUnlocked(relayFrame(RELAY_RELEASE, [], featureLen));
+    return this.rawReadUnlocked(timeoutMs, featureLen);
+  }
+
+  /** The receiver's own status (battery and link of what is behind it), or null. */
+  relayStatus(): Promise<RelayStatus | null> {
+    return this.run(() => this.relayStatusUnlocked());
+  }
+
+  /** True when this channel talks through a receiver (see `opts.relay`). */
+  isRelayed(): boolean {
+    return !!this.opts.relay;
+  }
+
+  private async rawReadUnlocked(timeoutMs = 250, featureLen = 65): Promise<Uint8Array | null> {
     const dev = await this.ensureOpen();
     const ms = this.readDeadline(timeoutMs);
     try {

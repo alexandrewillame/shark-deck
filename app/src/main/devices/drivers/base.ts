@@ -21,6 +21,8 @@ import type {
 } from '@shared/types/mouse-settings';
 import { HidChannel } from '../../hid/transport';
 import { buildFrame, toHex } from '../../hid/frame';
+import type { IdentityKey } from '../identity-key';
+import type { Capability } from '@shared/types/capability';
 
 /** Sleep. Lives here rather than in a driver so `writeVerified`'s settle can
  *  use it without importing a concrete driver (which would be circular). */
@@ -71,6 +73,37 @@ export interface TravelSample {
 export interface MagneticWriteOpts {
   keepZoneBindings?: boolean;
 }
+
+/**
+ * What a backup must hold before the first write to a device (CLAUDE.md
+ * invariant #1, manager.ts `ensureBackup`).
+ *
+ * - `full`: every setting the device has reads back. Writes are refused until
+ *   a backup holds every `required` block.
+ * - `partial`: the device cannot report some settings (`unreadable`). The
+ *   rest is backed up (`required`, when readable), and the first write waits
+ *   for the user's one-time OK per model + firmware (`acknowledgeNoBackup`),
+ *   because a Restore cannot bring those settings back.
+ */
+export interface BackupPolicy {
+  kind: 'full' | 'partial';
+  /** block names (`backup()` keys) a backup must hold */
+  required: string[];
+  /** the settings a `partial` device cannot report back */
+  unreadable?: Capability[];
+}
+
+/**
+ * Blocks a backup carries that hold no device setting: they never make a
+ * backup count as taken (the V8's always carried `schema` and `firmware`, so
+ * it used to "succeed" with nothing read at all).
+ */
+export const BACKUP_META_BLOCKS: ReadonlySet<string> = new Set([
+  'schema',
+  'firmware',
+  'identity',
+  'unreadable',
+]);
 
 export interface DriverContext {
   descriptor: DeviceDescriptor;
@@ -248,6 +281,31 @@ export abstract class Driver {
   }
 
   // -- reads (override as available) ------------------------------------
+  /**
+   * What the firmware says this device is (see identity-key.ts) — the one
+   * command sent to a device before it is identified. null = no answer.
+   */
+  async identify(): Promise<IdentityKey | null> {
+    return null;
+  }
+
+  /**
+   * True when this device is reached through a 2.4 GHz receiver that carries
+   * its packets (`DeviceDescriptor.relay`). What needs the cable — a factory
+   * reset, the live travel stream — is refused then: the receiver drops a
+   * bare-opcode packet if the device has dozed, so it may never arrive.
+   */
+  protected get relayed(): boolean {
+    return !!this.d.relay;
+  }
+
+  /** The battery of a device behind a receiver, from the receiver's own status. */
+  protected async relayBattery(kind: 'keyboard' | 'mouse'): Promise<number | null> {
+    const s = await this.ch.relayStatus?.();
+    if (!s) return null;
+    const pct = kind === 'keyboard' ? s.keyboardBattery : s.mouseBattery;
+    return pct > 0 && pct <= 100 ? pct : null;
+  }
   async getFirmware(): Promise<FirmwareInfo | null> {
     return null;
   }
@@ -526,6 +584,15 @@ export abstract class Driver {
    */
   protected backupCommands(): number[] {
     return [];
+  }
+
+  /**
+   * What a backup of this device has to hold before anything is written to it
+   * (manager.ts `ensureBackup`). A driver that writes must override this —
+   * test/contract/backup-policy.test.ts holds every one to it.
+   */
+  backupPolicy(): BackupPolicy {
+    return { kind: 'full', required: [] };
   }
 
   /**

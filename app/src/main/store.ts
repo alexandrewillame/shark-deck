@@ -77,6 +77,9 @@ export const paths = {
   /** per-model scratchpad for device state with no read-back (e.g. the V8's
    *  receiver LEDs) — see main/devices/deviceState.ts */
   deviceState: () => at('config/device-state.json'),
+  /** the one-time OK to write to a device a backup cannot fully cover, per
+   *  model + firmware — see main/devices/backupWaivers.ts */
+  backupWaivers: () => at('config/backup-waivers.json'),
 };
 
 export function ensureDirs(): void {

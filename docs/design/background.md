@@ -21,8 +21,9 @@ There are nine, plus None:
   over the page colour.
 - Landscape is a picture.
 
-They are backgrounds, not light shows: muted, unhurried, and mostly dark, in
-both themes (see [Light theme](#light-theme)).
+They are backgrounds, not light shows: muted and unhurried. In the dark theme
+each is a scene at night, mostly dark; in the light theme the same scene in
+daylight (see [Light theme](#light-theme)).
 Electricity is a thunderstorm at night: a ceiling of storm cloud drifting
 slowly, its lumps lit faintly from below, rain, and about every three or four
 seconds, unevenly, a burst of one to three bolts that lights the clouds around
@@ -52,53 +53,75 @@ the window, which blurred at one size and aliased at another.
 ## Colours
 
 - **Palette on.** An effect is drawn in `--night-accent-rgb` and
-  `--night-violet-rgb` (the secondary accent) over `--night-bg`: the dark
-  theme's colours, which tokens.css keeps under those names in both themes.
-  All three are read from the stylesheet with `getComputedStyle`, so
-  tokens.css stays the only place palette colours live.
+  `--night-violet-rgb` (the secondary accent): the dark theme's colours, which
+  tokens.css keeps under those names in both themes. At night they glow over
+  `--night-bg`; by day they are lit over the light theme's `--bg`. The light
+  theme's own accents are darkened for text on white, which is not what a
+  scene needs. All of these are read from the stylesheet with
+  `getComputedStyle`, so tokens.css stays the only place palette colours live.
 - **Palette off.** An effect uses its own natural pair (registry.ts): orange
   fire, green-violet aurora, and so on. A few effects need to know which
   (`uPal`): Rain's city has red tail lights and warm white of its own, which a
   palette's two colours replace, and the white-hot cores of Fire and Lava are
   warmer in their own colours.
-- **Palette changes.** A `MutationObserver` on `<html>` picks these up, and the
-  canvas cross-fades over 400 ms, the same length as `.theme-anim`. A light /
-  dark switch changes nothing here.
+- **Palette or mode changes.** A `MutationObserver` on `<html>` picks these
+  up, and the canvas cross-fades over 400 ms, the same length as `.theme-anim`.
+  Night turns to day halfway through a light/dark switch.
 
 ## Light theme
 
-The background is the same night sky in both themes. The light theme lightens
-the panels in front of it, not the sky.
+The light theme draws each scene **in daylight**. A night shows only what
+glows; a day shows everything. So the daylight version is not the night
+recoloured. Each effect has its own branch (`if (uLight > 0.5)` in
+`shaders/effects.ts`) that takes the same fields the night draws (density,
+relief, the cracks, the waves) and lights them as materials. It shows what the
+dark hides:
 
-Light versions were tried first, and dropped:
+- **Smoke** is a visible volume, thin wisps included, lit where it thins
+  toward the light and shaded in its folds.
+- **Fire** keeps its flames and pale cores, with the smoke rising off them.
+- **Nebula** gas is lit like cloud, and the dust that only dims the glow at
+  night shows as dark wisps.
+- **Lava** shows its crust: pale stone plates with a ropy surface in the sun,
+  tinted by the heat at their edges, fine hairline cracks, melt bright in the
+  seams.
+- **Electricity** is a storm by day: grey clouds lit on top and dark below,
+  flashes brightening them, grey rain, white bolts in a coloured glow.
+- **Aurora** curtains hang in a pale blue sky, each with a bright hem and its
+  rays fading upward.
+- **Water** is a sunlit pool, deeper below and paler toward the surface,
+  under a white caustic web.
+- **Rain** is a window on a bright, overcast city: shapes out of focus behind
+  a light mist, the beads lenses with dark rims and white glints.
+- **Landscape** is a hazy day with a low sun.
 
-- **Ink on a light page** (the original). An emitter cannot add light to
-  white, so it was laid down as ink, as opaque as it was bright. Faint, and a
-  light hue such as the cyan accent stayed light whatever its strength; the
-  white glass hid the rest: "you basically do not see any background".
-- **Stronger, perceptual ink.** Visible, but the dense parts went dark and
-  muddy (a deep teal): "very ugly".
-- **Clean pastel paint**, never darker than the accent, with white highlights.
-  Clean, but still pastel stains on white.
+Colours are clean in light and in shade. `material()` (common.ts) runs from a
+deep shade of a colour to a pale tint of it, never toward grey.
 
-These effects are night things: aurora, nebula, lightning, glowing lava, a
-city's lights in the rain. A daylight version of them is never quite the
-thing. So:
+The night must not change by a single bit, and the compiler optimises both
+branches together. Each day branch comes after the fields it lights and
+*before* the night's arithmetic, reads those fields instead of recomputing
+them, and shares no sum with the night. Each slip moved a few dark pixels by
+one step: a branch that read one of the night's sums, one that recomputed a
+field (Fire's now comes after `life` and reuses it), and one that stopped
+using a field only the night then needed (Lava's day keeps a share of the
+night's sunlit grain, `sun`, or the compiler moves that chain). Every dark
+effect is pixel-diffed against its earlier frame and comes out identical.
 
-- **The layer ignores the theme.** It reads the `--night-*` tokens, which the
-  light theme leaves alone (`palette.ts`), and the shaders have no light-page
-  path; Landscape is always the night one.
-- **Light glass is denser:** white at 88% (`--glass-a`; 92% for the sticky
-  sub-tab bars, 85% for the tab rail), where the dark panes take 72%. Any
-  thinner, and white over a dark sky turns grey.
-- **Text set straight on the sky** — the home grid's heading, a pane's title
-  and its info dot, the onboard-profile label, the welcome copy — takes the
-  night's text colours (`--night-text*`) and a dark shadow, as in the dark
-  theme. Only the text itself: a control or a box beside it is a light
-  surface and keeps the light theme's colours.
-- **An inert panel** (Actuation's key editor before a key is picked) dims what
-  is in it rather than itself: dimmed as a whole, a light panel over the dark
-  sky is a grey slab.
+Before this, four ways of recolouring the night were tried, and rejected:
+
+- **Ink on a light page**, as opaque as the light was bright: faint ("you
+  basically do not see any background"), and it read as inverted.
+- **Stronger, perceptual ink:** dense parts went dark and muddy ("very ugly").
+- **The night kept, with light panels on top:** still dark, which does not fit
+  a light theme.
+- **The glow lifted off the dark and laid on a light page:** neon, with the
+  detail gone ("totally missing the point").
+
+All four transformed the night picture. The point was to keep the scene, and
+a night picture has already lost what the dark hides. Light glass is 80% white
+(dark panes 72%): the daylight scenes are in full colour, and dark text needs
+a near-white surface under it.
 
 ## Layering
 

@@ -11,9 +11,16 @@
 import type { DeviceDescriptor } from '@shared/types/device';
 import type { DeviceUi, MacroLimits } from '@shared/types/live';
 import { PERFORMANCE_TIMEOUTS } from '@shared/mouse-options';
+import { artKeyOf, colorVariantsOf } from '@shared/device-art';
 import { SWITCH_CHOICES_DEFAULT } from '@shared/keyboard-switches';
 import { KB_MACRO_MAX_STEPS } from './drivers/compx-keyboard';
-import { V8_MACRO_MAX_STEPS, V8_MACRO_NAME_MAX, V8_MACRO_SLOTS } from '@shared/mouse-wire';
+import {
+  V8_MACRO_MAX_STEPS,
+  V8_MACRO_NAME_MAX,
+  V8_MACRO_SLOTS,
+  dpiCodecFor,
+  hubMacroSlots,
+} from '@shared/mouse-wire';
 
 /**
  * The vendor's own sleep-timeout choices (Mouse Hub Language/en.json,
@@ -45,6 +52,26 @@ export const MACRO_LIMITS: Record<string, MacroLimits> = {
   'compx-he-keyboard': { maxSteps: KB_MACRO_MAX_STEPS, slots: 1, delaysConsumeSteps: true },
 };
 
+/** A Hub mouse's slot count follows its sensor (shared/mouse-wire.ts `hubMacroSlots`). */
+function macroLimitsFor(d: DeviceDescriptor): MacroLimits | undefined {
+  const base = MACRO_LIMITS[d.driver];
+  if (!base || d.driver !== 'compx-mouse-8k') return base;
+  return { ...base, slots: hubMacroSlots(d.spec.dpi?.codec) };
+}
+
+/**
+ * Where the sensor stops taking every UI step (a codec's `coarseAbove`). Only
+ * a band coarser than the UI's own step is passed on — none is today: the
+ * PAW3955's band (even values above 42000) is no coarser than its UI step.
+ */
+function coarseBand(d: DeviceDescriptor): { coarseAbove?: { dpi: number; step: number } } {
+  const dpi = d.spec.dpi;
+  if (!dpi || d.driver !== 'compx-mouse-8k') return {};
+  const c = dpiCodecFor(dpi.codec);
+  if (c.coarseAbove === null || c.coarseAbove >= dpi.max || c.coarseStep <= dpi.step) return {};
+  return { coarseAbove: { dpi: c.coarseAbove, step: c.coarseStep } };
+}
+
 /** The renderer-facing slice of a descriptor's static spec (see DeviceUi). */
 export function deviceUi(d: DeviceDescriptor): DeviceUi {
   const s = d.spec;
@@ -53,7 +80,14 @@ export function deviceUi(d: DeviceDescriptor): DeviceUi {
     profileCount: s.profileCount ?? 4,
     pollRates: radioRate,
     dpiRange: s.dpi
-      ? { min: s.dpi.min, max: s.dpi.max, step: s.dpi.step, stages: s.dpi.stages }
+      ? {
+          min: s.dpi.min,
+          max: s.dpi.max,
+          step: s.dpi.step,
+          stages: s.dpi.stages,
+          ...(s.dpi.colorPerStage !== undefined ? { colorPerStage: s.dpi.colorPerStage } : {}),
+          ...coarseBand(d),
+        }
       : undefined,
     buttons: s.buttons,
     buttonMap: s.buttonMap,
@@ -63,8 +97,11 @@ export function deviceUi(d: DeviceDescriptor): DeviceUi {
       : undefined,
     lightZones: s.lighting?.zones ?? [],
     perKeyLighting: !!s.lighting?.perKey,
-    colorVariants: d.colorVariants ?? [],
-    sleepPresets: SLEEP_PRESETS,
+    colorVariants: colorVariantsOf(d),
+    artKey: artKeyOf(d),
+    sleepPresets: s.sleepPresets ?? SLEEP_PRESETS,
+    magnetic: s.magnetic,
+    debouncePresets: s.debouncePresets,
     lodOptions: s.lodOptions,
     debounceRange: s.debounceRange,
     buttonSlotOrder: s.buttonSlotOrder,
@@ -72,6 +109,8 @@ export function deviceUi(d: DeviceDescriptor): DeviceUi {
     sensorModes: s.sensorModes,
     dpiDynamicModes: s.dpiDynamicModes,
     bodyLightZones: s.bodyLightZones,
-    macroLimits: d.capabilities.includes('macros') ? MACRO_LIMITS[d.driver] : undefined,
+    macroLimits: d.capabilities.includes('macros') ? macroLimitsFor(d) : undefined,
+    ...(d.identity && d.identity !== 'exact' ? { identity: d.identity } : {}),
+    ...(d.identityNote ? { identityNote: d.identityNote } : {}),
   };
 }

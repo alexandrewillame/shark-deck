@@ -12,8 +12,12 @@
  *   uTime       seconds of animation (frozen while still)
  *   uA, uB      the effect's two colours — the palette's accent and secondary,
  *               or its own natural pair (registry.ts)
- *   uBg         the page colour, `--night-bg`: the dark theme's page, in both
- *               themes — the background is a night sky either way (palette.ts)
+ *   uBg         the night page, `--night-bg`: the dark theme's page colour
+ *   uDay        the day page, the light theme's `--bg`
+ *   uLight      1 in the light theme: the scene is drawn in daylight. Every
+ *               effect has its own daylight version, re-lit from the same
+ *               fields rather than recoloured from the night (docs/design/
+ *               background.md, "Light theme")
  *   uIntensity  how strongly to draw, 0..1
  *   uPal        1 when uA/uB are the palette's, 0 for the natural pair — for
  *               what an effect has beyond its two colours: fire's white-hot
@@ -28,11 +32,19 @@
  *                no `OES_standard_derivatives`, which leaves the surface
  *                unlit rather than failing
  *   stars(p, t)  a sparse field of twinkling points, one maybe-star per cell
- *   glow(light)  an effect that EMITS light (smoke lit from within, fire,
- *                sparks), its colour already times how much of it there is:
- *                light adds to the page
+ *   glow(light)  at night, an effect that EMITS light (smoke lit from within,
+ *                fire, sparks), its colour already times how much of it there
+ *                is: light adds to the page
  *   scene(col)   an effect that is a PICTURE (a landscape, a painting): the
  *                whole frame, faded toward the page by the intensity
+ * By day, for an effect's own daylight version:
+ *   dayPage()          the light page, a shade darker toward the bottom
+ *   dayAmount()        the intensity as a factor, 1 at the default 60%
+ *   over(back, c, a)   c laid over back at opacity a
+ *   material(c, lit)   colour c as a lit surface: its shade at lit 0, a pale
+ *                      tint of it at 1 — clean either way, never grey
+ *   hueOf(l), amountOf(l, k)  a night light's colour at full strength, and
+ *                      how much of it there is as an opacity
  *   finish(col)  the pixel, dithered by a fraction of a step so a slow dark
  *                gradient does not band into rings
  *
@@ -50,6 +62,8 @@ uniform float uTime;
 uniform vec3 uA;
 uniform vec3 uB;
 uniform vec3 uBg;
+uniform vec3 uDay;
+uniform float uLight;
 uniform float uIntensity;
 uniform float uPal;
 
@@ -138,8 +152,34 @@ vec3 glow(vec3 light) {
   return uBg + l;
 }
 
+vec3 dayPage() {
+  float y = gl_FragCoord.y / uRes.y;
+  return uDay * (0.97 + 0.03 * y);
+}
+
 vec3 scene(vec3 col) {
-  return mix(uBg, col, uIntensity);
+  vec3 page = uLight > 0.5 ? dayPage() : uBg;
+  return mix(page, col, uIntensity);
+}
+
+float dayAmount() {
+  return clamp(uIntensity / 0.6, 0.0, 1.6);
+}
+
+vec3 over(vec3 back, vec3 col, float a) {
+  return mix(back, col, clamp(a, 0.0, 1.0));
+}
+
+vec3 material(vec3 c, float lit) {
+  return mix(c * 0.48, mix(c, vec3(1.0), 0.5), clamp(lit, 0.0, 1.0));
+}
+
+vec3 hueOf(vec3 l) {
+  return l / max(max(l.r, max(l.g, l.b)), 0.0001);
+}
+
+float amountOf(vec3 l, float k) {
+  return 1.0 - exp(-max(l.r, max(l.g, l.b)) * k);
 }
 
 vec4 finish(vec3 col) {

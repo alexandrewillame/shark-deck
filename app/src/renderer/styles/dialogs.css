@@ -99,6 +99,39 @@
   margin-top: 16px;
 }
 
+/* The leave prompt (components/LeaveDialog.tsx): three verb labels ("Discard
+   and leave", "Apply and leave") broke onto two lines each at the base width.
+   So it is at least 480px, and wider when its row of buttons needs it (French
+   and German labels are longer); the text wraps inside whatever width the
+   buttons take and never widens the box itself (`width: 0; min-width: 100%`
+   keeps it out of the box's own size). Past the window's width, a button that
+   does not fit moves to the next row whole rather than breaking mid-label. */
+.modal.modal-leave {
+  width: fit-content;
+  min-width: min(480px, 92vw);
+  max-width: 92vw;
+}
+.modal-leave > h4,
+.modal-leave > p,
+.modal-leave > .modal-list {
+  width: 0;
+  min-width: 100%;
+}
+.modal-leave .modal-actions {
+  flex-wrap: wrap;
+}
+.modal-leave .modal-actions .btn {
+  white-space: nowrap;
+}
+/* The changes it would discard, when there are several. */
+.modal-list {
+  margin: -6px 0 14px;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: var(--fs-md);
+}
+
 /* ---- the profile comparator (components/ProfileCompare.tsx) ---------------
  *
  * A wider `.modal`: the base width is sized for a prompt with one field, and

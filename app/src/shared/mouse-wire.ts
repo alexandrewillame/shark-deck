@@ -30,46 +30,103 @@ export const rgbBytes = (r: number, g: number, b: number): number[] => [
 ];
 
 /**
- * DPI <-> sensor register for the PAW3950 — **fully decoded from the
- * 2026-08-30 verify capture** (`session-v8-verify.jsonl`, exact DPI targets
- * 400 / 800 / 1600 / 3200 / 6350 / 12800 / 20000 / 25950):
+ * DPI stage records, per sensor. Every Hub mouse lays region A out the same
+ * way, but where a stage's DPI lives and how it is packed belongs to the
+ * sensor (`spec.dpi.codec`). X and Y are always written equal.
  *
- *   register = round(dpi / 50) - 1          (dpi = (register + 1) * 50)
- *   payload  = [lo, lo, hiWire, companion]  where
- *     lo     = register & 0xff              (X and Y written equal)
- *     hbits  = (register >> 8) & 0x03       (0..3 — max 42000 DPI -> reg 839)
- *     hiWire = (hbits << 2) | (hbits << 6)  (0->0x00, 1->0x44, 2->0x88, 3->0xCC)
- *     companion = (0x55 - lo - lo - hiWire) & 0xff
+ * PAW3950 (the V8): 4 bytes per stage at 0x0C, `[v, v, flags, check]`.
+ *   - v = dpi/50 - 1 across the whole 50-42000 range;
+ *   - bits 8-9 of v sit in flags bits 2-3 and 6-7, check = companion.
+ *   `verified-capture` up to 25950 DPI — every vector in mouse-wire.test.ts is
+ *   a payload the vendor Hub wrote for that exact DPI (session-v8-verify.jsonl:
+ *   400 -> `07 07 00`, 800 -> `0f 0f 00`, 12800 -> `ff ff 00`, 20000 ->
+ *   `8f 8f 44`, 25950 -> `06 06 88`). Above that it is `inferred`: the same
+ *   rule carried on. A third-party Hub client documents another record above
+ *   30000 DPI — v = dpi/100 - 1 with the doubling bits 0x11 in flags, its
+ *   example 42000 -> `a3 a3 55 ba` — which would read a record the Hub wrote
+ *   there at twice what this one does. It is held back until it has been
+ *   tried on a V8.
  *
- * Verified: 400 -> `07 07 00`, 800 -> `0f 0f 00`, 12800 -> `ff ff 00`,
- * 20000 -> `8f 8f 44`, 25950 -> `06 06 88`.
+ * PAW3955: 6 bytes per stage at 0x1B00, `[lo, hi, lo, hi, flags, check]`.
+ *   - up to 42000 DPI: v = dpi - 1 (every value exists);
+ *   - above: v = dpi/2 - 1 with the doubling bits (even values only);
+ *   - bits 16-17 of v in flags as above.
+ *   `ported-from-vendor`, same source; no PAW3955 mouse has been on our
+ *   hardware, so treat it as `inferred` until one has.
  */
 export const DPI_STEP = 50;
 export const DPI_MIN = 50;
 export const DPI_MAX = 42000;
 
-export const dpiToRegister16 = (dpi: number, step = DPI_STEP): number => {
-  const clamped = Math.max(DPI_MIN, Math.min(DPI_MAX, Math.round(dpi / step) * step));
-  return Math.max(0, Math.round(clamped / step) - 1);
-};
-export const registerToDpi16 = (reg: number, step = DPI_STEP): number => (reg + 1) * step;
+/** The doubling bits of a DPI record's flags byte. */
+const DPI_DOUBLED = 0x11;
+/** Two value bits smeared into flags bits 2-3 and 6-7 (X and Y). */
+const spread2 = (bits: number): number => ((bits & 3) << 2) | ((bits & 3) << 6);
+const unspread2 = (flags: number): number => (flags >> 2) & 3;
 
-/** Pack a register (0..839) into the wire hi byte's smeared 2-bit field. */
-const dpiHiWire = (reg: number): number => {
-  const hb = (reg >> 8) & 0x03;
-  return (hb << 2) | (hb << 6);
-};
-/** Recover a register from a captured `[lo, lo, hi, …]` triple. */
-export const dpiRegFromBytes = (lo: number, hi: number): number =>
-  (lo & 0xff) | (((hi >> 2) & 0x03) << 8);
+export type DpiCodecId = 'paw3950' | 'paw3955';
 
-/** `[lo, lo, hiWire, companion]` — the wire encoding of one DPI stage register. */
-export const dpiRegBytes = (dpi: number, step = DPI_STEP): number[] => {
-  const reg = dpiToRegister16(dpi, step);
-  const lo = reg & 0xff;
-  const hi = dpiHiWire(reg);
-  return [lo, lo, hi, companion(lo, lo, hi)];
+export interface DpiCodec {
+  /** where stage 0's record starts, and the distance between records */
+  offset: number;
+  stride: number;
+  /** record length in bytes, check byte included */
+  len: number;
+  /** above this DPI only multiples of `coarseStep` exist (null: every step does) */
+  coarseAbove: number | null;
+  coarseStep: number;
+  encode(dpi: number, range?: { min: number; max: number }): number[];
+  decode(record: ArrayLike<number>): number;
+}
+
+const clampDpi = (dpi: number, range: { min: number; max: number }): number =>
+  Math.max(range.min, Math.min(range.max, Number.isFinite(dpi) ? dpi : range.min));
+
+export const DPI_CODECS: Record<DpiCodecId, DpiCodec> = {
+  paw3950: {
+    offset: 0x0c,
+    stride: 4,
+    len: 4,
+    coarseAbove: null,
+    coarseStep: DPI_STEP,
+    encode(dpi, range = { min: DPI_MIN, max: DPI_MAX }) {
+      const d = clampDpi(dpi, range);
+      const v = Math.max(0, Math.round(d / DPI_STEP) - 1);
+      const lo = v & 0xff;
+      const flags = spread2(v >> 8);
+      return [lo, lo, flags, companion(lo, lo, flags)];
+    },
+    decode(r) {
+      const v = (r[0] ?? 0) | (unspread2(r[2] ?? 0) << 8);
+      return (v + 1) * DPI_STEP;
+    },
+  },
+  paw3955: {
+    offset: 0x1b00,
+    stride: 6,
+    len: 6,
+    coarseAbove: 42000,
+    coarseStep: 2,
+    encode(dpi, range = { min: DPI_MIN, max: 60000 }) {
+      const d = clampDpi(dpi, range);
+      const doubled = d > 42000;
+      const v = Math.max(0, Math.round(doubled ? d / 2 : d) - 1);
+      const lo = v & 0xff;
+      const hi = (v >> 8) & 0xff;
+      const flags = spread2(v >> 16) | (doubled ? DPI_DOUBLED : 0);
+      return [lo, hi, lo, hi, flags, companion(lo, hi, lo, hi, flags)];
+    },
+    decode(r) {
+      const flags = r[4] ?? 0;
+      const v = (r[0] ?? 0) | ((r[1] ?? 0) << 8) | (unspread2(flags) << 16);
+      return (v + 1) * (flags & DPI_DOUBLED ? 2 : 1);
+    },
+  },
 };
+
+/** The codec for a descriptor's sensor; the V8's when it names none. */
+export const dpiCodecFor = (codec: DpiCodecId | undefined): DpiCodec =>
+  DPI_CODECS[codec ?? 'paw3950'];
 
 /**
  * A mouse always runs at *some* DPI — a stage set with nothing enabled is not
@@ -242,6 +299,15 @@ export const BUTTON_EXT_CLEAR = [0x00, 0xff];
 export const V8_MACRO_BASE = 0x0480;
 export const V8_MACRO_STRIDE = 0x180;
 export const V8_MACRO_SLOTS = 16;
+/**
+ * Macro slots a Hub mouse can use. A PAW3955 mouse keeps its DPI records at
+ * 0x1B00 — exactly where the 16th slot would start — so it has 15: a macro
+ * saved to slot 16 there would overwrite every DPI stage.
+ */
+export const hubMacroSlots = (codec: DpiCodecId | undefined): number =>
+  codec === 'paw3955'
+    ? Math.floor((DPI_CODECS.paw3955.offset - V8_MACRO_BASE) / V8_MACRO_STRIDE)
+    : V8_MACRO_SLOTS;
 export const V8_MACRO_NAME_LEN_OFF = 0x00;
 export const V8_MACRO_NAME_OFF = 0x01;
 export const V8_MACRO_NAME_MAX = 30;
@@ -262,6 +328,15 @@ export const V8_MACRO_MAX_STEPS = Math.floor(
  * driver, which used `0x09` for writes (it is a factory reset).
  */
 export const V8_CMD = {
+  /**
+   * Identify: `08 01 00 00 00 08 <4-byte nonce>` answers
+   * `08 01 00 00 00 08 <nonce> <cid> <mid> <link> …` — `verified-capture` for
+   * the frame (the Hub sends it on connect, pair and cable plug; our V8
+   * session shows the reply tail `7c 05 05`). The meanings — cid 124 =
+   * Attack Shark, mid = the model, link = cable/radio and its top rate — are
+   * `ported-from-vendor` from the Hub's model table (see catalog/hub-mice.ts).
+   */
+  IDENTIFY: 0x01,
   GET_VERSION: 0x02,
   STATUS: 0x03,
   /**

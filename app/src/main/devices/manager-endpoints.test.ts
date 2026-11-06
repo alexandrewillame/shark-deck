@@ -7,6 +7,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * over USB-C — same serial, same onboard memory. It used to produce two cards,
  * and because plugging the cable in stops the mouse talking to its dongle, one
  * of those two was a menu that showed nothing.
+ *
+ * Both endpoints attach as the Hub family, pending, and are bound to the V8
+ * only by the identify answer (registry.ts, identity.ts) — so the fake
+ * endpoints below answer the identify frame the way our V8 capture records
+ * it, each with its own link type.
  */
 
 const bus: Record<string, unknown>[] = [];
@@ -14,7 +19,7 @@ vi.mock('node-hid', () => ({
   default: {
     devicesAsync: async () => bus,
     HID: class {},
-    HIDAsync: { open: vi.fn(async () => ({ close: vi.fn() })) },
+    HIDAsync: { open: vi.fn(async (path: string) => fakeEndpoint(path)) },
   },
 }));
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp/sharkdeck-test', isPackaged: false } }));
@@ -38,7 +43,38 @@ vi.mock('../store', () => ({
   writeBackup: async () => 'f.json',
 }));
 
+import { appendChecksum } from '../hid/checksum';
 import { DeviceManager } from './manager';
+
+/**
+ * The identify reply our V8 capture recorded (docs/reverse-engineering/
+ * FINDINGS.md): `08 01 00 00 00 08 <nonce> 7c 05 05 …` — cid 124 (Attack
+ * Shark), mid 5 (V8), then the link: 5 = 8K wireless on the dongle, 3 =
+ * wired 8K on the cable.
+ */
+function identifyReply(query: number[], link: number): number[] {
+  const r = new Uint8Array(17);
+  r.set([0x08, 0x01, 0x00, 0x00, 0x00, 0x08, ...query.slice(6, 10), 124, 5, link]);
+  return Array.from(appendChecksum(r, 'shark-sum'));
+}
+
+/** A V8 endpoint that answers identify and nothing else. */
+function fakeEndpoint(path: string) {
+  const link = path.includes('#cable') ? 3 : 5;
+  let last: number[] | null = null;
+  return {
+    close: vi.fn(async () => undefined),
+    write: vi.fn(async (bytes: number[]) => {
+      last = bytes;
+      return bytes.length;
+    }),
+    read: vi.fn(async () => {
+      const q = last;
+      last = null;
+      return q && q[1] === 0x01 ? identifyReply(q, link) : [];
+    }),
+  };
+}
 
 const SERIAL = '541505796617';
 /** The vendor config collection each endpoint exposes (MI_01 / 0xFF02 / 2). */
@@ -146,9 +182,33 @@ describe('a device on two endpoints is one device', () => {
     expect(kb.id).not.toContain(kb.model);
   });
 
-  it('keys a serial-bearing device on model+serial, not on the endpoint', async () => {
+  it('keys a serial-bearing device on family+serial, not on the endpoint', async () => {
+    // The key is taken before the device identifies, so it is the family's
+    // (registry.ts) — and it must not change once the V8 has said what it is,
+    // or the card the user has open would vanish under them.
     setBus(DONGLE);
     await scanOnce(mgr);
-    expect(mgr.list()[0]!.id).toBe(`attack-shark-v8:${SERIAL}`);
+    const d = mgr.list()[0]!;
+    expect(d.displayName).toBe('Attack Shark V8');
+    expect(d.id).toBe(`compx-hub:${SERIAL}`);
+  });
+
+  it('is identified as the V8 from the dongle, before any other command', async () => {
+    setBus(DONGLE);
+    await scanOnce(mgr);
+    const d = mgr.list()[0]!;
+    expect(d.model).toBe('attack-shark-v8');
+    expect(d.capabilities).toContain('receiverLed');
+  });
+
+  it('re-identifies on the cable, which has no receiver to configure', async () => {
+    setBus(DONGLE);
+    await scanOnce(mgr);
+    setBus(DONGLE, CABLE);
+    await scanOnce(mgr);
+    const d = mgr.list()[0]!;
+    expect(d.displayName).toBe('Attack Shark V8');
+    expect(d.capabilities).not.toContain('receiverLed');
+    expect(d.capabilities).not.toContain('pairing');
   });
 });

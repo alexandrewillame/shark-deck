@@ -77,17 +77,16 @@ const POLL_HZ = Object.fromEntries(Object.entries(POLL_WIRE).map(([h, w]) => [w,
 
 const sharkSum = (b) => (0x55 - b.reduce((s, x) => s + x, 0)) & 0xff;
 const companion = (...bytes) => (0x55 - bytes.reduce((s, b) => s + (b & 0xff), 0)) & 0xff;
-// DPI register (verified): reg = dpi/50 - 1; hi byte smears the 2 high bits.
-const dpiReg = (dpi) => Math.max(0, Math.round(Math.max(50, Math.min(42000, dpi)) / 50) - 1);
+// PAW3950 DPI record — the same rule as DPI_CODECS.paw3950 in
+// src/shared/mouse-wire.ts: reg = dpi/50 - 1 across 50-42000 (verified up to
+// 25950); the flags byte smears the register's 2 high bits.
 const dpiRegDpi = (lo, hi) => ((lo | (((hi >> 2) & 3) << 8)) + 1) * 50;
-const dpiHiWire = (reg) => {
-  const hb = (reg >> 8) & 3;
-  return (hb << 2) | (hb << 6);
-};
 const dpiRegBytes = (dpi) => {
-  const r = dpiReg(dpi);
+  const d = Math.max(50, Math.min(42000, dpi));
+  const r = Math.max(0, Math.round(d / 50) - 1);
   const lo = r & 0xff;
-  const hi = dpiHiWire(r);
+  const hb = (r >> 8) & 3;
+  const hi = (hb << 2) | (hb << 6);
   return [lo, lo, hi, companion(lo, lo, hi)];
 };
 const hex = (a) => Array.from(a, (b) => b.toString(16).padStart(2, '0')).join(' ');
