@@ -102,6 +102,9 @@ export function ArtAnchor({
    * Re-reporting whenever the target goes missing closes that gap.
    */
   const targetLost = useStore((s) => s.artTarget === null);
+  /** The live observer's re-measure, for the target-lost effect below. */
+  const settleRef = useRef<(() => void) | null>(null);
+  const wasLost = useRef(targetLost);
 
   useLayoutEffect(() => {
     const el = measureRef?.current ?? ref.current;
@@ -138,6 +141,7 @@ export function ArtAnchor({
       );
       pendingTimeout.push(window.setTimeout(measure, 150));
     };
+    settleRef.current = settle;
     settle();
     const ro = new ResizeObserver(settle);
     ro.observe(el);
@@ -153,6 +157,7 @@ export function ArtAnchor({
     // finishes decoding after the passes above.
     el.addEventListener('load', settle, true);
     return () => {
+      settleRef.current = null;
       pendingRaf.forEach(cancelAnimationFrame);
       pendingTimeout.forEach(window.clearTimeout);
       ro.disconnect();
@@ -161,7 +166,24 @@ export function ArtAnchor({
       window.removeEventListener(RELAYOUT_EVENT, measure);
       el.removeEventListener('load', settle, true);
     };
-  }, [mode, report, targetLost]);
+  }, [mode, report]);
+
+  /**
+   * Losing the target re-runs the measure, never the observer. `targetLost`
+   * used to be a dependency of the effect above, so a target being *found*
+   * also tore down and re-created every anchor's ResizeObserver — and a
+   * target is usually found from inside one of those callbacks (a tab
+   * un-hiding). The new observations of boxes no deeper than the one that
+   * reported cannot be delivered in that frame, so the browser raised
+   * "ResizeObserver loop completed with undelivered notifications": the
+   * "Unexpected error" toast on Ctrl+Tab from Home to a device tab right after
+   * closing another one, which retires the flight.
+   */
+  useLayoutEffect(() => {
+    const was = wasLost.current;
+    wasLost.current = targetLost;
+    if (targetLost && !was) settleRef.current?.();
+  }, [targetLost]);
 
   return (
     <div ref={ref} className={className} style={style}>

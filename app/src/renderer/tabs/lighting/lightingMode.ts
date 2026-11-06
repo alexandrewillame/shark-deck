@@ -77,6 +77,21 @@ export function seedGlobalDraft(
 }
 
 /**
+ * Does the Global editor hold something the board is not showing — the
+ * "Modified" pill, and what Apply would change? Only the fields the editor
+ * sets; `enabled` follows the effect.
+ */
+export function globalDraftDiffers(
+  cur: LightingSettings,
+  applied: LightingSettings | undefined,
+): boolean {
+  if (!applied) return false;
+  const fields = (l: LightingSettings) =>
+    JSON.stringify([l.effect, l.brightness, l.speed, l.color, l.dazzle, l.option ?? 0]);
+  return fields(cur) !== fields(applied);
+}
+
+/**
  * Which mode the DEVICE is in, by wire index, not by label.
  *
  * Global and per-key are not two independent states: per-key is one entry

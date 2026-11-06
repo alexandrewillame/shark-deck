@@ -33,7 +33,17 @@ attribute vec2 aPos;
 void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
 `;
 
-const UNIFORMS = ['uRes', 'uTime', 'uA', 'uB', 'uBg', 'uIntensity', 'uPal'] as const;
+const UNIFORMS = [
+  'uRes',
+  'uTime',
+  'uA',
+  'uB',
+  'uBg',
+  'uDay',
+  'uLight',
+  'uIntensity',
+  'uPal',
+] as const;
 type Uniform = (typeof UNIFORMS)[number];
 
 interface Program {
@@ -194,6 +204,8 @@ export class BackgroundRenderer implements FrameSink {
     gl.uniform3fv(prog.loc.uA, a);
     gl.uniform3fv(prog.loc.uB, b);
     gl.uniform3fv(prog.loc.uBg, p.palette.base);
+    gl.uniform3fv(prog.loc.uDay, p.palette.day);
+    gl.uniform1f(prog.loc.uLight, p.palette.light);
     gl.uniform1f(prog.loc.uIntensity, Math.min(1, Math.max(0, p.intensity)));
     gl.uniform1f(prog.loc.uPal, p.usePalette ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);

@@ -37,7 +37,7 @@ permission rules deny most of them:
 
 | Path | Why |
 |---|---|
-| `app/scripts/_raw/` | 48k lines of extracted vendor data, incl. a 2.6 MB single-line `qmk-bundle.js`. Tracked only because three tests read it as a fixture. |
+| `app/scripts/_raw/` | 48k lines of extracted vendor data, incl. a 2.6 MB single-line `qmk-bundle.js`, plus the sharkfin download (`npm run import:kb`) and the art cache. Git-ignored (`app/.gitignore`); the tests that read it skip when it is absent, so CI runs without it. |
 | `app/out/`, `app/release/`, `dist/` | Build output. `dist/app/LICENSES.chromium.html` alone is 14.8 MB. |
 | `docs/reverse-engineering/*.jsonl` / `.json` / `.bin` | ~22.5k lines of raw Frida captures. The prose that interprets them (`FINDINGS*.md`, `CAPTURE-*.md`) is the useful part. |
 | `docs/roadmap.md` | **A dated session changelog, not reference material.** 857 lines of "2026-09-08 pass" entries. |
@@ -87,11 +87,13 @@ numbers drift, symbol names do not.
 | `app/src/main/handlers.ts` | `createDeviceHandlers()` — `guardedWrite()` and every device / library / backup handler, **shared by both hosts**. Also `createDispatcher()` (own-property routing, paged-read dedupe) and `wireDeviceEvents()`. |
 | `app/src/main/ipc.ts` | The desktop host: `desktopHandlers` (auto-switch, app profiles, window chrome, platform glue) and the Electron dispatch. The browser's counterpart is `browserHandlers` in `app/src/web/host/handlers.ts`. |
 | `app/src/renderer/state/host.ts` | `hostFeatures` — what the running host can do (window chrome, auto-switch, the WebHID device picker…). Gate host-specific UI on it, as device UI is gated on capabilities. |
-| `app/src/renderer/tabs/index.tsx` | `configTabs()` (`:43`) — **the real tab registry.** |
+| `app/src/renderer/tabs/index.tsx` | `configTabs()` — **the real tab registry**, driven by `shared/menuGates.ts`. |
+| `app/src/shared/menuGates.ts` | `GATES` — which tab / section / control draws for which model. Add a gate with a new control. |
+| `app/src/main/devices/identity.ts` | `resolveIdentity()` — identify answer -> descriptor or read-only card. |
 | `app/src/renderer/tabs/common.tsx` | `useDeviceData` (`:97`), `prefetchDeviceReads()` (`:208`), `useWrite` (`:294`), `useAutoWrite` (`:365`). Miss the prefetch and every tab open does a cold HID read. |
 | `app/src/main/devices/deviceUi.ts` | `deviceUi()` — per-model bounds the renderer needs. A "must also register here" hub: a capability needing a range, an option list or a slot limit adds a field here AND to `DeviceUi` in `shared/types/live.ts`. 73 lines, split out of `manager.ts`. |
 | `app/src/renderer/components/icons.tsx` | `IconName` (`:8`) + `PATHS` (`:58`). |
-| `app/src/renderer/components/deviceArtAssets.ts` | `DEVICE_ART` (`:31`), `DEVICE_ART_DETAIL` (`:51`). Static imports only — the renderer CSP forbids fetching. |
+| `app/src/renderer/components/deviceArtAssets.ts` | `DEVICE_ART` (art key -> colour -> URL) built from `app/assets/devices/manifest.json` over an eager `import.meta.glob` of the whole folder — bundled, never fetched (the renderer CSP forbids it). Colours, labels and swatches: `app/src/shared/device-art.ts`. Adding photos: `app/assets/devices/README.md`. |
 | `app/src/renderer/state/bridge.ts` | `sd` — `window.sharkdeck`, reached lazily so renderer modules stay importable in tests. |
 
 ### Repository layout
@@ -117,17 +119,37 @@ numbers drift, symbol names do not.
 
 ## Architecture hinges
 
-- **One capability enum is the pivot.** A descriptor in
-  `devices/catalog/<model>.ts` declares a `Capability[]`; the UI renders the
-  intersection. What gates it is **`hasAny()` from `shared/capabilities.ts` plus
-  `configTabs()`** — _not_ `CAPABILITY_META`, which is a `Record<Capability, …>`
-  and therefore the exhaustive runtime enumeration the guardrails iterate. Both
-  matter; only one draws the UI.
+- **A device is identified, not matched.** VID/PID names a protocol family
+  only (`devices/registry.ts`): `3151:5029` is ~100 boards of several brands,
+  `3554:F517` the V8's dongle and another brand's mouse. A device attaches
+  `pending` with a driver that sends nothing but its family's identify command
+  (`drivers/identify.ts`); `devices/identity.ts` turns the answer into the
+  descriptor — `exact`, `class` (a Hub mouse known only by its sensor),
+  `unsupported` (an Attack Shark model with no driver), `foreign` / `unknown`
+  (read-only cards, driver `no-io`, nothing ever written). The entry key is
+  taken while pending, so it never changes on identification. JXC (373E) has
+  no model read, so its PID is its identity; Beken (1D57) is shown, not driven.
+- **One capability enum is the pivot, one gate table draws the menus.** A
+  descriptor declares a `Capability[]`; **`shared/menuGates.ts`** decides which
+  tab, section and control draws from it plus `DeviceUi` (layout status,
+  colours per stage, travel ranges…) — the renderer wraps each control in
+  `<Gated id>`, and `configTabs()` and `prefetchDeviceReads()` read the same
+  table. `renderer/tabs/menuGates.test.tsx` renders every simulated model and
+  fails when a control draws without its gate or a gate opens with nothing
+  drawn. `CAPABILITY_META` is the exhaustive enumeration the guardrails
+  iterate, not what draws the UI. Keyboards come from the vendor registry
+  (`catalog/generated/`, `npm run import:kb`) through `catalog/keyboard-builder.ts`;
+  a board without a known key map gets whole-board settings only.
 - **Drivers are keyed by `descriptor.driver`** in `devices/drivers/index.ts`
-  (`compx-mouse-8k`, `compx-keyboard`, `compx-he-keyboard`). `manager.ts` owns
-  the enumerate/attach/poll loop and emits `devices:changed`;
-  `wireDeviceEvents()` in `handlers.ts` hands those to each host, which fans
-  them out (`ipc.ts` to every live window, the browser bridge in-page).
+  (`compx-mouse-8k` — the V8 and every Hub mouse, its DPI codec per sensor —
+  `compx-keyboard`, `compx-he-keyboard`, `yc500-keyboard` (never extend the
+  gen2 class for it: the opcodes collide), `gearhub-mouse`, `jxc-mouse`, plus
+  `royuan-identify`, `hub-identify` and `no-io`). Each declares a
+  `backupPolicy()`. `manager.ts` owns the enumerate/attach/identify/poll loop
+  and emits `devices:changed`; `wireDeviceEvents()` in `handlers.ts` hands
+  those to each host, which fans them out (`ipc.ts` to every live window, the
+  browser bridge in-page). A ROYUAN receiver relays its device's packets
+  (`hid/transport.ts`, `DeviceDescriptor.relay`).
 - **One renderer, two hosts.** The renderer only knows `window.sharkdeck`. On
   the desktop that is the preload over IPC; in the browser edition it is
   `web/host/bridge.ts` over the same shared handlers, with `node-hid` aliased
@@ -147,7 +169,7 @@ Each now has a test. Trust the guardrail instead of re-reading the wiring:
 
 | Invariant | Enforced by |
 |---|---|
-| **Backup before the first write to any device.** Every mutating handler goes through `guardedWrite()`, which calls `deviceManager.ensureBackup()` and refuses the write if it fails. It lives in the shared table, so both hosts get it. | `test/contract/ipc-guarded-write.test.ts`. "Mutating" = an `Api` method returning `Promise<WriteResult>`, read off the AST. Every one must be in the shared table, guarded; no host table may redefine a shared method; each host's tables must cover the whole `Api`. Three documented exemptions: `startPairing`, `restoreBackup`, `applyProfile`. |
+| **Backup before the first write to any device.** Every mutating handler goes through `guardedWrite()`, which calls `deviceManager.ensureBackup()` and refuses the write if it fails. It lives in the shared table, so both hosts get it. What the backup must hold is the driver's `backupPolicy()`: `full` = every required block (meta blocks like `schema`/`firmware` never count); `partial` (a device that cannot report some settings) = what it can report **plus the user's one-time OK per model + firmware** (`acknowledgeNoBackup`, the config screen's banner). Nothing is backed up or written for a `pending` or read-only device. | `test/contract/ipc-guarded-write.test.ts`. "Mutating" = an `Api` method returning `Promise<WriteResult>`, read off the AST. Every one must be in the shared table, guarded; no host table may redefine a shared method; each host's tables must cover the whole `Api`. Three documented exemptions: `startPairing`, `restoreBackup`, `applyProfile`. `test/contract/backup-policy.test.ts`: every writing driver declares a policy for every model it drives. `src/main/devices/manager-backup.test.ts`: what `ensureBackup` accepts. |
 | **The preload bridge mirrors `Api` exactly.** Hand-written, no codegen. | `test/contract/preload-mirrors-api.test.ts` — parity both ways, **plus** calling every method to confirm it asks for its own channel (`tsc` cannot see a wrong invoke string). The browser bridge is built from its tables, whose completeness `satisfies` and the guarded-write test prove. |
 | **No network.** Strict CSP, `will-navigate` block, `setWindowOpenHandler` deny. Model names and art are bundled, never fetched. The browser edition ships `connect-src 'none'`; its service worker (`src/web/sw.ts`) is the one file allowed a request — same origin, GET, its own files. | `test/contract/no-network-csp.test.ts` — including proof that the production CSP hardening actually fires (for both pages), and the service worker's guards, pinned verbatim. |
 | **The browser edition reaches no Node or Electron code.** | `test/contract/browser-node-free.test.ts` walks every import from `src/web/main.ts` (with the Vite aliases) and fails on Node built-ins, Electron, `process.*`, `Buffer`, `require`. `vite.web.config.ts` also fails the build on them. |
@@ -175,6 +197,8 @@ npm run dev:web           # browser edition dev server, http://127.0.0.1:5174 (b
 npm run build:web         # browser edition -> out/web/
 npm run preview:web       # serve out/web/ on http://127.0.0.1:4174 (background it)
 npm run map               # regenerate docs/MAP.md
+npm run import:kb         # re-import sharkfin's keyboard registry + layouts (network)
+npm run lineup            # regenerate docs/devices/attack-shark-lineup.md's tables
 npm run i18n:add -- 'a.key' 'English text'   # writes all 11 locales
 npm run i18n:todo         # untranslated placeholders
 npm run dist              # this OS's installer + portable + unpacked -> ../dist/
@@ -237,9 +261,9 @@ maintainer notes, deliberately kept out of the README.
 - **What differs is the host, not the app.** `vite.web.config.ts` aliases
   `node-hid` to `src/web/hid/node-hid-webhid.ts`, so `transport.ts`, the drivers
   and the manager run unchanged. `src/web/main.ts` installs IndexedDB storage
-  (`installStorage`), configures the manager (`serialless: 'model'` — WebHID has
-  no serial numbers, so the V8's dongle and cable merge by model), builds
-  `window.sharkdeck` and only then imports the renderer.
+  (`installStorage`), configures the manager (`serialless: 'family'` — WebHID
+  has no serial numbers, so a Hub mouse's dongle and cable merge by family),
+  builds `window.sharkdeck` and only then imports the renderer.
 - **Out of this edition:** auto-switch, app profiles, tray, start-at-login,
   overlay, window chrome, ambient (screen/music) lighting, simulated devices.
   `browserHandlers` answers those methods with empty shapes; the renderer hides

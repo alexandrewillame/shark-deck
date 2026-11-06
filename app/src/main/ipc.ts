@@ -12,6 +12,7 @@ import * as pstore from './profiles/store';
 import { scanGames } from './profiles/gameScan';
 import { listRunningProcesses } from './profiles/processScan';
 import { getSettingsSync, setSettings } from './settings';
+import { allowQuit, setPendingChanges } from './quitGuard';
 import { platform } from './platform';
 import { bundleExecutableName } from './platform/mac';
 import {
@@ -166,6 +167,13 @@ const desktopHandlers = {
   windowIsMaximized: () => mainWin()?.isMaximized() ?? false,
   windowStartDrag: () => startWindowDrag(),
   windowEndDrag: () => stopWindowDrag(),
+
+  // See quitGuard.ts: index.ts holds a quit while this says something is pending.
+  setPendingChanges: (pending: boolean) => setPendingChanges(pending),
+  quitApp: () => {
+    allowQuit();
+    app.quit();
+  },
 } satisfies { [K in HostMethods]: Handler };
 
 const handlers = {
@@ -273,12 +281,24 @@ export function registerIpc(
  *    by a mounted screen (see `setLiveWatch`), so one that outlives its
  *    renderer would keep polling a device with nothing on screen to show it.
  *    Whatever is actually open re-arms itself on the next render.
+ * 3. The same for "a change is pending" (quitGuard.ts): a renderer that
+ *    reloads or dies holds nothing, and must not keep holding a quit.
  */
 export function wireWindowChrome(w: BrowserWindow): void {
   const send = () =>
     !w.isDestroyed() && w.webContents.send(IPC.event, 'window:maximized', w.isMaximized());
   w.on('maximize', send);
   w.on('unmaximize', send);
-  w.webContents.on('did-start-loading', () => deviceManager.clearLiveWatches());
+  w.webContents.on('did-start-loading', () => {
+    deviceManager.clearLiveWatches();
+    setPendingChanges(false);
+  });
+  w.webContents.on('render-process-gone', () => setPendingChanges(false));
   w.on('closed', () => deviceManager.clearLiveWatches());
+}
+
+/** A quit is on hold (see quitGuard.ts): have the renderer ask about it. */
+export function requestQuitConfirmation(w: BrowserWindow): void {
+  if (!w.isDestroyed() && !w.webContents.isDestroyed())
+    w.webContents.send(IPC.event, 'app:quitRequested', undefined);
 }

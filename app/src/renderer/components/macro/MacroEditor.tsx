@@ -5,7 +5,7 @@ import { ConfirmDialog, InfoDot, Tooltip } from '../common';
 import { Icon } from '../icons';
 import { useT } from '../../state/i18n';
 import { useStore } from '../../state/store';
-import { registerUnsavedGuard } from '../../state/unsavedGuard';
+import { usePendingChange } from '../../state/leaveGuard';
 import { sd, useDeviceData, useWrite } from '../../tabs/common';
 import { MacroLibraryList } from './MacroLibraryList';
 import { MacroRecorder } from './MacroRecorder';
@@ -180,24 +180,15 @@ export function MacroEditor({ device }: { device: LiveDevice }) {
     return true;
   }, [draft, reloadLibrary, t, toast]);
 
-  // Let the tab rail and the tab strip ask before they destroy this pane — see
-  // state/unsavedGuard.ts for why neither could until now. Read through refs so
-  // the registration itself doesn't have to churn on every keystroke.
-  const dirtyRef = useRef(dirty);
-  dirtyRef.current = dirty;
-  const saveRef = useRef(save);
-  saveRef.current = save;
-  const nameRef = useRef(draft.name);
-  nameRef.current = draft.name;
-  useEffect(
-    () =>
-      registerUnsavedGuard(device.id, {
-        dirty: () => dirtyRef.current,
-        save: () => saveRef.current(),
-        name: () => nameRef.current.trim() || t('macro.defaultName', { n: 1 }),
-      }),
-    [device.id, t],
-  );
+  // Leaving this pane (another section, closing the tab, a profile switch,
+  // quitting) asks first — see state/leaveGuard.ts. A refused save (an
+  // unnamed macro) keeps the user here, with the toast explaining why.
+  usePendingChange(device.id, {
+    kind: 'save',
+    dirty,
+    label: () => draft.name.trim() || t('macro.defaultName', { n: 1 }),
+    commit: save,
+  });
 
   const revert = () => (saved ? loadMacro(saved) : startNew());
 

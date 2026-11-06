@@ -673,6 +673,25 @@ the most likely explanation is one image pre-populating slots for the larger
 board. Harmless — nothing writes to a slot no layout entry names — but it means
 "configured slots" is not a reliable key count.
 
+Neither is "bound slots". The base keymap binds **82** too: the 79, plus the
+knob at 90 / 91 / 92 (consumer Volume up / down / mute, `03 00 e9 00` …), which
+carries **no magnetism at all** — every page reads 0 there, where each real
+switch has at least its factory dead zones (`60`) and rapid-trigger points
+(`40`). Each signal has three wrong slots, and different ones:
+
+| Slots | Bound in the keymap | Magnetism configured |
+|---|---|---|
+| the 79 keys | yes | yes |
+| 90–92 (the knob) | yes | no |
+| 96–98 | no | yes |
+
+So a board **without** a slot map finds its keys as both at once —
+`CompxHeKeyboard.magneticKeys`: bound, and non-zero on travel, release, RT
+press or bottom dead zone (0xFFFF on travel = no switch). On the R85HE that is
+exactly `ANSI_79_SG9047`'s 79. `verified-capture`, fw 5.11, 2026-11-04
+(`npm run verify:identity`, read-only by default); for every other board it is
+`inferred`.
+
 ## GET replies — `verified-capture`
 
 Replies are **not checksummed**. Byte 8 is whatever our query left in the

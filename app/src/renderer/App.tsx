@@ -14,20 +14,16 @@ import { PersistentDeviceArt } from './components/PersistentDeviceArt';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { BackgroundLayer } from './background/BackgroundLayer';
 import { AppearanceMenu } from './components/AppearanceMenu';
-import {
-  WindowControls,
-  MinimalWindowControls,
-  Tooltip,
-  ConfirmDialog,
-  SaveDiscardDialog,
-} from './components/common';
+import { WindowControls, MinimalWindowControls, Tooltip, ConfirmDialog } from './components/common';
+import { LeaveDialog } from './components/LeaveDialog';
 import { useAnchoredPosition } from './components/usePortalPosition';
 import { moveFocusInList, usePopoverFocus } from './components/usePopoverFocus';
 import { requestArtRemeasure } from './components/ArtAnchor';
 import { useTabShortcuts } from './state/shortcuts';
-import { getUnsavedGuard } from './state/unsavedGuard';
+import { confirmLeave, installLeaveGuardHost } from './state/leaveGuard';
 import { Icon, type IconName } from './components/icons';
-import { LOCALES, localeMeta } from '@shared/i18n';
+import { LOCALES, localeMeta, type TFunc } from '@shared/i18n';
+import { deviceName } from './state/ui';
 import { useDragOrClick } from './components/useDragOrClick';
 import { hostFeatures } from './state/host';
 
@@ -70,20 +66,19 @@ export function App() {
     })),
   );
   const platformInfo = useStore((s) => s.platformInfo);
-  const t = useT();
 
-  // Closing a device tab unmounts its whole config screen, draft macros and
-  // all, so an editor that registered an unsaved guard gets asked first — see
-  // state/unsavedGuard.ts. Every close path (the X, middle-click, Ctrl+W) goes
+  // Closing a device tab unmounts its whole config screen, staged changes and
+  // all, so a change nobody applied is asked about first — see
+  // state/leaveGuard.ts. Every close path (the X, middle-click, Ctrl+W) goes
   // through here.
-  const [closing, setClosing] = useState<{ id: string; name: string } | null>(null);
   const closeTabGuarded = (id: string) => {
     const deviceId = id.startsWith('device:') ? id.slice('device:'.length) : null;
-    const guard = deviceId ? getUnsavedGuard(deviceId) : null;
-    if (guard) setClosing({ id, name: guard.name() });
+    if (deviceId) confirmLeave(deviceId, () => closeTab(id));
     else closeTab(id);
   };
   useTabShortcuts({ closeTab: closeTabGuarded });
+  // Quitting (desktop) and closing the page (browser) ask too.
+  useEffect(() => installLeaveGuardHost(), []);
 
   useEffect(() => {
     sd.listDevices().then(setDevices);
@@ -105,8 +100,22 @@ export function App() {
     });
     const offTheme = initSystemThemeFeed(() => useStore.getState().settings);
 
+    // macOS full screen hides the traffic lights, and the topbar's inset for
+    // them left an empty gap before the brand. Nothing tells the page it is
+    // full screen (display-mode stays "browser" in Electron), but then the
+    // window covers the whole screen, which a macOS window otherwise cannot —
+    // the menu bar stays above it. Only the native-traffic-lights rule reads it.
+    const syncFullscreen = () =>
+      document.documentElement.classList.toggle(
+        'window-fullscreen',
+        screen.width > 0 && innerWidth >= screen.width && innerHeight >= screen.height,
+      );
+    syncFullscreen();
+    window.addEventListener('resize', syncFullscreen);
+
     const offs = [
       offTheme,
+      () => window.removeEventListener('resize', syncFullscreen),
       sd.on('devices:changed', (d) => setDevices(d)),
       sd.on('scan:diagnostic', (d) => setScanDiag(d)),
       sd.on('switcher:state', (s) => setSwitcher(s)),
@@ -201,16 +210,19 @@ export function App() {
         <SettingsButton onOpen={() => openTab({ name: 'settings' })} />
         {/* macOS draws its own traffic lights (main/index.ts sets
             titleBarStyle: 'hidden' + trafficLightPosition) — a second,
-            custom set here would just duplicate them. Default to showing
-            them (undefined on first render, before platformInfo resolves)
-            so Windows/Linux never flash without controls. */}
-        {hostFeatures.windowChrome && !platformInfo?.nativeTrafficLights && (
-          // Unlike the rest of the topbar, this one keeps the window closable
-          // even if it errors — see MinimalWindowControls.
-          <ErrorBoundary fallback={<MinimalWindowControls />}>
-            <WindowControls />
-          </ErrorBoundary>
-        )}
+            custom set here would just duplicate them. Before platformInfo
+            resolves, navigator.platform answers the same question: defaulting
+            to "show them" kept Windows/Linux from flashing without controls,
+            but put a Windows-style set on a Mac's first paint, beside the real
+            traffic lights, for as long as startup took. */}
+        {hostFeatures.windowChrome &&
+          !(platformInfo?.nativeTrafficLights ?? /Mac/.test(navigator.platform)) && (
+            // Unlike the rest of the topbar, this one keeps the window closable
+            // even if it errors — see MinimalWindowControls.
+            <ErrorBoundary fallback={<MinimalWindowControls />}>
+              <WindowControls />
+            </ErrorBoundary>
+          )}
       </div>
 
       <div className="content">
@@ -227,28 +239,7 @@ export function App() {
             </ErrorBoundary>
           </div>
         ))}
-        {closing && (
-          <SaveDiscardDialog
-            title={t('macro.leave.title')}
-            body={t('macro.leave.body', { name: closing.name })}
-            saveLabel={t('macro.leave.save')}
-            discardLabel={t('macro.leave.discard')}
-            onResolve={(choice) => {
-              const { id } = closing;
-              const deviceId = id.slice('device:'.length);
-              setClosing(null);
-              if (choice === 'cancel') return;
-              if (choice === 'discard') {
-                closeTab(id);
-                return;
-              }
-              const guard = getUnsavedGuard(deviceId);
-              // A refused save (an unnamed macro) leaves the tab open, with the
-              // toast from the editor explaining why.
-              void (guard ? guard.save() : Promise.resolve(true)).then((ok) => ok && closeTab(id));
-            }}
-          />
-        )}
+        <LeaveDialog />
       </div>
 
       <Toasts />
@@ -274,7 +265,7 @@ const DEVICE_ICON: Record<string, IconName> = {
   unknown: 'chip',
 };
 
-function tabMeta(tab: Tab, devices: ReturnType<typeof useStore.getState>['devices']) {
+function tabMeta(tab: Tab, devices: ReturnType<typeof useStore.getState>['devices'], t: TFunc) {
   const route = tab.route;
   if (route.name === 'devices') return { icon: 'home' as IconName, label: null as string | null };
   if (route.name === 'settings') return { icon: 'gear' as IconName, label: 'settings' };
@@ -282,7 +273,7 @@ function tabMeta(tab: Tab, devices: ReturnType<typeof useStore.getState>['device
   const device = devices.find((d) => d.id === route.deviceId);
   return {
     icon: DEVICE_ICON[device?.kind ?? 'unknown'] ?? 'chip',
-    label: device?.displayName ?? route.deviceId,
+    label: device ? deviceName(device, t) : route.deviceId,
   };
 }
 
@@ -593,7 +584,7 @@ function TabStrip({
         />
       )}
       {visible.map((tab, index) => {
-        const meta = tabMeta(tab, devices);
+        const meta = tabMeta(tab, devices, t);
         // On Home no tab here is active, and the strip still needs one stop.
         const tabStop =
           tab.id === activeTabId || (index === 0 && !visible.some((v) => v.id === activeTabId));

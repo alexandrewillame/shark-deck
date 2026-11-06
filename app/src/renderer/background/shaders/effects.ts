@@ -5,12 +5,22 @@
  * (`uBg`), so a palette change recolours it with nothing else to do. Emitters
  * finish through `glow()`, pictures through `scene()` (see common.ts).
  *
- * Every one is a night scene, in both themes: the light theme lightens the
- * panels in front of it, not the sky (docs/design/background.md).
+ * Each is a scene, drawn at night in the dark theme and in daylight in the
+ * light one. The day is not the night recoloured: a night shows only what
+ * glows, so each effect has its own `if (uLight > 0.5)` branch that lights
+ * the SAME fields as a material — smoke as a shaded volume, lava's crust as
+ * rock in the sun — and so shows what the dark hides (docs/design/
+ * background.md, "Light theme"). That branch comes after the fields it lights
+ * and before the night's own arithmetic; it reads those fields rather than
+ * recomputing them and shares no sum with the night, so the dark theme draws
+ * exactly as it did. The compiler optimises both sides together, and each of
+ * those slips once moved a few dark pixels by one step (see Lava).
  */
 
 /** Smoke: domain-warped fbm (fbm feeding fbm feeding fbm), drifting upward —
- *  heavier low down, thinning as it rises, its lit edges bleaching. */
+ *  heavier low down, thinning as it rises, its lit edges bleaching. By day the
+ *  whole plume shows, thin wisps too, lit where it thins toward the light and
+ *  shaded in its folds (one more fbm, a step toward the light). */
 export const SMOKE = /* glsl */ `
 void main() {
   vec2 uv = gl_FragCoord.xy / uRes.y;
@@ -22,6 +32,16 @@ void main() {
     fbm(p + 1.8 * q + vec2(8.3, 2.8) - 0.3 * t)
   );
   float f = fbm(p + 1.6 * r);
+  if (uLight > 0.5) {
+    float toward = fbm(p + 1.6 * r + vec2(-0.05, 0.08));
+    float body = smoothstep(0.34, 0.84, f);
+    float lit = clamp(0.55 + (f - toward) * 5.0, 0.0, 1.0);
+    vec3 hue = mix(uA, uB, smoothstep(0.3, 0.8, q.y));
+    float thick = mix(1.0, 0.55, smoothstep(0.0, 1.0, gl_FragCoord.y / uRes.y));
+    float a = (1.0 - exp(-body * 2.6 * thick)) * dayAmount();
+    gl_FragColor = finish(over(dayPage(), material(hue, lit), a));
+    return;
+  }
   float density = smoothstep(0.42, 0.86, f);
   density *= density;
   vec3 col = mix(uA, uB, smoothstep(0.3, 0.8, q.y));
@@ -43,7 +63,8 @@ void main() {
  * dim, taller layer behind gives depth. Above, a faint lit haze, and a few
  * embers wandering up on their own paths, flickering — sized in pixels, so
  * they stay sparks at any window size. Unhurried: a hearth, not an
- * explosion.
+ * explosion. By day the flames are lit colour with pale cores, and the smoke
+ * rising off them shows.
  *
  * The first version added the noise to a height ramp instead, which filled
  * the whole bottom of the window with one flat sheet of the main colour
@@ -104,6 +125,20 @@ void main() {
   float smoke = fbm3(vec2(xs * 1.4, y * 1.2 - t * 0.07));
   light += uB * smoke * smoothstep(tall * 0.6, tall * 1.4, y) * smoothstep(0.95, 0.35, y) * 0.03;
   float life = smoothstep(tall * 0.5, tall * 1.05, y) * smoothstep(0.75, 0.3, y);
+  if (uLight > 0.5) {
+    float k = dayAmount();
+    vec3 col = dayPage();
+    float haze = smoke * smoothstep(tall * 0.45, tall * 1.3, y) * smoothstep(1.0, 0.35, y);
+    col = over(col, mix(vec3(0.42, 0.44, 0.5), uB * 0.6, 0.25), haze * 0.55 * k);
+    col = over(col, material(heat(0.1 + 0.3 * vb), 0.3), smoothstep(0.08, 0.35, vb) * 0.45 * k);
+    vec3 flame = material(heat(temp), 0.35 + 0.65 * temp);
+    flame = mix(flame, vec3(1.0, 0.98, 0.92), smoothstep(0.7, 1.0, temp) * 0.7);
+    col = over(col, flame, smoothstep(0.1, 0.18, v) * (0.75 + 0.25 * temp) * k);
+    float spark = clamp(embers(p, t, px) * life, 0.0, 1.0);
+    col = over(col, material(mix(uA, vec3(1.0, 0.86, 0.55), 0.55), 0.6), spark * k);
+    gl_FragColor = finish(col);
+    return;
+  }
   light += mix(uA, vec3(1.0, 0.86, 0.55), 0.55) * embers(p, t, px) * life * 1.2;
   gl_FragColor = finish(glow(light));
 }
@@ -126,7 +161,9 @@ void main() {
  * it, a hard core a couple of pixels wide in a soft glow, and the quick
  * re-strokes and decay of a real flash, which lights up the clouds around it.
  * In between, lightning hidden in the clouds now and then lights a patch of
- * them from within.
+ * them from within. By day it is a storm in daylight: grey clouds, lit on top
+ * and dark below, brightening where a flash goes off, grey rain, and bolts
+ * that are white inside a coloured glow.
  */
 export const ELECTRICITY = /* glsl */ `
 float jag(float y, float s) {
@@ -240,6 +277,29 @@ void main() {
   float thick = smoothstep(0.62, 1.05, f);
   vec3 sky = mix(uB, uA, 0.25);
   vec3 cloudCol = mix(sky, vec3(0.62, 0.66, 0.76), 0.45);
+  if (uLight > 0.5) {
+    float k = dayAmount();
+    float d0;
+    float x0;
+    float d1;
+    float x1;
+    vec3 bolts = burst(q, t, 3.3, 0.0, aspect, px, d0, x0) + burst(q, t, 4.7, 1.0, aspect, px, d1, x1);
+    float within = sheet(q, t, aspect);
+    float struck = d0 * exp(-abs(q.x - x0) * 1.5) + d1 * exp(-abs(q.x - x1) * 1.5);
+    vec3 col = mix(dayPage(), vec3(0.8, 0.82, 0.87), 0.35 * q.y);
+    vec3 base = mix(vec3(0.42, 0.45, 0.53), sky * 0.5, 0.25);
+    vec3 crest = mix(vec3(0.86, 0.88, 0.92), mix(sky, vec3(1.0), 0.6), 0.3);
+    vec3 cloud = mix(base, crest, clamp(0.35 + 0.65 * lump - 0.45 * under + 0.2 * thick, 0.0, 1.0));
+    cloud = mix(cloud, vec3(1.0), clamp((struck * 0.8 + within * 0.6) * (0.4 + 0.6 * dens), 0.0, 1.0) * 0.7);
+    col = over(col, cloud, (1.0 - exp(-dens * 3.0)) * k);
+    col = over(col, vec3(0.38, 0.41, 0.48), rain(q, t) * (1.0 - dens * 0.5) * 0.35 * k);
+    float bm = max(bolts.r, max(bolts.g, bolts.b));
+    float bn = min(bolts.r, min(bolts.g, bolts.b));
+    col = over(col, material(uA, 0.5), (1.0 - exp(-(bm - bn) * 3.0)) * k);
+    col = over(col, vec3(1.0), clamp(bn * 1.6, 0.0, 1.0));
+    gl_FragColor = finish(col);
+    return;
+  }
   vec3 light = sky * 0.03 * (1.0 - q.y);
   light = mix(light, cloudCol * (0.045 + 0.03 * thick + 0.12 * lump), dens);
   light += cloudCol * under * 0.18;
@@ -268,7 +328,11 @@ void main() {
  * every seam was a straight line and every junction a sharp polygon corner,
  * which read as tiles rather than rock. The crust is lit faintly from above,
  * glows where it borders the heat and is crazed with hairline cracks near the
- * pools, and the heat breathes.
+ * pools, and the heat breathes. By day the crust is pale stone, its plates
+ * ropy in the sun and tinted by the heat at their edges, with fine hairline
+ * cracks and the melt bright in its seams. The day keeps a share of the
+ * night's sunlit grain (`sun`): left to the night alone, that chain was moved
+ * by the compiler and a few dark pixels shifted by one step.
  */
 export const LAVA = /* glsl */ `
 vec3 heat(float k) {
@@ -305,6 +369,23 @@ void main() {
   vec3 n = normalize(vec3(-slope(rock) * 0.015, 1.0));
   float sun = clamp(dot(n, normalize(vec3(-0.5, 0.6, 0.65))), 0.0, 1.0);
   float rim = max(exp(-max(e - width, 0.0) * 52.0), smoothstep(0.5, 0.565, melt)) * crust;
+  if (uLight > 0.5) {
+    float k = dayAmount();
+    float slab = fbm(cp * 1.6 + pid * 9.0);
+    vec3 sn = normalize(vec3(-slope(slab) * 0.035, 1.0));
+    float shade = clamp(dot(sn, vec3(-0.52, 0.62, 0.59)), 0.0, 1.0) * 0.75 + sun * 0.25;
+    vec3 slate = mix(dayPage(), mix(uB, vec3(0.62, 0.6, 0.58), 0.6), 0.17 + 0.16 * (pid - 0.5));
+    vec3 col = slate * (0.82 + 0.24 * shade);
+    col = mix(col, material(uB, 0.75), rim * 0.4);
+    col *= 1.0 - 0.14 * rim * smoothstep(0.0, 0.3, 1.0 - rim);
+    col = mix(col, material(uB, 0.4), hair * 0.5);
+    vec3 liquid = material(heat(temp), 0.45 + 0.3 * flow);
+    liquid = mix(liquid, vec3(1.0, 0.99, 0.95), smoothstep(0.6, 1.0, temp) * 0.75);
+    liquid = mix(liquid, slate * (0.86 + 0.16 * shade), skin * 0.9);
+    col = over(col, liquid, molten);
+    gl_FragColor = finish(over(dayPage(), col, clamp(0.55 + 0.45 * k, 0.0, 1.0)));
+    return;
+  }
   vec3 light = heat(temp) * temp * 1.1;
   light += uB * rim * (0.2 + 0.1 * pulse);
   light += heat(0.3) * hair * 0.3 * pulse;
@@ -315,12 +396,39 @@ void main() {
 `;
 
 /** Aurora: three curtains hung across the upper sky, each a sharp lower hem
- *  fading upward, combed into rays and shimmering — over a few stars. */
+ *  fading upward, combed into rays and shimmering — over a few stars. By day
+ *  they hang in a pale blue sky, each with a bright hem and its rays fading
+ *  upward, laid back to front. */
 export const AURORA = /* glsl */ `
 void main() {
   vec2 uv = gl_FragCoord.xy / uRes;
   float x = uv.x * uRes.x / uRes.y;
   float t = uTime * 0.1;
+  if (uLight > 0.5) {
+    float k = dayAmount();
+    vec3 zenith = mix(vec3(0.7, 0.8, 0.96), uB, 0.15);
+    vec3 horizon = mix(vec3(1.0, 0.95, 0.9), uA, 0.06);
+    vec3 col = mix(mix(dayPage(), horizon, 0.6), mix(dayPage(), zenith, 0.4), smoothstep(0.15, 1.0, uv.y));
+    for (int j = 0; j < 3; j++) {
+      float fi = float(2 - j);
+      float curve = 0.52 + fi * 0.08
+        + 0.07 * sin(x * (2.3 + fi * 0.4) + t * (1.3 + fi * 0.4) + fi * 2.1)
+        + 0.04 * sin(x * (5.1 - fi) - t * 0.9 + fi)
+        + 0.1 * (fbm(vec2(x * 0.9 + fi * 3.7, t * 0.7)) - 0.5);
+      float dy = uv.y - curve;
+      float band = dy > 0.0 ? exp(-dy * (4.0 + fi * 1.5)) : exp(dy * 40.0);
+      float rays = 0.25 + 0.75 * pow(fbm(vec2(x * 20.0 + fi * 9.1, t * 1.4 + dy * 2.0)), 1.2);
+      float shimmer = 0.75 + 0.25 * sin(x * 3.0 - t * 6.0 + fi);
+      float comb = rays * rays;
+      float veil = band * comb * shimmer * (0.9 - fi * 0.2);
+      float hem = exp(-abs(dy) * 30.0);
+      vec3 hue = mix(uA, uB, fi / 2.0);
+      vec3 sheet = mix(material(hue, 0.5 + 0.3 * rays), mix(hue, vec3(1.0), 0.12), hem);
+      col = over(col, sheet, (1.0 - exp(-veil * 3.6)) * k);
+    }
+    gl_FragColor = finish(col);
+    return;
+  }
   vec3 light = vec3(stars(gl_FragCoord.xy / uRes.y * 160.0, uTime)) * smoothstep(0.2, 0.6, uv.y) * 0.8;
   for (int i = 0; i < 3; i++) {
     float fi = float(i);
@@ -339,7 +447,9 @@ void main() {
 `;
 
 /** Nebula: slowly turning gas clouds, warped twice, cut by dust lanes and
- *  brighter toward the heart, in a field of stars at two depths. */
+ *  brighter toward the heart, in a field of stars at two depths. By day the
+ *  gas is lit like cloud, and the dust that only dims the glow at night shows
+ *  as dark wisps through it. */
 export const NEBULA = /* glsl */ `
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
@@ -350,6 +460,19 @@ void main() {
   vec2 q = vec2(fbm(p + vec2(t * 2.0, 0.0)), fbm(p + vec2(3.1, 1.7) - t * 1.5));
   float cloud = fbm(p * 1.1 + 1.6 * q);
   float dust = fbm(p * 2.6 - q * 1.2 + 11.0);
+  if (uLight > 0.5) {
+    float k = dayAmount();
+    float toward = fbm(p * 1.1 + 1.6 * q + vec2(-0.05, 0.07));
+    float gas = smoothstep(0.36, 0.85, cloud);
+    float lit = clamp(0.5 + (cloud - toward) * 5.0, 0.0, 1.0);
+    float core = exp(-dot(uv, uv) * 2.5);
+    vec3 hue = mix(uB, uA, smoothstep(0.3, 0.75, q.x));
+    vec3 col = over(dayPage(), material(hue, mix(lit, 1.0, core * 0.5)), (1.0 - exp(-gas * 2.4)) * k);
+    float dusty = smoothstep(0.48, 0.8, dust) * smoothstep(0.3, 0.65, cloud);
+    col = over(col, mix(uB * 0.32, vec3(0.09, 0.08, 0.15), 0.45), dusty * 0.42 * k);
+    gl_FragColor = finish(col);
+    return;
+  }
   float neb = smoothstep(0.42, 0.85, cloud);
   neb *= neb * (1.0 - 0.7 * smoothstep(0.5, 0.8, dust));
   vec3 col = mix(uB, uA, smoothstep(0.3, 0.75, q.x));
@@ -365,7 +488,7 @@ void main() {
 
 /** Landscape: five ridged-noise mountain ranges with atmospheric perspective,
  *  rimmed in light, mist pooling in the valleys, under a night sky with a moon
- *  and stars. Drifts very slowly. */
+ *  and stars — or a hazy day with a low sun. Drifts very slowly. */
 export const LANDSCAPE = /* glsl */ `
 float ridge(float x) {
   float v = 0.0;
@@ -384,13 +507,17 @@ void main() {
   float x = uv.x * aspect;
   float t = uTime * 0.015;
   float px = 0.8 / uRes.y;
-  vec3 top = uBg;
-  vec3 horizon = mix(uBg, uA, 0.45);
+  bool day = uLight > 0.5;
+  vec3 page = day ? dayPage() : uBg;
+  vec3 top = day ? mix(page, uB, 0.18) : page;
+  vec3 horizon = mix(page, uA, day ? 0.3 : 0.45);
   vec3 col = mix(horizon, top, smoothstep(0.2, 0.95, uv.y));
   float md = length(vec2(x, uv.y) - vec2(aspect * 0.74, 0.74));
-  vec3 orb = mix(uA, vec3(1.0), 0.78);
+  vec3 orb = mix(uA, vec3(1.0), day ? 0.6 : 0.78);
   col += orb * (smoothstep(0.05 + px, 0.05 - px, md) * 0.85 + 0.22 * exp(-md * 7.0));
-  col += vec3(stars(gl_FragCoord.xy / uRes.y * 170.0, uTime)) * smoothstep(0.45, 0.85, uv.y) * 0.9;
+  if (!day) {
+    col += vec3(stars(gl_FragCoord.xy / uRes.y * 170.0, uTime)) * smoothstep(0.45, 0.85, uv.y) * 0.9;
+  }
   for (int i = 0; i < 5; i++) {
     float fi = float(i);
     float depth = fi / 4.0;
@@ -398,7 +525,7 @@ void main() {
       + (0.15 + depth * 0.08) * (ridge(x * (0.9 + depth * 1.3) + fi * 9.7 + t * (0.5 + depth)) - 0.45);
     float m = smoothstep(h + px, h - px, uv.y);
     vec3 far = mix(horizon, mix(uA, uB, 0.5), 0.25);
-    vec3 near = uBg * 0.35 + uB * 0.05;
+    vec3 near = day ? mix(page, uB, 0.45) * 0.8 : page * 0.35 + uB * 0.05;
     vec3 layer = mix(far, near, pow(depth, 0.8));
     layer += uA * smoothstep(h - 0.012, h, uv.y) * m * (1.0 - depth) * 0.35;
     col = mix(col, layer, m);
@@ -420,7 +547,8 @@ void main() {
  * and dimmer patches drift over it, faint shafts lean down from the surface,
  * and a few motes drift past. The water is the second colour, a clear blue
  * palette off, growing lighter toward the surface. (The first version was
- * two ridged noise fields, which read as clouds.)
+ * two ridged noise fields, which read as clouds.) By day it is a sunlit pool:
+ * deeper below, paler toward the surface, the web white.
  */
 export const WATER = /* glsl */ `
 vec2 site(vec2 id, float t) {
@@ -466,6 +594,17 @@ void main() {
   float ray = pow(noise(vec2((uv.x + (1.0 - h) * 0.3) * 5.0 + uTime * 0.03, 0.5)), 3.0) * 0.6
     + pow(noise(vec2((uv.x + (1.0 - h) * 0.2) * 11.0 - uTime * 0.02, 7.5)), 4.0) * 0.4;
   ray *= smoothstep(0.25, 1.0, h) * (0.85 + 0.15 * sin(uTime * 0.3 + uv.x * 4.0));
+  if (uLight > 0.5) {
+    float k = dayAmount();
+    float specks = stars(uv * 80.0 + vec2(0.0, -uTime * 0.012), uTime * 0.5);
+    vec3 col = mix(material(uB, 0.25), mix(uA, vec3(1.0), 0.78), 0.35 + 0.65 * smoothstep(0.0, 1.0, h));
+    col = mix(dayPage(), col, clamp(0.55 + 0.35 * k, 0.0, 1.0));
+    col = mix(col, vec3(1.0), clamp(caust * 0.45 * (0.5 + 0.5 * h) * k, 0.0, 0.9));
+    col = mix(col, mix(uA, vec3(1.0), 0.6), clamp(ray * 0.3 * k, 0.0, 1.0));
+    col = mix(col, vec3(1.0), specks * 0.5);
+    gl_FragColor = finish(col);
+    return;
+  }
   vec3 body = uB * (0.06 + 0.26 * h * h);
   vec3 beam = mix(uA, vec3(1.0), 0.35);
   vec3 light = body + beam * caust * 0.3 * (0.45 + 0.55 * h);
@@ -490,6 +629,8 @@ void main() {
  * left behind in it that dry up after it. Palette off, the lights are a
  * city's own: sodium amber and a cool white-blue, with the odd red tail light
  * and warm white (`uPal`); palette on, they are the palette's two colours.
+ * By day it is a window on a bright, overcast city: its shapes out of focus
+ * behind a light mist, the beads lenses with dark rims and white glints.
  */
 export const RAIN = /* glsl */ `
 vec3 lampCol(float k) {
@@ -617,6 +758,19 @@ void main() {
   vec3 soft;
   vec3 sharp;
   backdrop(uv + off, t, soft, sharp);
+  if (uLight > 0.5) {
+    float k = dayAmount();
+    vec3 street = mix(dayPage(), mix(uB, vec3(0.6, 0.64, 0.7), 0.6), 0.22 * smoothstep(0.9, 0.0, uv.y));
+    vec3 outside = over(street, material(hueOf(soft), 0.6), amountOf(soft, 3.0) * 0.8 * k);
+    vec3 inside = over(street, material(hueOf(soft + sharp), 0.5), amountOf(soft * 0.8 + sharp, 3.0) * k);
+    vec3 col = mix(outside, vec3(1.0), 0.22 * (1.0 - trail));
+    col = mix(col, inside, m);
+    col *= 1.0 - ring * m * 0.3;
+    col = mix(col, vec3(1.0), spec * m * 0.85);
+    col = mix(col, vec3(1.0), lo * m * 0.25);
+    gl_FragColor = finish(col);
+    return;
+  }
   vec3 tint = mix(uA, uB, 0.5);
   float fog = 1.0 - trail;
   vec3 sheen = mix(tint, vec3(0.8), 0.5);

@@ -41,6 +41,10 @@ export const hostFeatures = {
   simulatedDevices: desktop || import.meta.env.DEV,
   /** Devices are reached one at a time, after the user picks each in the browser's own dialog. */
   devicePicker: !desktop,
+  /** Quitting with a change nobody applied asks first, in the app's own prompt. */
+  quitPrompt: desktop,
+  /** Closing or reloading the page with a change nobody applied asks first, in the browser's own words. */
+  unloadPrompt: !desktop,
 } as const;
 
 export type HostFeature = keyof typeof hostFeatures;

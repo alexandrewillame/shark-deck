@@ -69,3 +69,46 @@ describe('createDispatcher (both hosts’ method router)', () => {
     expect(read).toHaveBeenCalledTimes(3);
   });
 });
+
+describe('per-key writes', () => {
+  // A board whose layout names no slots gets whole-board settings only; the
+  // renderer offers nothing per key there, and the shared table refuses it
+  // too, so no path can address a guessed slot.
+  it('are refused on a keyboard without a slot map, whole-board ones are not', async () => {
+    const { deviceManager } = await import('./devices/manager');
+    const { ATTACK_SHARK_R85HE } = await import('./devices/catalog/r85he');
+    const { createDeviceHandlers } = await import('./handlers');
+    const noSlots = {
+      ...ATTACK_SHARK_R85HE,
+      spec: {
+        ...ATTACK_SHARK_R85HE.spec,
+        keyMatrix: { ...ATTACK_SHARK_R85HE.spec.keyMatrix!, layoutStatus: 'none' as const },
+      },
+    };
+    const ok = { ok: true, verified: 'match' as const };
+    const driver = {
+      setKeyRemap: vi.fn(async () => ok),
+      setPerKeyLighting: vi.fn(async () => ok),
+      setMagneticKey: vi.fn(async () => ok),
+      setMagneticGlobal: vi.fn(async () => ok),
+    };
+    vi.spyOn(deviceManager, 'getDescriptor').mockReturnValue(noSlots);
+    vi.spyOn(deviceManager, 'getDriver').mockReturnValue(driver as never);
+    vi.spyOn(deviceManager, 'ensureBackup').mockResolvedValue(true);
+    const h = createDeviceHandlers({ onDeviceWrite: () => undefined });
+
+    await expect(h.setKeyRemap('kb', 'base', 9, 'KeyB')).rejects.toThrow(/whole-board/);
+    await expect(h.setPerKeyLighting('kb', [], {})).rejects.toThrow(/whole-board/);
+    await expect(h.setMagneticKey('kb', {})).rejects.toThrow(/whole-board/);
+    expect(driver.setKeyRemap).not.toHaveBeenCalled();
+    expect(driver.setPerKeyLighting).not.toHaveBeenCalled();
+    expect(driver.setMagneticKey).not.toHaveBeenCalled();
+
+    await expect(h.setMagneticGlobal('kb', 2)).resolves.toEqual(ok);
+
+    // the same board with its verified layout is addressed key by key
+    vi.spyOn(deviceManager, 'getDescriptor').mockReturnValue(ATTACK_SHARK_R85HE);
+    await expect(h.setKeyRemap('kb', 'base', 9, 'KeyB')).resolves.toEqual(ok);
+    vi.restoreAllMocks();
+  });
+});

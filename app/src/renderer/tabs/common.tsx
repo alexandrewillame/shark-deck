@@ -10,7 +10,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import type { Capability } from '@shared/types/capability';
+import { configurable, gate, type GateId } from '@shared/menuGates';
 import type { LiveDevice, WriteResult } from '@shared/types/live';
 import { useStore } from '../state/store';
 import { useT } from '../state/i18n';
@@ -207,27 +207,30 @@ export function useDeviceData<T>(
  * than keep talking to a device nobody is looking at.
  */
 export function prefetchDeviceReads(device: LiveDevice): () => void {
-  const has = (c: Capability) => device.capabilities.includes(c);
+  // Read ahead exactly what the menus will show: the same gates the tabs draw
+  // with (shared/menuGates.ts), so a read is never spent on a section this
+  // model does not have, and no shown section is left to a cold read.
+  const g = (id: GateId) => gate(id, device);
   const jobs: [string, () => Promise<unknown>][] = [];
   const add = (name: string, when: boolean, run: () => Promise<unknown>) => {
     if (when) jobs.push([name, run]);
   };
 
-  add('dpiStages', has('dpi'), () => sd.readDpiStages(device.id));
-  add('activeDpiStage', has('dpi'), () => sd.readActiveDpiStage(device.id));
-  add('pollRate', has('pollRate'), () => sd.readPollRate(device.id));
-  add('sensor', has('sensorTuning'), () => sd.readSensor(device.id));
-  add('power', has('sleepTimer'), () => sd.readPower(device.id));
-  add('debounce', has('mouseDebounce') || has('debounce'), () => sd.readDebounce(device.id));
-  add('buttons', has('buttonRemap'), () => sd.readButtons(device.id));
-  add('dpiLed', has('dpiIndicatorLed'), () => sd.readDpiLed(device.id));
-  add('receiverLed', has('receiverLed'), () => sd.readReceiverLed(device.id));
-  add('lighting', has('mouseLighting') || has('perKeyLighting') || has('sideLighting'), () =>
-    sd.readLighting(device.id),
-  );
-  add('sideLighting', has('sideLighting'), () => sd.readSideLighting(device.id));
-  add('perKeyLighting', has('perKeyLighting'), () => sd.readPerKeyLighting(device.id));
-  add('firmware', true, () => sd.getFirmware(device.id));
+  add('dpiStages', g('dpi.section'), () => sd.readDpiStages(device.id));
+  add('activeDpiStage', g('dpi.section'), () => sd.readActiveDpiStage(device.id));
+  add('pollRate', g('poll.section'), () => sd.readPollRate(device.id));
+  add('sensor', g('sensor.section'), () => sd.readSensor(device.id));
+  add('power', g('power.section'), () => sd.readPower(device.id));
+  add('debounce', g('debounce.mouse') || g('debounce.keyboard'), () => sd.readDebounce(device.id));
+  add('buttons', g('tab.buttons'), () => sd.readButtons(device.id));
+  add('dpiLed', g('light.dpiLed'), () => sd.readDpiLed(device.id));
+  add('receiverLed', g('light.receiver'), () => sd.readReceiverLed(device.id));
+  add('lighting', g('light.body') || g('light.kbEffects'), () => sd.readLighting(device.id));
+  add('sideLighting', g('light.side'), () => sd.readSideLighting(device.id));
+  add('perKeyLighting', g('light.perKeyPaint'), () => sd.readPerKeyLighting(device.id));
+  // Not for a device Shark Deck does not configure: its Device tab shows the
+  // identity panel instead, and nothing is read from it.
+  add('firmware', configurable(device), () => sd.getFirmware(device.id));
   // Deliberately NOT prefetched: `readMacros` sweeps all 16 onboard slots,
   // chunked, which is by far the most expensive read the mouse has — seconds
   // of traffic contending with the live poll, spent on a tab most sessions

@@ -31,6 +31,10 @@
 .native-traffic-lights .topbar {
   padding-left: 78px;
 }
+/* …except in full screen, where macOS hides them (App.tsx syncFullscreen). */
+.native-traffic-lights.window-fullscreen .topbar {
+  padding-left: 16px;
+}
 /* Brand + "back to home" merged into one bordered control (App.tsx's
  * BrandHome) — both already navigate home, so they read as a single button
  * rather than two adjacent ones. The wordmark is a blank (alpha-only) PNG

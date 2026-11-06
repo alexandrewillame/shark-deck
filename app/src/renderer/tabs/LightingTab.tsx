@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
+import { gate } from '@shared/menuGates';
+import { Gated } from '../components/Gated';
 import type { KeyLayoutEntry } from '@shared/types/keys';
 import type {
   DpiLedSettings,
@@ -50,10 +52,12 @@ import { EffectThumb } from './lighting/EffectThumb';
 import {
   GLOBAL_FALLBACK_EFFECT,
   GLOBAL_PICKER_EFFECTS,
+  globalDraftDiffers,
   globalPickerList,
   seedGlobalDraft,
   useLightingMode,
 } from './lighting/lightingMode';
+import { confirmLeave, usePendingChange } from '../state/leaveGuard';
 import { LightStage } from './lighting/LightStage';
 import { PanelActions } from './lighting/PanelActions';
 import { PerKeyPane } from './lighting/PerKeyPane';
@@ -70,6 +74,7 @@ import { useAmbientLighting } from './lighting/useAmbientLighting';
 import { hostFeatures } from '../state/host';
 import { useStore } from '../state/store';
 import { usePaneView } from '../state/paneView';
+import { useIsMac } from '../state/shortcuts';
 
 /**
  * Drives the animated effect previews with a looping 0..1 phase.
@@ -282,6 +287,12 @@ function MainLightingPane({ device, perKeyLighting }: TabProps & { perKeyLightin
    * meant previewing an effect the picker cannot select (see seedGlobalDraft).
    */
   const [globalDraft, setGlobalDraft] = useState<LightingSettings | null>(null);
+  /**
+   * Changed by hand since the board was last read or applied — what leaving
+   * would lose. Not the Modified pill: while the board shows its per-key
+   * picture, Global holds a fallback effect nobody chose.
+   */
+  const [globalEdited, setGlobalEdited] = useState(false);
   /** Set by Global's "Read from keyboard": the next read replaces the draft
    *  instead of being reconciled with it. */
   const discardDraft = useRef(false);
@@ -300,13 +311,36 @@ function MainLightingPane({ device, perKeyLighting }: TabProps & { perKeyLightin
    * moved on from that, not re-read — a read straight after the colour burst
    * can come back stale, and a stale one would flip the derived mode and bounce
    * the user off the pane they just applied from. This is also what tells
-   * Global, after a per-key Apply, that the board has left its effect.
+   * Global, after a per-key Apply, that the board has left its effect — and
+   * that its draft, which the board can no longer show, is not pending.
    */
   const noteApplied = (next: LightingSettings) => {
     const arr = [next, ...loaded.slice(1)];
     setLoaded(arr);
     putDeviceCache(deviceCacheKey(device.id, 'lighting'), arr);
+    setGlobalEdited(false);
   };
+
+  /**
+   * Leaving Lighting or its Main zone loses both editors, so each asks first
+   * (state/leaveGuard.ts). Global <-> Per-Key keeps them, which is why they
+   * register here; only the one on screen can apply from the prompt.
+   */
+  const globalApply = useRef<(() => Promise<boolean>) | null>(null);
+  const perKeyApply = useRef<(() => Promise<boolean>) | null>(null);
+  usePendingChange(device.id, {
+    dirty: globalEdited && !!globalDraft && globalDraftDiffers(globalDraft, loaded[0]),
+    label: () => t('leave.what.lighting', { name: globalDraft?.effect ?? '' }),
+    commit:
+      activeMode === 'global' ? () => globalApply.current?.() ?? Promise.resolve(false) : undefined,
+  });
+  usePendingChange(device.id, {
+    dirty: perKey.edited,
+    label: () => t('leave.what.perKey'),
+    plural: true,
+    commit:
+      activeMode === 'perkey' ? () => perKeyApply.current?.() ?? Promise.resolve(false) : undefined,
+  });
 
   return (
     <>
@@ -334,19 +368,25 @@ function MainLightingPane({ device, perKeyLighting }: TabProps & { perKeyLightin
           device={device}
           applied={loaded[0]}
           draft={globalDraft}
-          setDraft={setGlobalDraft}
+          setDraft={(next) => {
+            setGlobalDraft(next);
+            setGlobalEdited(true);
+          }}
           firstLoad={firstLoad}
           reserveTools={perKeyLighting}
           onRead={() => {
             discardDraft.current = true;
+            setGlobalEdited(false);
             reload();
           }}
           onApplied={noteApplied}
+          applyRef={globalApply}
         />
       ) : (
         <PerKeyPane
           device={device}
           editor={perKey}
+          applyRef={perKeyApply}
           // Until the main lighting has been read, assume it is: no hint
           // flashing up for a moment on every visit.
           showing={!loaded[0] || loaded[0].effect === KB_LIGHT_EFFECTS[KB_PERKEY_EFFECT_INDEX]}
@@ -388,6 +428,7 @@ function GlobalEffectPane({
   reserveTools,
   onRead,
   onApplied,
+  applyRef,
 }: TabProps & {
   /** What the board is believed to hold — the read, moved on by every Apply
    *  (MainLightingPane's `noteApplied`). */
@@ -400,6 +441,8 @@ function GlobalEffectPane({
   reserveTools: boolean;
   onRead: () => void;
   onApplied: (next: LightingSettings) => void;
+  /** Filled with this pane's Apply while it is mounted. */
+  applyRef: MutableRefObject<(() => Promise<boolean>) | null>;
 }) {
   const t = useT();
   const { run } = useWrite();
@@ -447,38 +490,32 @@ function GlobalEffectPane({
   // "Not written yet" compares against what the board holds — which, while
   // the board is on its per-key layer, is not any Global effect at all, so a
   // fallback draft correctly reads as unapplied.
-  const dirty =
-    !!applied &&
-    JSON.stringify([
-      cur.effect,
-      cur.brightness,
-      cur.speed,
-      cur.color,
-      cur.dazzle,
-      cur.option ?? 0,
-    ]) !==
-      JSON.stringify([
-        applied.effect,
-        applied.brightness,
-        applied.speed,
-        applied.color,
-        applied.dazzle,
-        applied.option ?? 0,
-      ]);
+  const dirty = globalDraftDiffers(cur, applied);
 
-  const apply = async () => {
+  /** Resolves whether the board took it. */
+  const apply = async (): Promise<boolean> => {
     setApplying(true);
     // `enabled` is no longer a control; it is whatever the chosen effect means.
     const next: LightingSettings = { ...cur, enabled: cur.effect !== 'Off' };
+    let ok = false;
     await whileBusy(t('busy.lighting'), async () => {
       const r = await run(t('light.apply'), () => sd.setLighting(device.id, next));
+      ok = r.ok;
       if (r.ok) {
         onApplied(next);
         await rememberEffect(next);
       }
     });
     setApplying(false);
+    return ok;
   };
+  // The leave prompt's "Apply and leave" (MainLightingPane holds the draft).
+  useEffect(() => {
+    applyRef.current = apply;
+    return () => {
+      applyRef.current = null;
+    };
+  });
   // Every control below is gated on the vendor's own per-effect capability
   // table rather than a hand-kept name list. Speed especially: the table omits
   // `maxSpeed` for static effects, which is exactly the "static lighting still
@@ -498,6 +535,7 @@ function GlobalEffectPane({
       : liveEffect === 'Music (Level)' || liveEffect === 'Music (Spectrum)'
         ? ('music' as const)
         : null;
+  const isMac = useIsMac();
   const { error: ambientError, noAudio } = useAmbientLighting(
     device.id,
     ambientMode,
@@ -585,6 +623,14 @@ function GlobalEffectPane({
       {ambientMode && ambientError && (
         <p className="hint" style={{ margin: '8px 0', color: 'var(--amber)' }}>
           {t('light.hostFed.failed', { reason: ambientError })}
+          {/* macOS refuses until the user allows it, and the error itself
+              ("Error starting capture") says nothing about where. */}
+          {isMac && ambientMode === 'screen' && (
+            <>
+              <br />
+              {t('light.hostFed.macPermission')}
+            </>
+          )}
         </p>
       )}
       <Panel
@@ -761,18 +807,29 @@ function UnderglowPane({ device }: TabProps) {
         applied.color,
         applied.dazzle,
       ]);
-  const apply = async () => {
+  /** Resolves whether the strip took it. */
+  const apply = async (): Promise<boolean> => {
     setApplying(true);
     const next: SideLightingSettings = { ...cur, enabled: cur.effect !== 'Off' };
+    let ok = false;
     await whileBusy(t('busy.lighting'), async () => {
       const r = await run(t('light.apply'), () => sd.setSideLighting(device.id, next));
+      ok = r.ok;
       if (r.ok) {
         setWritten(next);
         await rememberEffect(next);
       }
     });
     setApplying(false);
+    return ok;
   };
+  // Leaving this zone, Lighting or the device's tab loses an edit not applied
+  // yet, so they ask first (state/leaveGuard.ts).
+  usePendingChange(device.id, {
+    dirty,
+    label: () => t('leave.what.side', { name: cur.effect }),
+    commit: apply,
+  });
   // No local <ArtAnchor> here — the LightingTab container below owns the one
   // hero-side art column (keyboard photo + the side-light close-up) for this
   // pane, the same reason MouseLightingContainer owns it for the mouse's own
@@ -1161,48 +1218,56 @@ export function LightingTab({ device }: TabProps) {
     // Each LED's explanation is its tab's tooltip — it used to be the first
     // line of the pane, read once and then in the way.
     const panes: MousePane[] = [];
-    if (device.capabilities.includes('receiverLed'))
+    if (gate('light.receiver', device))
       panes.push({
         id: 'rxled',
         label: t('rxLed.title'),
         tip: t('rxLed.indication.hint'),
         el: <ReceiverLedPane device={device} />,
-        detail: DEVICE_ART_DETAIL[device.model]?.receiverLed,
+        detail: DEVICE_ART_DETAIL[device.ui.artKey]?.receiverLed,
       });
-    if (device.capabilities.includes('dpiIndicatorLed'))
+    if (gate('light.dpiLed', device))
       panes.push({
         id: 'dpiled',
         label: t('dpiLed.title'),
         tip: t('dpiLed.hint'),
         el: <DpiLedPane device={device} />,
-        detail: DEVICE_ART_DETAIL[device.model]?.dpiLed,
+        detail: DEVICE_ART_DETAIL[device.ui.artKey]?.dpiLed,
       });
-    if (device.capabilities.includes('mouseLighting'))
+    if (gate('light.body', device))
       panes.push({
         id: 'body',
         label: t('light.body.title'),
         el: <BodyLightPane device={device} />,
       });
     return (
-      <MouseLightingContainer
-        viewKey={`${device.id}:light.zone`}
-        title={t('light.title')}
-        sub={t('light.mouse.sub')}
-        panes={panes}
-      />
+      <>
+        <Gated id="light.receiver" device={device} />
+        <Gated id="light.dpiLed" device={device} />
+        <Gated id="light.body" device={device} />
+        <MouseLightingContainer
+          viewKey={`${device.id}:light.zone`}
+          title={t('light.title')}
+          sub={t('light.mouse.sub')}
+          panes={panes}
+        />
+      </>
     );
   }
 
   const panes = useMemo(() => {
-    const list: { id: string; label: string; tip: string; el: JSX.Element }[] = [
-      {
+    const list: { id: string; label: string; tip: string; el: JSX.Element }[] = [];
+    // The effect grid needs a main backlight; painting single keys also needs
+    // the slot map (shared/menuGates.ts). A board with only an edge light gets
+    // only the Side pane.
+    if (gate('light.kbEffects', device))
+      list.push({
         id: 'effects',
         label: t('light.zone.main'),
         tip: t('light.zone.main.tip'),
-        el: <MainLightingPane device={device} perKeyLighting={device.ui.perKeyLighting} />,
-      },
-    ];
-    if (device.ui.lightZones.includes('side'))
+        el: <MainLightingPane device={device} perKeyLighting={gate('light.perKeyPaint', device)} />,
+      });
+    if (gate('light.side', device))
       list.push({
         id: 'side',
         label: t('light.zone.side'),
@@ -1221,17 +1286,21 @@ export function LightingTab({ device }: TabProps) {
   // panel, so it gets the same hero-side shell the mouse's Lighting
   // sub-panes use, with the side-light close-up as its detail shot.
   const isSide = cur?.id === 'side';
-  const sideLight = DEVICE_ART_DETAIL[device.model]?.sideLight;
+  const sideLight = DEVICE_ART_DETAIL[device.ui.artKey]?.sideLight;
 
   return (
     <div className={`pane ${isSide ? 'hero-side is-keyboard' : ''}`}>
+      <Gated id="light.kbEffects" device={device} />
+      <Gated id="light.perKeyPaint" device={device} />
+      <Gated id="light.side" device={device} />
       <PaneHeader
         title={
           panes.length > 1 ? (
             <TitleTabs
               value={cur?.id ?? ''}
               options={panes.map((p) => ({ value: p.id, label: p.label, tip: p.tip }))}
-              onChange={setActive}
+              // Each zone's editor goes when another is shown: ask first.
+              onChange={(id) => id !== cur?.id && confirmLeave(device.id, () => setActive(id))}
             />
           ) : (
             t('light.title')

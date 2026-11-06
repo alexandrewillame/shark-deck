@@ -72,18 +72,18 @@ describe('settings coercion', () => {
 
   it('keeps a background turned off, and turns off one it cannot draw', async () => {
     // The default only fills a file that names no background: someone who
-    // chose None before Nebula became the default keeps None.
+    // chose None before a background became the default keeps None.
     await writeRaw({ background: 'none' });
     expect((await getSettings()).background).toBe('none');
     await writeRaw({ background: 'plasma' });
     expect((await getSettings()).background).toBe('none');
   });
 
-  it('defaults the background to Nebula in Shark Cyan, leaving Animate to the system', async () => {
+  it('defaults the background to Smoke in Shark Cyan, leaving Animate to the system', async () => {
     await writeRaw({});
     const s = await getSettings();
     expect(s).toMatchObject({
-      background: 'nebula',
+      background: 'smoke',
       palette: 'shark-cyan',
       backgroundPalette: true,
       backgroundIntensity: 60,

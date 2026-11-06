@@ -54,6 +54,18 @@ export const KB_TRAVEL_RANGE: Record<'travel' | 'rt' | 'deadzone', TravelRange> 
 };
 
 /**
+ * A board's own travel ranges: the model's declared limits (its descriptor's
+ * `spec.magnetic.ranges`, from the vendor registry where it carries them) over
+ * the R85HE-calibrated defaults above. A K85 whose firmware stops at 0.2 mm
+ * must not be offered 0.1.
+ */
+export function travelRangesFor(magnetic?: {
+  ranges?: Partial<Record<'travel' | 'rt' | 'deadzone', TravelRange>>;
+}): Record<'travel' | 'rt' | 'deadzone', TravelRange> {
+  return { ...KB_TRAVEL_RANGE, ...(magnetic?.ranges ?? {}) };
+}
+
+/**
  * The release point a factory key holds, in mm — NOT what Reset writes.
  *
  * `provenance: verified-capture`. A live read of an untouched R85HE decodes

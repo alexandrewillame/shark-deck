@@ -11,15 +11,17 @@ import {
   useDeviceTabOnScreen,
   Loading,
 } from '../common';
-import { KEY_DISABLED_CODE, hidUsageForBrowserCode, labelForCode } from '@shared/keys';
+import { KEY_DISABLED_CODE, hidUsageForBrowserCode } from '@shared/keys';
 import { slotOf } from '../../keyLayout';
 import { useT } from '../../state/i18n';
-import { useIsMac } from '../../state/shortcuts';
+import { NAVIGATION_SURFACES, usePendingChange } from '../../state/leaveGuard';
+import { keyNameForCode, useIsMac } from '../../state/shortcuts';
 import {
   COMBO_MAX,
   type RemapPick,
   differsFromFactory,
   factoryBinding,
+  factoryCode,
   heldModifiers,
   isRemapped,
   isUnbound,
@@ -76,14 +78,21 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
    * The assign panel below stays mounted either way (see `panel-inert`), so a
    * selection left behind is not obviously live — it just quietly decides
    * which key the next button press rewrites.
+   *
+   * Only while this tab is on screen — it stays mounted behind every other
+   * tab, and an Escape or a click on Home is not about this board — and never
+   * for a click that navigates: dropping the key there also dropped what was
+   * staged for it, before the leave prompt could ask (NAVIGATION_SURFACES).
    */
   useEffect(() => {
+    if (!onScreen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setSel(null);
     };
     const onDown = (e: PointerEvent) => {
       const el = e.target as HTMLElement | null;
       if (!el || el.closest('.kbkey, .kbmap, .keeps-selection, [role="dialog"]')) return;
+      if (el.closest(NAVIGATION_SURFACES)) return;
       setSel(null);
     };
     window.addEventListener('keydown', onKey);
@@ -92,7 +101,7 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('pointerdown', onDown);
     };
-  }, []);
+  }, [onScreen]);
 
   // Reads the CURRENT device state for whichever layer is active — the base
   // layer previously had no read at all (readFnLayer always returned {}, and
@@ -198,7 +207,15 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') return;
       const el = document.activeElement as HTMLElement | null;
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable))
+      // A dialog over the board (the leave prompt, Reset all) owns its keys:
+      // Enter there answers it, and must not be staged as the remap.
+      if (
+        el &&
+        (el.tagName === 'INPUT' ||
+          el.tagName === 'TEXTAREA' ||
+          el.isContentEditable ||
+          el.closest('[role="dialog"]'))
+      )
         return;
       e.preventDefault();
       e.stopPropagation();
@@ -243,17 +260,44 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
   const reservedText = (label?: string) =>
     label ? `${t('remap.reserved')} — ${label}` : t('remap.reserved');
 
+  /** Resolves whether the write landed. */
   const assign = async (
     code: string,
     label = layer === 'fn' ? t('remap.write.fn') : t('remap.write.base'),
-  ) => {
-    if (selSlot === null) return;
+  ): Promise<boolean> => {
+    if (selSlot === null) return false;
     const r = await run(label, () => sd.setKeyRemap(device.id, layer, selSlot, code));
     // Re-read so the new binding shows on the board immediately instead of
     // only after the pane remounts. This IS the verification — the driver
     // deliberately does no read-back of its own (see setKeyRemap).
     if (r.ok) reload();
+    return r.ok;
   };
+
+  /**
+   * A staged pick is lost by leaving this tab, its layer or the device's tab,
+   * so those ask first (state/leaveGuard.ts). Named the way the panel says it:
+   * the key by what it types on the base layer, the pick by what it will send.
+   */
+  usePendingChange(device.id, {
+    dirty: dirty && !locked,
+    label: () => {
+      const base = factoryCode(selEntry);
+      const key = base ? keyNameForCode(base) : (selEntry?.label ?? '');
+      const action =
+        pick.quad !== null
+          ? quadLabel(quadBytes(pick.quad), t)
+          : pick.usages.length
+            ? pick.usages.map((u) => keyNameForCode(u.toString(16))).join(' + ')
+            : t('remap.staged.none');
+      return t(layer === 'fn' ? 'leave.what.remapFn' : 'leave.what.remap', { key, action });
+    },
+    commit: async () => {
+      const ok = await assign(pickAction(pick));
+      if (ok) setStaged(null);
+      return ok;
+    },
+  });
 
   /** Put one key back to whatever the factory layout says it sends — which on
    *  the Fn layer is usually "nothing", i.e. usage 0. */
@@ -343,7 +387,7 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
   const bindingLabel = (b: KeyBinding | undefined): string | undefined => {
     if (!b || b.kind === 'unused') return undefined;
     if (b.label) return quadLabel(b.raw, t);
-    return b.code ? labelForCode(b.code) : undefined;
+    return b.code ? keyNameForCode(b.code) : undefined;
   };
 
   /** The same thing at keycap size — see KeyBinding.shortLabel. A 1u cap fits
@@ -509,7 +553,7 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
                   onClick={resetKey}
                 >
                   {t('remap.resetKey')}
-                  {selFactory.kind === 'usage' ? ` (${labelForCode(selFactory.code)})` : ''}
+                  {selFactory.kind === 'usage' ? ` (${keyNameForCode(selFactory.code)})` : ''}
                 </button>
                 <Tooltip text={layer === 'fn' ? t('remap.clear.tip') : t('remap.disable.tip')}>
                   <button
@@ -576,8 +620,8 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
                         <span key={u} className="remap-staged-key">
                           {i > 0 && <span className="remap-plus">+</span>}
                           <KeyCap
-                            label={labelForCode(u.toString(16))}
-                            face={usageFace(u, labelForCode(u.toString(16)))}
+                            label={keyNameForCode(u.toString(16))}
+                            face={usageFace(u, keyNameForCode(u.toString(16)))}
                             small
                           />
                         </span>

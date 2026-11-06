@@ -32,7 +32,7 @@ export interface BackgroundDef {
    *  and in the picker's thumbnail — chosen to be a good-looking one. */
   still: number;
   /** Its own colours, for when "Use palette colours" is off: [main, second].
-   *  One pair: the background is a night sky in both themes (palette.ts). */
+   *  One pair for night and day: the daylight version lights the same two. */
   natural: [Rgb, Rgb];
   /** The fragment shader's `main()`, after shaders/common.ts. */
   frag: string;

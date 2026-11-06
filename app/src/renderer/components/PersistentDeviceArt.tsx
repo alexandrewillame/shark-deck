@@ -173,7 +173,7 @@ export function PersistentDeviceArt() {
     device && colorPreview?.deviceId === device.id
       ? colorPreview.variant
       : (device?.colorVariant ?? null);
-  const resolvedSrc = device ? resolveDeviceArt(device.model, colorVariant, device.art) : null;
+  const resolvedSrc = device ? resolveDeviceArt(device.ui.artKey, colorVariant, device.art) : null;
   const [contentBox, setContentBox] = useState<ContentBox | null>(null);
   useEffect(() => {
     if (!resolvedSrc || (mode !== 'keyboard' && mode !== 'interactive')) {
@@ -273,7 +273,7 @@ export function PersistentDeviceArt() {
         <DeviceArt
           kind={device.kind}
           art={device.art}
-          model={device.model}
+          artKey={device.ui.artKey}
           colorVariant={colorVariant}
           layout={device.ui.keyMatrix?.layout}
         />

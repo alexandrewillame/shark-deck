@@ -16,8 +16,9 @@ import { KB_TRAVEL_RANGE } from '@shared/keyboard-travel';
  *  settable actuation at 3.4 mm, and every `step` here was a hand-typed 0.05
  *  rather than the table's own — which put the handle on values the firmware
  *  rounds away. Rapid trigger reads `T.rt`, not `T.travel`: it used to borrow
- *  the actuation row and so offered 0.01-2.5 mm with a 1.5 mm default. */
-const T = KB_TRAVEL_RANGE;
+ *  the actuation row and so offered 0.01-2.5 mm with a 1.5 mm default.
+ *  The ranges are the board's own (the `ranges` prop), defaulting to the
+ *  R85HE-calibrated KB_TRAVEL_RANGE. */
 
 /** The stage's own settings, by their `MagneticKeySettings` field name — the
  *  keys of the `mixed` map a multi-key selection passes down. */
@@ -190,7 +191,13 @@ export function SwitchTravelStage({
   onDeadZoneBottomChange,
   onRtPressChange,
   onRtReleaseChange,
+  ranges = KB_TRAVEL_RANGE,
+  showTopDeadZone = true,
 }: {
+  /** this board's own limits (`travelRangesFor(device.ui.magnetic)`) */
+  ranges?: typeof KB_TRAVEL_RANGE;
+  /** the top dead zone (page 251) exists on this board */
+  showTopDeadZone?: boolean;
   actuationMm: number;
   releaseMm?: number;
   rapidTrigger?: boolean;
@@ -219,6 +226,7 @@ export function SwitchTravelStage({
   onRtPressChange: (v: number, live?: boolean) => void;
   onRtReleaseChange: (v: number, live?: boolean) => void;
 }) {
+  const T = ranges;
   const t = useT();
   /** A delta drawn from the top of the axis — the track's length IS the value. */
   const rtTrack = (
@@ -309,26 +317,28 @@ export function SwitchTravelStage({
 
         {/* Both dead zones in one column: opposite ends of the same axis. */}
         <Col>
-          <TravelSlider
-            label={
-              <InfoLabel
-                stack
-                label={t('act.dz.top')}
-                text={t('act.dz.top.tip')}
-                media={<TopDeadZoneMedia />}
-              />
-            }
-            fromMm={0}
-            toMm={1}
-            value={deadZoneMm ?? T.deadzone.default}
-            min={T.deadzone.min}
-            max={T.deadzone.max}
-            step={T.deadzone.step}
-            hatched
-            mixed={mixed?.deadZoneMm}
-            mixedValues={distinct?.deadZoneMm}
-            onChange={onDeadZoneChange}
-          />
+          {showTopDeadZone && (
+            <TravelSlider
+              label={
+                <InfoLabel
+                  stack
+                  label={t('act.dz.top')}
+                  text={t('act.dz.top.tip')}
+                  media={<TopDeadZoneMedia />}
+                />
+              }
+              fromMm={0}
+              toMm={1}
+              value={deadZoneMm ?? T.deadzone.default}
+              min={T.deadzone.min}
+              max={T.deadzone.max}
+              step={T.deadzone.step}
+              hatched
+              mixed={mixed?.deadZoneMm}
+              mixedValues={distinct?.deadZoneMm}
+              onChange={onDeadZoneChange}
+            />
+          )}
           <TravelSlider
             label={
               <InfoLabel

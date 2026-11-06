@@ -16,3 +16,9 @@ src/shared/mouse-options.ts
 
 # Raw vendor protocol dumps (48k lines, incl. a 2.6 MB single-line bundle).
 scripts/_raw/
+
+# Written by their own scripts, kept in those scripts' format: the art manifest
+# (scripts/build-device-art.py, also hand-edited for per-photo hints) and the
+# sharkfin layout fixture, which stays byte-for-byte what sharkfin publishes.
+assets/devices/manifest.json
+test/fixtures/sharkfin/

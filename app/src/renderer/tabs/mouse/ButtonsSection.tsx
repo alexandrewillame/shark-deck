@@ -16,6 +16,7 @@ import {
   V8_BUTTON_ACTION_KEYS,
 } from '@shared/mouse-buttons';
 import { ALL_KEYS } from '@shared/keys';
+import { buttonActionAllowed } from '@shared/menuGates';
 import type { ButtonMapping } from '@shared/types/mouse-settings';
 
 /**
@@ -51,7 +52,12 @@ export function ButtonsSection({
   const allow = device.ui.buttonActions?.length
     ? device.ui.buttonActions
     : (V8_BUTTON_ACTION_KEYS as readonly string[]);
-  const actions = BUTTON_ACTIONS_TREE.filter((a) => allow.includes(a.key));
+  // ...and of those, only the ones whose feature this model has: a macro
+  // button on a mouse with no macros, or a DPI-LED toggle on one with no DPI
+  // LED, would be an option that does nothing (shared/menuGates.ts).
+  const actions = BUTTON_ACTIONS_TREE.filter(
+    (a) => allow.includes(a.key) && buttonActionAllowed(a.key, device),
+  );
 
   // No heading of its own: the pane above is already titled "Buttons", and
   // the table names its columns.

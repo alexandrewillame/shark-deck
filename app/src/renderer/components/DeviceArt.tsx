@@ -13,11 +13,11 @@ import { DEVICE_ART } from './deviceArtAssets';
  * duplicating the variant table lookup.
  */
 export function resolveDeviceArt(
-  model: string | undefined,
+  artKey: string | undefined,
   colorVariant: string | null | undefined,
   art: string | null,
 ): string | null {
-  const variantArt = model && colorVariant ? DEVICE_ART[model]?.[colorVariant] : undefined;
+  const variantArt = artKey && colorVariant ? DEVICE_ART[artKey]?.[colorVariant] : undefined;
   return variantArt ?? art;
 }
 
@@ -43,14 +43,14 @@ export function resolveDeviceArt(
 export function DeviceArt({
   kind,
   art,
-  model,
+  artKey,
   colorVariant,
   layout,
 }: {
   kind: DeviceKind;
   art: string | null;
-  /** LiveDevice.model — resolves a colour variant photo via deviceArtAssets.ts */
-  model?: string;
+  /** `DeviceUi.artKey` — resolves a colour variant photo via deviceArtAssets.ts */
+  artKey?: string;
   /** LiveDevice.colorVariant */
   colorVariant?: string | null;
   /** `LiveDevice.ui.keyMatrix.layout`. The generated keyboard silhouette is
@@ -60,7 +60,7 @@ export function DeviceArt({
   const uid = useId();
   const gid = `dvart-${uid}`;
 
-  const resolvedArt = resolveDeviceArt(model, colorVariant, art);
+  const resolvedArt = resolveDeviceArt(artKey, colorVariant, art);
   // Sizing is left entirely to the parent's CSS (`.card .art img`, `.ov-art
   // img`, …) via `object-fit: contain` — an inline max-height/max-width here
   // used to win over those rules by specificity and, worse, silently failed

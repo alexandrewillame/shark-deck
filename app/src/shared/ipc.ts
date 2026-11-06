@@ -278,6 +278,12 @@ export interface Api {
 
   // ---- backup / restore --------------------------------------------------
   backupNow(deviceId: string): Promise<BackupInfo>;
+  /**
+   * The user's one-time OK to write to a device whose backup cannot hold every
+   * setting (`LiveDevice.backupWaiver`), kept per model + firmware. Not a
+   * device write: it lets the next one through `guardedWrite`.
+   */
+  acknowledgeNoBackup(deviceId: string): Promise<void>;
   listBackups(deviceId: string): Promise<BackupInfo[]>;
   restoreBackup(deviceId: string, file: string): Promise<WriteResult>;
   /** Delete one of this device's backups. Never touches the device itself. */
@@ -349,6 +355,13 @@ export interface Api {
   windowStartDrag(): Promise<void>;
   windowEndDrag(): Promise<void>;
 
+  // ---- leaving with changes nobody applied (renderer/state/leaveGuard.ts) ----
+  /** Whether any screen holds such a change. While it does, the desktop holds
+   *  a quit and sends `app:quitRequested` instead, so the renderer can ask. */
+  setPendingChanges(pending: boolean): Promise<void>;
+  /** Quit without asking again: the user answered the renderer's prompt. */
+  quitApp(): Promise<void>;
+
   // ---- diagnostics -------------------------------------------------
   getFrameLog(): Promise<FrameLogEntry[]>;
   clearFrameLog(): Promise<void>;
@@ -381,6 +394,9 @@ export interface Events {
   'profiles:progress': { deviceId: string; slot: number; total: number };
   /** the custom titlebar's maximize glyph tracks this */
   'window:maximized': boolean;
+  /** A quit was held because a change was never applied (see `setPendingChanges`):
+   *  the window is on screen again, and the renderer asks before calling `quitApp`. */
+  'app:quitRequested': void;
   /** OS dark-mode preference changed; the renderer re-applies `themeMode: 'system'` */
   'nativeTheme:changed': { dark: boolean };
   /**

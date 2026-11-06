@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import type { LiveDevice } from '@shared/types/live';
 import type { MessageKey } from '@shared/i18n';
-import { hasAny } from '@shared/capabilities';
+import { configurable, gate } from '@shared/menuGates';
 import type { TabProps } from './common';
 import type { IconName } from '../components/icons';
 import { ProfileTab } from './ProfileTab';
@@ -45,14 +45,6 @@ export interface TabDef {
   profileScoped?: boolean;
 }
 
-const LIGHTING_CAPS = [
-  'perKeyLighting',
-  'sideLighting',
-  'mouseLighting',
-  'dpiIndicatorLed',
-  'receiverLed',
-] as const;
-
 /**
  * The device-config shell shows a small set of tabs, driven entirely by
  * capability: Overview (handled by the shell itself), Profile (onboard/
@@ -61,10 +53,20 @@ const LIGHTING_CAPS = [
  * feature — each used to be a section stacked inside Profile or Device, but
  * a device with several of them made those two tabs long and the individual
  * features hard to find, so they're promoted to their own top-level tabs.
- * Device (firmware, pairing, restore) always appears last.
+ * Device (firmware, pairing, restore) always appears last. Which tabs exist is
+ * decided by shared/menuGates.ts, the same table each tab's controls use.
  */
 export function configTabs(device: LiveDevice): TabDef[] {
-  const caps = device.capabilities;
+  const deviceTab: TabDef = {
+    id: 'device',
+    labelKey: 'cfg.tab.device',
+    descKey: 'cfg.tab.device.desc',
+    icon: 'chip',
+    component: DeviceTab,
+  };
+  // Not identified yet, or a device Shark Deck leaves alone: what it is, and
+  // nothing to set (see `configurable`).
+  if (!configurable(device)) return [deviceTab];
   // A keyboard's onboard slot holds its actuation settings and nothing else —
   // see TabDef.profileScoped. Its first tab then has nothing per-profile in
   // it, so it is not called "Profile" either.
@@ -79,7 +81,7 @@ export function configTabs(device: LiveDevice): TabDef[] {
       component: ProfileTab,
     },
   ];
-  if (caps.includes('buttonRemap')) {
+  if (gate('tab.buttons', device)) {
     tabs.push({
       id: 'buttons',
       profileScoped: true,
@@ -89,7 +91,7 @@ export function configTabs(device: LiveDevice): TabDef[] {
       component: ButtonsTab,
     });
   }
-  if (hasAny(caps, ['keyRemap', 'fnLayer'])) {
+  if (gate('tab.keys', device)) {
     tabs.push({
       id: 'keys',
       profileScoped: !kb,
@@ -99,7 +101,7 @@ export function configTabs(device: LiveDevice): TabDef[] {
       component: KeysTab,
     });
   }
-  if (caps.includes('magneticSwitches')) {
+  if (gate('tab.actuation', device)) {
     tabs.push({
       id: 'actuation',
       profileScoped: true,
@@ -109,7 +111,7 @@ export function configTabs(device: LiveDevice): TabDef[] {
       component: ActuationTab,
     });
   }
-  if (caps.includes('macros')) {
+  if (gate('tab.macros', device)) {
     tabs.push({
       id: 'macros',
       profileScoped: !kb,
@@ -119,7 +121,7 @@ export function configTabs(device: LiveDevice): TabDef[] {
       component: MacrosTab,
     });
   }
-  if (hasAny(caps, [...LIGHTING_CAPS])) {
+  if (gate('tab.lighting', device)) {
     tabs.push({
       id: 'lighting',
       profileScoped: !kb,
@@ -129,12 +131,6 @@ export function configTabs(device: LiveDevice): TabDef[] {
       component: LightingTab,
     });
   }
-  tabs.push({
-    id: 'device',
-    labelKey: 'cfg.tab.device',
-    descKey: 'cfg.tab.device.desc',
-    icon: 'chip',
-    component: DeviceTab,
-  });
+  tabs.push(deviceTab);
   return tabs;
 }

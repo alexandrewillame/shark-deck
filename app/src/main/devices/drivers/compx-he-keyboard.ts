@@ -27,7 +27,8 @@ import { toHex } from '../../hid/frame';
 import { KB_MAGNETISM_PAGE_CHUNKS } from '@shared/keyboard-options';
 import { KB_TRAVEL_RANGE } from '@shared/keyboard-travel';
 import { dksZoneBytes, dksZonesFrom } from '@shared/dks';
-import type { MagneticWriteOpts, TravelSample } from './base';
+import { layoutAddressable } from '@shared/menuGates';
+import type { BackupPolicy, MagneticWriteOpts, TravelSample } from './base';
 import { frameLog } from '../../diagnostics';
 
 /**
@@ -259,10 +260,28 @@ export function snapPairMismatch(keys: MagneticKeySettings[]): string | null {
   return null;
 }
 
+/** One key magnetism is read and written for. */
+interface MagKey {
+  slot: number;
+  row: number;
+  col: number;
+}
+
+/**
+ * The family's key matrix: 21 columns of 6 rows, slot = col * 6 + row — the
+ * per-key LED map's size (126 slots x 3 bytes, see compx-keyboard.ts). The
+ * magnetism pages have 128 slots; the last two are not keys (slot 126 holds a
+ * constant word at rest on an R85HE, see readTravel).
+ */
+const MATRIX_ROWS = 6;
+const MATRIX_SLOTS = 126;
+
 export class CompxHeKeyboard extends CompxKeyboard {
   private _travelMult: number | null = null;
   /** The board's real key slots, built once from its layout — see readTravel. */
   private _keySlots: ReadonlySet<number> | null = null;
+  /** The keys magnetism addresses, once resolved — see magneticKeys. */
+  private _magKeys: MagKey[] | null = null;
   /** Off-layout travel slots already written to the frame log this session. */
   private readonly _travelNoted = new Set<number>();
 
@@ -419,9 +438,71 @@ export class CompxHeKeyboard extends CompxKeyboard {
     });
   }
 
-  override async readMagnetic(): Promise<MagneticKeySettings[]> {
+  /**
+   * The keys magnetism is read and written for.
+   *
+   * A board whose layout names every key's slot (shared/menuGates.ts
+   * `layoutAddressable`) uses its layout. Any other board — most of the line,
+   * until its slot map is known — uses the slots its own base keymap binds: a
+   * slot with a key on it is a key, wherever on the board it sits. Their
+   * row/col are the slot's own matrix position (slot = col * 6 + row), which
+   * is all a whole-board write needs; nothing per-key is offered for such a
+   * board (handlers.ts refuses it). Never the layout array index: that is how
+   * a write lands on the wrong key.
+   *
+   * A bound slot is not always a switch: a knob's turn and press are bound
+   * too (Volume up / down / mute on an R85HE's slots 90-92). What tells them
+   * apart is the magnetism: a real switch carries its factory dead zones and
+   * rapid-trigger points even if nobody ever touched it, and a knob's slot is
+   * 0 on every page, like an empty one. Read on an R85HE (fw 5.11): all 79
+   * keys non-zero, the knob's three slots and every empty slot zero on all of
+   * travel, release, RT press and bottom dead zone. A slot the travel page
+   * marks with the "no switch" sentinel (0xFFFF) is dropped as well.
+   *
+   * `provenance: verified-capture` for that rule on the R85HE (the bound,
+   * configured slots are exactly its verified layout's 79 — scripts/
+   * verify-identity.ts); `inferred` for every board without a verified map.
+   */
+  protected async magneticKeys(): Promise<MagKey[] | null> {
+    if (this._magKeys) return this._magKeys;
     const km = this.d.spec.keyMatrix;
-    if (!km?.layout) return [];
+    if (km?.layout && layoutAddressable({ keyMatrix: km })) {
+      this._magKeys = km.layout.map((k) => ({ slot: k.slot!, row: k.row, col: k.col }));
+      return this._magKeys;
+    }
+    const base = await this.readKeyBindings('base');
+    // A sweep that stopped part way returns the chunks it got; a key list
+    // built from it would leave the rest of the board out of every write.
+    if (!base || Object.keys(base).length < MATRIX_SLOTS) return null;
+    const travel = await this.readMagnetismPage(MM_PAGE.TRAVEL);
+    if (!travel) return null;
+    const pages = [travel];
+    for (const page of [MM_PAGE.RELEASE, MM_PAGE.RT_PRESS, MM_PAGE.DEADZONE_BOTTOM]) {
+      const values = await this.readMagnetismPage(page);
+      if (values) pages.push(values);
+    }
+    const configured = (slot: number) =>
+      pages.some((page) => {
+        const v = page[slot] ?? 0;
+        return v !== 0 && v !== 0xffff;
+      });
+    const keys: MagKey[] = [];
+    for (const b of Object.values(base)) {
+      if (b.slot >= MATRIX_SLOTS || b.kind === 'unused') continue;
+      if ((travel[b.slot] ?? 0) === 0xffff || !configured(b.slot)) continue;
+      keys.push({ slot: b.slot, row: b.slot % MATRIX_ROWS, col: Math.floor(b.slot / MATRIX_ROWS) });
+    }
+    // Bound slots, none of them configured: nothing tells keys from knobs, so
+    // no key list — a whole-board write is refused rather than guessed.
+    if (!keys.length) return null;
+    keys.sort((a, b) => a.slot - b.slot);
+    this._magKeys = keys;
+    return keys;
+  }
+
+  override async readMagnetic(): Promise<MagneticKeySettings[]> {
+    const keyList = await this.magneticKeys();
+    if (!keyList?.length) return [];
     // MODES and TRAVEL are not optional extras: between them they ARE the key
     // — its mode, its rapid-trigger bit, its actuation point. Every other page
     // below is read only when some key's mode calls for it, so `?? []` there
@@ -459,10 +540,7 @@ export class CompxHeKeyboard extends CompxKeyboard {
     const mtHold = anyMt ? ((await this.readMagnetismPage(MM_PAGE.MT)) ?? []) : [];
     // slot -> key, for turning a partner slot back into a row/col
     const bySlot = new Map<number, { row: number; col: number }>();
-    for (let li = 0; li < km.layout.length; li++) {
-      const e = km.layout[li]!;
-      bySlot.set(e.slot ?? li, { row: e.row, col: e.col });
-    }
+    for (const e of keyList) bySlot.set(e.slot, { row: e.row, col: e.col });
     const dzTop = (await this.readMagnetismPage(MM_PAGE.DEADZONE_TOP)) ?? [];
     const dzBottom = (await this.readMagnetismPage(MM_PAGE.DEADZONE_BOTTOM)) ?? [];
     // Resolved ONCE for the whole sweep — see mmToUnitsWith's comment.
@@ -487,11 +565,10 @@ export class CompxHeKeyboard extends CompxKeyboard {
       page[i] === undefined ? undefined : this.unitsToMmWith(page[i]!, mult);
 
     const out: MagneticKeySettings[] = [];
-    for (let li = 0; li < km.layout.length; li++) {
-      const k = km.layout[li]!;
+    for (const k of keyList) {
       // page arrays are indexed by the firmware matrix slot, not the layout
       // array position — see ANSI_79_SG9047 in shared/layouts.ts.
-      const i = k.slot ?? li;
+      const i = k.slot;
       const modeByte = modes[i] ?? 0;
       const modeNum = modeByte & MODE_MASK;
       const snap = isSnapNum(modeNum);
@@ -782,13 +859,24 @@ export class CompxHeKeyboard extends CompxKeyboard {
   override async restoreDefaults(): Promise<WriteResult> {
     const r = await super.restoreDefaults();
     if (r.ok) await this.saveZoneRecord({});
+    // A factory reset rewrites the keymap the key list came from.
+    this._magKeys = null;
     return r;
   }
 
   override async setMagneticGlobal(mm: number): Promise<WriteResult> {
-    const km = this.d.spec.keyMatrix;
     const units = await this.mmToUnits(mm);
-    const slots = km?.layout?.map((e) => e.slot).filter((s): s is number => s !== undefined) ?? [];
+    // Every key the board has, layout or not — this used to take its slots
+    // from the layout alone, and so wrote nothing at all to a board without one.
+    const keyList = await this.magneticKeys();
+    if (!keyList) {
+      return {
+        ok: false,
+        verified: 'unverified',
+        error: 'Could not read which keys the board has',
+      };
+    }
+    const slots = keyList.map((k) => k.slot);
     const frames: string[] = [];
     for (const [i, slot] of slots.entries()) {
       // Paced, like every other multi-write path here (setMagneticKey,
@@ -937,12 +1025,11 @@ export class CompxHeKeyboard extends CompxKeyboard {
   ): Promise<
     { writes: Array<{ page: number; slot: number; value: number | number[] }> } | { error: string }
   > {
-    const km = this.d.spec.keyMatrix;
-    if (!km?.layout) return { error: 'Magnetic switches not supported' };
-    const entry = km.layout.find((e) => e.row === k.row && e.col === k.col);
-    if (!entry || entry.slot === undefined) {
-      return { error: `key ${k.row},${k.col} not in matrix` };
-    }
+    const keyList = await this.magneticKeys();
+    if (!keyList) return { error: 'Could not read which keys the board has' };
+    const at = (row: number, col: number) => keyList.find((e) => e.row === row && e.col === col);
+    const entry = at(k.row, k.col);
+    if (!entry) return { error: `key ${k.row},${k.col} not in matrix` };
     const slot = entry.slot;
 
     const writes: Array<{ page: number; slot: number; value: number | number[] }> = [];
@@ -1074,7 +1161,7 @@ export class CompxHeKeyboard extends CompxKeyboard {
     // never released A's previous partner, which went on naming it.
     let partnerSlot: number = SOCD_NO_PARTNER;
     if (k.mode === 'snap' && k.socdPartner) {
-      const p = km.layout.find((e) => e.row === k.socdPartner!.row && e.col === k.socdPartner!.col);
+      const p = at(k.socdPartner.row, k.socdPartner.col);
       if (p?.slot === undefined) {
         return {
           error: `snap-tap partner ${k.socdPartner.row},${k.socdPartner.col} not in matrix`,
@@ -1085,9 +1172,7 @@ export class CompxHeKeyboard extends CompxKeyboard {
     }
     const prevPartnerSlot = (() => {
       if (!prev || prev.mode !== 'snap' || !prev.socdPartner) return SOCD_NO_PARTNER;
-      const p = km.layout.find(
-        (e) => e.row === prev.socdPartner!.row && e.col === prev.socdPartner!.col,
-      );
+      const p = at(prev.socdPartner.row, prev.socdPartner.col);
       return p?.slot ?? SOCD_NO_PARTNER;
     })();
     // Without a previous state, write it: a key that was paired in the vendor
@@ -1211,6 +1296,8 @@ export class CompxHeKeyboard extends CompxKeyboard {
    * into the enable.
    */
   override async startTravelStream(): Promise<TravelStreamResult> {
+    // The stream is pushed input reports, which a receiver does not carry.
+    if (this.relayed) return { ok: false, unsupported: true, error: 'needs the cable' };
     try {
       await this.ch.write(this.frame(KB_CMD.SET_MAGNETISM_REPORT, [1]));
       if (this.settleMs) await delay(this.settleMs);
@@ -1297,7 +1384,10 @@ export class CompxHeKeyboard extends CompxKeyboard {
     if (this._keySlots) return this._keySlots;
     const layout = this.d.spec.keyMatrix?.layout;
     if (!layout) return null;
-    this._keySlots = new Set(layout.map((e, li) => e.slot ?? li));
+    const slots = layout.map((e) => e.slot).filter((x): x is number => x !== undefined);
+    // A layout without slots names no keys; the stream then reports every slot.
+    if (!slots.length) return null;
+    this._keySlots = new Set(slots);
     return this._keySlots;
   }
 
@@ -1326,6 +1416,18 @@ export class CompxHeKeyboard extends CompxKeyboard {
     // the MCU, fired by ensureBackup() before the first write from any tab.
     // Every page is captured properly by the backup() override below.
     return super.backupCommands();
+  }
+
+  /** …and every key's mode and actuation point, which between them are the key. */
+  override backupPolicy(): BackupPolicy {
+    return {
+      kind: 'full',
+      required: [
+        ...super.backupPolicy().required,
+        `magnetism_page_${MM_PAGE.MODES}`,
+        `magnetism_page_${MM_PAGE.TRAVEL}`,
+      ],
+    };
   }
 
   override async backup(): Promise<Record<string, string>> {
@@ -1385,8 +1487,9 @@ export class CompxHeKeyboard extends CompxKeyboard {
   override async restoreFromBackup(blocks: Record<string, string>): Promise<WriteResult> {
     const results: WriteResult[] = [];
 
-    const km = this.d.spec.keyMatrix;
-    const slots = km?.layout?.map((e) => e.slot).filter((s): s is number => s !== undefined) ?? [];
+    // The same keys every other magnetism path addresses — a board without a
+    // layout restored nothing at all when this took them from the layout.
+    const slots = ((await this.magneticKeys()) ?? []).map((k) => k.slot);
 
     const pages = new Map<number, unknown[]>();
     for (const [name, value] of Object.entries(blocks)) {

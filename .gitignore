@@ -38,7 +38,6 @@ tooltip-animations-preview.html
 # tracked; settings.local.json is each person's own.
 .claude/settings.local.json
 
-# NOTE: app/scripts/_raw/ is deliberately NOT ignored. It looks generated, and
-# `npm run extract*` does regenerate it, but three tests read it as a fixture
-# (kb-commands.test.ts, shared/lighting.test.ts) so CI needs it checked in.
-# It is excluded from *search* via the root .ignore file instead.
+# app/scripts/_raw/ is ignored by app/.gitignore: extracted vendor data, the
+# sharkfin download and the art cache. The tests that read it skip when it is
+# absent. It is also excluded from *search* via the root .ignore file.

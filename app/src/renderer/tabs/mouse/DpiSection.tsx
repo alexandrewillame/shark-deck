@@ -12,6 +12,7 @@ import {
   Loading,
 } from '../common';
 import { useT } from '../../state/i18n';
+import { Gated } from '../../components/Gated';
 import { hexToRgb, rgbToHex } from '../../colorUtil';
 import { ColorPickerField } from '../../components/ColorPickerField';
 import { InfoLabel } from '../../components/InfoLabel';
@@ -28,7 +29,12 @@ import {
 
 export function DpiSection({ device }: TabProps) {
   const t = useT();
-  const rng = device.ui.dpiRange ?? { min: 100, max: 26000, step: 50, stages: 6 };
+  // The gate (shared/menuGates.ts) only opens this section for a model that
+  // declares a DPI range; the fallback is never drawn, it only keeps the hooks
+  // below unconditional.
+  const rng = device.ui.dpiRange ?? { min: 100, max: 26000, step: 50, stages: MAX_STAGES };
+  // The model's own stage count (8 on some mice), not one global constant.
+  const maxStages = rng.stages || MAX_STAGES;
   const {
     data: rawStages,
     setData,
@@ -43,8 +49,8 @@ export function DpiSection({ device }: TabProps) {
   // (always a new object) never settled — a self-sustaining render loop once a
   // DPI read succeeds.
   const stages = useMemo(
-    () => (rawStages ? rawStages.slice(0, MAX_STAGES) : rawStages),
-    [rawStages],
+    () => (rawStages ? rawStages.slice(0, maxStages) : rawStages),
+    [rawStages, maxStages],
   );
   const { queue, flush, commit } = useAutoWrite(250, { deviceId: device.id });
 
@@ -112,11 +118,11 @@ export function DpiSection({ device }: TabProps) {
     setData(stages.map((x, j) => (j === i ? { ...x, ...p } : x)));
   };
   const addStage = () => {
-    if (!stages || stages.length >= MAX_STAGES) return;
+    if (!stages || stages.length >= maxStages) return;
     const prevDpi = stages[stages.length - 1]?.dpi ?? rng.min;
     // A proportional jump (not a fixed +4 steps) so a new stage is visibly
     // distinct from the last one even inside a zoomed-in auto window.
-    const dpi = Math.min(rng.max, Math.round((prevDpi * 1.5) / rng.step) * rng.step);
+    const dpi = snapDpi(prevDpi * 1.5, rng);
     const color = pickNewStageColor(
       stages.map((s) => s.color),
       stages.length,
@@ -227,8 +233,7 @@ export function DpiSection({ device }: TabProps) {
     const usable = Math.max(1, rect.width - thumb);
     const frac = clamp01((clientX - rect.left - thumb / 2) / usable);
     const raw = win.min + frac * (win.max - win.min);
-    const stepped = Math.round(raw / rng.step) * rng.step;
-    return Math.min(rng.max, Math.max(rng.min, stepped));
+    return snapDpi(raw, rng);
   };
 
   return (
@@ -461,10 +466,10 @@ export function DpiSection({ device }: TabProps) {
               </div>
             </div>
             <span className="dpi-track-end mono">{win.max}</span>
-            <Tooltip text={stages.length >= MAX_STAGES ? t('dpi.maxStages') : t('dpi.add')}>
+            <Tooltip text={stages.length >= maxStages ? t('dpi.maxStages') : t('dpi.add')}>
               <button
                 className="btn icon-only dpi-add"
-                disabled={stages.length >= MAX_STAGES}
+                disabled={stages.length >= maxStages}
                 onClick={addStage}
                 aria-label={t('dpi.add')}
               >
@@ -524,17 +529,21 @@ export function DpiSection({ device }: TabProps) {
                     }}
                   />
                   <span style={{ color: 'var(--text-mut)', fontSize: 12 }}>DPI</span>
-                  <Tooltip text={t('common.colour')}>
-                    <ColorPickerField
-                      value={rgbToHex(s.color)}
-                      onChange={(hex) => patch(i, { color: hexToRgb(hex) })}
-                    />
-                  </Tooltip>
+                  {/* Only a model whose DPI indicator shows a colour per
+                      stage gets a colour per stage (shared/menuGates.ts). */}
+                  <Gated id="dpi.stageColors" device={device}>
+                    <Tooltip text={t('common.colour')}>
+                      <ColorPickerField
+                        value={rgbToHex(s.color)}
+                        onChange={(hex) => patch(i, { color: hexToRgb(hex) })}
+                      />
+                    </Tooltip>
+                  </Gated>
                   {/* Removing is the only way to change how many stages the
                       mouse cycles — the wire has no per-stage disable, so the
                       row's old enable toggle could only ever pretend. Disabled
                       rather than hidden at MIN_STAGES, mirroring how the add
-                      button handles MAX_STAGES above. */}
+                      button handles the stage limit above. */}
                   <Tooltip
                     text={stages.length <= MIN_STAGES ? t('dpi.minStages') : t('dpi.remove')}
                   >

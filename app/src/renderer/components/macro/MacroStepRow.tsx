@@ -1,8 +1,8 @@
-import { ALL_KEYS, labelForCode } from '@shared/keys';
+import { ALL_KEYS } from '@shared/keys';
 import { Select, Tooltip } from '../common';
 import { Icon } from '../icons';
 import { useT } from '../../state/i18n';
-import { useIsMac } from '../../state/shortcuts';
+import { keyName, keyNameForCode, useIsMac } from '../../state/shortcuts';
 import { MOUSE_BUTTONS, type GroupKind, type MacroGroup } from './macroUtils';
 
 /**
@@ -59,7 +59,7 @@ export function MacroStepRow({
           MOUSE_BUTTONS.find((b) => b.value === Number(group.value))?.labelKey ??
             'macro.mouse.left',
         )
-      : labelForCode(String(group.value ?? ''));
+      : keyNameForCode(String(group.value ?? ''));
 
   const kindHint = isWait
     ? t('macro.step.wait.hint')
@@ -146,10 +146,10 @@ export function MacroStepRow({
                 // table does not list; keep it selectable instead of silently
                 // snapping the row to another key.
                 ALL_KEYS.some((k) => k.code === String(group.value))
-                  ? ALL_KEYS.map((k) => ({ value: k.code, label: k.label }))
+                  ? ALL_KEYS.map((k) => ({ value: k.code, label: keyName(k.code, k.label) }))
                   : [
                       { value: String(group.value ?? ''), label: targetLabel },
-                      ...ALL_KEYS.map((k) => ({ value: k.code, label: k.label })),
+                      ...ALL_KEYS.map((k) => ({ value: k.code, label: keyName(k.code, k.label) })),
                     ]
               }
               onChange={(v) => onChange({ ...group, value: v })}

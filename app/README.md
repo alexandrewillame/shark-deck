@@ -69,9 +69,9 @@ npm run dist            # -> ../dist/installer/SharkDeck-Setup-<ver>.exe   (NSIS
 npm run dist:portable   # portable target only
 
 # macOS
-npm run dist:mac         # -> ../dist/installer/SharkDeck-<ver>-<arch>.dmg   (drag-to-Applications)
-                        #    ../dist/portable/SharkDeck-<ver>-<arch>.zip     (relocatable .app)
-                        #    ../dist/app/SharkDeck.app                      (unpacked, runnable)
+npm run dist:mac         # -> ../dist/installer/SharkDeck-<ver>-{x64,arm64}.dmg     (drag-to-Applications)
+                        #    ../dist/portable/SharkDeck-<ver>-mac.zip, -arm64-mac.zip  (relocatable .app)
+                        #    ../dist/app/mac{,-arm64}/SharkDeck.app             (unpacked, runnable)
 
 # Linux
 npm run dist:linux       # -> ../dist/installer/sharkdeck_<ver>_amd64.deb     (installs a udev rule too)

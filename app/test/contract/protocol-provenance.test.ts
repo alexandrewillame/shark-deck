@@ -46,7 +46,11 @@ const PROTOCOL_MODULES = [
   'src/main/devices/drivers/compx-he-keyboard.ts',
   'src/main/devices/drivers/compx-keyboard.ts',
   'src/main/devices/drivers/compx-mouse-8k.ts',
+  'src/main/devices/drivers/gearhub-mouse.ts',
+  'src/main/devices/drivers/identify.ts',
+  'src/main/devices/drivers/jxc-mouse.ts',
   'src/main/devices/drivers/mouse-macro-codec.ts',
+  'src/main/devices/drivers/yc500-keyboard.ts',
   'src/shared/battery.ts',
   'src/shared/dks.ts',
   'src/shared/key-zones.ts',
@@ -74,7 +78,10 @@ const NOT_PROTOCOL: Record<string, string> = {
   'src/main/devices/drivers/index.ts': 'driver name -> constructor registry',
   'src/shared/backgrounds.ts': 'the app background ids, a UI setting',
   'src/shared/capabilities.ts': 'capability labels and predicates, app-internal',
+  'src/shared/device-art.ts': 'which product photos and colours a model has, cosmetic only',
   'src/shared/ipc.ts': 'the renderer<->main contract, app-internal',
+  'src/shared/menuGates.ts':
+    'which menu controls draw, as predicates over what a descriptor declares — app-internal',
   'src/shared/keys.ts':
     'the standard HID keyboard-usage table, from the USB spec rather than reverse-engineered from the vendor',
   'src/shared/naming.ts': 'unique-name string helper',

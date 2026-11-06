@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { LiveDevice } from '@shared/types/live';
 import { configTabs } from '../tabs';
-import { SaveDiscardDialog, Tooltip } from '../components/common';
+import { Tooltip } from '../components/common';
 import { Icon } from '../components/icons';
 import {
   ArtAnchorContext,
@@ -19,9 +19,10 @@ import {
 } from '../tabs/common';
 import { useT } from '../state/i18n';
 import { useStore } from '../state/store';
-import { getUnsavedGuard } from '../state/unsavedGuard';
+import { confirmLeave } from '../state/leaveGuard';
 
 import { sd } from '../state/bridge';
+import { BackupWaiverBanner } from '../components/BackupWaiverBanner';
 
 /**
  * The capability-driven Profile / Buttons / Keys / Actuation / Macros /
@@ -161,14 +162,11 @@ export function DeviceConfig({ device }: { device: LiveDevice }) {
   // {configEpoch}` remounting div below.
   const { registry, failedCount, reloadAll } = useReadFailureRegistry();
 
-  // Switching sub-tab remounts the pane below (the `key` on `.tabpane-in`), so
-  // an editor with unsaved work gets a say first — see state/unsavedGuard.ts.
-  const [leaving, setLeaving] = useState<{ to: string; name: string } | null>(null);
+  // Switching section remounts the pane below (the `key` on `.tabpane-in`), so
+  // a change nobody applied is asked about first — see state/leaveGuard.ts.
   const goToTab = (id: string) => {
-    if (busy) return;
-    const guard = getUnsavedGuard(device.id);
-    if (guard) setLeaving({ to: id, name: guard.name() });
-    else setActive(id);
+    if (busy || id === active) return;
+    confirmLeave(device.id, () => setActive(id));
   };
 
   // Slides a single indicator to the active rail button instead of each
@@ -269,6 +267,7 @@ export function DeviceConfig({ device }: { device: LiveDevice }) {
                   </Tooltip>
                 </div>
               )}
+              <BackupWaiverBanner device={device} />
               {device.online && failedCount > 0 && (
                 <div className="readfail-banner">
                   <span>{t('cfg.readFailed')}</span>
@@ -277,34 +276,16 @@ export function DeviceConfig({ device }: { device: LiveDevice }) {
                   </button>
                 </div>
               )}
-              <fieldset className="offline-lock" disabled={!device.online || !!busy}>
+              <fieldset
+                className="offline-lock"
+                disabled={!device.online || !!busy || !!device.backupWaiver}
+              >
                 {Comp && <Comp device={device} />}
               </fieldset>
             </div>
           </ReadFailureContext.Provider>
         </ArtAnchorContext.Provider>
       </div>
-      {leaving && (
-        <SaveDiscardDialog
-          title={t('macro.leave.title')}
-          body={t('macro.leave.body', { name: leaving.name })}
-          saveLabel={t('macro.leave.save')}
-          discardLabel={t('macro.leave.discard')}
-          onResolve={(choice) => {
-            const to = leaving.to;
-            setLeaving(null);
-            if (choice === 'cancel') return;
-            if (choice === 'discard') {
-              setActive(to);
-              return;
-            }
-            const guard = getUnsavedGuard(device.id);
-            // A save can still be refused (an unnamed macro), in which case the
-            // toast explains why and we stay put rather than losing it anyway.
-            void (guard ? guard.save() : Promise.resolve(true)).then((ok) => ok && setActive(to));
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -102,13 +102,12 @@ export class BackgroundLayerController {
       this.sink?.reset();
       this.invalidate();
     });
-    // A palette change lands on <html> (state/theme.ts). A light/dark change
-    // does not reach the background at all: it is a night sky in both themes,
-    // drawn in the palette's `--night-*` colours (palette.ts).
+    // A palette or light/dark change lands on <html> (state/theme.ts), and an
+    // OS theme flip in "follow system" lands there too.
     const observer = new MutationObserver(() => this.onTheme());
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-palette'],
+      attributeFilter: ['data-palette', 'data-mode'],
     });
     this.cleanup.push(() => observer.disconnect());
 

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { KEY_GROUPS } from '@shared/keys';
 import { useT } from '../../state/i18n';
+import { keyName } from '../../state/shortcuts';
 
 /**
  * The grouped, searchable key grid, lifted out of the old single-file editor.
@@ -17,7 +18,11 @@ export function KeyPicker({ onPick }: { onPick: (code: string) => void }) {
     if (!q) return KEY_GROUPS;
     return KEY_GROUPS.map((g) => ({
       ...g,
-      keys: g.keys.filter((k) => k.label.toLowerCase().includes(q)),
+      // Either name finds it: "win" on any OS, "⌘" where that is what it says.
+      keys: g.keys.filter(
+        (k) =>
+          k.label.toLowerCase().includes(q) || keyName(k.code, k.label).toLowerCase().includes(q),
+      ),
     })).filter((g) => g.keys.length);
   }, [search]);
 
@@ -37,7 +42,7 @@ export function KeyPicker({ onPick }: { onPick: (code: string) => void }) {
             <div className="keys">
               {g.keys.map((k) => (
                 <button key={k.code} className="keypick-key" onClick={() => onPick(k.code)}>
-                  {k.label}
+                  {keyName(k.code, k.label)}
                 </button>
               ))}
             </div>

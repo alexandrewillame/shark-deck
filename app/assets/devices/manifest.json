@@ -1,0 +1,2208 @@
+{
+  "$comment": "Device art manifest. One entry per marketing model (the art key a descriptor names in `artKey`), one variant per colour the official store sells. `src` is the store's colour-variant photo (relative to `cdn`); null = art that predates the pipeline, kept as-is. `file`, `bytes` and `sha256` are written by scripts/build-device-art.py. Variants that only differ by grip tape, a bundled cable or a switch choice are merged; keycap editions are kept. `swatches` is the picker swatch per store colour name: fixed for plain colour words, sampled from the photos for edition names.",
+  "cdn": "https://cdn.shopify.com/s/files/1/0823/5050/6282/files/",
+  "store": "https://attackshark.com/products/",
+  "swatches": {
+    "Berry Red": "#e9427e",
+    "Black": "#1a1c20",
+    "Black Contours": "linear-gradient(135deg,#131c21 55%,#6b7280)",
+    "Black Gradient": "linear-gradient(135deg,#232a2f,#b8d3c2)",
+    "BlackBerry": "linear-gradient(135deg,#2b2727,#7b6468)",
+    "Blue": "#4a6fa5",
+    "Cheese": "linear-gradient(135deg,#f9f8f1,#f1d68a)",
+    "Cheese White": "linear-gradient(135deg,#f6f1df,#c7c6c7)",
+    "Comic": "linear-gradient(135deg,#dcdddc 50%,#373437 50%)",
+    "Crystal White": "linear-gradient(135deg,#eedddd,#c6a9bd)",
+    "Dark Warrior": "linear-gradient(135deg,#4c4d4c,#9a9c9b)",
+    "Dune": "#d5d1c2",
+    "Forged Black": "linear-gradient(135deg,#18191b,#525358 50%,#18191b)",
+    "Forged Carbon": "linear-gradient(135deg,#323846,#5f506d 50%,#323846)",
+    "Gradient Black": "linear-gradient(135deg,#403f41,#a4b3ae)",
+    "Gradient Purple": "linear-gradient(135deg,#2d2b40,#5f5686)",
+    "Green": "#378570",
+    "Grey": "#8a8f98",
+    "Grey Gradient": "linear-gradient(135deg,#26242a,#7f8487)",
+    "Ice Ninja": "linear-gradient(135deg,#ebe5df,#be9dc5)",
+    "Iced Orange": "linear-gradient(135deg,#dbd7d2,#be9880)",
+    "Ink Shade": "linear-gradient(135deg,#1e2936,#432d4d)",
+    "Knight-Errant": "linear-gradient(135deg,#ebeaef,#d4d3da)",
+    "Lake Green": "#9cd9c5",
+    "Lavender": "linear-gradient(135deg,#7f7b86,#dfdde0)",
+    "Lavender Blue": "linear-gradient(135deg,#505561,#acb4bd)",
+    "Milk White": "#f6f3ea",
+    "Moonlight": "linear-gradient(135deg,#262d39,#bdc1be)",
+    "Orange": "#ea7539",
+    "Pink": "#e2a6b8",
+    "Pink Contours": "linear-gradient(135deg,#f2f3f5,#ea6e93)",
+    "Purple": "#742793",
+    "Purple & Blue": "linear-gradient(135deg,#c5a4e6 50%,#8fb4f0 50%)",
+    "Purple Blue": "linear-gradient(135deg,#c5a4e6 50%,#8fb4f0 50%)",
+    "Red": "#c42b31",
+    "Retro Blue": "linear-gradient(135deg,#ebe8df 50%,#3d4e58 50%)",
+    "Retro Grey": "linear-gradient(135deg,#e1e1dd 50%,#60605f 50%)",
+    "Retro White": "#ece6d6",
+    "Rose Red": "#ed2872",
+    "Shadow Jade": "linear-gradient(135deg,#1f241f,#3b5e44)",
+    "Silver": "#c3c5c9",
+    "Star Black": "linear-gradient(135deg,#1f1f1e 55%,#a4a299)",
+    "Star White": "linear-gradient(135deg,#e9e5e1,#b5b4d0)",
+    "Starry Black": "linear-gradient(135deg,#161616 55%,#676664)",
+    "Starry White": "linear-gradient(135deg,#dfdeda,#78787a)",
+    "Weave Black": "linear-gradient(135deg,#18181b,#66676e 50%,#18181b)",
+    "White": "#f2f3f5",
+    "White & Black": "linear-gradient(135deg,#f2f3f5 50%,#2c2d39 50%)",
+    "White Contours": "linear-gradient(135deg,#f2f3f5,#c9d3ff)",
+    "White Purple": "linear-gradient(135deg,#f4f5f5,#777e9c)",
+    "Yellow": "#f4d03f"
+  },
+  "models": {
+    "attack-shark-v8": {
+      "kind": "mouse",
+      "name": "V8",
+      "handle": "attack-shark-v8-ultra-light-ergonomic-wireless-gaming-mouse",
+      "variants": {
+        "black": {
+          "colour": "Black",
+          "src": null,
+          "file": "attack-shark-v8-black.webp"
+        },
+        "white": {
+          "colour": "White",
+          "src": null,
+          "file": "attack-shark-v8-white.webp"
+        }
+      }
+    },
+    "attack-shark-r6": {
+      "kind": "mouse",
+      "name": "R6",
+      "handle": "attack-shark-r6-ultralight-wireless-8k-gaming-mouse",
+      "variants": {
+        "black": {
+          "colour": "Black",
+          "src": null,
+          "file": "attack-shark-r6-black.webp"
+        },
+        "white": {
+          "colour": "White",
+          "src": null,
+          "file": "attack-shark-r6-white.webp"
+        }
+      }
+    },
+    "attack-shark-r85he": {
+      "kind": "keyboard",
+      "name": "R85HE",
+      "handle": "attack-shark-r85he-wired-magnetic-switch-rapid-trigger-keyboard",
+      "variants": {
+        "green": {
+          "colour": "Black",
+          "src": null,
+          "file": "attack-shark-r85-he-green.webp"
+        },
+        "black-gradient": {
+          "colour": "Grey Gradient",
+          "src": null,
+          "file": "attack-shark-r85-he-key-gradient.webp"
+        },
+        "white": {
+          "colour": "White",
+          "src": null,
+          "file": "attack-shark-r85-he-white.webp"
+        },
+        "white-contour": {
+          "colour": "White Contours",
+          "src": null,
+          "file": "attack-shark-r85-he-white-contour.webp"
+        }
+      }
+    },
+    "attack-shark-r86-he": {
+      "kind": "keyboard",
+      "name": "R86 HE",
+      "handle": "attack-shark-r86-he",
+      "variants": {
+        "ink-shade": {
+          "colour": "Ink Shade",
+          "src": "1_d5ea6201-0eb8-4943-9379-663808dd8a10.webp",
+          "file": "attack-shark-r86-he-ink-shade.webp",
+          "bytes": 50194,
+          "sha256": "b482e491ce013cbf21613f5110ca400664e3d5674568c48cd07f643c1950d7cf"
+        },
+        "ice-ninja": {
+          "colour": "Ice Ninja",
+          "src": "1_0eaa5e08-9219-40bb-9444-4a2ad4581131.webp",
+          "file": "attack-shark-r86-he-ice-ninja.webp",
+          "bytes": 49850,
+          "sha256": "e8afda8bd72819333a9c165f6dd57cb9796b155fc08f58aac3e0f63fddefc68a",
+          "outline": "sibling"
+        },
+        "moonlight": {
+          "colour": "Moonlight",
+          "src": "1_958f7d50-9c2e-4116-999b-69ea31a8b5ee.webp",
+          "solid": [
+            [
+              1490,
+              900,
+              1550,
+              1145
+            ]
+          ],
+          "file": "attack-shark-r86-he-moonlight.webp",
+          "bytes": 46176,
+          "sha256": "fc69f2757f8344909f4b114f1215e97a0ad9d4cfa9b066df970186c165b94797"
+        }
+      }
+    },
+    "attack-shark-r98-he": {
+      "kind": "keyboard",
+      "name": "R98 HE",
+      "handle": "attack-shark-r98-he-rapid-trigger-keyboard",
+      "variants": {
+        "ink-shade": {
+          "colour": "Ink Shade",
+          "src": "1_d6afd11b-29a9-4069-868f-7f0a612c77c5.png",
+          "file": "attack-shark-r98-he-ink-shade.webp",
+          "bytes": 47352,
+          "sha256": "1e2b595a3d25dfce9dfe25cb93f266fb094be34f66ba32a15131b9d12757553c",
+          "outline": "sibling"
+        },
+        "ice-ninja": {
+          "colour": "Ice Ninja",
+          "src": "1_0a5a26bb-8bc9-418e-94b9-76d2762f9a56.png",
+          "file": "attack-shark-r98-he-ice-ninja.webp",
+          "bytes": 50358,
+          "sha256": "0573387a143fa27b1e06d3a677f2e5f29e5e523e792e04cef134b2db6746a057",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "1_4e2d6e3a-1c4c-4396-b1a6-7158fd4e0814.png",
+          "file": "attack-shark-r98-he-black.webp",
+          "bytes": 49068,
+          "sha256": "dfcd4d63b787d32a90efec16cbe9e9dc717e0acbc5de0b3c0886adff895f6a05"
+        },
+        "moonlight": {
+          "colour": "Moonlight",
+          "src": "1_d0338dfd-a5b7-4bb3-82ef-37b0361a84ca.png",
+          "file": "attack-shark-r98-he-moonlight.webp",
+          "bytes": 48928,
+          "sha256": "4b0a5118c28e1ad4af96b0ceea3da0faacea3cd59aef51f17c77ad074ef50426",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-r68-he": {
+      "kind": "keyboard",
+      "name": "R68 HE",
+      "handle": "attack-shark-r68he-carbon-fiber-wired-rapid-trigger-magnetic-switch-keyboard",
+      "variants": {
+        "ink-shade": {
+          "colour": "Ink Shade",
+          "src": "1_6.png",
+          "file": "attack-shark-r68-he-ink-shade.webp",
+          "bytes": 50802,
+          "sha256": "ae21b4631ac93c3ee6dc1b21f79b46331894cbab1b06600f532ac71346ddfc5e",
+          "holes": [
+            [
+              72,
+              460,
+              110,
+              590
+            ],
+            [
+              92,
+              916,
+              114,
+              1038
+            ]
+          ]
+        },
+        "ice-ninja": {
+          "colour": "Ice Ninja",
+          "src": "1_3_8056d57d-9fb5-4ef7-8d26-368865787dd4.png",
+          "file": "attack-shark-r68-he-ice-ninja.webp",
+          "bytes": 50816,
+          "sha256": "b6af877bbd18ff97fa8c374c0f536a62f41de5c13b1a6b06b87f4f431d1c4701",
+          "holes": [
+            [
+              72,
+              458,
+              114,
+              580
+            ],
+            [
+              92,
+              920,
+              116,
+              1052
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "lake-green": {
+          "colour": "Lake Green",
+          "src": "1_ce0ce60e-cf64-4e6b-8e87-666ab442bc61.png",
+          "file": "attack-shark-r68-he-lake-green.webp",
+          "bytes": 51124,
+          "sha256": "8af01009faabbd3c5888e6e5b00da840904e6c7d0d3352959e79dfa1843f2bd8",
+          "holes": [
+            [
+              68,
+              448,
+              94,
+              578
+            ]
+          ]
+        },
+        "black": {
+          "colour": "Black",
+          "src": "1_13.png",
+          "file": "attack-shark-r68-he-black.webp",
+          "bytes": 49530,
+          "sha256": "43ce90983add7ad2b9b547d30ae6e02ed5d13973436b3edc49225861524ee617",
+          "holes": [
+            [
+              70,
+              460,
+              118,
+              618
+            ],
+            [
+              92,
+              916,
+              114,
+              1038
+            ]
+          ],
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-r82-he": {
+      "kind": "keyboard",
+      "name": "R82 HE",
+      "handle": "attack-shark-r82-he-rapid-trigger-keyboard-magnetic-switch",
+      "variants": {
+        "black": {
+          "colour": "Black",
+          "src": "5_9_fa5d4e16-a769-4a78-9f9d-75ff08f6c47c.jpg",
+          "file": "attack-shark-r82-he-black.webp",
+          "bytes": 50500,
+          "sha256": "c5bbac767f5e354092818b14e4b9b599a4c5355bef3a3d973d386a277e1eb05c",
+          "holes": [
+            [
+              94,
+              596,
+              112,
+              716
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "white-contours": {
+          "colour": "White Contours",
+          "src": "1_19.jpg",
+          "file": "attack-shark-r82-he-white-contours.webp",
+          "bytes": 49524,
+          "sha256": "34b859197d46c598921d66bcb934ff9c045d297d2e3414bc76d57c949f122f88",
+          "holes": [
+            [
+              94,
+              596,
+              112,
+              718
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "pink-contours": {
+          "colour": "Pink Contours",
+          "src": "2_15.jpg",
+          "file": "attack-shark-r82-he-pink-contours.webp",
+          "bytes": 49714,
+          "sha256": "473a6e9a2360ace663c62ccbac58bc75102382aaab67c9ad0834d2875a297a02",
+          "holes": [
+            [
+              96,
+              596,
+              112,
+              716
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "black-gradient": {
+          "colour": "Black Gradient",
+          "src": "6_52726d22-c374-4dae-923f-7ddfa06cfcb6.jpg",
+          "file": "attack-shark-r82-he-black-gradient.webp",
+          "bytes": 48082,
+          "sha256": "06ba74c6bf087d4435c622561ed987e30e94e90885d6412cc34c511c42a6d5e1",
+          "holes": [
+            [
+              94,
+              596,
+              110,
+              716
+            ]
+          ]
+        }
+      }
+    },
+    "attack-shark-x68-he": {
+      "kind": "keyboard",
+      "name": "X68 HE",
+      "handle": "attack-shark-x68-he-rapid-trigger-keyboard-magnetic-switch",
+      "variants": {
+        "black": {
+          "colour": "Black",
+          "src": "08_124c2ed9-35a7-4eef-8a06-53b081fb3625.jpg",
+          "file": "attack-shark-x68-he-black.webp",
+          "bytes": 48528,
+          "sha256": "5542794855c028af01d2d8805859bcb337efc5c779c7b626c50f48d1742ff467",
+          "holes": [
+            [
+              238,
+              588,
+              258,
+              716
+            ]
+          ]
+        },
+        "white": {
+          "colour": "White",
+          "src": "X68_.3714_0c558aa8-ac47-4cae-b43d-5d9e49d0a404.jpg",
+          "file": "attack-shark-x68-he-white.webp",
+          "bytes": 46470,
+          "sha256": "60a9522c24e80cc5620ff0fa66cf39a3bc2c3c444b0da2eb568b880695fd519d",
+          "holes": [
+            [
+              202,
+              610,
+              222,
+              744
+            ]
+          ]
+        },
+        "crystal-white": {
+          "colour": "Crystal White",
+          "src": "1_59a636e0-f24c-4fe5-90c2-bac9738748d2.jpg",
+          "file": "attack-shark-x68-he-crystal-white.webp",
+          "bytes": 50924,
+          "sha256": "b2e65d667bd558e42699deaa976366b9093e0f87595e7d2076e31f5dbe408c75",
+          "holes": [
+            [
+              206,
+              650,
+              234,
+              800
+            ]
+          ],
+          "hull": true
+        },
+        "black-gradient": {
+          "colour": "Black Gradient",
+          "src": "05_6ac26b32-0392-4c96-9e43-248f731c848f.jpg",
+          "file": "attack-shark-x68-he-black-gradient.webp",
+          "bytes": 44992,
+          "sha256": "e3ea595ca0784d709e3715b004d05f72cd87907d45deb47d6cbe7b0e9f5e8789",
+          "holes": [
+            [
+              238,
+              588,
+              258,
+              716
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "black-contours": {
+          "colour": "Black Contours",
+          "src": "06_13d08781-1abb-49e0-b2f9-bf6a453c016c.jpg",
+          "file": "attack-shark-x68-he-black-contours.webp",
+          "bytes": 49782,
+          "sha256": "f13b299263135db187b0b2bc90ec22328175099b19a0e922f6d9cc230a070a8c",
+          "holes": [
+            [
+              238,
+              588,
+              258,
+              716
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "white-contours": {
+          "colour": "White Contours",
+          "src": "0.1.jpg",
+          "file": "attack-shark-x68-he-white-contours.webp",
+          "bytes": 45138,
+          "sha256": "94fd214b26f454464d80a8b9510a6a4110b12fd3e2136e098fa862dcc2c598f9",
+          "holes": [
+            [
+              254,
+              628,
+              276,
+              764
+            ]
+          ]
+        },
+        "pink-contours": {
+          "colour": "Pink Contours",
+          "src": "1500X68.jpg",
+          "file": "attack-shark-x68-he-pink-contours.webp",
+          "bytes": 50870,
+          "sha256": "99153d30e462ea2bae89f49b7479e0fc7f5d0cde1ee7d849d36882e302f28bc2",
+          "holes": [
+            [
+              238,
+              588,
+              258,
+              716
+            ]
+          ]
+        }
+      }
+    },
+    "attack-shark-x68-pro-he": {
+      "kind": "keyboard",
+      "name": "X68 PRO HE",
+      "handle": "attack-shark-x68pro-he-wireless-rapid-trigger-keyboard-magnetic-switch",
+      "variants": {
+        "gradient-black": {
+          "colour": "Gradient Black",
+          "src": "X68PROHE_3589b423-250a-4f20-a5e6-8216cfca58e3.jpg",
+          "file": "attack-shark-x68-pro-he-gradient-black.webp",
+          "bytes": 44084,
+          "sha256": "b420e2267cbd341b7214330336f2423fc6d23dd9d4e339b24f44fa160929d361",
+          "holes": [
+            [
+              68,
+              636,
+              96,
+              790
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "X68PROHE_3cbac2f2-145d-43af-9cc9-589e4784c280.jpg",
+          "file": "attack-shark-x68-pro-he-black.webp",
+          "bytes": 50780,
+          "sha256": "8a7c360635b36dbc52314b27e3aa5c8bd78139e25bef1e6e65314f9e2c23c5e6",
+          "holes": [
+            [
+              68,
+              636,
+              96,
+              790
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "white": {
+          "colour": "White",
+          "src": "X68PROHE.jpg",
+          "file": "attack-shark-x68-pro-he-white.webp",
+          "bytes": 47752,
+          "sha256": "3d05c180ab53d8c30e32fc635821fa4db92c607b57c84b1bd4eb3333ddb4f51a",
+          "holes": [
+            [
+              68,
+              634,
+              100,
+              790
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "red": {
+          "colour": "Red",
+          "src": "X68PROHE_66095e87-e291-4df7-9471-80872d4826f5.jpg",
+          "file": "attack-shark-x68-pro-he-red.webp",
+          "bytes": 49372,
+          "sha256": "ab6780cd7606e7708f940f9bf37533554bfff27376bdc4c723235c637c8e939d",
+          "holes": [
+            [
+              68,
+              636,
+              96,
+              790
+            ]
+          ]
+        }
+      }
+    },
+    "attack-shark-x68-max-he": {
+      "kind": "keyboard",
+      "name": "X68 MAX HE",
+      "handle": "attack-shark-x68max-he-rapid-trigger-aluminum-keyboard-magnetic-switch",
+      "variants": {
+        "star-white": {
+          "colour": "Star White",
+          "src": "X68MAX_7870abf2-018d-4641-8366-21fa6fcf3f74.jpg",
+          "file": "attack-shark-x68-max-he-star-white.webp",
+          "bytes": 49764,
+          "sha256": "87ce3b1f941b4f4fb75c7a9e4b55e9b958c02fc2b499c6d86f4701148c76ea16",
+          "holes": [
+            [
+              60,
+              656,
+              80,
+              778
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "white-contours": {
+          "colour": "White Contours",
+          "src": "X68MAX_85197696-5623-4fa4-b437-5d0cc037cdb6.jpg",
+          "file": "attack-shark-x68-max-he-white-contours.webp",
+          "bytes": 45832,
+          "sha256": "46d69eb9561c66c18ecc1fb281c78752330317e4aa38cb3984510cd388d34c93",
+          "holes": [
+            [
+              60,
+              658,
+              80,
+              778
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "black-contours": {
+          "colour": "Black Contours",
+          "src": "X68MAX_f7a8c88d-1c70-4e45-9d10-0591c39c522d.jpg",
+          "file": "attack-shark-x68-max-he-black-contours.webp",
+          "bytes": 49318,
+          "sha256": "46bd1219d9ecee7a42d36cb00a7f79660de2953e8f2abc4c8b00d773d31150ca",
+          "holes": [
+            [
+              64,
+              658,
+              80,
+              778
+            ]
+          ]
+        }
+      }
+    },
+    "attack-shark-x65-he": {
+      "kind": "keyboard",
+      "name": "X65 HE",
+      "handle": "attack-shark-x65-he-magnetic-switch-rapid-trigger-keyboard",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "X65HE.jpg",
+          "file": "attack-shark-x65-he-white.webp",
+          "bytes": 49632,
+          "sha256": "52f6ce2b3be24ce675343cd67811b6181f682f38a0069cd054ac35f440981a94",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "X65HE_f0ed343e-edc1-4980-a4f3-508f0158eac1.jpg",
+          "file": "attack-shark-x65-he-black.webp",
+          "bytes": 50134,
+          "sha256": "c8c78a5b61f862cd03b1c9e4b4e8810a333460fff1aa395b2adf4bd1262fd5c8",
+          "outline": "sibling"
+        },
+        "starry-black": {
+          "colour": "Starry Black",
+          "src": "X65HE_321ae4ef-d013-46cf-8b82-4cd1b3546001.jpg",
+          "file": "attack-shark-x65-he-starry-black.webp",
+          "bytes": 51058,
+          "sha256": "154724de69a24442d24da70fcc41cebf7cd1c0a4cdf5fc8b6ea0b751e444a4fc",
+          "outline": "sibling"
+        },
+        "white-contours": {
+          "colour": "White Contours",
+          "src": "X65HE_49325e21-25b5-4274-ac35-0f52e3e2c302.jpg",
+          "file": "attack-shark-x65-he-white-contours.webp",
+          "bytes": 48404,
+          "sha256": "7309c14d22c0980d0d664f18b06fc6389796366ffef758b6bd647ebce7f328e1",
+          "outline": "sibling"
+        },
+        "black-contours": {
+          "colour": "Black Contours",
+          "src": "X65HE_5e7f7202-a55c-4be3-a319-275cfa4166d0.jpg",
+          "file": "attack-shark-x65-he-black-contours.webp",
+          "bytes": 50270,
+          "sha256": "ee65d46ce30bb32273993aa33af4b85d010992cde7c287abc99c0db55f61ef18"
+        }
+      }
+    },
+    "attack-shark-x65-pro-he": {
+      "kind": "keyboard",
+      "name": "X65 PRO HE",
+      "handle": "attack-shark-x65pro-he-wireless-rapid-trigger-keyboard-magnetic-switch",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "X65PROHE_4c712145-1793-4c29-83cc-f43b7c415c88.jpg",
+          "file": "attack-shark-x65-pro-he-white.webp",
+          "bytes": 49722,
+          "sha256": "d456d067e16685f066222dc52e56220e2f95fb605259413d15513073308d38b2"
+        },
+        "red": {
+          "colour": "Red",
+          "src": "X65PROHE_29e35d8f-0664-45e5-b22b-e26aee074c51.jpg",
+          "file": "attack-shark-x65-pro-he-red.webp",
+          "bytes": 50390,
+          "sha256": "17f8f8ce0764eb9a9e4ceaf8dd25364f3148144d90767c3bca3660f516b0feb8",
+          "outline": "sibling"
+        },
+        "yellow": {
+          "colour": "Yellow",
+          "src": "X65PROHE_d2662dfe-652a-46a7-aabc-6ac370954124.jpg",
+          "file": "attack-shark-x65-pro-he-yellow.webp",
+          "bytes": 49820,
+          "sha256": "2065a35f2086a89851f2616f6fa5140ba983566d8bcafaf181e7352c3b70dc31"
+        }
+      }
+    },
+    "attack-shark-x82-pro-he": {
+      "kind": "keyboard",
+      "name": "X82 PRO HE",
+      "handle": "attack-shark-x82pro-he-wireless-rapid-trigger-gaming-keyboard-magnetic-switch",
+      "variants": {
+        "comic": {
+          "colour": "Comic",
+          "src": "X82PROHE_8c35fae2-3e7e-4ea9-b96b-dc017d40ac51.jpg",
+          "file": "attack-shark-x82-pro-he-comic.webp",
+          "bytes": 50610,
+          "sha256": "1e13b81c2f0ccc386284dab3bcf1b888aa93c8b3ce0365505a37b4a02b3395a2",
+          "outline": "sibling"
+        },
+        "black-contours": {
+          "colour": "Black Contours",
+          "src": "X82PROHE.jpg",
+          "file": "attack-shark-x82-pro-he-black-contours.webp",
+          "bytes": 50044,
+          "sha256": "9cdfe39f626ba51ebde1a8b73f518cbb6684db3120bfd96e70862f30f05807d4"
+        },
+        "white-contours": {
+          "colour": "White Contours",
+          "src": "X82PROHE_e5b946bd-2424-4ea9-9d69-0c4f41a36091.jpg",
+          "file": "attack-shark-x82-pro-he-white-contours.webp",
+          "bytes": 50752,
+          "sha256": "5f6644f7fd755d87c2f43c527a677fe3df2bee4345cd35acb6777af854f0b483",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-k85": {
+      "kind": "keyboard",
+      "name": "K85",
+      "handle": "attack-shark-k85-rapid-trigger-gaming-keyboard-magnetic-switch",
+      "variants": {
+        "grey": {
+          "colour": "Grey",
+          "src": "K85_4.jpg",
+          "file": "attack-shark-k85-grey.webp",
+          "bytes": 43374,
+          "sha256": "5aad5724f31fa49dc65cc38e1ae2031c31b772f84568a239bbe6f74a36df7b08",
+          "outline": "sibling"
+        },
+        "blue": {
+          "colour": "Blue",
+          "src": "1500_2.jpg",
+          "file": "attack-shark-k85-blue.webp",
+          "bytes": 49914,
+          "sha256": "c1148b5c18c754bdaeaa840f2013601ccea6e4514791f5459abf6a36635be88f"
+        },
+        "starry-black": {
+          "colour": "Starry Black",
+          "src": "1500_2_61c7f4f8-6a47-43cd-b218-4076475f1b64.jpg",
+          "file": "attack-shark-k85-starry-black.webp",
+          "bytes": 44860,
+          "sha256": "f883c3b865c4f53b132837fa4bd5721a56ed66b1fdca9e69c980d9b1cc72fef9"
+        }
+      }
+    },
+    "attack-shark-k86": {
+      "kind": "keyboard",
+      "name": "K86",
+      "handle": "attackshark-k86-wireless-mechanical-keyboard",
+      "variants": {
+        "retro-grey": {
+          "colour": "Retro Grey",
+          "src": "K86_1500_8102751a-78c6-4d86-b041-31e5abec5a04.jpg",
+          "file": "attack-shark-k86-retro-grey.webp",
+          "bytes": 50018,
+          "sha256": "7108f0e94e8ed733b52ff307b6e621172dc6a558dbe1c84bda03fa7f29c2a8a6"
+        },
+        "retro-blue": {
+          "colour": "Retro Blue",
+          "src": "K86_1500_cab1a58d-517e-4635-89e7-3d22607cc3e0.jpg",
+          "file": "attack-shark-k86-retro-blue.webp",
+          "bytes": 47928,
+          "sha256": "6e59dd50c83b7f3e6e79074d672bf1611aed55ad34d17b5fd0d378e36225fee2"
+        },
+        "lavender-blue": {
+          "colour": "Lavender Blue",
+          "src": "K86_1500.jpg",
+          "file": "attack-shark-k86-lavender-blue.webp",
+          "bytes": 48770,
+          "sha256": "210b98b1cdff975a7f96953f5716fbb8a93fb069d30208e31a094af28e278eb8"
+        }
+      }
+    },
+    "attack-shark-x85-pro": {
+      "kind": "keyboard",
+      "name": "X85 PRO",
+      "handle": "attack-shark-x85pro-tri-mode-gasket-mechanical-keyboard",
+      "variants": {
+        "starry-black": {
+          "colour": "Starry Black",
+          "src": "1-1_fdd56494-556d-4cea-83a9-142666f07904.jpg",
+          "file": "attack-shark-x85-pro-starry-black.webp",
+          "bytes": 46246,
+          "sha256": "901c7a13e6c55edde0921956805af47dda4a6bb3adc9f8850fc57be5ef936485"
+        },
+        "cheese": {
+          "colour": "Cheese",
+          "src": "X85PRO_6bda409b-455a-4a89-9398-a5350cb428ed.jpg",
+          "file": "attack-shark-x85-pro-cheese.webp",
+          "bytes": 50156,
+          "sha256": "c25fe1f2bc3fccbe8bffc1373c3c32163dbb8fde8faab6c4fa8ccb2b81094d44",
+          "outline": "sibling"
+        },
+        "lavender": {
+          "colour": "Lavender",
+          "src": "1-1_9a6d15a7-ec6b-4d80-9a73-dd6ca1ff267a.jpg",
+          "file": "attack-shark-x85-pro-lavender.webp",
+          "bytes": 43720,
+          "sha256": "dabc69cbd091f6602223f25ed8b0141b3df9cf2a1746283be674aad56e64edcd",
+          "outline": "sibling"
+        },
+        "moonlight": {
+          "colour": "Moonlight",
+          "src": "1-1_ec7d0453-75b2-4aee-bb3d-12a1e68d1cd4.jpg",
+          "file": "attack-shark-x85-pro-moonlight.webp",
+          "bytes": 49520,
+          "sha256": "36628575fdf236c420a899cc40a6e52ec4f3d16f1a7d9f93572181c792d0c8fc"
+        },
+        "white-contours": {
+          "colour": "White Contours",
+          "src": "X85PRO-4_1.jpg",
+          "file": "attack-shark-x85-pro-white-contours.webp",
+          "bytes": 48310,
+          "sha256": "fd428ec0b23a88b9e6b5ec3a9215e792ec5d7b230ddca08d0d28d4c9d3908767"
+        }
+      }
+    },
+    "attack-shark-x85": {
+      "kind": "keyboard",
+      "name": "X85",
+      "handle": "attack-shark-x85",
+      "variants": {
+        "gradient-black": {
+          "colour": "Gradient Black",
+          "src": "X85_58458282-1c5f-44a3-99dd-f04a714b9f9e.jpg",
+          "file": "attack-shark-x85-gradient-black.webp",
+          "bytes": 51118,
+          "sha256": "e22767dda0f8b1c24785833b2a9190dc954af8c78732979f632f80a4d26ef559"
+        },
+        "white-purple": {
+          "colour": "White Purple",
+          "src": "X85_305b68b8-6019-4790-ba5a-55cc760c06bd.jpg",
+          "file": "attack-shark-x85-white-purple.webp",
+          "bytes": 43354,
+          "sha256": "32ffc694dac99fc4d3b96b90470c96c2d2ddad328824627174e17e28a308c4e1"
+        },
+        "blackberry": {
+          "colour": "BlackBerry",
+          "src": "1-1_97b186dc-6902-419e-9542-7ac475d2b3dc.jpg",
+          "file": "attack-shark-x85-blackberry.webp",
+          "bytes": 48204,
+          "sha256": "fa90c1452dd23c8c55eb8afc089bf6b053caef70af45c4391296df3c25e83363"
+        },
+        "gradient-purple": {
+          "colour": "Gradient Purple",
+          "src": "3034a1133efe01daba919094b70c6310_11933830-fe71-44e5-a1ae-c24e6d37483e.jpg",
+          "file": "attack-shark-x85-gradient-purple.webp",
+          "bytes": 43100,
+          "sha256": "a44cec85609191e3fd3274e2965423a576bb04e5d13dc9eebe4d9996c92b581e"
+        }
+      }
+    },
+    "attack-shark-x86": {
+      "kind": "keyboard",
+      "name": "X86",
+      "handle": "attack-shark-x86-full-aluminum-keyboard",
+      "variants": {
+        "milk-white": {
+          "colour": "Milk White",
+          "src": "1_61_4da744bd-50a8-4153-a251-2c3abc462549.jpg",
+          "file": "attack-shark-x86-milk-white.webp",
+          "bytes": 46636,
+          "sha256": "373375c00122f519256df9239204207a356017d825ac5cfb8d7610bec240e2b0"
+        },
+        "starry-white": {
+          "colour": "Starry White",
+          "src": "03_6b5f6d25-ca57-426b-9379-7df52f69064f.jpg",
+          "file": "attack-shark-x86-starry-white.webp",
+          "bytes": 45098,
+          "sha256": "e5b00dd4ba0f9a435c06b84e2e218e335c518b4545eebbc0d62d8da88a9e0a60",
+          "outline": "sibling"
+        },
+        "starry-black": {
+          "colour": "Starry Black",
+          "src": "01_b215b941-369c-43ee-8f58-a7ffd684f893.jpg",
+          "file": "attack-shark-x86-starry-black.webp",
+          "bytes": 50044,
+          "sha256": "5c156dc17cc622ad5c51af7a525033d7841639dc5eb5979664952311bed1a4f9"
+        }
+      }
+    },
+    "attack-shark-x98-pro": {
+      "kind": "keyboard",
+      "name": "X98 PRO",
+      "handle": "attack-shark-x98pro-gaming-keyboard",
+      "variants": {
+        "cheese-white": {
+          "colour": "Cheese White",
+          "src": "6d9f6c4f775f5adab44e466074472695_25368654-bdd8-4db0-af7b-647185234ce2.jpg",
+          "file": "attack-shark-x98-pro-cheese-white.webp",
+          "bytes": 51060,
+          "sha256": "c738973735506335c5d061beb089c98e60313bd84e27b8a9fb25ae133706c703",
+          "outline": "sibling"
+        },
+        "star-black": {
+          "colour": "Star Black",
+          "src": "ee33403842d6e2d4a98a47d289fd7ed9_e7f8b2a7-0b69-421f-a508-7665f1a9464d.jpg",
+          "file": "attack-shark-x98-pro-star-black.webp",
+          "bytes": 49438,
+          "sha256": "fd8431810c409124dd679281ab7e7bfc52536b1de85ff4c4984f41f50cca1e87",
+          "outline": "sibling",
+          "locked": true
+        },
+        "pink": {
+          "colour": "Pink",
+          "src": "7712088c5dfea910e9869b35a092fd90_90d58bb5-950a-4ef7-9e23-0b4cc3760a08.jpg",
+          "file": "attack-shark-x98-pro-pink.webp",
+          "bytes": 44790,
+          "sha256": "9e1745bc5c7ba4d4956c3c5f97767e3f864a8985b8a9e8bfcc514ba10bb68be4",
+          "locked": true
+        },
+        "gradient-black": {
+          "colour": "Gradient Black",
+          "src": "cc12c49ec1ddd727ad4772220e9e6267_a35a0b49-d4fa-4fcb-9292-1c44003f856d.jpg",
+          "file": "attack-shark-x98-pro-gradient-black.webp",
+          "bytes": 43718,
+          "sha256": "6eca19d91aa2da626b571f8ee28b7f91adf596121367654c6ef95c417d28bf60",
+          "outline": "sibling",
+          "locked": true
+        }
+      }
+    },
+    "attack-shark-x820-ultra": {
+      "kind": "keyboard",
+      "name": "X820 ULTRA",
+      "handle": "attack-shark-x820ultra-tri-mode-gasket-mechanical-keyboard",
+      "variants": {
+        "dark-warrior": {
+          "colour": "Dark Warrior",
+          "src": "b0adcc79d36aa97f76ca5d3399cb498f_6edc2032-8f9e-4001-9e22-651bf937cc23.png",
+          "file": "attack-shark-x820-ultra-dark-warrior.webp",
+          "bytes": 49774,
+          "sha256": "e6a31699e38ff25eec8b0f2cfdcf67e5c3c1a85bf90178325fd35b93b3e1bc5c",
+          "outline": "sibling"
+        },
+        "star-white": {
+          "colour": "Star White",
+          "src": "217f869196c3d0f74c7345f452804f68_2b1930db-9201-4921-ade1-d0bd56a88488.png",
+          "file": "attack-shark-x820-ultra-star-white.webp",
+          "bytes": 45220,
+          "sha256": "cabb3c55c9a31fa144b974a0ec03fee8ae5dd4b350a788874e6bfb57e5dba411",
+          "outline": "sibling"
+        },
+        "star-black": {
+          "colour": "Star Black",
+          "src": "a572edcea46aa884fd1e26e39d37dea7_4a97e24e-793b-4373-bc18-3f7f1a0f7ef9.png",
+          "file": "attack-shark-x820-ultra-star-black.webp",
+          "bytes": 44848,
+          "sha256": "82a65472b1db5bb588a6bf7d594027409b66eeb87ae5d6b966a7a3c5ef1d30fd"
+        },
+        "black-gradient": {
+          "colour": "Black Gradient",
+          "src": "574d96187eee297feeb4b9d834d33ef4_aacc19c5-c8aa-459d-8b88-088a4f7a860c.png",
+          "file": "attack-shark-x820-ultra-black-gradient.webp",
+          "bytes": 50068,
+          "sha256": "d66049da4c08133700084db9708e650606fcca3265342f3ab93799030c90de11",
+          "outline": "sibling"
+        },
+        "white-contours": {
+          "colour": "White Contours",
+          "src": "7da6d9e87716c7359f1b7aa553278968.png",
+          "file": "attack-shark-x820-ultra-white-contours.webp",
+          "bytes": 50032,
+          "sha256": "fa4d562a426804a4fed3161c81a2560f992665c869f0e9bfecc6f498294d2553",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-x87-ultra": {
+      "kind": "keyboard",
+      "name": "X87 ULTRA",
+      "handle": "attack-shark-x87ultra-wireless-rgb-mechanical-keyboard-with-shark-wireless-receiver",
+      "variants": {
+        "forged-carbon": {
+          "colour": "Forged Carbon",
+          "src": "R87.2782.jpg",
+          "file": "attack-shark-x87-ultra-forged-carbon.webp",
+          "bytes": 47890,
+          "sha256": "9709921bf6ffb254d17a29bc108464ce0217bbd37df2ff4aa04bf9025ba40309"
+        },
+        "iced-orange": {
+          "colour": "Iced Orange",
+          "src": "R87.2774.jpg",
+          "file": "attack-shark-x87-ultra-iced-orange.webp",
+          "bytes": 50666,
+          "sha256": "0d336a035fa565a1a78de4383db1c88ce0a89560518d02f7f6581b3eb4d1e836"
+        },
+        "shadow-jade": {
+          "colour": "Shadow Jade",
+          "src": "R87.2777.jpg",
+          "file": "attack-shark-x87-ultra-shadow-jade.webp",
+          "bytes": 48940,
+          "sha256": "dd095ac9b46c481a06cfbe8cd2aa0609ac8a1d26f7f22321a582df0cafa25749",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-m86": {
+      "kind": "keyboard",
+      "name": "M86",
+      "handle": "attack-shark-m86-gasket-mechanical-keyboard",
+      "variants": {
+        "gradient-black": {
+          "colour": "Gradient Black",
+          "src": "05_6de6d266-3a3f-45ad-ba7e-44b3eded46e1.jpg",
+          "file": "attack-shark-m86-gradient-black.webp",
+          "bytes": 47998,
+          "sha256": "5e1b71f78a9c700a5df73b2293e1df34585ecb11d8b6818ba1c28275f0592db2",
+          "outline": "sibling"
+        },
+        "pink": {
+          "colour": "Pink",
+          "src": "06_8124a490-9c55-4e23-98a0-a01ee8c85cbb.jpg",
+          "file": "attack-shark-m86-pink.webp",
+          "bytes": 49500,
+          "sha256": "6a55bbed596f32d63b3dfe1f41e64d8b25d5b7f3bfd6699822dce5e2e149a8e4"
+        },
+        "white": {
+          "colour": "White",
+          "src": "07_b082708a-6866-4ecd-8b0d-5a0622a87cb4.jpg",
+          "file": "attack-shark-m86-white.webp",
+          "bytes": 48392,
+          "sha256": "99f915c6fd735784de279ee1c9a166af41b00512c914d6e1ac7ef0e9b1496ca0",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "08_8eef5b66-14a3-4e35-9a73-e44a78752041.jpg",
+          "file": "attack-shark-m86-black.webp",
+          "bytes": 48812,
+          "sha256": "58444a3c270f889eeabd07989f7425b5c33431b90cb60712f8dd4fafcdc36ef3"
+        }
+      }
+    },
+    "attack-shark-x11-ultra": {
+      "kind": "mouse",
+      "name": "X11 ULTRA",
+      "handle": "attack-shark-x11ultra",
+      "variants": {
+        "black": {
+          "colour": "Black",
+          "src": "X11ULTRA_1.png",
+          "file": "attack-shark-x11-ultra-black.webp",
+          "bytes": 48566,
+          "sha256": "c0286e5aa4162c37742d071a0d86222a4eaf7f31a79431af78ce9ceb00c6c78f"
+        },
+        "purple": {
+          "colour": "Purple",
+          "src": "X11ULTRA_3.png",
+          "file": "attack-shark-x11-ultra-purple.webp",
+          "bytes": 48494,
+          "sha256": "c689e4dd5b962c4e089c9a735179e516092ffbe24c660d5d7b99f05f4d9a3708",
+          "outline": "sibling"
+        },
+        "red": {
+          "colour": "Red",
+          "src": "X11ULTRA_2.png",
+          "file": "attack-shark-x11-ultra-red.webp",
+          "bytes": 47644,
+          "sha256": "51083acaea49cbdf1357a709bd32ebc0c0f7215eea3b5784ba24bbe6f8d0adad"
+        }
+      }
+    },
+    "attack-shark-f1-air": {
+      "kind": "mouse",
+      "name": "F1 AIR",
+      "handle": "attack-shark-f1-air-39g-wireless-paw3955max-gaming-mouse",
+      "variants": {
+        "white-black": {
+          "colour": "White & Black",
+          "src": "1_d8efa54b-fd23-4da9-9c5b-c1d5c21d5bd0.webp",
+          "file": "attack-shark-f1-air-white-black.webp",
+          "bytes": 44264,
+          "sha256": "6e312044d13fde5d32a775cf54124d5986a041a6038c4b09b9fd4b034b09b3da",
+          "outline": "sibling"
+        },
+        "white": {
+          "colour": "White",
+          "src": "1_638277ae-f5f1-45fb-867d-57d73b8ff901.webp",
+          "file": "attack-shark-f1-air-white.webp",
+          "bytes": 26278,
+          "sha256": "d0a9f785dd78315b4625dcc98f27483afb11b2dc8e1012c697f98c880fdb06a2",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "1_e4a21683-cc5d-4d28-87f3-cd5172357ffe.webp",
+          "file": "attack-shark-f1-air-black.webp",
+          "bytes": 37360,
+          "sha256": "6da3c8e08038183d670f9ca16d804495d8b9df6cb646aa5fb3302a40917d99a4"
+        }
+      }
+    },
+    "attack-shark-v2-air": {
+      "kind": "mouse",
+      "name": "V2 AIR",
+      "handle": "attack-shark-v2-air-wireless-gaming-mouse",
+      "variants": {
+        "white-black": {
+          "colour": "White & Black",
+          "src": "1_018cd9d8-ed28-4bff-ad35-7a559c94d125.jpg",
+          "file": "attack-shark-v2-air-white-black.webp",
+          "bytes": 38598,
+          "sha256": "2bfbafc440724fb53ffd31c0f31e432e680f071b7897700ebef6d105761286a4"
+        },
+        "white": {
+          "colour": "White",
+          "src": "1_0cc95a97-f794-4e67-a63f-572c2c24d3fc.jpg",
+          "file": "attack-shark-v2-air-white.webp",
+          "bytes": 27870,
+          "sha256": "60c45b3947a39b890e4fdc4da0866dd18f4bdee1d578bb0cd5739ec9e55fbe88"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "1_58dccbf9-8cb4-40f4-b5b4-5a081103c51a.jpg",
+          "file": "attack-shark-v2-air-black.webp",
+          "bytes": 34286,
+          "sha256": "ca4b3f05c580f3c3ad8e169cd08778ff86ec3461079f8011e26dc86c957d9ef4"
+        }
+      }
+    },
+    "attack-shark-rs3-ultra": {
+      "kind": "mouse",
+      "name": "RS3 ULTRA",
+      "handle": "rs3-ultra-carbon-fiber-gaming-mouse",
+      "variants": {
+        "black": {
+          "colour": "Black",
+          "src": "1_d7edc062-593f-432f-9c53-aefbd8b022fe.png",
+          "file": "attack-shark-rs3-ultra-black.webp",
+          "bytes": 45084,
+          "sha256": "21f305bedb3f0700a7eb91d4d5c7e496eb70e38ce7e66480e5b25541cc939b35"
+        },
+        "silver": {
+          "colour": "Silver",
+          "src": "1.1_4ddab7a6-0922-41d9-a7bd-a4445102afdb.png",
+          "file": "attack-shark-rs3-ultra-silver.webp",
+          "bytes": 50072,
+          "sha256": "6228c47ab851607f4692f5cf25b36036e888ef3ebf5a00c39f633c63490c75ef",
+          "outline": "sibling"
+        },
+        "red": {
+          "colour": "Red",
+          "src": "5d4ad98b7e6fd7642323ef49163d8697_cc2708d5-8149-4e43-81a1-5bb4340aa45b.png",
+          "file": "attack-shark-rs3-ultra-red.webp",
+          "bytes": 49606,
+          "sha256": "8d8201de10a2cd42dcb76ea739ed4b812bc4f1c7c199fc713f49c710360216e5",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-rs6-ultra": {
+      "kind": "mouse",
+      "name": "RS6 ULTRA",
+      "handle": "attack-shark-rs6-ultra-wireless-gaming-mouse",
+      "variants": {
+        "silver": {
+          "colour": "Silver",
+          "src": "1eae7ae6ce239862c44d09c80b59d31e_16dcee8d-5e02-43bc-8e7e-5e50275c7a9c.png",
+          "file": "attack-shark-rs6-ultra-silver.webp",
+          "bytes": 48210,
+          "sha256": "1f466b7de0c14a667912b9938b4ca1540310627839c7d0a844541332f7d39175",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "2218b0223bfebfb7baca19d71afe89db_d1d3315a-0598-4026-a6e0-9bf40a06bd29.png",
+          "file": "attack-shark-rs6-ultra-black.webp",
+          "bytes": 48394,
+          "sha256": "0015311b69dadf557fa9736cbcccc7115579d0403f24613d0cd22d282a73afd5"
+        }
+      }
+    },
+    "attack-shark-mega-b2": {
+      "kind": "mouse",
+      "name": "MEGA B2",
+      "handle": "attack-shark-mega-b2",
+      "variants": {
+        "white-black": {
+          "colour": "White & Black",
+          "src": "1_3a749ed3-510b-48e7-b2ee-cccc4d3e1f6c.webp",
+          "file": "attack-shark-mega-b2-white-black.webp",
+          "bytes": 43406,
+          "sha256": "f348961f6a0cca26605056e3d556d3396b27ce10e3133ca63d515a8720c3c3d4",
+          "outline": "sibling"
+        },
+        "white": {
+          "colour": "White",
+          "src": "1_69bb4533-d0f9-4f6d-bd4e-95303c2c59db.webp",
+          "file": "attack-shark-mega-b2-white.webp",
+          "bytes": 23786,
+          "sha256": "377471f5cbfaba97378ab241b5aaf77d5e4e2602cd9708990dc647defe19a0fd",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "1_c527ad5c-b43a-4a04-8dd1-06cd503ed073.webp",
+          "file": "attack-shark-mega-b2-black.webp",
+          "bytes": 41820,
+          "sha256": "48210fbcc7a7c427a353762939eac32857c0c980244f283894ba55cbf77761b9"
+        },
+        "knight-errant": {
+          "colour": "Knight-Errant",
+          "src": "1_116a588d-9509-4e0e-9ef0-66fee1b94bf0.webp",
+          "file": "attack-shark-mega-b2-knight-errant.webp",
+          "bytes": 45440,
+          "sha256": "1ef4583e27a93046f57913d7c6e4bb75faf664cfd7aca6f6544024ed7de299f0",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-r5-turbo": {
+      "kind": "mouse",
+      "name": "R5 TURBO",
+      "handle": "attack-shark-r5-turbo",
+      "variants": {
+        "dune": {
+          "colour": "Dune",
+          "src": "1_06b8ff31-999f-4bd9-b861-b446a454a710.webp",
+          "file": "attack-shark-r5-turbo-dune.webp",
+          "bytes": 48310,
+          "sha256": "a3ab7f2623b90a1292f7600f13995c7b2d8ff47bb81aa74b7cbfe4974e6ade0d",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "1_67655dca-4042-4d54-96bc-a9c303d10741.webp",
+          "file": "attack-shark-r5-turbo-black.webp",
+          "bytes": 49072,
+          "sha256": "b8cf75b8804a5da268fad21213c0d2f53ed6f0134a5572c4d6f34fa286557822"
+        },
+        "white": {
+          "colour": "White",
+          "src": "1_e8cb6818-b52b-492c-a0a1-78f180b4feec.webp",
+          "file": "attack-shark-r5-turbo-white.webp",
+          "bytes": 45854,
+          "sha256": "2ff131e8564326e8543a5cc7e1c4f79b3d56176949625aa75f58b0682530cf3c",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-x8": {
+      "kind": "mouse",
+      "name": "X8 Series",
+      "handle": "attack-shark-x8ultra-tri-mode-wireless-gaming-mouse-42000-dpi-ultra-lightweight",
+      "variants": {
+        "black": {
+          "colour": "Black",
+          "src": "X8_1.png",
+          "file": "attack-shark-x8-black.webp",
+          "bytes": 46086,
+          "sha256": "0c5f6a9cdf8b003211ae8ffd01826c1a1a905ce9512ec9f4a226281638d729ff"
+        },
+        "white": {
+          "colour": "White",
+          "src": "X8_2_fc2a39d6-279f-48ca-aa6f-19e08fb4aecd.png",
+          "file": "attack-shark-x8-white.webp",
+          "bytes": 22870,
+          "sha256": "d2c8abbd43d9a6302da45b39ccdefcbfe9eb4beddd1c087125762da36e249c20",
+          "outline": "sibling"
+        },
+        "berry-red": {
+          "colour": "Berry Red",
+          "src": "X8_3_4470a318-eded-4870-a277-d3e2a4929c96.png",
+          "file": "attack-shark-x8-berry-red.webp",
+          "bytes": 49284,
+          "sha256": "05153510c0d12c23324dd34801e4d0a48fdf43cff22883fa9a59365fb7915141",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-v5": {
+      "kind": "mouse",
+      "name": "V5",
+      "handle": "attack-shark-v5-ultra-light-tri-mode-gaming-mouse",
+      "variants": {
+        "black": {
+          "colour": "Black",
+          "src": "V5_2.png",
+          "file": "attack-shark-v5-black.webp",
+          "bytes": 42920,
+          "sha256": "c6bdd0d08b9ab010c434aaf868147d4405c7c8e3fcdd3d831ef5ba1d9418439b"
+        },
+        "white": {
+          "colour": "White",
+          "src": "V5_1.png",
+          "file": "attack-shark-v5-white.webp",
+          "bytes": 25584,
+          "sha256": "bcac1c27fd42417c89269feee6e30ebb80974432f06e7f054ceb25c74596618e",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-r11-ultra": {
+      "kind": "mouse",
+      "name": "R11 ULTRA",
+      "handle": "attack-shark-r11-ultra-carbon-fiber-wireless-8k-paw3950max-gaming-mouse",
+      "variants": {
+        "forged-black": {
+          "colour": "Forged Black",
+          "src": "R11ULTRA_1.png",
+          "file": "attack-shark-r11-ultra-forged-black.webp",
+          "bytes": 50648,
+          "sha256": "0c796a69d4485e744d811e19c2cbfc125f9aa290301c68d9480d32784b4d30b2"
+        },
+        "weave-black": {
+          "colour": "Weave Black",
+          "src": "R11ULTRA_2.png",
+          "file": "attack-shark-r11-ultra-weave-black.webp",
+          "bytes": 49572,
+          "sha256": "7e7f963e185f817bce8f38e048255533c0f67abded61caf7cf243cbfcf17a92b"
+        }
+      }
+    },
+    "attack-shark-x11": {
+      "kind": "mouse",
+      "name": "X11",
+      "handle": "attack-shark-x11-wireless-gaming-mouse-charging-dock",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "X11_2.png",
+          "file": "attack-shark-x11-white.webp",
+          "bytes": 19492,
+          "sha256": "f422de315a5e8771df63d2d3153a5b1dd5a04b59bea5dc0551c7b28318f67b0b",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "X11_3.png",
+          "file": "attack-shark-x11-black.webp",
+          "bytes": 50716,
+          "sha256": "d2dd3419c5cef0ebad003a087d766f874e4974c3016adc20013cac10736caba8"
+        },
+        "red": {
+          "colour": "Red",
+          "src": "X11_1.png",
+          "file": "attack-shark-x11-red.webp",
+          "bytes": 37524,
+          "sha256": "14d54f5875531716318b8e30d847e0774e46b7199e40f25421f80b538838bfbc",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-x11-se": {
+      "kind": "mouse",
+      "name": "X11 SE",
+      "handle": "attack-shark-x11se-wireless-gaming-mouse",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "X11SE_2.png",
+          "file": "attack-shark-x11-se-white.webp",
+          "bytes": 19478,
+          "sha256": "97621fc3bdc74f4937065624bfdc2433b1e316d9bffe8f30e89edec3189a89bb",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "X11SE_4.png",
+          "file": "attack-shark-x11-se-black.webp",
+          "bytes": 50774,
+          "sha256": "8d998ba0038c2dd5649f1234c7e9c4ee1e9e57553f30f2ff316dd0ee1352446b"
+        },
+        "red": {
+          "colour": "Red",
+          "src": "X11SE_3.png",
+          "file": "attack-shark-x11-se-red.webp",
+          "bytes": 37886,
+          "sha256": "f98d04e82e3c5c2b149cfa1d6b4fa50672b265c8021bf7adf076f42a5cf8b7ef",
+          "outline": "sibling"
+        },
+        "berry-red": {
+          "colour": "Berry Red",
+          "src": "X11SE_1.png",
+          "file": "attack-shark-x11-se-berry-red.webp",
+          "bytes": 34770,
+          "sha256": "1e1100317c91cb42b621de662bd5ccb8df9a240084b011cd0c692b777a5c6867",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-x11-pro-v2": {
+      "kind": "mouse",
+      "name": "X11 PRO V2",
+      "handle": "attack-shark-x11-pro-v2-wireless-gaming-mouse-with-charging-dock",
+      "variants": {
+        "white-black": {
+          "colour": "White & Black",
+          "src": "5_0662cbd8-0a6b-4892-9af3-556331cd589f.jpg",
+          "file": "attack-shark-x11-pro-v2-white-black.webp",
+          "bytes": 40640,
+          "sha256": "b3e6f68b82d6d2517b1532f0ada5efaa00587dc80fd75376984433e677c26025",
+          "crop": [
+            0,
+            0,
+            840,
+            1600
+          ],
+          "floor": [
+            [
+              700,
+              1100,
+              840,
+              1500,
+              20
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "white": {
+          "colour": "White",
+          "src": "5_98f678c5-5c8b-49cf-9998-b1ddb31edd18.jpg",
+          "file": "attack-shark-x11-pro-v2-white.webp",
+          "bytes": 22558,
+          "sha256": "c283892feadc99583cbf27a6eecc80c22c923b680f92aee58570ba45c34c2e39",
+          "crop": [
+            0,
+            0,
+            840,
+            1600
+          ],
+          "floor": [
+            [
+              700,
+              1100,
+              840,
+              1500,
+              20
+            ]
+          ]
+        },
+        "black": {
+          "colour": "Black",
+          "src": "5_3fef91c6-a7e2-4f1b-8736-9967a38bdea9.jpg",
+          "file": "attack-shark-x11-pro-v2-black.webp",
+          "bytes": 41824,
+          "sha256": "4611873298aa14413e2afb184c1763133d194b88e4153a134404bd0afeded28c",
+          "crop": [
+            0,
+            0,
+            840,
+            1600
+          ]
+        }
+      }
+    },
+    "attack-shark-r1": {
+      "kind": "mouse",
+      "name": "R1",
+      "handle": "attack-shark-r1-mouse",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "R1_3.png",
+          "file": "attack-shark-r1-white.webp",
+          "bytes": 22066,
+          "sha256": "87e477a4d360210408a101d72a8eeb094a92de1cbdd32a8ae07fefb5ae26771d",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "R1_1.png",
+          "file": "attack-shark-r1-black.webp",
+          "bytes": 43414,
+          "sha256": "f2f596c127869db6a8daece16393dfe1b1a2d6375d27cf2dc6c54d29624b4cc7"
+        },
+        "red": {
+          "colour": "Red",
+          "src": "R1_2.png",
+          "file": "attack-shark-r1-red.webp",
+          "bytes": 48954,
+          "sha256": "7c57e8eda4e88e111a88a6d6cce69d3d5c079a0418f320c30fad67fde4731280",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-x6": {
+      "kind": "mouse",
+      "name": "X6",
+      "handle": "x6-49g-wireless-gaming-mouse-charging-dock",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "X6_3.png",
+          "file": "attack-shark-x6-white.webp",
+          "bytes": 23876,
+          "sha256": "199438c9cc8d5daa3db7e8ddf266c2d0d797aa07311ff05ced118e05275c33c6"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "X6_2.png",
+          "file": "attack-shark-x6-black.webp",
+          "bytes": 37984,
+          "sha256": "ac2c1fedda21da19d7b16ae5c63fc29d68d7deaac57f7346d3757c5cb3d58b7b"
+        },
+        "red": {
+          "colour": "Red",
+          "src": "X6_1.png",
+          "file": "attack-shark-x6-red.webp",
+          "bytes": 47656,
+          "sha256": "783e865a63f8b922c8ca55966919f48aae5366babf54eebdb45747277e9873a1",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-x3": {
+      "kind": "mouse",
+      "name": "X3",
+      "handle": "attack-shark-x3-wireless-gaming-mouse-paw3395",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "attackshark_x3_gaming_mouse_0005.jpg",
+          "file": "attack-shark-x3-white.webp",
+          "bytes": 24250,
+          "sha256": "cb12403b7a931d6a2dd6e8c14ec651d3d83dab7f289f8b98ad7f0904a29b1b3e",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "attackshark_x3_gaming_mouse_0001.jpg",
+          "file": "attack-shark-x3-black.webp",
+          "bytes": 25768,
+          "sha256": "d083f3d211459a5f4ce3f9a7eb9d94fd357adc5e94f4a64e5e624ea0448bc841"
+        },
+        "red": {
+          "colour": "Red",
+          "src": "41_7c03697b-b216-4911-a041-05703cf7d551.jpg",
+          "file": "attack-shark-x3-red.webp",
+          "bytes": 41954,
+          "sha256": "553d4ca22756b508c1792002e1420c7a5d4e43420bffd715e63d8e4ab12e219f",
+          "outline": "sibling"
+        },
+        "purple": {
+          "colour": "Purple",
+          "src": "attackshark_x3_gaming_mouse_0037_1_c1b552ab-d9c8-47db-826e-bc91f12af51b.jpg",
+          "file": "attack-shark-x3-purple.webp",
+          "bytes": 45772,
+          "sha256": "b8c92413c4aeca40823db97199f0a942b4fc82049e1b87f213aa68f531e0063f",
+          "outline": "sibling"
+        },
+        "orange": {
+          "colour": "Orange",
+          "src": "attackshark_x3_gaming_mouse_0025.jpg",
+          "file": "attack-shark-x3-orange.webp",
+          "bytes": 37922,
+          "sha256": "921b004c7295b3e511aa1d50ba06f69f7b4d2a2764c5024cda1285c7df8cd734",
+          "outline": "sibling"
+        },
+        "berry-red": {
+          "colour": "Berry Red",
+          "src": "attackshark_x3_gaming_mouse_0021.jpg",
+          "file": "attack-shark-x3-berry-red.webp",
+          "bytes": 42136,
+          "sha256": "3daae2666ee229775c997498c2d3eed1de281f8c1f5d6858832dfc0cbdec6562",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-x3-max": {
+      "kind": "mouse",
+      "name": "X3 MAX",
+      "handle": "attack-shark-x3max",
+      "variants": {
+        "black": {
+          "colour": "Black",
+          "src": "X3MAX_1.png",
+          "file": "attack-shark-x3-max-black.webp",
+          "bytes": 39640,
+          "sha256": "587d6d7c821c443da053b772b952255675c92d375834c167ae4741e94da45314"
+        },
+        "white": {
+          "colour": "White",
+          "src": "X3MAX_3.png",
+          "file": "attack-shark-x3-max-white.webp",
+          "bytes": 21536,
+          "sha256": "ee915e353d33f12fec9d2dc15a5ffb43786257da8e40c0e228969d7d5910e227",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-x3-pro": {
+      "kind": "mouse",
+      "name": "X3 PRO",
+      "handle": "attack-shark-x3pro-8k-mouse",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "X3PRO_3.png",
+          "file": "attack-shark-x3-pro-white.webp",
+          "bytes": 21762,
+          "sha256": "221181f5ec470870d603469b1bc2554363dbc361bdb1a9090372b5c4e3a2ff46",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "X3PRO_1.png",
+          "file": "attack-shark-x3-pro-black.webp",
+          "bytes": 39624,
+          "sha256": "bc604f8f3d74ad05e5109facc15dd679cd5b9c366c1836bbd8e13e1a7b17ba54"
+        },
+        "red": {
+          "colour": "Red",
+          "src": "X3PRO_2.png",
+          "file": "attack-shark-x3-pro-red.webp",
+          "bytes": 40374,
+          "sha256": "938d853ef1a397c052a3c0950dbf3d0e73d300aac0fbef40ae4250b8fdcc276d",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-x1": {
+      "kind": "mouse",
+      "name": "X1",
+      "handle": "attack-shark-x1-wireless-gaming-mouse-with-magnetic-charging-dock-paw3395pro",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "X1_3_ce7e8143-8241-4e02-b881-65faace74e4c.png",
+          "file": "attack-shark-x1-white.webp",
+          "bytes": 18682,
+          "sha256": "ca5c8394ab73e0273d1035e27c0e1da9fb733ab0f2614bc37cdb75ef8902ee48",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "X1_2_b11e7362-84ab-4a01-addb-421a06438ac6.png",
+          "file": "attack-shark-x1-black.webp",
+          "bytes": 45710,
+          "sha256": "873706cf830354f73a010b63312f779cabf5b975b0f556ff876072abfa6091e9"
+        },
+        "red": {
+          "colour": "Red",
+          "src": "X1_1_3ddaaf73-d603-4fd2-b189-16f73fc3d454.png",
+          "file": "attack-shark-x1-red.webp",
+          "bytes": 42362,
+          "sha256": "90a3b489331f6bf509fc12f6a9705dd55bf4baa66a3a08d031860c5fdd0fb2b3",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-g3": {
+      "kind": "mouse",
+      "name": "G3",
+      "handle": "attack-shark-g3-tri-mode-wireless-gaming-mouse-25000-dpi-ultra-lightweight",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "G3_2.png",
+          "file": "attack-shark-g3-white.webp",
+          "bytes": 24084,
+          "sha256": "820911e6c00cab968d8e0e8ec9e938dfe4184c10cc4c5bd432a730bcdb80af04",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "G3_1.png",
+          "file": "attack-shark-g3-black.webp",
+          "bytes": 45938,
+          "sha256": "b5ff61978deafd5b6fd0489ae02a61c2e823db0c5c1a433997edfd679c65514b"
+        },
+        "berry-red": {
+          "colour": "Berry Red",
+          "src": "G3_3.png",
+          "file": "attack-shark-g3-berry-red.webp",
+          "bytes": 35674,
+          "sha256": "ce85bc8e03a7a4b595bf58065f422add9564be3251806a31b26e181b645555fc",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-g3-pro": {
+      "kind": "mouse",
+      "name": "G3 PRO",
+      "handle": "attack-shark-g3-tri-mode-wireless-gaming-mouse-with-charge-dock-25000-dpi-ultra-lightweight",
+      "variants": {
+        "black": {
+          "colour": "Black",
+          "src": "G3PRO_3.png",
+          "file": "attack-shark-g3-pro-black.webp",
+          "bytes": 45910,
+          "sha256": "8e99c147e098e3d90f563fdcbf6c9c599f9a2fba7097e0e695122cd768a5e515"
+        },
+        "white": {
+          "colour": "White",
+          "src": "G3PRO_2.png",
+          "file": "attack-shark-g3-pro-white.webp",
+          "bytes": 24012,
+          "sha256": "8bf25015a8b8a2f3af57491c42df17de32eafbb2e06b5754334dd0c465956c40",
+          "tolerance": 1,
+          "outline": "sibling"
+        },
+        "berry-red": {
+          "colour": "Berry Red",
+          "src": "G3PRO_1.png",
+          "file": "attack-shark-g3-pro-berry-red.webp",
+          "bytes": 35794,
+          "sha256": "2ace970291df837771455023cbf9400d09c0d29e1ee707810618450b0f7c369f",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-v3": {
+      "kind": "mouse",
+      "name": "V3",
+      "handle": "attackshark-v3-ultra-light-tri-mode-gaming-mouse",
+      "variants": {
+        "black": {
+          "colour": "Black",
+          "src": "V3_3.png",
+          "file": "attack-shark-v3-black.webp",
+          "bytes": 41794,
+          "sha256": "07275901a8d056bb8dfa1dfb224cbf02c28ef07d1bd4fa29cef56e6fd8f5eebb"
+        },
+        "white": {
+          "colour": "White",
+          "src": "V3_2.png",
+          "file": "attack-shark-v3-white.webp",
+          "bytes": 23600,
+          "sha256": "bffd91d07445d3256294ae29b3a6d68ceac19e9c9a6efdff34cf14a7bbcaf0c8",
+          "outline": "sibling"
+        },
+        "rose-red": {
+          "colour": "Rose Red",
+          "src": "V3_1.png",
+          "file": "attack-shark-v3-rose-red.webp",
+          "bytes": 37430,
+          "sha256": "32c86082c5c13f4dc89f71a52e4091323a466a0484c4e6e53ff376908033d6ac",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-v3-pro": {
+      "kind": "mouse",
+      "name": "V3 PRO",
+      "handle": "attack-shark-v3pro-ultra-light-tri-mode-gaming-mouse-with-charge-dock",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "V3PRO_2.png",
+          "file": "attack-shark-v3-pro-white.webp",
+          "bytes": 23736,
+          "sha256": "c04d49b8f5caa891eff35eaeccb7adf922feace1e0cd6bf828d2110b757a5369",
+          "tolerance": 1,
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "V3PRO_1.png",
+          "file": "attack-shark-v3-pro-black.webp",
+          "bytes": 41806,
+          "sha256": "c4af04366cc34898d78e6325b79629778be9c4ac3a803c52cbc2fe9d4ac16f37"
+        },
+        "rose-red": {
+          "colour": "Rose Red",
+          "src": "V3PRO_3.png",
+          "file": "attack-shark-v3-pro-rose-red.webp",
+          "bytes": 37434,
+          "sha256": "53bea13823ac1cb7be8ebf8094ffbefe18255c0fb9661b3a04b6abce09673c7c",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-v6": {
+      "kind": "mouse",
+      "name": "V6",
+      "handle": "attack-shark-v6-ultra-light-tri-mode-gaming-mouse",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "V6_3.png",
+          "file": "attack-shark-v6-white.webp",
+          "bytes": 22950,
+          "sha256": "5e92c92ef10eb5d6fdc5529001469817d4c7d0d7f4e59c617c75fb72ca96a891",
+          "tolerance": 1,
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "V6_1.png",
+          "file": "attack-shark-v6-black.webp",
+          "bytes": 43694,
+          "sha256": "53bd2bdf5521dc46800c1c22b776a652c3e8c0e95afe5bcd91eff793312a2111"
+        },
+        "berry-red": {
+          "colour": "Berry Red",
+          "src": "V6_2.png",
+          "file": "attack-shark-v6-berry-red.webp",
+          "bytes": 48450,
+          "sha256": "869659f1cea705c1adbcd32cde6061911c3d81cb08510665b0e284158db27610",
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-r5-ultra": {
+      "kind": "mouse",
+      "name": "R5 ULTRA",
+      "handle": "attack-shark-r5ultra-carbon-fibre-wireless-8k-paw3950max-gaming-mouse",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "R5ULTRA_4.png",
+          "file": "attack-shark-r5-ultra-white.webp",
+          "bytes": 45538,
+          "sha256": "06e33632d850679104da6aa46ae84a0ff492fa42964ad5806abda90fbe8f1d3f",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "R5ULTRA_1.png",
+          "file": "attack-shark-r5-ultra-black.webp",
+          "bytes": 50298,
+          "sha256": "e262973d05eb22b0aa941c9f004085b93e3c320d0da26c5ccfc3eeecc53aa8ed",
+          "outline": "sibling"
+        },
+        "red": {
+          "colour": "Red",
+          "src": "R5ULTRA_3.png",
+          "file": "attack-shark-r5-ultra-red.webp",
+          "bytes": 50282,
+          "sha256": "c5607aecf39fc1cc8929e74acac57119316e3922270e3012caac8d57645c0732",
+          "outline": "sibling"
+        },
+        "green": {
+          "colour": "Green",
+          "src": "R5ULTRA_2.png",
+          "file": "attack-shark-r5-ultra-green.webp",
+          "bytes": 51148,
+          "sha256": "5dc72ee97750b3a8d3830ff2835fd82e48875141781a22bc2f6db7fa4880d63a"
+        }
+      }
+    },
+    "attack-shark-r2": {
+      "kind": "mouse",
+      "name": "R2",
+      "handle": "attack-shark-r2-magnesium-alloy-paw3950-gaming-mouse-8k",
+      "variants": {
+        "grey": {
+          "colour": "Grey",
+          "src": "R2_4.png",
+          "file": "attack-shark-r2-grey.webp",
+          "bytes": 45120,
+          "sha256": "f306d9ab096f20e385975c8df22721feda6005ed8ac57e579522dad77e424987",
+          "holes": [
+            [
+              830,
+              504,
+              856,
+              594
+            ],
+            [
+              830,
+              724,
+              860,
+              864
+            ],
+            [
+              412,
+              840,
+              450,
+              914
+            ],
+            [
+              718,
+              840,
+              756,
+              914
+            ],
+            [
+              412,
+              962,
+              450,
+              1022
+            ],
+            [
+              718,
+              962,
+              754,
+              1022
+            ],
+            [
+              780,
+              964,
+              826,
+              1060
+            ],
+            [
+              356,
+              974,
+              388,
+              1062
+            ],
+            [
+              812,
+              976,
+              882,
+              1138
+            ],
+            [
+              286,
+              980,
+              354,
+              1138
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "R2_5.png",
+          "file": "attack-shark-r2-black.webp",
+          "bytes": 50770,
+          "sha256": "48ec1c3d724ff6226412c8eb8f791495ab285d5344dc6e035594e39f77e16346",
+          "holes": [
+            [
+              830,
+              504,
+              856,
+              594
+            ],
+            [
+              830,
+              724,
+              860,
+              864
+            ],
+            [
+              412,
+              838,
+              450,
+              914
+            ],
+            [
+              718,
+              838,
+              756,
+              914
+            ],
+            [
+              412,
+              962,
+              450,
+              1022
+            ],
+            [
+              718,
+              962,
+              754,
+              1022
+            ],
+            [
+              780,
+              964,
+              826,
+              1060
+            ],
+            [
+              356,
+              974,
+              388,
+              1062
+            ],
+            [
+              812,
+              976,
+              882,
+              1138
+            ],
+            [
+              286,
+              980,
+              354,
+              1138
+            ]
+          ]
+        },
+        "white": {
+          "colour": "White",
+          "src": "R2_3.png",
+          "file": "attack-shark-r2-white.webp",
+          "bytes": 48370,
+          "sha256": "0e95e5ac522ffa76d7d4e04f786231411bcc4fe60d8050533d6aaa1609c89840",
+          "holes": [
+            [
+              830,
+              504,
+              856,
+              594
+            ],
+            [
+              828,
+              724,
+              860,
+              866
+            ],
+            [
+              412,
+              840,
+              450,
+              914
+            ],
+            [
+              718,
+              840,
+              756,
+              914
+            ],
+            [
+              412,
+              962,
+              450,
+              1022
+            ],
+            [
+              718,
+              962,
+              756,
+              1022
+            ],
+            [
+              780,
+              964,
+              826,
+              1062
+            ],
+            [
+              356,
+              974,
+              388,
+              1062
+            ],
+            [
+              812,
+              976,
+              882,
+              1138
+            ],
+            [
+              286,
+              980,
+              354,
+              1138
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "retro-white": {
+          "colour": "Retro White",
+          "src": "R2_2.png",
+          "file": "attack-shark-r2-retro-white.webp",
+          "bytes": 51110,
+          "sha256": "bf0f3bf4ff23414875a61b7f47193276db72868a17dc9fc0fde307fd6d4e75a8",
+          "holes": [
+            [
+              830,
+              504,
+              856,
+              594
+            ],
+            [
+              830,
+              724,
+              860,
+              866
+            ],
+            [
+              412,
+              840,
+              450,
+              914
+            ],
+            [
+              718,
+              840,
+              756,
+              914
+            ],
+            [
+              412,
+              962,
+              450,
+              1022
+            ],
+            [
+              718,
+              962,
+              754,
+              1022
+            ],
+            [
+              780,
+              964,
+              826,
+              1062
+            ],
+            [
+              356,
+              974,
+              388,
+              1062
+            ],
+            [
+              812,
+              976,
+              882,
+              1138
+            ],
+            [
+              286,
+              980,
+              354,
+              1138
+            ]
+          ],
+          "outline": "sibling"
+        },
+        "purple-blue": {
+          "colour": "Purple & Blue",
+          "src": "R2_1.png",
+          "file": "attack-shark-r2-purple-blue.webp",
+          "bytes": 46782,
+          "sha256": "c83993c71074afdebd094294346b9f2e4c94e3293edf6d282a798e0e00907925",
+          "holes": [
+            [
+              830,
+              504,
+              856,
+              594
+            ],
+            [
+              830,
+              724,
+              860,
+              866
+            ],
+            [
+              412,
+              840,
+              450,
+              914
+            ],
+            [
+              718,
+              840,
+              756,
+              914
+            ],
+            [
+              412,
+              962,
+              450,
+              1022
+            ],
+            [
+              718,
+              962,
+              754,
+              1022
+            ],
+            [
+              780,
+              964,
+              826,
+              1060
+            ],
+            [
+              356,
+              974,
+              388,
+              1062
+            ],
+            [
+              812,
+              976,
+              882,
+              1138
+            ],
+            [
+              286,
+              980,
+              354,
+              1138
+            ]
+          ],
+          "outline": "sibling"
+        }
+      }
+    },
+    "attack-shark-r3": {
+      "kind": "mouse",
+      "name": "R3",
+      "handle": "attack-shark-r3-magnesium-alloy-wireless-gaming-mouse",
+      "variants": {
+        "white": {
+          "colour": "White",
+          "src": "R3_8.png",
+          "file": "attack-shark-r3-white.webp",
+          "bytes": 43868,
+          "sha256": "ce6812b5787564161d44c102b2a5ddf5a0fa09ecdf6234bd807d78c69318b49f",
+          "outline": "sibling"
+        },
+        "black": {
+          "colour": "Black",
+          "src": "R3_6.png",
+          "file": "attack-shark-r3-black.webp",
+          "bytes": 47934,
+          "sha256": "deaa7322a994595489c165ce3987621afb8d596313ad0f8ef77d0f73544f8d17"
+        },
+        "grey": {
+          "colour": "Grey",
+          "src": "R3_3.png",
+          "file": "attack-shark-r3-grey.webp",
+          "bytes": 46196,
+          "sha256": "e49476277c4ac4cc1eff40bb5652f63d6904d2c17ce6afc217ac0d476b58b1c0",
+          "outline": "sibling"
+        },
+        "purple-blue": {
+          "colour": "Purple Blue",
+          "src": "R3_1.png",
+          "file": "attack-shark-r3-purple-blue.webp",
+          "bytes": 45282,
+          "sha256": "e6e4cad360f8e05901e47dd853489968812a3647d048676ee863b3e5fd5e942e",
+          "outline": "sibling"
+        }
+      }
+    }
+  }
+}

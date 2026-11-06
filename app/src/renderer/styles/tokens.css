@@ -12,16 +12,13 @@
  * with cyan bleeding through the amber palette.
  */
 :root {
-  /* The night: the dark theme's page, text and accent colours, under names
-     that hold in BOTH themes. The app background is a night sky in either
-     theme (docs/design/background.md), so it, and the text set straight on
-     it, read these; everything else reads the plain tokens below, which the
-     light theme overrides. A palette sets its own night colours in its
-     `:root[data-palette]` block. */
+  /* The night: the dark theme's page and accent colours, under names that
+     hold in BOTH themes. The app background reads these in either theme:
+     its scenes glow in them at night and are lit in them by day
+     (docs/design/background.md). Everything else reads the plain tokens
+     below, which the light theme overrides. A palette sets its own night
+     colours in its `:root[data-palette]` block. */
   --night-bg: #0a0c10;
-  --night-text: #e8edf4;
-  --night-text-dim: #9aa7ba;
-  --night-text-mut: #64728a;
   --night-accent-rgb: 61, 248, 232;
   --night-violet-rgb: 139, 125, 255;
   /* surfaces — dark */
@@ -30,9 +27,9 @@
   --bg-2: #161c26;
   --bg-3: #1e2632;
   --line: #263041;
-  --text: var(--night-text);
-  --text-dim: var(--night-text-dim);
-  --text-mut: var(--night-text-mut);
+  --text: #e8edf4;
+  --text-dim: #9aa7ba;
+  --text-mut: #64728a;
   /* status — shared, palette-independent (success/warning/danger meaning) */
   --amber: #ffb454;
   --red: #ff5c6c;
@@ -244,15 +241,15 @@
   --on-accent: #0a0a0a;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.3), 0 0 18px -4px rgba(var(--accent-rgb), 0.4);
   --night-bg: #000000;
-  --night-text: #f2f2f2;
-  --night-text-dim: #a8a8a8;
-  --night-text-mut: #707070;
 }
 :root[data-palette='black']:not([data-mode='light']) {
   --bg-1: #0c0c0c;
   --bg-2: #161616;
   --bg-3: #202020;
   --line: #2c2c2c;
+  --text: #f2f2f2;
+  --text-dim: #a8a8a8;
+  --text-mut: #707070;
 }
 
 /* accent palette: red (bright scarlet, vs. crimson's deep red) */
@@ -352,15 +349,15 @@
   --on-accent: #221a12;
   --glow: 0 0 0 1px rgba(var(--accent-rgb), 0.3), 0 0 18px -4px rgba(var(--accent-rgb), 0.4);
   --night-bg: #1a1613;
-  --night-text: #f1ebe3;
-  --night-text-dim: #b0a494;
-  --night-text-mut: #7e7264;
 }
 :root[data-palette='grey-brown']:not([data-mode='light']) {
   --bg-1: #221d18;
   --bg-2: #2d261f;
   --bg-3: #392f26;
   --line: #4a3f33;
+  --text: #f1ebe3;
+  --text-dim: #b0a494;
+  --text-mut: #7e7264;
 }
 
 /* light surfaces (palette-independent, except amber's warm tint below) */

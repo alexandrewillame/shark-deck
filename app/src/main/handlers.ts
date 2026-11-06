@@ -19,6 +19,8 @@ import type { PerKeyLightingPreset } from '@shared/types/lighting';
 import type { ActuationLayout, KeyGroup, KeyboardOptions } from '@shared/types/keyboard-settings';
 import type { Macro } from '@shared/types/macros';
 import { applicableDpiStages } from '@shared/mouse-wire';
+import { layoutAddressable } from '@shared/menuGates';
+import { isReadOnly } from './devices/identity';
 import { deviceManager } from './devices/manager';
 import * as mstore from './macros/store';
 import * as lstore from './lighting/store';
@@ -58,6 +60,21 @@ function driverOrThrow(deviceId: string) {
   const d = deviceManager.getDriver(deviceId);
   if (!d) throw new Error(`device not connected: ${deviceId}`);
   return d;
+}
+
+/**
+ * The driver, for a write addressed to one key. Refused on a board whose
+ * layout does not name every key's slot (shared/menuGates.ts
+ * `layoutAddressable`): the renderer offers no per-key control there, and a
+ * guessed slot is how a write lands on the wrong key. Whole-board writes go
+ * through `driverOrThrow` as before.
+ */
+function perKeyDriverOrThrow(deviceId: string) {
+  const d = deviceManager.getDescriptor(deviceId);
+  if (d?.kind === 'keyboard' && !layoutAddressable({ keyMatrix: d.spec.keyMatrix })) {
+    throw new Error('This keyboard has no per-key layout; only whole-board settings can be set.');
+  }
+  return driverOrThrow(deviceId);
 }
 
 export function createDeviceHandlers(deps: DeviceHandlerDeps) {
@@ -111,7 +128,7 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
     readKeyZoneBindings: (id: string) => driverOrThrow(id).readKeyZoneBindings(),
     readSwitchTypes: (id: string) => driverOrThrow(id).readSwitchTypes(),
     setSwitchTypes: (id: string, assignments: { slot: number; switchId: number }[]) =>
-      guardedWrite(id, () => driverOrThrow(id).setSwitchTypes(assignments)),
+      guardedWrite(id, () => perKeyDriverOrThrow(id).setSwitchTypes(assignments)),
     readLighting: (id: string) => driverOrThrow(id).readLighting(),
     readSideLighting: (id: string) => driverOrThrow(id).readSideLighting(),
     readPerKeyLighting: (id: string) => driverOrThrow(id).readPerKeyLighting(),
@@ -164,13 +181,13 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
     setButtonMapping: (id: string, b: number, m: any) =>
       guardedWrite(id, () => driverOrThrow(id).setButtonMapping(b, m)),
     setMagneticKey: (id: string, k: any) =>
-      guardedWrite(id, () => driverOrThrow(id).setMagneticKey(k)),
+      guardedWrite(id, () => perKeyDriverOrThrow(id).setMagneticKey(k)),
     setMagneticKeys: (id: string, keys: any, previous?: any) =>
       guardedWrite(id, () => driverOrThrow(id).setMagneticKeys(keys, previous)),
     setMagneticGlobal: (id: string, mm: number) =>
       guardedWrite(id, () => driverOrThrow(id).setMagneticGlobal(mm)),
     setKeyZoneBindings: (id: string, slot: number, zones: Array<string | null>) =>
-      guardedWrite(id, () => driverOrThrow(id).setKeyZoneBindings(slot, zones)),
+      guardedWrite(id, () => perKeyDriverOrThrow(id).setKeyZoneBindings(slot, zones)),
     setMagneticCalibration: (id: string, scope: 'zero' | 'max') =>
       guardedWrite(id, () => driverOrThrow(id).setMagneticCalibration(scope)),
     setDebounce: (id: string, ms: number) =>
@@ -186,12 +203,12 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
     setSideLighting: (id: string, l: any) =>
       guardedWrite(id, () => driverOrThrow(id).setSideLighting(l)),
     setPerKeyLighting: (id: string, keys: any, opts?: any) =>
-      guardedWrite(id, () => driverOrThrow(id).setPerKeyLighting(keys, opts)),
+      guardedWrite(id, () => perKeyDriverOrThrow(id).setPerKeyLighting(keys, opts)),
     setReceiverLed: (id: string, l: any) =>
       guardedWrite(id, () => driverOrThrow(id).setReceiverLed(l)),
     setDpiLed: (id: string, l: any) => guardedWrite(id, () => driverOrThrow(id).setDpiLed(l)),
     setKeyRemap: (id: string, layer: 'base' | 'fn', index: number, action: string) =>
-      guardedWrite(id, () => driverOrThrow(id).setKeyRemap(layer, index, action)),
+      guardedWrite(id, () => perKeyDriverOrThrow(id).setKeyRemap(layer, index, action)),
     saveMacro: (id: string, m: any) => guardedWrite(id, () => driverOrThrow(id).saveMacro(m)),
     deleteMacro: (id: string, mid: string) =>
       guardedWrite(id, () => driverOrThrow(id).deleteMacro(mid)),
@@ -278,6 +295,7 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
 
     setLiveWatch: (id: string, on: boolean) => deviceManager.setLiveWatch(id, on),
 
+    acknowledgeNoBackup: (id: string) => deviceManager.acknowledgeNoBackup(id),
     backupNow: async (id: string) => {
       const desc = deviceManager.getDescriptor(id);
       const drv = driverOrThrow(id);
@@ -285,6 +303,11 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
       // otherwise drop a file named for the *real* model — which listBackups()
       // would then report as a backup of actual hardware.
       if (desc?.simulated) throw new Error('simulated device: nothing to back up');
+      // Nothing is read from a device that has not said what it is, or that
+      // Shark Deck leaves alone — a file here would be named for its family.
+      if (!desc || desc.identity === 'pending' || isReadOnly(desc)) {
+        throw new Error('this device is not configured by Shark Deck: nothing to back up');
+      }
       const blocks = await drv.backup();
       const file = await writeBackup(desc!.model, id, blocks);
       return {

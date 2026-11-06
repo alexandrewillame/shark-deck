@@ -93,7 +93,7 @@ async function boot(): Promise<void> {
   // Ask the browser not to evict app data (backups among it) under pressure.
   void navigator.storage?.persist?.().catch(() => false);
   // A first visit: the browser's language rather than English. The rest of
-  // the newcomer's look (Nebula in Shark Cyan) is the shared default
+  // the newcomer's look (Smoke in Shark Cyan) is the shared default
   // (main/settings.ts). A visitor's own choices win from then on.
   if (readJsonSync(paths.settings(), null) === null) {
     await setSettings({ language: browserLocale() });
@@ -107,7 +107,7 @@ async function boot(): Promise<void> {
     showDevNotes: import.meta.env.DEV,
     os: detectOs(),
     // WebHID exposes no serial numbers — see ManagerConfig.serialless.
-    serialless: 'model',
+    serialless: 'family',
   });
 
   const bus = createEventBus();

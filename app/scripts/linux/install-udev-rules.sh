@@ -39,6 +39,9 @@ else
 # SharkDeck — see app/assets/linux/60-sharkdeck.rules for the commented source.
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3554", TAG+="uaccess"
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3151", TAG+="uaccess"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="39ab", TAG+="uaccess"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="373e", TAG+="uaccess"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1d57", TAG+="uaccess"
 EOF
 fi
 chmod 0644 "$RULE_DEST"

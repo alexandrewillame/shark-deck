@@ -68,16 +68,40 @@ export function usePerKeyEditor(lighting: LightingSettings | null) {
   /** What the board runs the layer at: the read, moved on by every Apply. */
   const appliedBrightness = lighting?.brightness ?? brightness;
   const dirty = history.dirty || brightness !== appliedBrightness;
+  /** The brightness slider was moved since the last read, Apply or Cancel. */
+  const [brightEdited, setBrightEdited] = useState(false);
+  /**
+   * Changed by hand — what leaving would lose (state/leaveGuard.ts). Unlike
+   * `dirty`, a Global Apply that moved the board's brightness is not an edit
+   * made here.
+   */
+  const edited = history.dirty || (brightEdited && brightness !== appliedBrightness);
 
-  const { revert } = history;
+  const setBrightness = useCallback((v: number) => {
+    setBright(v);
+    setBrightEdited(true);
+  }, []);
+  const { revert, markSaved } = history;
   /** Cancel: the colours back to the board, undoably, and the brightness too
    *  (brightness is not a history step of its own). */
   const cancel = useCallback(() => {
     revert();
     setBright(appliedBrightness);
+    setBrightEdited(false);
   }, [revert, appliedBrightness]);
   /** After an explicit Read: take the board's brightness again. */
-  const resetBrightness = useCallback(() => setBright(lighting?.brightness ?? null), [lighting]);
+  const resetBrightness = useCallback(() => {
+    setBright(lighting?.brightness ?? null);
+    setBrightEdited(false);
+  }, [lighting]);
+  /** An Apply landed: the board now holds these colours at this brightness. */
+  const noteApplied = useCallback(
+    (sent: ColorMap) => {
+      markSaved(sent);
+      setBrightEdited(false);
+    },
+    [markSaved],
+  );
 
   return {
     history,
@@ -85,10 +109,12 @@ export function usePerKeyEditor(lighting: LightingSettings | null) {
     paint,
     setPaint,
     brightness,
-    setBrightness: setBright,
+    setBrightness,
     dirty,
+    edited,
     cancel,
     resetBrightness,
+    noteApplied,
   };
 }
 

@@ -5,6 +5,7 @@ import { Icon } from './icons';
 import { ProfileCompare } from './ProfileCompare';
 import { sd, useDeviceBusy, useWrite } from '../tabs/common';
 import { useT } from '../state/i18n';
+import { confirmLeave } from '../state/leaveGuard';
 import { slotLabel } from '../state/ui';
 
 /**
@@ -62,7 +63,17 @@ function OnboardSwitcher({ device }: { device: LiveDevice }) {
   return (
     <div className="profile-switcher-bar">
       <span className="hint">{t('onboard.title')}</span>
-      <select ref={selectRef} value={active} onChange={(e) => void select(Number(e.target.value))}>
+      {/* A switch re-reads every pane it shows (DeviceConfig's configEpoch),
+          dropping what nobody applied yet: ask first (state/leaveGuard.ts).
+          Kept editing, the controlled value puts the old slot back. */}
+      <select
+        ref={selectRef}
+        value={active}
+        onChange={(e) => {
+          const n = Number(e.target.value);
+          confirmLeave(device.id, () => void select(n), 'switch');
+        }}
+      >
         {Array.from({ length: count }, (_, i) => i + 1).map((n) => (
           <option key={n} value={n}>
             {slotLabel(device, n, t)}

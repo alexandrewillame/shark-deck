@@ -117,13 +117,26 @@ async function pathForRunningProcess(name: string): Promise<string | null> {
 /**
  * `guiOnly` has no single macOS API as clean as Windows' `MainWindowHandle`;
  * the practical proxy is "the running binary lives inside a `.app` bundle" —
- * background daemons and CLI tools don't. Best-effort, not exhaustive.
+ * background daemons and CLI tools don't. That alone let through the couple of
+ * dozen agents macOS keeps running as `.app` bundles of its own (AirPlayUIAgent,
+ * XProtect, WindowManager… under /System/Library and /Library/Apple), and the
+ * helper apps every Electron or Chromium app nests inside its bundle — Shark
+ * Deck's own `SharkDeck Helper (Renderer).app` included: on a fresh Mac they were
+ * the whole list. /System/Applications (Chess, Calculator…) stays, and so does a
+ * Steam game under ~/Library/Application Support. Best-effort, not exhaustive.
  */
+export function isUserApp(comm: string): boolean {
+  if (!comm.includes('.app/Contents/MacOS/')) return false;
+  if (comm.startsWith('/System/Library/') || comm.startsWith('/Library/Apple/')) return false;
+  // A bundle inside another bundle is that app's helper.
+  return comm.split('.app/').length === 2;
+}
+
 async function listRunningProcesses(guiOnly = true): Promise<RunningProcess[]> {
   const snap = await psSnapshot().catch(() => []);
   const byName = new Map<string, string>();
   for (const { comm } of snap) {
-    if (guiOnly && !comm.includes('.app/Contents/MacOS/')) continue;
+    if (guiOnly && !isUserApp(comm)) continue;
     const name = path.basename(comm).toLowerCase();
     if (!name || SYSTEM_NOISE.has(name) || byName.has(name)) continue;
     byName.set(name, resolveAppBundle(comm));
