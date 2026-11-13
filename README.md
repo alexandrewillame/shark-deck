@@ -144,6 +144,3 @@ Copyright © 2026 Alexandre Willame. Shark Deck is free software under the
 [GNU General Public License, version 3 or later](LICENSE): you may use, study,
 share and change it; versions you distribute must stay under the same license,
 with their source, and keep this copyright notice. It comes with no warranty.
-
-If you build on Shark Deck, please credit Alexandre Willame as its original
-author.
