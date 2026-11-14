@@ -70,10 +70,6 @@ the [platform support matrix](docs/platform-support.md#browser-edition-webhid).
 | **Macro editor** | **Per-game auto-switching** | **Light theme** |
 | ![](docs/media/screens/08-macro-editor.png) | ![](docs/media/screens/09-auto-profile-switching.png) | ![](docs/media/screens/11-light-theme.png) |
 
-**Themes & languages:** animated backgrounds, colour palettes, eleven languages.
-
-<p align="center"><img src="docs/media/walkthrough/tour-4-themes.webp" alt="Shark Deck walkthrough: themes and languages" width="800"></p>
-
 ## Where things are
 
 | Path | What it is |
