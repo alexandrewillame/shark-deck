@@ -739,7 +739,7 @@ GET_LEDPARAM (135) reply, from the payload start: same order
 ```
 
 **The reply order matches the write order — resolved, not assumed.** This was an
-open question (`roadmap.md`): `FINDINGS-R85HE.md:163` read the reply as *effect,
+open question: `FINDINGS-R85HE.md:163` read the reply as *effect,
 brightness, speed*, the opposite of the write, which would have meant the main
 zone's brightness and speed were swapped on every read. The vendor's own
 `getLightSetting` settles it:

@@ -1,8 +1,7 @@
 # Auto-switch design
 
 How game-aware profile switching works, and how it diverges from the Python
-switcher it was generalised from
-(`legacy/attack-shark-profile-switcher/switcher.py`, reference only).
+switcher it was generalised from.
 
 Moved out of `app/src/main/profiles/switcher.ts`'s header comment: the
 comparison against a superseded implementation is orientation, not something

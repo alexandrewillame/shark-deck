@@ -3,8 +3,8 @@ import type { DeviceDescriptor } from '@shared/types/device';
 import type { LiveDevice } from '@shared/types/live';
 
 /**
- * What `ensureBackup` accepts as the backup before a first write (CLAUDE.md
- * invariant #1), against the driver's `backupPolicy()`. In-memory store; the
+ * What `ensureBackup` accepts as the backup before a first write, against
+ * the driver's `backupPolicy()`. In-memory store; the
  * driver is a stub that returns whatever blocks a test hands it.
  */
 

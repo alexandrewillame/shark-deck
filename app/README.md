@@ -12,7 +12,7 @@ a trustworthy replacement for the vendor's _Mouse Hub_ and _Driver v4_.
   a catalog slot). Adding a _feature_ is not one tab and one capability string —
   it lands in 12–17 files across the type union, the IPC contract, the preload
   bridge, a driver, the simulated-device seeds and the UI. `npm run test:contract`
-  checks the wiring; the `add-capability-tab` skill lists every file.
+  checks the wiring.
 - **Safe by construction.** A full config backup is taken before the first write
   to any device, and every write is read back and diffed. Each protocol command
   is tagged `verified-capture` / `ported-from-vendor` / `inferred`.
@@ -30,8 +30,7 @@ Basics implemented:
 - Keyboard tabs: Profiles, Magnetic (interactive key map), Key Remap, Lighting,
   Macros, Power, Screen, Firmware, Restore
 - Automatic game-aware profile switching (Steam/Epic scan, rules, tray, pin),
-  reimplemented natively from the Python tool now in
-  `../legacy/attack-shark-profile-switcher/`
+  reimplemented natively from an earlier Python tool
 - **V8 profile switching is verified against real hardware traffic.** Other
   writes are wired end-to-end but their frames are still being confirmed — see
   `../docs/protocol/`.

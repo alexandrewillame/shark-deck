@@ -75,8 +75,8 @@ export interface MagneticWriteOpts {
 }
 
 /**
- * What a backup must hold before the first write to a device (CLAUDE.md
- * invariant #1, manager.ts `ensureBackup`).
+ * What a backup must hold before the first write to a device (the
+ * backup-before-write invariant, manager.ts `ensureBackup`).
  *
  * - `full`: every setting the device has reads back. Writes are refused until
  *   a backup holds every `required` block.

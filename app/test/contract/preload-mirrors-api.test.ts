@@ -3,7 +3,7 @@ import { IPC } from '@shared/ipc';
 import { interfaceMembers, parse } from '../lib/ast';
 
 /**
- * CLAUDE.md invariant: `src/preload/index.ts` hand-mirrors every method of
+ * Invariant: `src/preload/index.ts` hand-mirrors every method of
  * `interface Api` in `src/shared/ipc.ts`. There is no codegen, and `tsc` only
  * catches a *missing* method (via `const api: Api`) -- it cannot catch a method
  * wired to the wrong channel name, because every read is

@@ -89,9 +89,8 @@ the [platform support matrix](docs/platform-support.md#browser-edition-webhid).
 | `dist/app/` | **Just want to run it? This is the launcher.** Unpacked build, no install — `SharkDeck.exe` (Windows), `SharkDeck.app` (macOS), `sharkdeck` (Linux). |
 | `dist/installer/` | `SharkDeck-Setup-*.exe` (Windows NSIS), `SharkDeck-*.dmg` (macOS), `sharkdeck_*.deb` / `sharkdeck-*.rpm` (Linux). |
 | `dist/portable/` | `SharkDeck-*-portable.exe` (Windows), `SharkDeck-*.zip` (macOS), `SharkDeck-*.AppImage` (Linux) — one self-contained file, no install. |
-| `docs/` | Protocol notes, reverse-engineering captures, the brief & roadmap, the [platform support matrix](docs/platform-support.md). |
+| `docs/` | Protocol notes, reverse-engineering notes, design decisions, the [platform support matrix](docs/platform-support.md). |
 | `app/assets/` | App icons (`logo.*`), device art, and `brand/` (wordmark) — all shipped in the asar. |
-| `legacy/` | The superseded Python V8 profile switcher, kept for reference. |
 
 ## Run the app
 
@@ -134,12 +133,8 @@ require the symlink privilege. The old workaround is kept, unwired, as
 
 ## Develop further
 
-- Architecture, conventions and the capability model: [`CLAUDE.md`](CLAUDE.md)
-  and [`app/README.md`](app/README.md).
-- What's planned and what's unverified: [`docs/roadmap.md`](docs/roadmap.md) —
-  note this is a dated, append-only session changelog rather than a reference
-  document. For orientation start with [`CLAUDE.md`](CLAUDE.md) and the generated
-  file index at [`docs/MAP.md`](docs/MAP.md).
+- Architecture, conventions and the capability model: [`app/README.md`](app/README.md),
+  and the design decisions in [`docs/design/`](docs/design/).
 - Wire protocol and its provenance tags: [`docs/protocol/README.md`](docs/protocol/README.md).
 - Per-OS support matrix, the udev rule, and unsigned-build workarounds:
   [`docs/platform-support.md`](docs/platform-support.md).

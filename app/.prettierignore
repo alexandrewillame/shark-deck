@@ -22,3 +22,6 @@ scripts/_raw/
 # sharkfin layout fixture, which stays byte-for-byte what sharkfin publishes.
 assets/devices/manifest.json
 test/fixtures/sharkfin/
+
+# The R85HE state snapshot compx-he-read.test.ts replays, kept as captured.
+test/fixtures/r85he-kb-snapshot.json

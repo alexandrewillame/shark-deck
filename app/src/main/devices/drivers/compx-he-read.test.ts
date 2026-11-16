@@ -27,13 +27,7 @@ interface Snapshot {
 }
 
 const SNAPSHOT: Snapshot = JSON.parse(
-  readFileSync(
-    resolve(
-      __dirname,
-      '../../../../../docs/reverse-engineering/kb-snapshot-2026-09-05T04-30-15-131Z.json',
-    ),
-    'utf8',
-  ),
+  readFileSync(resolve(__dirname, '../../../../test/fixtures/r85he-kb-snapshot.json'), 'utf8'),
 );
 
 /** `compx-fea` lays args from byte 2 (see hid/frame.ts): page, 1, chunk. */

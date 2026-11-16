@@ -5,7 +5,7 @@ import { hardenCsp, hardenWebCsp } from '../../build/csp';
 import { APP_ROOT } from '../lib/ast';
 
 /**
- * CLAUDE.md invariant: no network. Strict CSP, a `will-navigate` block, and a
+ * Invariant: no network. Strict CSP, a `will-navigate` block, and a
  * `setWindowOpenHandler` deny. Model names and art are bundled, never fetched.
  *
  * Two halves:

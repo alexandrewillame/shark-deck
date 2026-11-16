@@ -29,7 +29,7 @@ was built on a Windows machine with no Mac or Linux box to test against.
 
 The same app, run from `https://alexandrewillame.github.io/shark-deck/` with
 nothing installed: the renderer and the whole device layer run in the page, and
-the browser's WebHID API replaces node-hid (see CLAUDE.md, *Browser edition*).
+the browser's WebHID API replaces node-hid.
 Configuration only — everything that needs software on the computer stays in
 the desktop app.
 
@@ -89,8 +89,8 @@ all three backends, verified by reading the hidapi source for each platform.
 That part held on Linux and on macOS. The broadcast quirk above, Apple
 Silicon and the V8 are what still need real hardware to confirm one way or
 the other — until then, every write still goes through the existing
-backup-before-write and read-back-and-diff machinery (`CLAUDE.md`'s
-invariants), so a wrong assumption fails safe rather than silently.
+backup-before-write and read-back-and-diff machinery, so a wrong assumption
+fails safe rather than silently.
 
 **If you have Attack Shark hardware and a Mac or Linux machine**, the most
 useful thing you can do is: install the app, run

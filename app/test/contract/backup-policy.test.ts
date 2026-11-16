@@ -15,7 +15,7 @@ const { GEARHUB_MICE } = await import('../../src/main/devices/catalog/gearhub-mi
 const { jxcMouseRoster } = await import('../../src/main/devices/catalog/jxc-mice');
 
 /**
- * CLAUDE.md invariant #1: a backup before the first write to any device.
+ * Invariant: a backup before the first write to any device.
  * `guardedWrite` (ipc-guarded-write.test.ts) proves every write asks for one;
  * this proves every driver says what one has to HOLD — `ensureBackup` refuses
  * the write until a backup does (drivers/base.ts `BackupPolicy`):

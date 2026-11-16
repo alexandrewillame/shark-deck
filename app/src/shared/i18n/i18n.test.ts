@@ -37,9 +37,8 @@ describe('i18n fallback chain', () => {
 
   // Every locale is a *complete* translation now (not a partial skeleton that
   // silently falls back to English key by key) — this is the parity guard
-  // called for in docs/roadmap.md-adjacent planning after de/ru/tr/ja/ko/
-  // zh-CN/zh-TW/ar went from a 59-key hardware-vocabulary skeleton to the
-  // full catalogue. A locale that regresses back to partial coverage fails
+  // added after de/ru/tr/ja/ko/zh-CN/zh-TW/ar went from a 59-key
+  // hardware-vocabulary skeleton to the full catalogue. A locale that regresses back to partial coverage fails
   // here instead of silently reading as English in the app.
   it('every canonical key is translated in every locale', () => {
     const canonical = Object.keys(en);

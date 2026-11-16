@@ -5,7 +5,7 @@ import type { ScannedGame } from '@shared/types/diagnostics';
 import { platform } from '../platform';
 
 /**
- * Ported from legacy/attack-shark-profile-switcher/detect_games.py. Scans
+ * Ported from the earlier Python switcher's game detection. Scans
  * installed Steam (all OSes) and Epic (Windows only — no Linux/macOS Epic
  * launcher exists) titles and heuristically picks the most game-like
  * executable per install dir. The guess is a heuristic — the UI shows it for

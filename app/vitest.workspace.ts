@@ -16,7 +16,7 @@ import { defineWorkspace } from 'vitest/config';
  *
  * Tiers:
  *   unit     -- pure/node, co-located with source. The hot path (476 tests).
- *   contract -- the CLAUDE.md wiring invariants. ~1s; run after any edit that
+ *   contract -- the wiring invariants. ~1s; run after any edit that
  *               touches IPC, the preload bridge, the catalog or a descriptor.
  *   ui       -- jsdom + React. Matches only *.test.tsx, so the unit tier never
  *               pays the cost of booting a DOM.

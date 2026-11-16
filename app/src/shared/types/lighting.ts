@@ -128,7 +128,7 @@ export type ReceiverLedValues = Omit<ReceiverLedSettings, 'source'>;
  * The DPI-indicator LED on the mouse body. `effect` is the vendor
  * `DPI_LED_EFFECTS` wire value (0 Off / 1 Steady / 2 Breathing). The colour it
  * shows per DPI stage is `DpiStage.color` (DPI Setting owns that memory block
- * solely — see docs/roadmap.md — so it isn't duplicated here).
+ * solely, so it isn't duplicated here).
  */
 export interface DpiLedSettings {
   effect: number;

@@ -46,8 +46,7 @@ import { MT_HOLD_ZONE, MT_TAP_ZONE, isModTapEntry } from '@shared/key-zones';
  * `LiveDevice`/`Capability` pair the main process reports, so with nothing
  * plugged in none of them are reachable. This module fabricates one device per
  * *supported shape* — not per PID — so the whole UI can be navigated with no
- * hardware attached (see docs/roadmap.md, which records several work batches
- * done with no device on the desk).
+ * hardware attached.
  *
  * Nothing here ever touches HID: `VirtualDriver` overrides every method that
  * would reach `this.ch`, and the manager hands it a channel it never opens.

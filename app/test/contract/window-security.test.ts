@@ -4,7 +4,7 @@ import { join, relative, resolve, sep } from 'node:path';
 import { APP_ROOT, isBooleanLiteral, newExpressions, parse, propValue } from '../lib/ast';
 
 /**
- * CLAUDE.md invariant: the renderer stays sandboxed --
+ * Invariant: the renderer stays sandboxed --
  * `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` -- and
  * every window denies navigation and popups.
  *

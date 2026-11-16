@@ -69,7 +69,7 @@ jobs:
         if: runner.os == 'Linux'
         run: npm run format:check
 
-      - name: contract (CLAUDE.md invariants)
+      - name: contract (invariants)
         run: npm run test:contract
 
       - name: unit
@@ -81,12 +81,6 @@ jobs:
 
       - name: ui
         run: npm run test:ui
-
-      # docs/MAP.md is generated from the source tree; a stale one is worse
-      # than none, since it is meant to be read INSTEAD of opening files.
-      - name: file map is current
-        if: runner.os == 'Linux'
-        run: npm run map:check
 
       # The browser edition (pages.yml publishes it on a release). The contract
       # tier already walks its import graph; only a real build proves Vite can

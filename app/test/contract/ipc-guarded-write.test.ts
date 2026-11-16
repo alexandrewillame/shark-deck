@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { APP_ROOT, interfaceMembers, objectProps, parse, type Prop } from '../lib/ast';
 
 /**
- * CLAUDE.md invariant #1: a full backup exists before the first write to any
+ * Invariant: a full backup exists before the first write to any
  * device. Every mutating handler goes through `guardedWrite()`, which calls
  * `deviceManager.ensureBackup()` and refuses the write if no backup could be
  * taken.
@@ -149,7 +149,7 @@ describe('every mutating handler takes a backup first', () => {
     expect(
       calls.length,
       'switcher.ts no longer calls deviceManager.ensureBackup(); applyProfile’s ' +
-        'exemption in this file is now a gap in CLAUDE.md invariant #1',
+        'exemption in this file is now a gap in the backup-before-write invariant',
     ).toBeGreaterThan(0);
   });
 

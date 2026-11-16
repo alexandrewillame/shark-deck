@@ -9,7 +9,7 @@
  * edition bundles this file. test/contract/browser-node-free.test.ts walks
  * its imports to keep it that way.
  *
- * `guardedWrite` lives here, so CLAUDE.md invariant #1 — a backup exists
+ * `guardedWrite` lives here, so the backup invariant — a backup exists
  * before the first write to any device — holds in both hosts by construction,
  * and test/contract/ipc-guarded-write.test.ts checks one table, not two.
  */
@@ -88,7 +88,7 @@ function perKeyDriverOrThrow(deviceId: string) {
 export function createDeviceHandlers(deps: DeviceHandlerDeps) {
   /**
    * Every mutating handler goes through here so a full backup exists before
-   * the first write to a device (CLAUDE.md invariant #1). `ensureBackup`
+   * the first write to a device. `ensureBackup`
    * returns `false` when it could not take one (read threw / came back
    * empty) — the write must NOT proceed in that case, or a device that can be
    * written but not fully read gets mutated with nothing to restore from. A

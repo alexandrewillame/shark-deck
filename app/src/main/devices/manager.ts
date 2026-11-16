@@ -157,7 +157,8 @@ const LIVE_POLL_MS = 1_500;
  * Without it the poll races the user: a read that started before their write
  * lands after it and pushes the old value back into the UI they just changed.
  * Stamped from `guardedWrite` in main/ipc.ts, which every mutating path
- * already funnels through (CLAUDE.md invariant #1), so no write can bypass it.
+ * already funnels through (the backup-before-write invariant), so no write
+ * can bypass it.
  */
 const LIVE_WRITE_QUIET_MS = 750;
 
@@ -494,7 +495,7 @@ export class DeviceManager extends Emitter {
   }
 
   /**
-   * The backup CLAUDE.md invariant #1 asks for, before any write reaches a
+   * The backup that must exist before any write reaches a
    * device. What it must hold is the driver's `backupPolicy()`:
    *
    *  - the newest stored backup of this model counts only if it holds every

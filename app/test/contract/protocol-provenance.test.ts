@@ -8,7 +8,7 @@ import { APP_ROOT, parse } from '../lib/ast';
 import { commentsOf } from '../lib/comments';
 
 /**
- * CLAUDE.md invariant: every protocol command carries a provenance tag --
+ * Invariant: every protocol command carries a provenance tag --
  * `verified-capture`, `ported-from-vendor` or `inferred`. Only V8 profile
  * switching is `verified-capture`; everything else is treated as unconfirmed
  * and keeps its read-back diff.

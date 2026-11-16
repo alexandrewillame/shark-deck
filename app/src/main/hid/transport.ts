@@ -87,8 +87,8 @@ export function lastHidError(): string | null {
  * Enumerate every HID collection for a VID/PID. We match the vendor config
  * collection by usage page + usage (from the report descriptor), never by the
  * `colNN` index or instance suffix in the path — those change with USB port.
- * This rule is carried over verbatim from the proven Python switcher
- * (legacy/attack-shark-profile-switcher/sharkctl.py:find_device).
+ * This rule is carried over verbatim from the proven Python switcher that
+ * came before this app (its `find_device`).
  *
  * node-hid v3 `HID.devicesAsync()` accepts *either* no arguments *or* both a
  * vendor and product id — passing a lone vid (or `vid, undefined`) throws

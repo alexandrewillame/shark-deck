@@ -8,8 +8,8 @@ import { bigIconFor, iconFor } from './profiles/processIcons';
 
 /**
  * The profile-switch popup: a small always-on-top card, bottom-right of the
- * primary display, that stays for `DISPLAY_MS` then fades — modelled on
- * `legacy/attack-shark-profile-switcher/overlay.py`, but as a real Electron
+ * primary display, that stays for `DISPLAY_MS` then fades — modelled on the
+ * earlier Python switcher's overlay, but as a real Electron
  * `BrowserWindow` (mirroring how `main/crash.ts` uses a second window with
  * its own isolated preload) rather than a renderer-only card, because it
  * has to stay visible over a fullscreen game while the main SharkDeck window
