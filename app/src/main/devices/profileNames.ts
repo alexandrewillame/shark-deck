@@ -1,4 +1,5 @@
-import { paths, readJson, withFileLock, writeJson } from '../store';
+import { paths } from '../store';
+import { realIo, type StoreIo } from './demoScope';
 import { uniqueName } from '@shared/naming';
 
 /**
@@ -15,13 +16,16 @@ import { uniqueName } from '@shared/naming';
  */
 type Store = Record<string, Record<number, string>>;
 
-async function readStore(): Promise<Store> {
-  return readJson<Store>(paths.onboardProfileNames(), {});
+async function readStore(io: StoreIo): Promise<Store> {
+  return io.readJson<Store>(paths.onboardProfileNames(), {});
 }
 
 /** Names set so far for this model's slots, sparse — an unset slot has no entry. */
-export async function getOnboardProfileNames(model: string): Promise<Record<number, string>> {
-  const store = await readStore();
+export async function getOnboardProfileNames(
+  model: string,
+  io: StoreIo = realIo,
+): Promise<Record<number, string>> {
+  const store = await readStore(io);
   return store[model] ?? {};
 }
 
@@ -29,9 +33,10 @@ export async function renameOnboardProfile(
   model: string,
   slot: number,
   name: string,
+  io: StoreIo = realIo,
 ): Promise<Record<number, string>> {
-  return withFileLock(paths.onboardProfileNames(), async () => {
-    const store = await readStore();
+  return io.withFileLock(paths.onboardProfileNames(), async () => {
+    const store = await readStore(io);
     const forModel = { ...(store[model] ?? {}) };
     const trimmed = name.trim();
     if (trimmed) {
@@ -45,7 +50,7 @@ export async function renameOnboardProfile(
       forModel[slot] = uniqueName(trimmed, others);
     } else delete forModel[slot]; // an empty name clears back to the "Profile {n}" default
     store[model] = forModel;
-    await writeJson(paths.onboardProfileNames(), store);
+    await io.writeJson(paths.onboardProfileNames(), store);
     return forModel;
   });
 }

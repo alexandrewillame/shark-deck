@@ -524,10 +524,10 @@ export const ar: Partial<Messages> = {
   'set.frameLog': 'سجل إطارات HID',
   'set.frameLog.hint': 'عرض حي لكل تقرير مُرسَل إلى الأجهزة المتصلة ومنها.',
   'set.noFrames': 'لا توجد إطارات بعد.',
-  'set.devDevices': 'أجهزة محاكاة',
-  'set.devDevices.hint':
-    'يعرض جهازًا واحدًا من كل نوع مدعوم في الشبكة، لاستعراض الواجهة بالكامل دون توصيل أي عتاد.',
-  'hint.simulated': 'جهاز محاكاة — وضع المطور، لا يوجد عتاد متصل.',
+  'set.demoMode': 'وضع العرض التجريبي',
+  'set.demoMode.hint':
+    'يعرض نسخة محاكاة من كل جهاز مدعوم لاستكشاف جميع القوائم. لا يُرسل أي شيء إلى أجهزة حقيقية.',
+  'hint.demo': 'جهاز تجريبي — محاكاة، لا يُرسل أي شيء إلى الجهاز.',
 
   // -- device manager hints (main process) -----------------------
   'hint.offlineWireless':
@@ -1404,4 +1404,11 @@ export const ar: Partial<Messages> = {
   'leave.body.lostThem': 'إذا غادرت الآن فسيتم تجاهل هذا التغيير.',
   'leave.body.lostThemSwitch': 'إذا بدّلت الآن فسيتم تجاهل هذا التغيير.',
   'leave.body.lostThemQuit': 'إذا خرجت الآن فسيتم تجاهل هذا التغيير.',
+  'keypick.search': 'ابحث عن مفاتيح…',
+  'keypick.search.clear': 'مسح البحث',
+  'keypick.search.none': 'لا يوجد مفتاح يطابق «{q}».',
+  'web.desktopApp': 'احصل على تطبيق سطح المكتب',
+  'demo.banner': 'وضع العرض التجريبي: هذه الأجهزة محاكاة، ولا يُرسل أي شيء إلى أجهزة حقيقية.',
+  'demo.exit': 'إنهاء العرض التجريبي',
+  'demo.noBackups': 'لا تحتفظ الأجهزة التجريبية بنسخ احتياطية.',
 };

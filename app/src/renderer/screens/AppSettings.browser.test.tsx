@@ -11,9 +11,10 @@ vi.mock('../state/host', () => ({
     overlay: false,
     mouseSettingsLink: false,
     ambientLighting: false,
-    simulatedDevices: false,
+    publicDemo: true,
     devicePicker: true,
   },
+  canPickDevices: () => true,
 }));
 
 import type { AppSettings } from '@shared/types/app-settings';
@@ -34,7 +35,7 @@ const SETTINGS = {
   batteryLowThreshold: 15,
   railCollapsed: false,
   deviceOrder: [],
-  devMode: false,
+  demoMode: false,
 } as AppSettings;
 
 /** A setting the browser cannot honour must not be offered there at all. */
@@ -64,8 +65,14 @@ describe('Settings, browser edition', () => {
     ]) {
       expect(screen.queryByText(label), label).toBeNull();
     }
-    // Even in a dev build: the browser host never adds simulated devices.
-    expect(screen.queryByText(/Simulated devices/i)).toBeNull();
+  });
+
+  it('offers demo mode to every visitor, a published build included', () => {
+    useStore.setState({ platformInfo: { ...useStore.getState().platformInfo!, isDev: false } });
+    render(<AppSettingsScreen />);
+    expect(screen.getByText('Demo mode')).toBeTruthy();
+    // The Developer section (the HID frame log) is still for dev builds only.
+    expect(screen.queryByText('Developer')).toBeNull();
   });
 
   it('keeps what works in a browser, and says which edition this is', () => {

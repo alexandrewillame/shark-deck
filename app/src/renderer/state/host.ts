@@ -34,11 +34,13 @@ export const hostFeatures = {
   /** Lighting that follows the screen or the music — a capture that must outlive the window's focus. */
   ambientLighting: desktop,
   /**
-   * The row that offers developer mode's simulated devices. Its panel already
-   * shows only in development builds; the browser edition's published build
-   * never adds them (src/web/main.ts), its dev server does.
+   * Demo mode (simulated devices) for every visitor of the browser edition —
+   * in Settings, and through the `#demo` link. Not advertised anywhere (the
+   * welcome screen, the README): it is for those who know it is there. The
+   * desktop offers it in development builds only (`PlatformInfo.isDev`) — an
+   * installed app is for the hardware in front of you.
    */
-  simulatedDevices: desktop || import.meta.env.DEV,
+  publicDemo: !desktop,
   /** Devices are reached one at a time, after the user picks each in the browser's own dialog. */
   devicePicker: !desktop,
   /** Quitting with a change nobody applied asks first, in the app's own prompt. */
@@ -48,3 +50,12 @@ export const hostFeatures = {
 } as const;
 
 export type HostFeature = keyof typeof hostFeatures;
+
+/**
+ * Whether this page can reach a USB device at all: the browser edition, in a
+ * browser that has WebHID. Firefox, Safari, Brave (by default) and phones do
+ * not, and there the device picker is a dead button — the page points to the
+ * desktop app instead. Always false on the desktop, which has no picker.
+ */
+export const canPickDevices = (): boolean =>
+  hostFeatures.devicePicker && typeof navigator !== 'undefined' && 'hid' in navigator;

@@ -115,7 +115,12 @@ export function jxcDescriptorFor(pid: number): DeviceDescriptor {
   return onCollection(readOnly(endpoint, 'mouse', 'unknown', `373e:${hex}`));
 }
 
-/** One descriptor per JXC model, for developer mode and the menu tests. */
+/** One descriptor per JXC model, for demo mode and the menu tests. */
 export function jxcMouseRoster(): DeviceDescriptor[] {
   return MODELS.map((m) => jxcMouse(m, m.receiver));
+}
+
+/** The names shown, never driven, until the model is confirmed as Attack Shark's — for the lineup doc. */
+export function jxcUnconfirmedNames(): string[] {
+  return [...new Set(UNCONFIRMED.values())];
 }

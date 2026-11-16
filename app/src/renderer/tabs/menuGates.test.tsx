@@ -12,7 +12,7 @@ import { configTabs } from './index';
  * Every model's menus, drawn, against the gate table (shared/menuGates.ts).
  *
  * For each simulated device (one per catalogue model and fallback family —
- * the same roster developer mode shows), every tab and sub-view is rendered
+ * the same roster demo mode shows), every tab and sub-view is rendered
  * with its reads answered by the VirtualDriver, and the `<Gated>` probe records
  * which controls actually drew. Two checks:
  *
@@ -69,7 +69,7 @@ const VIEWS: Partial<Record<TabId, { key: string; views: string[] }>> = {
   device: { key: 'device.view', views: ['device', 'switches'] },
 };
 
-// Developer mode's roster, plus a device of each family that has not said
+// Demo mode's roster, plus a device of each family that has not said
 // what it is yet — real hardware shows one of those on every plug-in.
 const roster = [
   ...virtualDescriptors(),

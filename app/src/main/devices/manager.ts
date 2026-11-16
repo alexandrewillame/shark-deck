@@ -30,6 +30,7 @@ import { listBackupFiles, readBackup, writeBackup } from '../store';
 import { hasBackupWaiver, recordBackupWaiver } from './backupWaivers';
 import { getOnboardProfileNames, renameOnboardProfile } from './profileNames';
 import { getDeviceColor, setDeviceColor } from './colors';
+import { ioFor } from './demoScope';
 import { deviceStateFor } from './deviceState';
 import { deviceUi } from './deviceUi';
 
@@ -198,7 +199,8 @@ function receiverOnline(wireless: boolean, online: boolean, channelOpen: boolean
  * the call ships no developer aids.
  */
 export interface ManagerConfig {
-  /** Developer mode may add the simulated devices. Desktop: unpackaged builds only. */
+  /** Demo mode may add the simulated devices. Desktop: unpackaged builds
+   *  only; the browser edition: always. */
   allowSimulated: boolean;
   /** Show developer-only card notes (the "protocol inferred" hint). Desktop: unpackaged builds only. */
   showDevNotes: boolean;
@@ -214,6 +216,13 @@ export interface ManagerConfig {
    * family stays on its endpoint key.
    */
   serialless: 'path' | 'family';
+  /**
+   * Whether there is a USB HID bus to scan at all. False in a browser with no
+   * WebHID (Firefox, Safari): every pass would fail the same way and put a
+   * "cannot read the USB HID bus, restart the app" error on the welcome
+   * screen, for something no restart changes. Demo devices are still added.
+   */
+  hid: boolean;
 }
 
 const DEFAULT_CONFIG: ManagerConfig = {
@@ -221,6 +230,7 @@ const DEFAULT_CONFIG: ManagerConfig = {
   showDevNotes: false,
   os: 'unknown',
   serialless: 'path',
+  hid: true,
 };
 
 function hint(
@@ -238,7 +248,7 @@ function hint(
   const Kind = `${kind[0]!.toUpperCase()}${kind.slice(1)}`;
   // Takes precedence over every other hint: a simulated card must never be
   // mistaken for hardware that is actually attached.
-  if (simulated) return t('hint.simulated');
+  if (simulated) return t('hint.demo');
   if (!online && permissionError) {
     // The udev rule is the Linux answer. On macOS and Windows a refused open
     // means another program holds the device (the vendor's software, most
@@ -377,7 +387,7 @@ export class DeviceManager extends Emitter {
   }
 
   /** Re-run the scan now instead of waiting out the rest of the 2.5s tick —
-   *  used when a setting that changes what the scan produces (developer mode)
+   *  used when a setting that changes what the scan produces (demo mode)
    *  is toggled, so the grid reacts immediately. */
   nudgeScan(): void {
     if (this.stopped || this.paused) return;
@@ -424,23 +434,40 @@ export class DeviceManager extends Emitter {
     return this.entries.get(deviceId)?.live.activeProfile ?? null;
   }
 
-  /** Rename one onboard profile slot for every live entry of this model — see devices/profileNames.ts. */
-  async setProfileName(model: string, slot: number, name: string): Promise<LiveDevice[]> {
-    const names = await renameOnboardProfile(model, slot, name);
+  /**
+   * The descriptor of a connected device, and whether the entries sharing its
+   * per-model records are the demo ones or the real ones (devices/demoScope.ts).
+   */
+  private recordsOf(deviceId: string) {
+    const descriptor = this.getDescriptor(deviceId);
+    if (!descriptor) throw new Error(`device not connected: ${deviceId}`);
+    const demo = !!descriptor.simulated;
+    const sharing = (e: Entry) =>
+      e.descriptor.model === descriptor.model && !!e.descriptor.simulated === demo;
+    return { model: descriptor.model, io: ioFor(demo), sharing };
+  }
+
+  /** Rename one onboard profile slot for every live entry of this device's
+   *  model — see devices/profileNames.ts. A demo device renames only demo ones. */
+  async setProfileName(deviceId: string, slot: number, name: string): Promise<LiveDevice[]> {
+    const { model, io, sharing } = this.recordsOf(deviceId);
+    const names = await renameOnboardProfile(model, slot, name, io);
     for (const e of this.entries.values()) {
-      if (e.descriptor.model === model) e.live.profileNames = names;
+      if (sharing(e)) e.live.profileNames = names;
     }
     this.emitChanged();
     return this.list();
   }
 
-  /** Set the cosmetic colour/edition choice for every live entry of this model — see devices/colors.ts. */
-  async setColor(model: string, variantId: string | null): Promise<LiveDevice[]> {
-    const chosen = await setDeviceColor(model, variantId);
+  /** Set the cosmetic colour/edition choice for every live entry of this
+   *  device's model — see devices/colors.ts. A demo device recolours only demo ones. */
+  async setColor(deviceId: string, variantId: string | null): Promise<LiveDevice[]> {
+    const { model, io, sharing } = this.recordsOf(deviceId);
+    const chosen = await setDeviceColor(model, variantId, io);
     for (const e of this.entries.values()) {
       // Clearing the stored pick falls back to the catalogue default, not to
       // null — null is the silhouette, and "no pick" is not "no photo".
-      if (e.descriptor.model === model) {
+      if (sharing(e)) {
         e.live.colorVariant = resolveColorVariant(e.descriptor, chosen);
       }
     }
@@ -668,7 +695,7 @@ export class DeviceManager extends Emitter {
   }
 
   /** The renderer-facing snapshot for a freshly-attached device. Shared by the
-   *  real scan path and developer mode so the two cannot drift. */
+   *  real scan path and demo mode so the two cannot drift. */
   /**
    * Bind a device to what it said it is (see identity.ts).
    *
@@ -809,7 +836,8 @@ export class DeviceManager extends Emitter {
       activeDpiStage: null,
       activeDpi: null,
       pollRate: null,
-      profileNames: await getOnboardProfileNames(descriptor.model),
+      // A demo device reads demo mode's own records (devices/demoScope.ts).
+      profileNames: await getOnboardProfileNames(descriptor.model, ioFor(descriptor.simulated)),
       firmware: null,
       capabilities: descriptor.capabilities,
       provenance: descriptor.provenance,
@@ -819,12 +847,17 @@ export class DeviceManager extends Emitter {
       // instead of the generic silhouette (resolveDeviceArt needs a variant id
       // to find one, and every current descriptor leaves the legacy single-image
       // `art` field null). The user's own pick, once made, always wins.
-      colorVariant: resolveColorVariant(descriptor, await getDeviceColor(descriptor.model)),
+      colorVariant: resolveColorVariant(
+        descriptor,
+        await getDeviceColor(descriptor.model, ioFor(descriptor.simulated)),
+      ),
       hint: null,
       hasBackup: descriptor.simulated
         ? false
         : (await listBackupFiles(descriptor.model)).length > 0,
       ui: deviceUi(descriptor),
+      // Only on a demo device, so a real one's snapshot is unchanged.
+      ...(descriptor.simulated ? { simulated: true } : {}),
     };
   }
 
@@ -906,7 +939,7 @@ export class DeviceManager extends Emitter {
 
     // One native enumeration per pass; filter to the Attack Shark VIDs here.
     const vendorIds = new Set(knownVendorIds());
-    const allCollections = await enumerate();
+    const allCollections = this.config.hid ? await enumerate() : [];
     if (this.stopped) return;
     const vendorCollections = allCollections.filter((c) => vendorIds.has(c.vendorId));
 
@@ -914,7 +947,7 @@ export class DeviceManager extends Emitter {
       totalCollections: allCollections.length,
       vendorMatches: vendorCollections.length,
       resolved: 0,
-      lastError: lastHidError(),
+      lastError: this.config.hid ? lastHidError() : null,
       unmatched: [],
     };
     const flagged = new Set<number>(); // vid<<16|pid already recorded in `unmatched`
@@ -1024,13 +1057,14 @@ export class DeviceManager extends Emitter {
       if (await this.refreshEntry(entry)) changed = true;
     }
 
-    // `devMode` is a developer aid, and its Settings row only renders in an
-    // unpackaged build (see AppSettings.tsx) — but the *setting* persists in
-    // the shared userData config, so a flag left on during development would
-    // otherwise follow the user into a packaged build, where there is no
-    // longer any row to turn it back off. Gate on the build itself so the
-    // setting really is inert once packaged, as documented.
-    if (this.config.allowSimulated && getSettingsSync().devMode && !this.stopped) {
+    // On the desktop, demo mode's Settings row only renders in an unpackaged
+    // build (see AppSettings.tsx) — but the *setting* persists in the shared
+    // userData config, so a flag left on during development would otherwise
+    // follow the user into a packaged build, where there is no longer any row
+    // to turn it back off. Gate on what the host allows (the desktop: its
+    // build; the browser edition: always) so the setting really is inert where
+    // it is not offered.
+    if (this.config.allowSimulated && getSettingsSync().demoMode && !this.stopped) {
       if (await this.scanVirtual(seen)) changed = true;
     }
 
@@ -1061,7 +1095,7 @@ export class DeviceManager extends Emitter {
   }
 
   /**
-   * Developer mode: one simulated device per supported shape, so the grid and
+   * Demo mode: one simulated device per supported shape, so the grid and
    * every config tab are reachable with no hardware attached (see
    * devices/virtual.ts).
    *

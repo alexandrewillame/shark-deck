@@ -70,6 +70,16 @@ describe('settings coercion', () => {
     expect((await getSettings()).background).toBe('none');
   });
 
+  it('reads demo mode under its old name, developer mode', async () => {
+    // `devMode` until the rename: a file written before keeps its choice.
+    await writeRaw({ devMode: true });
+    expect((await getSettings()).demoMode).toBe(true);
+    await writeRaw({ devMode: true, demoMode: false });
+    expect((await getSettings()).demoMode).toBe(false);
+    await writeRaw({});
+    expect((await getSettings()).demoMode).toBe(false);
+  });
+
   it('keeps a background turned off, and turns off one it cannot draw', async () => {
     // The default only fills a file that names no background: someone who
     // chose None before a background became the default keeps None.
@@ -79,11 +89,11 @@ describe('settings coercion', () => {
     expect((await getSettings()).background).toBe('none');
   });
 
-  it('defaults the background to Smoke in Shark Cyan, leaving Animate to the system', async () => {
+  it('defaults the background to Nebula in Shark Cyan, leaving Animate to the system', async () => {
     await writeRaw({});
     const s = await getSettings();
     expect(s).toMatchObject({
-      background: 'smoke',
+      background: 'nebula',
       palette: 'shark-cyan',
       backgroundPalette: true,
       backgroundIntensity: 60,

@@ -248,7 +248,7 @@ function hubMouseOnLink(mid: number, link: number): DeviceDescriptor {
   };
 }
 
-/** Every distinct Hub descriptor, for developer mode and the menu tests. */
+/** Every distinct Hub descriptor, for demo mode and the menu tests. */
 export function hubMouseRoster(): DeviceDescriptor[] {
   return [
     hubMouseFor(11, 5),

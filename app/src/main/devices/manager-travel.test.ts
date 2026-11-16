@@ -29,7 +29,7 @@ vi.mock('node-hid', () => ({
 }));
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp/sharkdeck-test', isPackaged: false } }));
 
-const mockSettings = { devMode: true, language: 'en', batteryLowThreshold: 15 };
+const mockSettings = { demoMode: true, language: 'en', batteryLowThreshold: 15 };
 vi.mock('../settings', () => ({
   getSettingsSync: () => mockSettings,
   getSettings: async () => mockSettings,
@@ -71,7 +71,7 @@ describe('live travel stream: refcount and cadence', () => {
   let id: string;
 
   beforeEach(async () => {
-    mockSettings.devMode = true;
+    mockSettings.demoMode = true;
     mgr = new DeviceManager();
     mgr.configure({ allowSimulated: true }); // an unpackaged desktop build
     await scanOnce(mgr);
@@ -157,7 +157,7 @@ describe('live travel stream: what it answers', () => {
   };
 
   beforeEach(async () => {
-    mockSettings.devMode = true;
+    mockSettings.demoMode = true;
     mgr = new DeviceManager();
     mgr.configure({ allowSimulated: true }); // an unpackaged desktop build
     await scanOnce(mgr);

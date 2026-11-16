@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useStore } from '../state/store';
 import { useT } from '../state/i18n';
-import { hostFeatures } from '../state/host';
+import { canPickDevices, hostFeatures } from '../state/host';
+import { sd } from '../state/bridge';
 import { ConnectDeviceButton } from '../components/ConnectDevice';
+import { Icon } from '../components/icons';
+import { DESKTOP_DOWNLOAD_URL } from '@shared/links';
 import type { ScanDiagnostic } from '@shared/types/diagnostics';
 // The rule the desktop's Linux packages install, bundled as text so the
 // browser edition can hand the same lines to the user (see LinuxAccess).
@@ -108,17 +111,29 @@ function LinuxAccess() {
 /**
  * The browser edition's empty state: nothing is found until the user picks a
  * device in the browser's own list, so this asks for that instead of saying
- * it is scanning — and says plainly when the browser cannot do it at all.
+ * it is scanning — and says plainly when the browser cannot do it at all, with
+ * the way to the desktop app, which can.
+ *
+ * Demo mode is deliberately not offered here (nor in the README): it is for
+ * those who know where it is — Settings, or the `#demo` link.
  */
 function BrowserWelcomeBody() {
   const t = useT();
   const os = useStore((s) => s.platformInfo?.os);
-  const supported = typeof navigator !== 'undefined' && 'hid' in navigator;
-  if (!supported) {
+  if (!canPickDevices()) {
     return (
       <>
         <h1>{t('web.unsupported.title')}</h1>
         <p>{t('web.unsupported.body')}</p>
+        <div className="web-actions">
+          <button
+            className="btn primary"
+            onClick={() => void sd.openExternal(DESKTOP_DOWNLOAD_URL)}
+          >
+            <Icon name="download" size={12} />
+            {t('web.desktopApp')}
+          </button>
+        </div>
       </>
     );
   }
@@ -192,7 +207,9 @@ export function Welcome() {
             </div>
           </>
         )}
-        {diag && <Diagnostic diag={diag} />}
+        {/* Not in a browser that cannot reach USB at all: there is no bus to
+            report on, and "restart the app" would be advice about nothing. */}
+        {diag && (!hostFeatures.devicePicker || canPickDevices()) && <Diagnostic diag={diag} />}
       </div>
     </div>
   );

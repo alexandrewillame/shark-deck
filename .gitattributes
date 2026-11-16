@@ -13,3 +13,8 @@
 # What a Linux shell or udev reads, wherever it is.
 *.sh text eol=lf
 *.rules text eol=lf
+
+# The device report tool runs under cmd.exe, which misreads a batch file with
+# bare LF endings. Stored as written (CRLF), so a checkout, a download from
+# GitHub and the release asset all get the bytes cmd.exe expects.
+/tools/*.bat -text

@@ -1342,7 +1342,7 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
     loaded: groupsLoaded,
     save: saveGroup,
     replaceAll: replaceAllGroups,
-  } = useKeyGroups(device.model, groupProfile);
+  } = useKeyGroups(device.id, groupProfile);
 
   /**
    * Keep the groups agreeing with the board, on every settings change.

@@ -506,9 +506,10 @@ export const zhCN: Partial<Messages> = {
   'set.frameLog': 'HID 帧日志',
   'set.frameLog.hint': '实时查看与已连接设备之间收发的每一条报文。',
   'set.noFrames': '暂无报文记录。',
-  'set.devDevices': '模拟设备',
-  'set.devDevices.hint': '在列表中显示每种支持设备各一台，无需连接硬件即可浏览整个界面。',
-  'hint.simulated': '模拟设备 — 开发者模式，未连接硬件。',
+  'set.demoMode': '演示模式',
+  'set.demoMode.hint':
+    '为每种支持的设备各显示一台模拟设备，便于浏览所有菜单。不会向真实硬件发送任何内容。',
+  'hint.demo': '演示设备——模拟设备，不会向硬件发送任何内容。',
 
   // -- device manager hints (main process) -----------------------
   'hint.offlineWireless': '检测到接收器，但{kind}处于离线状态。请开机、充电，或与接收器重新配对。',
@@ -1344,4 +1345,11 @@ export const zhCN: Partial<Messages> = {
   'leave.body.lostThem': '现在离开将放弃此更改。',
   'leave.body.lostThemSwitch': '现在切换将放弃此更改。',
   'leave.body.lostThemQuit': '现在退出将放弃此更改。',
+  'keypick.search': '搜索按键…',
+  'keypick.search.clear': '清除搜索',
+  'keypick.search.none': '没有与“{q}”匹配的按键。',
+  'web.desktopApp': '获取桌面应用',
+  'demo.banner': '演示模式：这些设备是模拟的，不会向真实硬件发送任何内容。',
+  'demo.exit': '退出演示',
+  'demo.noBackups': '演示设备不保留备份。',
 };

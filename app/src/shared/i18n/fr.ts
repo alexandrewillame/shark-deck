@@ -520,10 +520,10 @@ export const fr: Partial<Messages> = {
   'set.frameLog.hint':
     'Vue en direct de chaque rapport envoyé et reçu des périphériques connectés.',
   'set.noFrames': 'Aucune trame pour l’instant.',
-  'set.devDevices': 'Appareils simulés',
-  'set.devDevices.hint':
-    'Affiche un exemplaire de chaque appareil pris en charge dans la grille, pour parcourir toute l’interface sans matériel connecté.',
-  'hint.simulated': 'Appareil simulé — mode développeur, aucun matériel connecté.',
+  'set.demoMode': 'Mode démo',
+  'set.demoMode.hint':
+    'Affiche un exemplaire simulé de chaque appareil pris en charge, pour explorer tous les menus. Rien n’est envoyé à un vrai appareil.',
+  'hint.demo': 'Appareil de démo — simulé, rien n’est envoyé au matériel.',
 
   'hint.offlineWireless':
     'Récepteur détecté mais le {kind} est hors ligne. Allumez-le, chargez-le, ou ré-appairez-le avec son récepteur.',
@@ -1423,4 +1423,11 @@ export const fr: Partial<Messages> = {
   'leave.body.lostThem': 'Si vous quittez maintenant, elle sera perdue.',
   'leave.body.lostThemSwitch': 'Si vous changez de profil maintenant, elle sera perdue.',
   'leave.body.lostThemQuit': 'Si vous quittez Shark Deck maintenant, elle sera perdue.',
+  'keypick.search': 'Rechercher des touches…',
+  'keypick.search.clear': 'Effacer la recherche',
+  'keypick.search.none': 'Aucune touche ne correspond à « {q} ».',
+  'web.desktopApp': 'Télécharger l’application de bureau',
+  'demo.banner': 'Mode démo : ces appareils sont simulés, et rien n’est envoyé à un vrai appareil.',
+  'demo.exit': 'Quitter la démo',
+  'demo.noBackups': 'Les appareils de démo ne gardent pas de sauvegardes.',
 };

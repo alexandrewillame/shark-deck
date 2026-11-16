@@ -66,9 +66,9 @@ import { deviceCacheKey, putDeviceCache } from '../state/deviceCache';
 import {
   applyPreset,
   applySidePreset,
-  presetKey,
   presetOf,
   recallPreset,
+  rememberPreset,
 } from './lighting/effectMemory';
 import { useAmbientLighting } from './lighting/useAmbientLighting';
 import { hostFeatures } from '../state/host';
@@ -299,7 +299,7 @@ function MainLightingPane({ device, perKeyLighting }: TabProps & { perKeyLightin
   useEffect(() => {
     const read = loaded[0];
     if (!read) return;
-    const fallback = recallPreset(settings, device.model, BOARD_ZONE, GLOBAL_FALLBACK_EFFECT);
+    const fallback = recallPreset(settings, device, BOARD_ZONE, GLOBAL_FALLBACK_EFFECT);
     setGlobalDraft((prev) => seedGlobalDraft(read, discardDraft.current ? null : prev, fallback));
     discardDraft.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -461,18 +461,16 @@ function GlobalEffectPane({
    */
   const withEffect = (from: LightingSettings, label: string): LightingSettings => {
     void rememberEffect(from);
-    return applyPreset(from, label, recallPreset(settings, device.model, BOARD_ZONE, label));
+    return applyPreset(from, label, recallPreset(settings, device, BOARD_ZONE, label));
   };
 
   /** Persist one effect's parameters. Called when leaving an effect and on
    *  Apply — not on every slider tick, which would be a settings write per
    *  frame of a drag. */
   const rememberEffect = async (l: LightingSettings) => {
-    const key = presetKey(device.model, BOARD_ZONE, l.effect);
-    const next = await sd.setSettings({
-      lightingPresets: { ...(settings?.lightingPresets ?? {}), [key]: presetOf(l) },
-    });
-    setSettings(next);
+    const patch = rememberPreset(settings, device, BOARD_ZONE, l.effect, presetOf(l));
+    if (!patch) return;
+    setSettings(await sd.setSettings(patch));
   };
 
   /**
@@ -636,6 +634,7 @@ function GlobalEffectPane({
       <Panel
         title={t('light.global.title')}
         actions={<PanelActions dirty={dirty} busy={applying} onApply={apply} onRead={onRead} />}
+        stickyHead
       >
         <div>
           {firstLoad && <Loading />}
@@ -656,7 +655,7 @@ function GlobalEffectPane({
               rainbow={!!cur.dazzle}
               option={cur.option ?? 0}
               layout={layout}
-              recall={(label) => recallPreset(settings, device.model, BOARD_ZONE, label)}
+              recall={(label) => recallPreset(settings, device, BOARD_ZONE, label)}
               onPick={(label) => edit(withEffect(cur, label))}
             />
           </div>
@@ -766,20 +765,14 @@ function UnderglowPane({ device }: TabProps) {
   const settings = useStore((st) => st.settings);
   const setSettings = useStore((st) => st.setSettings);
   const rememberEffect = async (from: SideLightingSettings) => {
-    const next = await sd.setSettings({
-      lightingPresets: {
-        ...(settings?.lightingPresets ?? {}),
-        [presetKey(device.model, SIDE_ZONE, from.effect)]: presetOf({
-          ...from,
-          zone: 'side',
-        } as LightingSettings),
-      },
-    });
-    setSettings(next);
+    const preset = presetOf({ ...from, zone: 'side' } as LightingSettings);
+    const patch = rememberPreset(settings, device, SIDE_ZONE, from.effect, preset);
+    if (!patch) return;
+    setSettings(await sd.setSettings(patch));
   };
   const withEffect = (from: SideLightingSettings, label: string): SideLightingSettings => {
     void rememberEffect(from);
-    return applySidePreset(from, label, recallPreset(settings, device.model, SIDE_ZONE, label));
+    return applySidePreset(from, label, recallPreset(settings, device, SIDE_ZONE, label));
   };
   // Same edit-then-Apply rule as the Main panes. This zone kept its own
   // auto-write and its own `enabled` toggle, which would have left one tab
@@ -839,6 +832,7 @@ function UnderglowPane({ device }: TabProps) {
       <Panel
         title={t('light.side.title')}
         actions={<PanelActions dirty={dirty} busy={applying} onApply={apply} onRead={readBoard} />}
+        stickyHead
       >
         <div>
           {/* The same visual picker the main lighting pane uses, over the side
@@ -856,7 +850,7 @@ function UnderglowPane({ device }: TabProps) {
               // are one continuous rectangle rather than a second keyboard.
               strip
               option={0}
-              recall={(label) => recallPreset(settings, device.model, SIDE_ZONE, label)}
+              recall={(label) => recallPreset(settings, device, SIDE_ZONE, label)}
               onPick={(label) => edit(withEffect(cur, label))}
             />
           </div>

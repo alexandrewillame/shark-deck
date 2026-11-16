@@ -49,6 +49,7 @@
     "extract:qmk": "node scripts/extract-qmktop-protocol.mjs",
     "import:kb": "vite-node --config vitest.config.ts scripts/import-keyboard-registry.ts",
     "lineup": "vite-node --config vitest.config.ts scripts/gen-lineup.ts",
+    "device-report": "vite-node --config vitest.config.ts scripts/read-device-report.ts",
     "identify:kb": "node scripts/identify-keyboard.mjs",
     "verify:he": "vite-node --config vitest.config.ts scripts/verify-he-driver.ts",
     "verify:identity": "vite-node --config vitest.config.ts scripts/verify-identity.ts",

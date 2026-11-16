@@ -51,10 +51,12 @@ export interface Api {
   refreshDevices(): Promise<LiveDevice[]>;
   getScanDiagnostic(): Promise<ScanDiagnostic>;
   getFirmware(deviceId: string): Promise<FirmwareInfo | null>;
-  /** Renames one onboard profile slot (see LiveDevice.profileNames); empty name clears back to "Profile {n}". */
-  renameOnboardProfile(model: string, slot: number, name: string): Promise<LiveDevice[]>;
-  /** Sets the cosmetic colour/edition choice for a model (see LiveDevice.colorVariant); null clears it. */
-  setDeviceColor(model: string, variantId: string | null): Promise<LiveDevice[]>;
+  /** Renames one onboard profile slot of this device's model (see LiveDevice.profileNames);
+   *  empty name clears back to "Profile {n}". By device: a demo device renames only demo ones. */
+  renameOnboardProfile(deviceId: string, slot: number, name: string): Promise<LiveDevice[]>;
+  /** Sets the cosmetic colour/edition choice for this device's model (see
+   *  LiveDevice.colorVariant); null clears it. A demo device recolours only demo ones. */
+  setDeviceColor(deviceId: string, variantId: string | null): Promise<LiveDevice[]>;
   /**
    * Browser edition: open the browser's device picker so the user can let
    * Shark Deck reach a device — WebHID grants one device at a time, and only
@@ -213,14 +215,15 @@ export interface Api {
   /** Key groups are per MODEL and per onboard PROFILE (slot), not per endpoint:
    *  `slots` are that board's matrix indices, and two of the same keyboard
    *  share them — but the settings a group is derived from belong to one
-   *  profile, so each profile has its own groups and its own names. */
-  listKeyGroups(model: string, profile: number): Promise<KeyGroup[]>;
-  saveKeyGroup(model: string, profile: number, g: KeyGroup): Promise<KeyGroup[]>;
-  deleteKeyGroup(model: string, profile: number, id: string): Promise<KeyGroup[]>;
+   *  profile, so each profile has its own groups and its own names. Asked
+   *  through a device, so a demo board's groups stay demo mode's own. */
+  listKeyGroups(deviceId: string, profile: number): Promise<KeyGroup[]>;
+  saveKeyGroup(deviceId: string, profile: number, g: KeyGroup): Promise<KeyGroup[]>;
+  deleteKeyGroup(deviceId: string, profile: number, id: string): Promise<KeyGroup[]>;
   /** Replace one profile's whole group list. The list is derived from the
    *  board's own settings, so reconciling it has to be able to REMOVE groups —
    *  which an upsert cannot. See replaceKeyGroups in main/actuation/store.ts. */
-  replaceKeyGroups(model: string, profile: number, groups: KeyGroup[]): Promise<KeyGroup[]>;
+  replaceKeyGroups(deviceId: string, profile: number, groups: KeyGroup[]): Promise<KeyGroup[]>;
 
   // ---- replaceable magnetic switches (magnetism page 252) --------------
   /** slot -> switch model id, or null when the board did not answer. */

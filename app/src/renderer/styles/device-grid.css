@@ -441,3 +441,31 @@
   filter: none;
   opacity: 1;
 }
+
+/* Demo mode, said once over the grid with the way out (DeviceGrid). Tinted
+   with the accent rather than a warning colour: nothing is wrong, the cards
+   are just not hardware. */
+.demo-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 720px;
+  margin: 10px 0 4px;
+  padding: 7px 8px 7px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-1));
+  color: var(--text);
+  font-size: var(--fs-sm);
+  text-align: left;
+}
+.demo-strip > svg {
+  flex: none;
+  color: var(--accent);
+}
+.demo-strip > span {
+  flex: 1 1 auto;
+}
+.demo-strip > .btn {
+  flex: none;
+}

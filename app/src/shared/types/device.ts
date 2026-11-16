@@ -102,7 +102,7 @@ export interface DeviceDescriptor {
    */
   artKey?: string;
   /**
-   * True only for descriptors synthesised by developer mode (see
+   * True only for descriptors synthesised by demo mode (see
    * main/devices/virtual.ts) — never a real device. Every path that would
    * write to a per-model on-disk store checks this first, so a simulated
    * device can never pollute the colours / profile names / software profiles

@@ -81,6 +81,11 @@ export const browserHandlers = {
   forgetDevice: async (id: string): Promise<DeviceAccessResult> => {
     const hid = navigator.hid;
     if (!hid) return { status: 'unsupported' };
+    // A demo device has no grant of its own, and matching by model would
+    // revoke a real device of the same model.
+    if (deviceManager.getDescriptor(id)?.simulated) {
+      return { status: 'failed', error: 'a demo device has no browser access to forget' };
+    }
     const mine = await grantedInterfacesOf(hid, id);
     if (mine.length === 0) return { status: 'failed', error: `device not connected: ${id}` };
     try {
@@ -117,11 +122,20 @@ export const browserHandlers = {
   pickExecutable: async () => null,
 
   // No OS side effects to apply first (start-at-login, the switcher's poll
-  // rate) and no simulated devices to add — just persist.
-  setSettings: (patch: Partial<AppSettings>) => setSettings(patch),
+  // rate). Demo mode's devices come and go with the next scan pass: nudge it,
+  // so they appear (or leave) at once.
+  setSettings: async (patch: Partial<AppSettings>) => {
+    const next = await setSettings(patch);
+    if (patch.demoMode !== undefined) deviceManager.nudgeScan();
+    return next;
+  },
   openMouseSettings: async () => false,
-  // Nothing in the renderer opens links, and the edition makes no requests.
-  openExternal: async () => {},
+  // A link the user clicked — "Get the desktop app" — in a new tab. Never a
+  // request from this page (connect-src 'none'), and http(s) only, as on the
+  // desktop (main/platform/shared.ts).
+  openExternal: async (url: string) => {
+    if (/^https?:\/\//i.test(url)) window.open(url, '_blank', 'noopener,noreferrer');
+  },
   getSystemDark: async () => matchMedia('(prefers-color-scheme: dark)').matches,
   getPlatformInfo: async (): Promise<PlatformInfo> => ({
     os: detectOs(),

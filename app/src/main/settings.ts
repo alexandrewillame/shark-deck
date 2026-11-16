@@ -18,8 +18,8 @@ const DEFAULTS: AppSettings = {
   palette: 'shark-cyan',
   themeMode: 'dark',
   // The look a newcomer meets, on the desktop and in the browser alike: the
-  // Smoke background in the default palette's colours (Shark Cyan).
-  background: 'smoke',
+  // Nebula background in the default palette's colours (Shark Cyan).
+  background: 'nebula',
   backgroundPalette: true,
   backgroundIntensity: BACKGROUND_INTENSITY_DEFAULT,
   pollSeconds: 2,
@@ -27,7 +27,7 @@ const DEFAULTS: AppSettings = {
   batteryLowThreshold: 15,
   railCollapsed: false,
   deviceOrder: [],
-  devMode: false,
+  demoMode: false,
 };
 
 /** Fold forward pre-0.2 settings files (single `theme: 'shark-dark'` literal). */
@@ -87,7 +87,9 @@ function coerce(raw: Record<string, unknown>): AppSettings {
     deviceOrder: Array.isArray(raw.deviceOrder)
       ? raw.deviceOrder.filter((x): x is string => typeof x === 'string')
       : [...DEFAULTS.deviceOrder],
-    devMode: bool(raw.devMode, DEFAULTS.devMode),
+    // Called "developer mode" (`devMode`) until it became Demo mode: a file
+    // written before the rename keeps its choice.
+    demoMode: bool(raw.demoMode ?? raw.devMode, DEFAULTS.demoMode),
     // `coerce` is an allowlist — a field it does not name is dropped on every
     // write, so this has to be here or the per-effect lighting memory would
     // be discarded the moment anything else in settings changed.

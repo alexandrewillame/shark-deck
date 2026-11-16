@@ -547,10 +547,10 @@ export const de: Partial<Messages> = {
   'set.frameLog.hint':
     'Live-Ansicht jedes Reports, der an verbundene Geräte gesendet wird und von ihnen eingeht.',
   'set.noFrames': 'Noch keine Frames.',
-  'set.devDevices': 'Simulierte Geräte',
-  'set.devDevices.hint':
-    'Zeigt eines von jedem unterstützten Gerät im Raster, damit die gesamte Oberfläche ohne angeschlossene Hardware nutzbar ist.',
-  'hint.simulated': 'Simuliertes Gerät – Entwicklermodus, keine Hardware angeschlossen.',
+  'set.demoMode': 'Demo-Modus',
+  'set.demoMode.hint':
+    'Zeigt von jedem unterstützten Gerät ein simuliertes Exemplar, um alle Menüs zu erkunden. An echte Hardware wird nichts gesendet.',
+  'hint.demo': 'Demo-Gerät – simuliert, an die Hardware wird nichts gesendet.',
 
   // -- device manager hints (main process) -----------------------
   'hint.offlineWireless':
@@ -1454,4 +1454,11 @@ export const de: Partial<Messages> = {
   'leave.body.lostThem': 'Wenn Sie jetzt gehen, werden sie verworfen.',
   'leave.body.lostThemSwitch': 'Wenn Sie jetzt das Profil wechseln, werden sie verworfen.',
   'leave.body.lostThemQuit': 'Wenn Sie Shark Deck jetzt beenden, werden sie verworfen.',
+  'keypick.search': 'Tasten suchen…',
+  'keypick.search.clear': 'Suche löschen',
+  'keypick.search.none': 'Keine Taste passt zu „{q}“.',
+  'web.desktopApp': 'Desktop-App herunterladen',
+  'demo.banner': 'Demo-Modus: Diese Geräte sind simuliert, an echte Hardware wird nichts gesendet.',
+  'demo.exit': 'Demo beenden',
+  'demo.noBackups': 'Demo-Geräte haben keine Sicherungen.',
 };

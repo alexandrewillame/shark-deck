@@ -6,7 +6,7 @@ import type { VirtualDriver } from '../../src/main/devices/virtual';
 import { deviceUi } from '../../src/main/devices/deviceUi';
 
 /**
- * Rendering real panes against developer mode's simulated devices, for the
+ * Rendering real panes against demo mode's simulated devices, for the
  * `ui` tier: a `LiveDevice` as the manager would publish it, and every read
  * answered by a `VirtualDriver`.
  */

@@ -412,7 +412,13 @@ export function KeyChooser({
                   </button>
                 )}
               </div>
-              <KeyPicker isOn={(code) => code === value} onPick={choose} listen groups={groups} />
+              <KeyPicker
+                isOn={(code) => code === value}
+                onPick={choose}
+                listen
+                groups={groups}
+                searchable
+              />
             </div>
           </div>,
           document.body,

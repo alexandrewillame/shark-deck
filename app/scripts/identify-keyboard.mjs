@@ -201,7 +201,7 @@ async function main() {
 
   if (!cols.length) {
     console.error('No vendor config collection (usage page 0xFFFF / usage 0x02) found.');
-    console.error('Is the keyboard connected? Close SharkDeck / ATK HUB / qmk.top first —');
+    console.error('Is the keyboard connected? Close SharkDeck / qmk.top first —');
     console.error('they hold the handle exclusively.');
     process.exit(1);
   }

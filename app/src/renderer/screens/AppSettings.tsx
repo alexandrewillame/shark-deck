@@ -70,6 +70,14 @@ export function AppSettingsScreen() {
             ))}
           </select>
         </Row>
+        {/* Everyone in the browser edition; on the desktop, an unpackaged
+            build only — an installer must never fill someone's grid with
+            hardware they do not own (host.ts `publicDemo`). */}
+        {(hostFeatures.publicDemo || platformInfo?.isDev) && (
+          <Row label={t('set.demoMode')} hint={t('set.demoMode.hint')}>
+            <Toggle on={s.demoMode} onChange={(v) => patch({ demoMode: v })} />
+          </Row>
+        )}
       </Panel>
 
       {/* Default to showing this until platformInfo resolves (undefined on
@@ -99,22 +107,12 @@ export function AppSettingsScreen() {
         {hostFeatures.devicePicker && <p className="hint">{t('set.about.browser')}</p>}
       </Panel>
 
-      {/* The whole section, not just its rows.
-
-          Every row in here was already gated on `isDev`, but the Panel around
-          them was not — so a shipped build showed an empty card titled
-          "Developer", a heading promising controls that were not there.
-
-          Simulated devices in particular are a build-time aid, not a product
-          feature: a shipped installer must never be able to fill someone's
-          grid with hardware they do not own. */}
+      {/* The whole section, not just its rows: a shipped build that showed an
+          empty card titled "Developer" promised controls that were not there.
+          Demo mode used to live here as "Simulated devices"; it is in General
+          now, where the browser edition offers it to everyone. */}
       {platformInfo?.isDev && (
         <Panel title={t('set.developer')}>
-          {hostFeatures.simulatedDevices && (
-            <Row label={t('set.devDevices')} hint={t('set.devDevices.hint')}>
-              <Toggle on={s.devMode} onChange={(v) => patch({ devMode: v })} />
-            </Row>
-          )}
           <Row label={t('set.frameLog')} hint={t('set.frameLog.hint')}>
             <Toggle on={showLog} onChange={setShowLog} />
           </Row>

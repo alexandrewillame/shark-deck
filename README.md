@@ -21,15 +21,24 @@ offline replacement for the vendor's _Mouse Hub_ and _Driver v4_.
 ## Supported devices
 
 Shark Deck recognises each device from what its firmware reports, not from its
-USB id, and shows only the settings that model has. The R85HE keyboard and the
-V8 mouse are checked on hardware. The rest are driven from protocol
-documentation and not yet checked on a device: about 80 Attack Shark keyboards
-(R, X and K series, magnetic and mechanical) and the X11 ULTRA, F1 AIR, X8,
-V5, R11 ULTRA, RS3/RS6 ULTRA, V2 AIR, MEGA B2, R5 TURBO, R2, R3, X3 PRO, R5 ULTRA,
-R6 and R8 mice. Every change is read back, and a backup is taken first. The
-Beken-based mice (X11, X3, X6, X8, G3, V3, V6 families, R1, X1) are recognised
-but not configurable yet. The full list, model by model:
-[docs/devices/attack-shark-lineup.md](docs/devices/attack-shark-lineup.md).
+USB id, and shows only the settings that model has.
+
+- 🟢 **Tested on hardware:** the R85HE keyboard and the V8 mouse.
+- 🟡 **Should work, not yet confirmed on a unit:** about 20 more keyboards, and
+  the X11 ULTRA, F1 AIR, R2, R3, X3 PRO, R5 ULTRA, R6 and R8 mice.
+- 🟠 **Partly supported:** about 60 keyboards (whole-keyboard settings only, until
+  their key map is known) and the X8, V5, R11 ULTRA, RS3/RS6 ULTRA, V2 AIR,
+  MEGA B2 and R5 TURBO mice (their sensor's common settings).
+- ⚪ **Recognised, not configurable yet:** the Beken-based mice (the original
+  X11, X1, X8 PRO / PLUS, R1, X3, X6).
+
+Every change is read back, and a backup is taken first. The full list, model by
+model: [docs/devices/attack-shark-lineup.md](docs/devices/attack-shark-lineup.md).
+Your device is missing, or only recognised? Run the
+[device report tool](docs/devices/attack-shark-lineup.md#missing-a-device) and
+send us its report. For a device Shark Deck cannot talk to yet, the tool also
+records the official software at work, which is what a new driver is written
+from.
 
 Another brand's device on the same chip gets a "Not an Attack Shark device"
 card and is never written to.
@@ -44,7 +53,8 @@ in the browser's list. It can be installed as an app, and then works offline.
 The browser edition configures the device — DPI, buttons, lighting, actuation,
 macros, onboard profiles, backups (downloadable as files). What needs software
 on the computer stays in the desktop app: per-game auto-switching, the tray
-icon, start at login. Firefox and Safari cannot reach USB devices; on Linux the
+icon, start at login. Firefox and Safari cannot reach USB devices (they have no
+WebHID), so there the page points to the desktop app instead; on Linux the
 browser needs the udev rule once, and the page shows the commands. Details in
 the [platform support matrix](docs/platform-support.md#browser-edition-webhid).
 

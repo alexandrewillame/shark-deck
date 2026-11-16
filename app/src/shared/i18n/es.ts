@@ -539,10 +539,10 @@ export const es: Partial<Messages> = {
   'set.frameLog.hint':
     'Vista en vivo de cada informe enviado a y recibido de los dispositivos conectados.',
   'set.noFrames': 'Aún no hay tramas.',
-  'set.devDevices': 'Dispositivos simulados',
-  'set.devDevices.hint':
-    'Muestra uno de cada dispositivo compatible en la cuadrícula, para recorrer toda la interfaz sin hardware conectado.',
-  'hint.simulated': 'Dispositivo simulado: modo de desarrollador, sin hardware conectado.',
+  'set.demoMode': 'Modo demo',
+  'set.demoMode.hint':
+    'Muestra un ejemplar simulado de cada dispositivo compatible para explorar todos los menús. No se envía nada a ningún dispositivo real.',
+  'hint.demo': 'Dispositivo de demostración: simulado, no se envía nada al hardware.',
 
   // -- device manager hints (main process) -----------------------
   'hint.offlineWireless':
@@ -1439,4 +1439,12 @@ export const es: Partial<Messages> = {
   'leave.body.lostThem': 'Si sales ahora, se descartarán.',
   'leave.body.lostThemSwitch': 'Si cambias de perfil ahora, se descartarán.',
   'leave.body.lostThemQuit': 'Si sales de Shark Deck ahora, se descartarán.',
+  'keypick.search': 'Buscar teclas…',
+  'keypick.search.clear': 'Borrar la búsqueda',
+  'keypick.search.none': 'Ninguna tecla coincide con «{q}».',
+  'web.desktopApp': 'Descargar la aplicación de escritorio',
+  'demo.banner':
+    'Modo demo: estos dispositivos son simulados y no se envía nada a ningún dispositivo real.',
+  'demo.exit': 'Salir de la demo',
+  'demo.noBackups': 'Los dispositivos de demostración no guardan copias de seguridad.',
 };

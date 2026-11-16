@@ -252,6 +252,52 @@
   flex-wrap: wrap;
   row-gap: 6px;
 }
+
+/* ---- a box whose heading holds its Apply: pinned while it scrolls ----------
+ * `Panel stickyHead` and the macro editor (components/stickyHead.ts). The
+ * heading line stays under the pane's own sticky bars while the box's body
+ * scrolls beneath it, so Apply / Cancel / Save stay within reach at the bottom
+ * of a long list. Sticky binds to the box: scrolled past it, the heading goes
+ * with it. It bleeds over the box's 16px padding, so what scrolls under it is
+ * hidden edge to edge, and gives the same room back inside. */
+.has-sticky-head > .sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin-top: -16px;
+  margin-left: -16px;
+  margin-right: -16px;
+  padding: 16px 16px 8px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+/* With the 8px of padding: the 12px a panel heading always had below it. */
+.panel.has-sticky-head > .sticky-head {
+  margin-bottom: 4px;
+}
+/* Under the pane's header when that is pinned too (a TitleTabs heading), and
+   under a level-2 rail as well — both publish their heights (common.tsx). */
+.pane:has(> .pane-head .title-tabs) .has-sticky-head > .sticky-head {
+  top: var(--pane-head-h, 0px);
+}
+.pane:has(> .title-tabs) .has-sticky-head > .sticky-head,
+.pane:has(> .pane-head .title-tabs):has(> .title-tabs) .has-sticky-head > .sticky-head {
+  top: calc(var(--pane-head-h, 0px) + var(--pane-rail-h, 0px));
+}
+/* A surface of its own only while pinned: the box's colour, and the pane bars'
+   fade, so the content reads as going under rather than ending. */
+.has-sticky-head[data-stuck] > .sticky-head {
+  background: var(--bg-1);
+}
+.has-sticky-head[data-stuck] > .sticky-head::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 8px;
+  pointer-events: none;
+  background: linear-gradient(var(--bg-1), transparent);
+}
 .panel-tip {
   display: inline-flex;
   color: var(--text-mut);

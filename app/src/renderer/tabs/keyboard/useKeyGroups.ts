@@ -173,17 +173,19 @@ export function nextGroupColor(groups: KeyGroup[]): string {
 /**
  * One onboard profile's key groups, and the "which group am I adding to" mode.
  *
- * Groups are stored per MODEL (slots are that board's matrix indices), so this
- * keys off `model` rather than a device id — two of the same keyboard share
- * their groups, the same way they share onboard profile names. And per
- * PROFILE: a group is derived from the actuation settings, which belong to
- * the profile, so each profile has its own groups and names. One list for the
- * whole model is what made a rename on profile 1 show up on profile 2.
+ * Groups are stored per MODEL (slots are that board's matrix indices) — two of
+ * the same keyboard share their groups, the same way they share onboard
+ * profile names. They are asked for through the device, though, so a demo
+ * board's groups stay demo mode's own and never replace the real model's
+ * (main/devices/demoScope.ts). And per PROFILE: a group is derived from the
+ * actuation settings, which belong to the profile, so each profile has its own
+ * groups and names. One list for the whole model is what made a rename on
+ * profile 1 show up on profile 2.
  *
  * Every mutator returns the whole new list from the main process, so nothing
  * here refetches.
  */
-export function useKeyGroups(model: string, profile: number) {
+export function useKeyGroups(deviceId: string, profile: number) {
   const [groups, setGroups] = useState<KeyGroup[]>([]);
   /** False until the store has answered. An empty list means "this model has
    *  no groups", which is a different thing from "we have not looked yet" —
@@ -195,7 +197,7 @@ export function useKeyGroups(model: string, profile: number) {
   useEffect(() => {
     let stale = false;
     setLoaded(false);
-    sd.listKeyGroups(model, profile)
+    sd.listKeyGroups(deviceId, profile)
       .then((g) => {
         if (stale) return;
         setGroups(g);
@@ -205,19 +207,19 @@ export function useKeyGroups(model: string, profile: number) {
     return () => {
       stale = true;
     };
-  }, [model, profile]);
+  }, [deviceId, profile]);
 
   const save = useCallback(
-    async (g: KeyGroup) => setGroups(await sd.saveKeyGroup(model, profile, g)),
-    [model, profile],
+    async (g: KeyGroup) => setGroups(await sd.saveKeyGroup(deviceId, profile, g)),
+    [deviceId, profile],
   );
 
   const remove = useCallback(
     async (id: string) => {
-      setGroups(await sd.deleteKeyGroup(model, profile, id));
+      setGroups(await sd.deleteKeyGroup(deviceId, profile, id));
       setAdding((cur) => (cur === id ? null : cur));
     },
-    [model, profile],
+    [deviceId, profile],
   );
 
   /** Add or remove one slot from a group, and save. A slot in no group is the
@@ -249,13 +251,13 @@ export function useKeyGroups(model: string, profile: number) {
     async (next: KeyGroup[]) => {
       setGroups(
         await sd.replaceKeyGroups(
-          model,
+          deviceId,
           profile,
           next.filter((g) => g.slots.length > 0),
         ),
       );
     },
-    [model, profile],
+    [deviceId, profile],
   );
 
   return { groups, loaded, adding, setAdding, save, remove, toggleSlot, replaceAll };

@@ -21,7 +21,7 @@ import { commentsOf } from '../lib/comments';
  *
  *  1. the tag vocabulary in the docs and in the `Provenance` type cannot drift
  *     apart (fully robust);
- *  2. every device descriptor carries one of the three, and developer mode
+ *  2. every device descriptor carries one of the three, and demo mode
  *     preserves it (fully robust, runtime);
  *  3. every module on the protocol allowlist discusses provenance somewhere in
  *     a comment (coarse, but catches the case that actually happens -- a new
@@ -85,6 +85,7 @@ const NOT_PROTOCOL: Record<string, string> = {
   'src/shared/keys.ts':
     'the standard HID keyboard-usage table, from the USB spec rather than reverse-engineered from the vendor',
   'src/shared/naming.ts': 'unique-name string helper',
+  'src/shared/links.ts': 'the project pages the app links to (the desktop download)',
   'src/shared/proximityFade.ts': 'pointer-distance fade for floating cards, UI geometry only',
 };
 

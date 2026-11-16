@@ -58,7 +58,24 @@ describe('the Remap picker', () => {
   });
 
   it('leaves the macro editor its own keyboard-page media row', () => {
-    expect(KEY_GROUPS.find((g) => g.label === 'Media')?.keys[0]?.code).toBe('e8');
+    const media = KEY_GROUPS.find((g) => g.label === 'Media')?.keys ?? [];
+    expect(media.length).toBeGreaterThan(0);
+    for (const k of media) expect(k.code).toMatch(/^e[8-f]$/);
+  });
+
+  it('orders media and brightness back before forward, down before up', () => {
+    const names = (label: string) =>
+      REMAP_GROUPS.find((g) => g.label === label)!.keys.map((k) => k.label);
+    const media = names('Media');
+    const before = (a: string, b: string) =>
+      expect(media.indexOf(a)).toBeLessThan(media.indexOf(b));
+    before('Previous track', 'Play / Pause');
+    before('Play / Pause', 'Next track');
+    before('Volume -', 'Volume +');
+    const system = names('System');
+    expect(system.indexOf('Screen brightness -')).toBeLessThan(
+      system.indexOf('Screen brightness +'),
+    );
   });
 });
 

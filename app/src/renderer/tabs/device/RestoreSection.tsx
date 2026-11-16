@@ -144,6 +144,16 @@ export function RestoreSection({ device }: TabProps) {
     }
   };
 
+  // A demo device has nothing to back up, and the backups area belongs to the
+  // real model it is named after (main/handlers.ts refuses each call too).
+  if (device.simulated) {
+    return (
+      <Panel title={t('restore.title')} tip={t('restore.sub')}>
+        <p className="hint">{t('demo.noBackups')}</p>
+      </Panel>
+    );
+  }
+
   return (
     <Panel title={t('restore.title')} tip={t('restore.sub')}>
       <div style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'center' }}>

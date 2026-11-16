@@ -36,12 +36,14 @@ export function variantLabel(v: DeviceColorVariant, t: TFunc): string {
 }
 
 export function ColorPicker({
-  model,
+  deviceId,
   current,
   variants,
   onPreview,
 }: {
-  model: string;
+  /** The device whose model's photo this picks — by device, so a demo card
+   *  never recolours the real one (main/devices/demoScope.ts). */
+  deviceId: string;
   current: string | null;
   variants: DeviceColorVariant[];
   /** Called with a variant id while hovering it, and `null` on mouse-leave
@@ -115,7 +117,7 @@ export function ColorPicker({
 
   const choose = async (id: string) => {
     cancelClose();
-    const next = await sd.setDeviceColor(model, id);
+    const next = await sd.setDeviceColor(deviceId, id);
     setDevices(next);
     setHovering(false);
     onPreview?.(null);

@@ -71,7 +71,7 @@ async function openRemap(id: string) {
   expect(activeSection()).toBe('Remap');
 }
 
-/** Caps Lock -> Esc, staged and not applied. */
+/** Fn + Caps Lock -> Esc, staged and not applied: Remap opens on the Fn layer. */
 async function stageCapsToEsc() {
   press(boardKey('CAPS'));
   await settle();
@@ -100,7 +100,7 @@ describe('leaving Remap with a staged pick', () => {
     await settle();
     const dialog = screen.getByRole('dialog', { name: 'Apply this change before leaving?' });
     expect(dialog.textContent).toContain(
-      "Caps Lock → Esc hasn't been applied to the keyboard yet.",
+      "Fn + Caps Lock → Esc hasn't been applied to the keyboard yet.",
     );
 
     press(dialogButton('Keep editing'));
@@ -140,7 +140,7 @@ describe('leaving Remap with a staged pick', () => {
     expect(sdMock.setKeyRemap).toHaveBeenCalledTimes(1);
     expect(sdMock.setKeyRemap).toHaveBeenCalledWith(
       'r85-apply',
-      'base',
+      'fn',
       expect.any(Number),
       expect.any(String),
     );
@@ -150,22 +150,20 @@ describe('leaving Remap with a staged pick', () => {
   it('asks before the other layer too', async () => {
     await openRemap('r85-layer');
     await stageCapsToEsc();
-    const fnLayer = [...document.querySelectorAll('.title-tabs button')].find(
-      (b) => b.textContent?.trim() === 'Fn layer',
+    const baseLayer = [...document.querySelectorAll('.title-tabs button')].find(
+      (b) => b.textContent?.trim() === 'Base',
     )!;
-    press(fnLayer);
+    press(baseLayer);
     await settle();
     press(dialogButton('Keep editing'));
     await settle();
     expect(remapApply().disabled).toBe(false);
 
-    press(fnLayer);
+    press(baseLayer);
     await settle();
     press(dialogButton('Discard and leave'));
     await settle();
-    expect(document.querySelector('.title-tabs button.active')?.textContent?.trim()).toBe(
-      'Fn layer',
-    );
+    expect(document.querySelector('.title-tabs button.active')?.textContent?.trim()).toBe('Base');
   });
 
   it('keeps the pick while another tab is in front, where nothing asks', async () => {

@@ -56,7 +56,7 @@ Rules for this session:
 
 - R85HE connected (wired — it has no dongle) **and typing normally**.
 - Driver v4 installed, its window open, and **showing the R85HE card**.
-- **Close SharkDeck and ATK HUB** — they contend for the HID handle.
+- **Close SharkDeck** — it holds the HID handle.
 - `python -m pip install frida psutil`. Any version: `hook-kb.js` resolves
   exports through an `exportByName` shim, because frida 17 removed the static
   `Module.findExportByName` the agent used to call — which made it install no

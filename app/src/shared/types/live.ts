@@ -95,6 +95,13 @@ export interface LiveDevice {
   backupWaiver?: { unreadable: Capability[] };
   /** renderer-facing slice of the static spec — see DeviceUi */
   ui: DeviceUi;
+  /**
+   * A demo-mode device (DeviceDescriptor.simulated): nothing reaches hardware,
+   * it keeps no backups, and its names, photo colour and key groups live in
+   * demo mode's own records, never the real model's (main/devices/demoScope.ts).
+   * Absent on a real device.
+   */
+  simulated?: true;
 }
 
 export interface FirmwareInfo {

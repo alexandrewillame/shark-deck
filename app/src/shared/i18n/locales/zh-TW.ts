@@ -502,9 +502,10 @@ export const zhTW: Partial<Messages> = {
   'set.frameLog': 'HID 封包紀錄',
   'set.frameLog.hint': '即時檢視所有裝置傳送與接收的封包內容。',
   'set.noFrames': '尚無任何封包紀錄。',
-  'set.devDevices': '模擬裝置',
-  'set.devDevices.hint': '在列表中顯示每種支援裝置各一台，無需連接硬體即可瀏覽整個介面。',
-  'hint.simulated': '模擬裝置 — 開發者模式，未連接硬體。',
+  'set.demoMode': '示範模式',
+  'set.demoMode.hint':
+    '為每種支援的裝置各顯示一台模擬裝置，方便瀏覽所有選單。不會傳送任何內容到真實硬體。',
+  'hint.demo': '示範裝置——模擬裝置，不會傳送任何內容到硬體。',
 
   // -- device manager hints (main process) -----------------------
   'hint.offlineWireless':
@@ -1342,4 +1343,11 @@ export const zhTW: Partial<Messages> = {
   'leave.body.lostThem': '現在離開將捨棄此變更。',
   'leave.body.lostThemSwitch': '現在切換將捨棄此變更。',
   'leave.body.lostThemQuit': '現在結束將捨棄此變更。',
+  'keypick.search': '搜尋按鍵…',
+  'keypick.search.clear': '清除搜尋',
+  'keypick.search.none': '沒有符合「{q}」的按鍵。',
+  'web.desktopApp': '取得桌面應用程式',
+  'demo.banner': '示範模式：這些裝置是模擬的，不會傳送任何內容到真實硬體。',
+  'demo.exit': '結束示範',
+  'demo.noBackups': '示範裝置不保留備份。',
 };

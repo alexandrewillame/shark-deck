@@ -1,0 +1,75 @@
+name: New device
+description: Ask for a mouse or keyboard that Shark Deck does not support yet, or only recognises.
+title: "Support for: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping Shark Deck support more devices.
+
+        **First, on Windows, run the device report tool:** download
+        `SharkDeck-device-report.bat` from the
+        [latest release](https://github.com/alexandrewillame/shark-deck/releases/latest)
+        (or from [`tools/`](https://github.com/alexandrewillame/shark-deck/blob/main/tools/SharkDeck-device-report.bat)),
+        double-click it and follow the window. Windows may warn about a file from
+        the internet: **More info → Run anyway**. It finds your device (one of a
+        brand it does not know, you unplug and plug back in), then records the
+        official software talking to it, one setting at a time: that recording is
+        what a driver is written from. It needs
+        [USBPcap](https://github.com/desowin/usbpcap/releases), a free USB capture
+        driver the tool offers to install for you (it needs one restart), and
+        about 30 minutes. It changes nothing on the device, sends nothing
+        anywhere, and saves a .zip on your Desktop: look through its pictures
+        first, since anything attached here is public.
+
+        Is your device already in the
+        [list](https://github.com/alexandrewillame/shark-deck/blob/main/docs/devices/attack-shark-lineup.md)
+        as 🟡 or 🟠? A report still helps: it can confirm what it is.
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: As on the box or the store page.
+      placeholder: X11
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - Mouse
+        - Keyboard
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: connection
+    attributes:
+      label: How it connects
+      options:
+        - label: USB cable
+        - label: 2.4 GHz receiver
+        - label: Bluetooth
+  - type: textarea
+    id: report
+    attributes:
+      label: Device report
+      description: Drag the tool's .zip in here. Made no recording? Drag the report file instead, or paste what it contains. One per way of connecting it (cable, receiver) is even better.
+    validations:
+      required: true
+  - type: input
+    id: store
+    attributes:
+      label: Store page (optional)
+      placeholder: https://attackshark.com/...
+  - type: checkboxes
+    id: testing
+    attributes:
+      label: Testing
+      options:
+        - label: I can try a test version on my device and say what works.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else

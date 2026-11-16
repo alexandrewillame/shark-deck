@@ -109,13 +109,23 @@ jobs:
         with:
           path: artifacts
 
+      # The device report tool goes up next to the installers: it is what
+      # someone with an unsupported device is asked to run (the lineup doc's
+      # "Missing a device?"). Only tools/ is needed; .gitattributes keeps the
+      # file's Windows line endings.
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: tools
+          path: source
+
       # electron-builder's update metadata (.blockmap, latest*.yml) is left
       # out: the app has no network access, so nothing would ever read it.
       - name: Draft the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          find artifacts -type f ! -name '*.blockmap' ! -name '*.yml' -print0 |
+          { find artifacts -type f ! -name '*.blockmap' ! -name '*.yml' -print0
+            printf '%s\0' source/tools/SharkDeck-device-report.bat; } |
             xargs -0 gh release create "$GITHUB_REF_NAME" \
               --repo "$GITHUB_REPOSITORY" --draft --generate-notes \
               --title "Shark Deck $GITHUB_REF_NAME"

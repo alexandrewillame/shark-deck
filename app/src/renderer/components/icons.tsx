@@ -70,7 +70,8 @@ export type IconName =
   | 'shiftKey'
   | 'save'
   | 'undo'
-  | 'redo';
+  | 'redo'
+  | 'search';
 
 const PATHS: Record<IconName, JSX.Element> = {
   home: <path d="M2 8.5 8 3l6 5.5M4 7v6h3v-4h2v4h3V7" />,
@@ -450,6 +451,12 @@ const PATHS: Record<IconName, JSX.Element> = {
     <>
       <path d="M10.5 3.5l3 3-3 3" />
       <path d="M13.5 6.5h-7a3.5 3.5 0 0 0 0 7H9" />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="7" cy="7" r="4.25" />
+      <path d="M10.2 10.2 13.5 13.5" />
     </>
   ),
   arrowUp: <path d="M8 12.5V3.2M4.4 6.8 8 3.2l3.6 3.6" />,

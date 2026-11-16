@@ -515,10 +515,10 @@ export const ko: Partial<Messages> = {
   'set.frameLog': 'HID 프레임 로그',
   'set.frameLog.hint': '연결된 장치와 주고받는 모든 리포트를 실시간으로 확인합니다.',
   'set.noFrames': '아직 프레임이 없습니다.',
-  'set.devDevices': '시뮬레이션 장치',
-  'set.devDevices.hint':
-    '지원되는 장치를 종류별로 하나씩 목록에 표시하여 하드웨어 없이도 전체 UI를 사용할 수 있습니다.',
-  'hint.simulated': '시뮬레이션 장치 — 개발자 모드, 연결된 하드웨어 없음.',
+  'set.demoMode': '데모 모드',
+  'set.demoMode.hint':
+    '지원되는 모든 장치를 하나씩 시뮬레이션으로 표시해 모든 메뉴를 둘러볼 수 있습니다. 실제 하드웨어로는 아무것도 보내지 않습니다.',
+  'hint.demo': '데모 장치 — 시뮬레이션이며 하드웨어로 아무것도 보내지 않습니다.',
 
   // -- device manager hints (main process) -----------------------
   'hint.offlineWireless':
@@ -1404,4 +1404,12 @@ export const ko: Partial<Messages> = {
   'leave.body.lostThem': '지금 나가면 버려집니다.',
   'leave.body.lostThemSwitch': '지금 전환하면 버려집니다.',
   'leave.body.lostThemQuit': '지금 종료하면 버려집니다.',
+  'keypick.search': '키 검색…',
+  'keypick.search.clear': '검색 지우기',
+  'keypick.search.none': '“{q}”와(과) 일치하는 키가 없습니다.',
+  'web.desktopApp': '데스크톱 앱 받기',
+  'demo.banner':
+    '데모 모드: 이 장치들은 시뮬레이션이며 실제 하드웨어로는 아무것도 보내지 않습니다.',
+  'demo.exit': '데모 종료',
+  'demo.noBackups': '데모 장치는 백업을 보관하지 않습니다.',
 };

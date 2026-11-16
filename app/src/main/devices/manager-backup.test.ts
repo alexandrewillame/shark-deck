@@ -13,7 +13,7 @@ vi.mock('node-hid', () => ({
 }));
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp/sharkdeck-test', isPackaged: false } }));
 vi.mock('../settings', () => {
-  const s = { devMode: false, language: 'en', batteryLowThreshold: 15 };
+  const s = { demoMode: false, language: 'en', batteryLowThreshold: 15 };
   return { getSettingsSync: () => s, getSettings: async () => s, setSettings: async () => s };
 });
 

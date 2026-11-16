@@ -102,6 +102,20 @@
 :root[data-bg][data-mode='light'] :is(.pane-head:has(.title-tabs), .pane > .title-tabs)::after {
   background: linear-gradient(rgb(0 0 0 / 0.06), transparent);
 }
+/* A pinned panel heading (panes.css, `.has-sticky-head`) the same way, while
+   it is pinned — at rest it is part of the panel's own glass. Nearly opaque:
+   it sits inside the panel's glass, whose own blur stops the heading's from
+   reaching the rows beneath, so at the bars' opacity they read through it. */
+:root[data-bg] .has-sticky-head[data-stuck] > .sticky-head {
+  background: color-mix(in srgb, var(--bg-1) 95%, transparent);
+  backdrop-filter: var(--glass-blur);
+}
+:root[data-bg] .has-sticky-head[data-stuck] > .sticky-head::after {
+  background: linear-gradient(rgb(0 0 0 / 0.16), transparent);
+}
+:root[data-bg][data-mode='light'] .has-sticky-head[data-stuck] > .sticky-head::after {
+  background: linear-gradient(rgb(0 0 0 / 0.06), transparent);
+}
 /* The device page's accent wash is the background's job now. */
 :root[data-bg] .config::before {
   display: none;

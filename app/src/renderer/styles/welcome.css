@@ -92,6 +92,16 @@
 .welcome .connect-device {
   gap: 8px;
 }
+/* A browser with no WebHID: the way to the desktop app. */
+.web-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.web-actions .btn {
+  gap: 8px;
+}
 .web-notes {
   margin: 22px auto 0;
   padding: 0;

@@ -14,8 +14,9 @@ const api: Api = {
   refreshDevices: () => invoke('refreshDevices'),
   getScanDiagnostic: () => invoke('getScanDiagnostic'),
   getFirmware: (id) => invoke('getFirmware', id),
-  renameOnboardProfile: (model, slot, name) => invoke('renameOnboardProfile', model, slot, name),
-  setDeviceColor: (model, variantId) => invoke('setDeviceColor', model, variantId),
+  renameOnboardProfile: (deviceId, slot, name) =>
+    invoke('renameOnboardProfile', deviceId, slot, name),
+  setDeviceColor: (deviceId, variantId) => invoke('setDeviceColor', deviceId, variantId),
   requestDeviceAccess: () => invoke('requestDeviceAccess'),
   forgetDevice: (id) => invoke('forgetDevice', id),
 
@@ -89,10 +90,11 @@ const api: Api = {
   saveActuationLayout: (l) => invoke('saveActuationLayout', l),
   deleteActuationLayout: (id) => invoke('deleteActuationLayout', id),
   applyActuationLayout: (id, layoutId) => invoke('applyActuationLayout', id, layoutId),
-  listKeyGroups: (model, profile) => invoke('listKeyGroups', model, profile),
-  saveKeyGroup: (model, profile, g) => invoke('saveKeyGroup', model, profile, g),
-  deleteKeyGroup: (model, profile, id) => invoke('deleteKeyGroup', model, profile, id),
-  replaceKeyGroups: (model, profile, groups) => invoke('replaceKeyGroups', model, profile, groups),
+  listKeyGroups: (deviceId, profile) => invoke('listKeyGroups', deviceId, profile),
+  saveKeyGroup: (deviceId, profile, g) => invoke('saveKeyGroup', deviceId, profile, g),
+  deleteKeyGroup: (deviceId, profile, id) => invoke('deleteKeyGroup', deviceId, profile, id),
+  replaceKeyGroups: (deviceId, profile, groups) =>
+    invoke('replaceKeyGroups', deviceId, profile, groups),
 
   startAmbientLighting: (id, mode, color, dazzle) =>
     invoke('startAmbientLighting', id, mode, color, dazzle),

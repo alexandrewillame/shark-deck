@@ -34,6 +34,13 @@ const BY_PID: ReadonlyMap<number, [string, string | null]> = new Map([
   [0xfa61, ['Attack Shark R1 / X6 / X3', null]],
 ]);
 
+/** The models named here, each with its PIDs — for the lineup doc (devices/lineup.ts). */
+export function bekenRoster(): { name: string; pids: number[] }[] {
+  const byName = new Map<string, number[]>();
+  for (const [pid, [name]] of BY_PID) byName.set(name, [...(byName.get(name) ?? []), pid]);
+  return [...byName].map(([name, pids]) => ({ name, pids }));
+}
+
 /** A named, never-written card — or null for a PID that is not Attack Shark's own. */
 export function bekenDescriptorFor(pid: number): DeviceDescriptor | null {
   const hit = BY_PID.get(pid);

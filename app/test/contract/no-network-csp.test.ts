@@ -191,6 +191,19 @@ describe('no source file reaches the network', () => {
       );
     }
   });
+
+  it("keeps the browser edition's window.open to its openExternal, behind the same guard", () => {
+    // The page's one way out: a link the user clicked ("Get the desktop app"),
+    // opened in a new tab. A tab the page opens is not a request it makes, so
+    // connect-src 'none' does not cover it — this does.
+    const callers = files
+      .filter((abs) => /\bwindow\.open\s*\(/.test(readFileSync(abs, 'utf8')))
+      .map(rel)
+      .sort();
+    expect(callers).toEqual(['src/web/host/handlers.ts']);
+    const text = readFileSync(resolve(APP_ROOT, 'src/web/host/handlers.ts'), 'utf8');
+    expect(text).toMatch(/\^https\?:.*\n?.*window\.open\(url, '_blank', 'noopener,noreferrer'\)/);
+  });
 });
 
 /**

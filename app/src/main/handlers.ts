@@ -22,6 +22,7 @@ import { applicableDpiStages } from '@shared/mouse-wire';
 import { layoutAddressable } from '@shared/menuGates';
 import { isReadOnly } from './devices/identity';
 import { deviceManager } from './devices/manager';
+import { ioFor } from './devices/demoScope';
 import * as mstore from './macros/store';
 import * as lstore from './lighting/store';
 import * as astore from './actuation/store';
@@ -69,6 +70,13 @@ function driverOrThrow(deviceId: string) {
  * guessed slot is how a write lands on the wrong key. Whole-board writes go
  * through `driverOrThrow` as before.
  */
+/** The descriptor of a connected device, for a request about its model's records. */
+function descriptorOrThrow(deviceId: string) {
+  const d = deviceManager.getDescriptor(deviceId);
+  if (!d) throw new Error(`device not connected: ${deviceId}`);
+  return d;
+}
+
 function perKeyDriverOrThrow(deviceId: string) {
   const d = deviceManager.getDescriptor(deviceId);
   if (d?.kind === 'keyboard' && !layoutAddressable({ keyMatrix: d.spec.keyMatrix })) {
@@ -115,10 +123,11 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
     refreshDevices: () => deviceManager.list(),
     getScanDiagnostic: () => deviceManager.getDiagnostic(),
     getFirmware: (id: string) => driverOrThrow(id).getFirmware(),
-    renameOnboardProfile: (model: string, slot: number, name: string) =>
-      deviceManager.setProfileName(model, slot, name),
-    setDeviceColor: (model: string, variantId: string | null) =>
-      deviceManager.setColor(model, variantId),
+    // By device, not by model: a demo device's records are its own
+    // (devices/demoScope.ts), never the real model's.
+    renameOnboardProfile: (id: string, slot: number, name: string) =>
+      deviceManager.setProfileName(id, slot, name),
+    setDeviceColor: (id: string, variantId: string | null) => deviceManager.setColor(id, variantId),
 
     readDpiStages: (id: string) => driverOrThrow(id).readDpiStages(),
     readActiveDpiStage: (id: string) => driverOrThrow(id).readActiveDpiStage(),
@@ -266,13 +275,24 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
           };
         return writeActuationLayout(driverOrThrow(id), layout);
       }),
-    listKeyGroups: (model: string, profile: number) => astore.listKeyGroups(model, profile),
-    saveKeyGroup: (model: string, profile: number, g: KeyGroup) =>
-      astore.saveKeyGroup(model, profile, g),
-    deleteKeyGroup: (model: string, profile: number, gid: string) =>
-      astore.deleteKeyGroup(model, profile, gid),
-    replaceKeyGroups: (model: string, profile: number, groups: KeyGroup[]) =>
-      astore.replaceKeyGroups(model, profile, groups),
+    // Per model, through the device asking: a demo board's groups go to demo
+    // mode's own records and can never replace a real board's.
+    listKeyGroups: (id: string, profile: number) => {
+      const d = descriptorOrThrow(id);
+      return astore.listKeyGroups(d.model, profile, ioFor(d.simulated));
+    },
+    saveKeyGroup: (id: string, profile: number, g: KeyGroup) => {
+      const d = descriptorOrThrow(id);
+      return astore.saveKeyGroup(d.model, profile, g, ioFor(d.simulated));
+    },
+    deleteKeyGroup: (id: string, profile: number, gid: string) => {
+      const d = descriptorOrThrow(id);
+      return astore.deleteKeyGroup(d.model, profile, gid, ioFor(d.simulated));
+    },
+    replaceKeyGroups: (id: string, profile: number, groups: KeyGroup[]) => {
+      const d = descriptorOrThrow(id);
+      return astore.replaceKeyGroups(d.model, profile, groups, ioFor(d.simulated));
+    },
 
     // Not through `guardedWrite`: these are continuous streams, not a settings
     // change, and taking a backup eight times a second is absurd. The first
@@ -319,7 +339,10 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
     },
     listBackups: async (id: string) => {
       const desc = deviceManager.getDescriptor(id);
-      if (!desc) return [];
+      // A demo device carries a real model's name, and the backups area is
+      // keyed by model: listing it here put the real board's backups — with
+      // their Restore and Delete buttons — on the demo card.
+      if (!desc || desc.simulated) return [];
       const files = await listBackupFiles(desc.model);
       const infos = [];
       for (const f of files) {
@@ -340,6 +363,9 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
       // taken from a different model — the wire layouts don't transfer, and
       // the UI only ever lists same-model backups, so a mismatch here is a bug
       // or a hand-edited request.
+      if (deviceManager.getDescriptor(id)?.simulated) {
+        return { ok: false, verified: 'unverified', error: 'simulated device: no backups' };
+      }
       const b = await readBackup(file);
       if (!b) return { ok: false, verified: 'unverified', error: 'backup not found' };
       const desc = deviceManager.getDescriptor(id);
@@ -358,6 +384,10 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
       // belonging to a different model is refused here — the UI only lists
       // same-model backups, so a mismatch is a bug or a hand-crafted request,
       // and this deletes.
+      // Never a real model's backup file, through a demo device.
+      if (deviceManager.getDescriptor(id)?.simulated) {
+        return { ok: false, error: 'simulated device: no backups' };
+      }
       const b = await readBackup(file);
       if (!b) return { ok: false, error: 'backup not found' };
       const desc = deviceManager.getDescriptor(id);
@@ -371,7 +401,9 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
       return { ok: true };
     },
     exportBackup: async (id: string, file: string): Promise<BackupExport | null> => {
-      // The same guards as restore and delete: a plain name, and this device's model.
+      // The same guards as restore and delete: a plain name, this device's
+      // model, and never through a demo device.
+      if (deviceManager.getDescriptor(id)?.simulated) return null;
       const b = await readBackup(file);
       if (!b) return null;
       const desc = deviceManager.getDescriptor(id);

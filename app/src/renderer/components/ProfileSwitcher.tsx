@@ -58,7 +58,7 @@ function OnboardSwitcher({ device }: { device: LiveDevice }) {
     // remount follows.
     void r;
   };
-  const rename = (name: string) => sd.renameOnboardProfile(device.model, active, name);
+  const rename = (name: string) => sd.renameOnboardProfile(device.id, active, name);
 
   return (
     <div className="profile-switcher-bar">

@@ -53,12 +53,14 @@ export interface AppSettings {
    *  after the ones that are, in their natural (scan) order. */
   deviceOrder: string[];
   /**
-   * Developer mode: populate the home grid with one simulated device per
-   * supported shape, so the whole UI is navigable with no hardware attached.
-   * The toggle is only rendered in unpackaged builds (see AppSettingsScreen
-   * and PlatformInfo.isDev); the flag itself is inert otherwise.
+   * Demo mode: populate the home grid with one simulated device per supported
+   * shape, so every menu can be explored with no hardware attached. Offered
+   * to every visitor of the browser edition; the desktop offers it in
+   * unpackaged builds only (AppSettingsScreen, PlatformInfo.isDev) and the
+   * flag is inert in an installed one (ManagerConfig.allowSimulated).
+   * Stored as `devMode` before it was renamed; `coerce` still reads that.
    */
-  devMode: boolean;
+  demoMode: boolean;
   /**
    * Per-effect lighting parameters, remembered so each effect keeps its own
    * brightness/speed/colour instead of inheriting whatever the last one used.

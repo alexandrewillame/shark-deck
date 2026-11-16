@@ -527,10 +527,10 @@ export const ja: Partial<Messages> = {
   'set.frameLog.hint':
     '接続中のデバイスとの間で送受信されるすべてのレポートをリアルタイムに表示します。',
   'set.noFrames': 'まだフレームがありません。',
-  'set.devDevices': 'シミュレートデバイス',
-  'set.devDevices.hint':
-    '対応する各デバイスを 1 つずつ一覧に表示し、ハードウェアなしで UI 全体を操作できます。',
-  'hint.simulated': 'シミュレートデバイス — 開発者モード、ハードウェアは接続されていません。',
+  'set.demoMode': 'デモモード',
+  'set.demoMode.hint':
+    '対応している各デバイスのシミュレーションを1台ずつ表示し、すべてのメニューを試せます。実際のハードウェアには何も送信されません。',
+  'hint.demo': 'デモデバイス — シミュレーションです。ハードウェアには何も送信されません。',
 
   // -- device manager hints (main process) -----------------------
   'hint.offlineWireless':
@@ -1422,4 +1422,12 @@ export const ja: Partial<Messages> = {
   'leave.body.lostThem': 'ここで離れると破棄されます。',
   'leave.body.lostThemSwitch': 'ここで切り替えると破棄されます。',
   'leave.body.lostThemQuit': 'ここで終了すると破棄されます。',
+  'keypick.search': 'キーを検索…',
+  'keypick.search.clear': '検索をクリア',
+  'keypick.search.none': '「{q}」に一致するキーはありません。',
+  'web.desktopApp': 'デスクトップ版アプリを入手',
+  'demo.banner':
+    'デモモード：これらのデバイスはシミュレーションです。実際のハードウェアには何も送信されません。',
+  'demo.exit': 'デモを終了',
+  'demo.noBackups': 'デモデバイスにはバックアップがありません。',
 };

@@ -539,10 +539,10 @@ export const tr: Partial<Messages> = {
   'set.frameLog': 'HID kare günlüğü',
   'set.frameLog.hint': 'Bağlı aygıtlara ve aygıtlardan gönderilen her raporun canlı görünümü.',
   'set.noFrames': 'Henüz kare yok.',
-  'set.devDevices': 'Simüle edilmiş cihazlar',
-  'set.devDevices.hint':
-    'Desteklenen her cihazdan birini ızgarada gösterir; böylece donanım bağlı olmadan tüm arayüz kullanılabilir.',
-  'hint.simulated': 'Simüle edilmiş cihaz — geliştirici modu, bağlı donanım yok.',
+  'set.demoMode': 'Demo modu',
+  'set.demoMode.hint':
+    'Tüm menüleri keşfetmek için desteklenen her cihazın bir benzetimini gösterir. Gerçek donanıma hiçbir şey gönderilmez.',
+  'hint.demo': 'Demo cihazı — benzetim, donanıma hiçbir şey gönderilmez.',
 
   // -- device manager hints (main process) -----------------------
   'hint.offlineWireless':
@@ -1430,4 +1430,11 @@ export const tr: Partial<Messages> = {
   'leave.body.lostThem': 'Şimdi çıkarsanız bu değişiklik atılır.',
   'leave.body.lostThemSwitch': 'Şimdi profil değiştirirseniz bu değişiklik atılır.',
   'leave.body.lostThemQuit': 'Şimdi Shark Deck’ten çıkarsanız bu değişiklik atılır.',
+  'keypick.search': 'Tuşlarda ara…',
+  'keypick.search.clear': 'Aramayı temizle',
+  'keypick.search.none': '“{q}” ile eşleşen tuş yok.',
+  'web.desktopApp': 'Masaüstü uygulamasını indir',
+  'demo.banner': 'Demo modu: Bu cihazlar benzetimdir ve gerçek donanıma hiçbir şey gönderilmez.',
+  'demo.exit': 'Demodan çık',
+  'demo.noBackups': 'Demo cihazları yedek tutmaz.',
 };

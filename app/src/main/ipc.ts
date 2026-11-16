@@ -76,6 +76,9 @@ const desktopHandlers = {
   captureProfileFromDevices: async (name: string) => {
     const links: AppProfile['links'] = {};
     for (const dev of deviceManager.list()) {
+      // A demo device carries a real model's name: linking it would point the
+      // real board's entry at whatever slot the simulation happens to be on.
+      if (dev.simulated) continue;
       if (dev.capabilities.includes('profiles')) {
         links[dev.model] = { slot: dev.activeProfile ?? 1 };
       }
@@ -143,9 +146,9 @@ const desktopHandlers = {
     if (patch.startAtBoot !== undefined) await platform.setStartAtBoot(patch.startAtBoot);
     const next = await setSettings(patch);
     if (patch.pollSeconds !== undefined) switcher.setPollSeconds(patch.pollSeconds);
-    // Developer mode adds/removes simulated devices on the next scan pass;
-    // nudge it so the grid reacts immediately instead of up to 2.5s later.
-    if (patch.devMode !== undefined) deviceManager.nudgeScan();
+    // Demo mode adds/removes simulated devices on the next scan pass; nudge it
+    // so the grid reacts immediately instead of up to 2.5s later.
+    if (patch.demoMode !== undefined) deviceManager.nudgeScan();
     return next;
   },
   openMouseSettings: () => platform.openMouseSettings(),

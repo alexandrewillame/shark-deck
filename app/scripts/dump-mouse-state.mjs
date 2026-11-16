@@ -186,7 +186,7 @@ async function main() {
   );
   if (!cols.length) {
     console.error('V8 vendor collection not found — is the 8K receiver connected?');
-    console.error('Close SharkDeck / ATK HUB / the vendor Mouse Hub first (they hold the handle).');
+    console.error('Close SharkDeck / the vendor Mouse Hub first (they hold the handle).');
     process.exit(1);
   }
   const col = cols[0];

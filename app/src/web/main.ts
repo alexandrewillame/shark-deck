@@ -93,21 +93,32 @@ async function boot(): Promise<void> {
   // Ask the browser not to evict app data (backups among it) under pressure.
   void navigator.storage?.persist?.().catch(() => false);
   // A first visit: the browser's language rather than English. The rest of
-  // the newcomer's look (Smoke in Shark Cyan) is the shared default
+  // the newcomer's look (Nebula in Shark Cyan) is the shared default
   // (main/settings.ts). A visitor's own choices win from then on.
   if (readJsonSync(paths.settings(), null) === null) {
     await setSettings({ language: browserLocale() });
   }
+  // `…/shark-deck/#demo` opens straight into demo mode: the link to give
+  // someone who wants to look around first. The hash goes once it is read, so
+  // a reload after "Exit demo" stays out of it.
+  if (location.hash === '#demo') {
+    await setSettings({ demoMode: true });
+    history.replaceState(null, '', location.pathname + location.search);
+  }
 
   deviceManager.configure({
-    // The dev server only (`npm run dev:web`): the whole app with simulated
-    // devices and no Electron — for visual checks. A published build never
-    // offers them (there is no demo mode).
-    allowSimulated: import.meta.env.DEV,
+    // Demo mode — one simulated device of every kind — is open to every
+    // visitor who knows where it is (Settings, `#demo`); nothing advertises
+    // it. Its records never mix with a real device's (main/devices/demoScope.ts).
+    allowSimulated: true,
     showDevNotes: import.meta.env.DEV,
     os: detectOs(),
     // WebHID exposes no serial numbers — see ManagerConfig.serialless.
     serialless: 'family',
+    // Firefox, Safari, phones: no WebHID, so no USB to scan — and nothing to
+    // report as a failure. The welcome screen says why, and links to the
+    // desktop app.
+    hid: 'hid' in navigator,
   });
 
   const bus = createEventBus();

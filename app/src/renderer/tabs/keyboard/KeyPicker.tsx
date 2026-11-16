@@ -1,7 +1,15 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { KEY_GROUPS, hidUsageForBrowserCode, normalizeUsage, type KeyGroup } from '@shared/keys';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  KEY_GROUPS,
+  hidUsageForBrowserCode,
+  normalizeUsage,
+  type KeyDef,
+  type KeyGroup,
+} from '@shared/keys';
 import { Row } from '../../components/common';
+import { Icon } from '../../components/icons';
 import { useT } from '../../state/i18n';
+import { filterKeyGroups } from '../../state/keySearch';
 import { keyName } from '../../state/shortcuts';
 import { keyFace } from './remapKeyFace';
 
@@ -20,6 +28,10 @@ import { keyFace } from './remapKeyFace';
  * editor's key list); the Remap tab captures combinations itself. Escape is
  * never picked — it closes the popover around the picker — and typing into a
  * text field stays typing.
+ *
+ * `searchable`: a box above the groups that narrows them to what is typed —
+ * "vol", "f5", "media" (state/keySearch.ts). It never takes the focus by
+ * itself: the board's own keys, and `listen`, keep theirs.
  */
 export function KeyPicker({
   isOn = () => false,
@@ -27,14 +39,23 @@ export function KeyPicker({
   disabled,
   groups = KEY_GROUPS,
   listen,
+  searchable,
 }: {
   isOn?: (code: string) => boolean;
   onPick: (code: string) => void;
   disabled?: boolean;
   groups?: readonly KeyGroup[];
   listen?: boolean;
+  searchable?: boolean;
 }) {
   const t = useT();
+  const [query, setQuery] = useState('');
+  // A media or launcher key is named for what it does, and that name is
+  // translated; a key legend stays as printed — but for Win and Alt, which a
+  // Mac calls ⌘ and ⌥.
+  const nameOf = (k: KeyDef) => (k.labelKey ? t(k.labelKey) : keyName(k.code, k.label));
+  const groupNameOf = (g: KeyGroup) => (g.labelKey ? t(g.labelKey) : g.label);
+  const shown = searchable ? filterKeyGroups(groups, query, nameOf, groupNameOf) : groups;
   /** The picker's own code for each usage it offers, by normalised usage. */
   const offered = useMemo(() => {
     const m = new Map<string, string>();
@@ -66,19 +87,54 @@ export function KeyPicker({
   return (
     <>
       {listen && !disabled && <p className="hint key-picker-listen">{t('keypick.listen')}</p>}
-      {groups.map((g) => (
+      {searchable && (
+        <div className="key-search">
+          <Icon name="search" size={12} />
+          <input
+            type="text"
+            value={query}
+            placeholder={t('keypick.search')}
+            aria-label={t('keypick.search')}
+            spellCheck={false}
+            autoComplete="off"
+            disabled={disabled}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              // Escape empties the box first; with nothing typed it is left to
+              // whatever the picker sits in (a chooser closes on it).
+              if (e.key === 'Escape' && query) {
+                e.preventDefault();
+                e.stopPropagation();
+                setQuery('');
+              }
+            }}
+          />
+          {query && (
+            <button
+              type="button"
+              className="key-search-clear"
+              aria-label={t('keypick.search.clear')}
+              title={t('keypick.search.clear')}
+              onClick={() => setQuery('')}
+            >
+              <Icon name="close" size={10} />
+            </button>
+          )}
+        </div>
+      )}
+      {searchable && query.trim() && shown.length === 0 && (
+        <p className="hint key-search-none">{t('keypick.search.none', { q: query.trim() })}</p>
+      )}
+      {shown.map((g) => (
         // Stacked: the group's name above its keys, which wrap to the width
         // they have. Beside the name, a row's control never shrinks (`.row-ctl`),
         // so the 26 letters stayed on one line and whatever held the picker
         // scrolled sideways.
-        <Row key={g.label} className="row-stack" label={g.labelKey ? t(g.labelKey) : g.label}>
+        <Row key={g.label} className="row-stack" label={groupNameOf(g)}>
           <div className="remap-picker">
             {g.keys.map((k) => {
               const on = isOn(k.code);
-              // A media or launcher key is named for what it does, and that
-              // name is translated; a key legend stays as printed — but for
-              // Win and Alt, which a Mac calls ⌘ and ⌥.
-              const name = k.labelKey ? t(k.labelKey) : keyName(k.code, k.label);
+              const name = nameOf(k);
               return (
                 <button
                   key={k.code + k.label}

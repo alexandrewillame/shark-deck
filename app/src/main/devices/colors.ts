@@ -1,4 +1,5 @@
-import { paths, readJson, withFileLock, writeJson } from '../store';
+import { paths } from '../store';
+import { realIo, type StoreIo } from './demoScope';
 
 /**
  * The user's chosen cosmetic colour/edition variant per device model —
@@ -11,24 +12,25 @@ import { paths, readJson, withFileLock, writeJson } from '../store';
  */
 type Store = Record<string, string>;
 
-async function readStore(): Promise<Store> {
-  return readJson<Store>(paths.deviceColors(), {});
+async function readStore(io: StoreIo): Promise<Store> {
+  return io.readJson<Store>(paths.deviceColors(), {});
 }
 
-export async function getDeviceColor(model: string): Promise<string | null> {
-  const store = await readStore();
+export async function getDeviceColor(model: string, io: StoreIo = realIo): Promise<string | null> {
+  const store = await readStore(io);
   return store[model] ?? null;
 }
 
 export async function setDeviceColor(
   model: string,
   variantId: string | null,
+  io: StoreIo = realIo,
 ): Promise<string | null> {
-  return withFileLock(paths.deviceColors(), async () => {
-    const store = await readStore();
+  return io.withFileLock(paths.deviceColors(), async () => {
+    const store = await readStore(io);
     if (variantId) store[model] = variantId;
     else delete store[model];
-    await writeJson(paths.deviceColors(), store);
+    await io.writeJson(paths.deviceColors(), store);
     return variantId;
   });
 }

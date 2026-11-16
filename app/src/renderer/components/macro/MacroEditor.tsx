@@ -3,6 +3,7 @@ import type { LiveDevice } from '@shared/types/live';
 import type { Macro } from '@shared/types/macros';
 import { ConfirmDialog, InfoDot, Tooltip } from '../common';
 import { Icon } from '../icons';
+import { useStuckHead } from '../stickyHead';
 import { useT } from '../../state/i18n';
 import { useStore } from '../../state/store';
 import { usePendingChange } from '../../state/leaveGuard';
@@ -79,6 +80,9 @@ export function MacroEditor({ device }: { device: LiveDevice }) {
   const toast = useStore((s) => s.toast);
   const { run } = useWrite();
   const limits = device.ui.macroLimits;
+  // Save / Revert stay pinned while a long list of steps scrolls under them.
+  const editRef = useRef<HTMLElement>(null);
+  useStuckHead(editRef);
 
   const { data: onDevice, reload: reloadDevice } = useDeviceData<Macro[]>(
     device.id,
@@ -260,11 +264,11 @@ export function MacroEditor({ device }: { device: LiveDevice }) {
         onNew={() => guard({ kind: 'new' })}
       />
 
-      <section className="macro-edit">
+      <section className="macro-edit has-sticky-head" ref={editRef}>
         {/* The editor's how-to is an info dot beside the name field rather
             than a paragraph above it — read once, and it was a line of the
             pane on every visit. */}
-        <div className="macro-edit-head">
+        <div className="macro-edit-head sticky-head">
           <InfoDot text={t('macro.editorHint')} />
           <Tooltip text={t('macro.name.tip', { max: limits?.nameMax ?? FALLBACK_NAME_MAX })}>
             <input

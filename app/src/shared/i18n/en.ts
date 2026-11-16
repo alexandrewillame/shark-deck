@@ -630,10 +630,10 @@ export const en = {
   'set.frameLog': 'HID frame log',
   'set.frameLog.hint': 'Live view of every report sent to and from connected devices.',
   'set.noFrames': 'No frames yet.',
-  'set.devDevices': 'Simulated devices',
-  'set.devDevices.hint':
-    'Show one of every supported device in the grid, so the whole UI can be used with no hardware attached.',
-  'hint.simulated': 'Simulated device — developer mode, no hardware attached.',
+  'set.demoMode': 'Demo mode',
+  'set.demoMode.hint':
+    'Show one of every supported device, simulated, to explore every menu. Nothing is sent to real hardware.',
+  'hint.demo': 'Demo device — simulated, nothing is sent to hardware.',
 
   // -- device manager hints (main process) -----------------------
   'hint.offlineWireless':
@@ -1425,6 +1425,13 @@ export const en = {
   'leave.body.lostThem': "If you leave now, they're discarded.",
   'leave.body.lostThemSwitch': "If you switch now, they're discarded.",
   'leave.body.lostThemQuit': "If you quit now, they're discarded.",
+  'keypick.search': 'Search keys…',
+  'keypick.search.clear': 'Clear the search',
+  'keypick.search.none': 'No key matches “{q}”.',
+  'web.desktopApp': 'Get the desktop app',
+  'demo.banner': 'Demo mode: these devices are simulated, and nothing is sent to real hardware.',
+  'demo.exit': 'Exit demo',
+  'demo.noBackups': 'Demo devices keep no backups.',
 } as const;
 
 export type MessageKey = keyof typeof en;

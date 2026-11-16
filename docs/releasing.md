@@ -22,7 +22,9 @@ git push origin v0.1.0
 ```
 
 The tag builds all three platforms again and opens a **draft** release with
-every installer attached. Nothing is public until you check the draft on the
+every installer attached, plus `SharkDeck-device-report.bat` from `tools/` —
+the tool owners of an unsupported device run (docs/devices/attack-shark-lineup.md,
+"Missing a device?"). Nothing is public until you check the draft on the
 repository's **Releases** page and press **Publish**.
 
 Publishing the release also deploys the browser edition to GitHub Pages

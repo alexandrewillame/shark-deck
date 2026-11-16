@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * Developer mode's *lifecycle* through the real DeviceManager scan loop: that
+ * Demo mode's *lifecycle* through the real DeviceManager scan loop: that
  * simulated devices attach when the setting is on, come up online (the config
  * screen disables every control on an offline device), and — the part with no
  * teardown code of its own — are removed by the ordinary prune sweep when the
- * setting goes off.
+ * setting goes off. Then that a demo device's per-model records stay its own.
  *
- * node-hid is mocked to an empty bus, so this is also the assertion that dev
+ * node-hid is mocked to an empty bus, so this is also the assertion that demo
  * mode needs no hardware at all.
  */
 
@@ -24,7 +24,7 @@ vi.mock('node-hid', () => ({
 // memory so the test cannot touch the developer's real config.
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp/sharkdeck-test', isPackaged: false } }));
 
-const mockSettings = { devMode: false, language: 'en', batteryLowThreshold: 15 };
+const mockSettings = { demoMode: false, language: 'en', batteryLowThreshold: 15 };
 vi.mock('../settings', () => ({
   getSettingsSync: () => mockSettings,
   getSettings: async () => mockSettings,
@@ -39,6 +39,7 @@ vi.mock('../store', () => ({
     deviceState: () => '/tmp/device-state.json',
     deviceColors: () => '/tmp/device-colors.json',
     onboardProfileNames: () => '/tmp/onboard-names.json',
+    keyGroups: () => '/tmp/key-groups.json',
   },
   readJson: async (_p: string, d: unknown) => d,
   writeJson: async (p: string) => void writes.push(`writeJson:${p}`),
@@ -50,27 +51,29 @@ vi.mock('../store', () => ({
   },
 }));
 
-import { DeviceManager } from './manager';
+import { DeviceManager, deviceManager } from './manager';
 import { isReadOnly } from './identity';
 import { virtualDescriptors } from './virtual';
+import { clearDemoRecords } from './demoScope';
+import { createDeviceHandlers } from '../handlers';
 
 /** Drive one scan pass without waiting on the 2.5s timer chain. */
 async function scanOnce(m: DeviceManager): Promise<void> {
   await (m as unknown as { scan(): Promise<void> }).scan();
 }
 
-describe('developer mode through the scan loop', () => {
+describe('demo mode through the scan loop', () => {
   let mgr: DeviceManager;
 
   beforeEach(() => {
     writes.length = 0;
-    mockSettings.devMode = false;
+    mockSettings.demoMode = false;
     mgr = new DeviceManager();
     // What main/index.ts passes in an unpackaged build.
     mgr.configure({ allowSimulated: true });
   });
 
-  it('lists nothing with dev mode off and no hardware', async () => {
+  it('lists nothing with demo mode off and no hardware', async () => {
     await scanOnce(mgr);
     expect(mgr.list()).toEqual([]);
   });
@@ -79,13 +82,13 @@ describe('developer mode through the scan loop', () => {
     // The default must be the packaged-build behaviour: a dev-mode flag left
     // on in the shared settings must stay inert unless the host opts in.
     const unconfigured = new DeviceManager();
-    mockSettings.devMode = true;
+    mockSettings.demoMode = true;
     await scanOnce(unconfigured);
     expect(unconfigured.list()).toEqual([]);
   });
 
   it('attaches one online device per supported shape when switched on', async () => {
-    mockSettings.devMode = true;
+    mockSettings.demoMode = true;
     await scanOnce(mgr);
 
     const devices = mgr.list();
@@ -109,9 +112,9 @@ describe('developer mode through the scan loop', () => {
     const seen: number[] = [];
     mgr.on('devices:changed', (list: unknown[]) => seen.push(list.length));
 
-    mockSettings.devMode = true;
+    mockSettings.demoMode = true;
     await scanOnce(mgr);
-    mockSettings.devMode = false;
+    mockSettings.demoMode = false;
     await scanOnce(mgr);
 
     expect(seen[0]).toBe(virtualDescriptors().length);
@@ -119,17 +122,17 @@ describe('developer mode through the scan loop', () => {
   });
 
   it('is pruned by the ordinary sweep when switched off — no teardown of its own', async () => {
-    mockSettings.devMode = true;
+    mockSettings.demoMode = true;
     await scanOnce(mgr);
     expect(mgr.list().length).toBeGreaterThan(0);
 
-    mockSettings.devMode = false;
+    mockSettings.demoMode = false;
     await scanOnce(mgr);
     expect(mgr.list()).toEqual([]);
   });
 
   it('is stable across repeated passes — no duplicate cards', async () => {
-    mockSettings.devMode = true;
+    mockSettings.demoMode = true;
     await scanOnce(mgr);
     await scanOnce(mgr);
     await scanOnce(mgr);
@@ -138,7 +141,7 @@ describe('developer mode through the scan loop', () => {
   });
 
   it('never writes to a per-model store, and takes no backup', async () => {
-    mockSettings.devMode = true;
+    mockSettings.demoMode = true;
     await scanOnce(mgr);
 
     for (const d of mgr.list()) {
@@ -149,10 +152,75 @@ describe('developer mode through the scan loop', () => {
   });
 });
 
+/**
+ * Demo mode is public in the browser edition, where a visitor may own the very
+ * keyboard a demo card is named after. Every record kept per MODEL — profile
+ * names, the photo colour, key groups, backups — used to be shared with the
+ * real model: renaming a demo profile renamed the real one, and the demo
+ * card's backup list held the real board's backups, Delete included.
+ */
+describe('a demo device keeps its records to itself', () => {
+  const h = createDeviceHandlers({ onDeviceWrite: () => {} });
+
+  beforeEach(async () => {
+    writes.length = 0;
+    clearDemoRecords();
+    mockSettings.demoMode = true;
+    deviceManager.configure({ allowSimulated: true });
+    await scanOnce(deviceManager);
+  });
+  afterEach(async () => {
+    mockSettings.demoMode = false;
+    await scanOnce(deviceManager);
+  });
+
+  const board = () => deviceManager.list().find((d) => d.kind === 'keyboard' && d.simulated)!;
+  const pictured = () =>
+    deviceManager.list().find((d) => d.simulated && d.ui.colorVariants.length > 1)!;
+
+  it('marks the device as a demo one', () => {
+    expect(board().simulated).toBe(true);
+  });
+
+  it('renames, recolours and keeps key groups without writing a real store', async () => {
+    const kb = board();
+    const renamed = await h.renameOnboardProfile(kb.id, 1, 'Demo name');
+    expect(renamed.find((d) => d.id === kb.id)!.profileNames[1]).toBe('Demo name');
+
+    const dev = pictured();
+    const other = dev.ui.colorVariants.find((v) => v.id !== dev.colorVariant)!;
+    const recoloured = await h.setDeviceColor(dev.id, other.id);
+    expect(recoloured.find((d) => d.id === dev.id)!.colorVariant).toBe(other.id);
+
+    const saved = await h.saveKeyGroup(kb.id, 1, {
+      id: '',
+      name: 'WASD',
+      color: '#f00',
+      slots: [1],
+    });
+    expect(await h.listKeyGroups(kb.id, 1)).toEqual(saved);
+    await h.replaceKeyGroups(kb.id, 1, []);
+    expect(await h.listKeyGroups(kb.id, 1)).toEqual([]);
+    await h.deleteKeyGroup(kb.id, 1, 'none');
+
+    expect(writes).toEqual([]);
+  });
+
+  it('lists, restores, deletes and exports none of the real model’s backups', async () => {
+    const kb = board();
+    const file = `${kb.model}-backup.json`;
+    expect(await h.listBackups(kb.id)).toEqual([]);
+    expect((await h.restoreBackup(kb.id, file)).ok).toBe(false);
+    expect((await h.deleteBackup(kb.id, file)).ok).toBe(false);
+    expect(await h.exportBackup(kb.id, file)).toBeNull();
+    expect(writes).toEqual([]);
+  });
+});
+
 describe('nudgeScan() does not fork a second scan-timer chain', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    mockSettings.devMode = false;
+    mockSettings.demoMode = false;
   });
   afterEach(() => {
     vi.useRealTimers();

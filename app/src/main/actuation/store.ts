@@ -1,5 +1,6 @@
 import type { ActuationLayout, KeyGroup } from '@shared/types/keyboard-settings';
 import { paths, readJson, withFileLock, writeJson } from '../store';
+import { realIo, type StoreIo } from '../devices/demoScope';
 
 /**
  * Two app-side stores for the Actuation tab, both the same pattern as
@@ -67,7 +68,7 @@ interface ModelGroups {
 }
 type GroupsFile = Record<string, KeyGroup[] | ModelGroups>;
 
-const readGroups = () => readJson<GroupsFile>(paths.keyGroups(), {});
+const readGroups = (io: StoreIo) => io.readJson<GroupsFile>(paths.keyGroups(), {});
 
 function modelGroups(all: GroupsFile, model: string): ModelGroups {
   const e = all[model];
@@ -86,8 +87,16 @@ const withList = (
   next: KeyGroup[],
 ): GroupsFile => ({ ...all, [model]: { ...m, bySlot: { ...m.bySlot, [String(profile)]: next } } });
 
-export async function listKeyGroups(model: string, profile: number): Promise<KeyGroup[]> {
-  return listFor(modelGroups(await readGroups(), model), profile);
+/**
+ * Key groups, by model and onboard profile. `io` is `demoIo` for a demo
+ * device (devices/demoScope.ts): its groups must never replace a real board's.
+ */
+export async function listKeyGroups(
+  model: string,
+  profile: number,
+  io: StoreIo = realIo,
+): Promise<KeyGroup[]> {
+  return listFor(modelGroups(await readGroups(io), model), profile);
 }
 
 /**
@@ -101,9 +110,10 @@ export async function saveKeyGroup(
   model: string,
   profile: number,
   g: KeyGroup,
+  io: StoreIo = realIo,
 ): Promise<KeyGroup[]> {
-  return withFileLock(paths.keyGroups(), async () => {
-    const all = await readGroups();
+  return io.withFileLock(paths.keyGroups(), async () => {
+    const all = await readGroups(io);
     const m = modelGroups(all, model);
     const list = listFor(m, profile);
     const id = g.id || crypto.randomUUID();
@@ -114,7 +124,7 @@ export async function saveKeyGroup(
     );
     const at = stripped.findIndex((x) => x.id === id);
     const next = at === -1 ? [...stripped, entry] : stripped.map((x, i) => (i === at ? entry : x));
-    await writeJson(paths.keyGroups(), withList(all, model, m, profile, next));
+    await io.writeJson(paths.keyGroups(), withList(all, model, m, profile, next));
     return next;
   });
 }
@@ -123,12 +133,13 @@ export async function deleteKeyGroup(
   model: string,
   profile: number,
   id: string,
+  io: StoreIo = realIo,
 ): Promise<KeyGroup[]> {
-  return withFileLock(paths.keyGroups(), async () => {
-    const all = await readGroups();
+  return io.withFileLock(paths.keyGroups(), async () => {
+    const all = await readGroups(io);
     const m = modelGroups(all, model);
     const next = listFor(m, profile).filter((g) => g.id !== id);
-    await writeJson(paths.keyGroups(), withList(all, model, m, profile, next));
+    await io.writeJson(paths.keyGroups(), withList(all, model, m, profile, next));
     return next;
   });
 }
@@ -152,11 +163,12 @@ export async function replaceKeyGroups(
   model: string,
   profile: number,
   groups: KeyGroup[],
+  io: StoreIo = realIo,
 ): Promise<KeyGroup[]> {
-  return withFileLock(paths.keyGroups(), async () => {
-    const all = await readGroups();
+  return io.withFileLock(paths.keyGroups(), async () => {
+    const all = await readGroups(io);
     const next = groups.map((g) => ({ ...g, id: g.id || crypto.randomUUID() }));
-    await writeJson(
+    await io.writeJson(
       paths.keyGroups(),
       withList(all, model, modelGroups(all, model), profile, next),
     );

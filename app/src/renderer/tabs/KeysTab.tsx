@@ -13,13 +13,15 @@ import { Gated } from '../components/Gated';
  *  allows, for a choice of the same kind the rail itself offers. */
 export function KeysTab({ device }: TabProps) {
   const t = useT();
-  // Outside the component's own state, so switching profile — which remounts
-  // every pane to make it re-read the board — does not also send you back to
-  // the Base layer. See usePaneView.
-  const [picked, setLayer] = usePaneView<'base' | 'fn'>(`${device.id}:keys.layer`, 'base');
+  // The tab opens on the Fn layer. The pick is kept outside the component's
+  // own state, so switching profile — which remounts every pane to make it
+  // re-read the board — does not also send you back to it. See usePaneView.
+  const [picked, setLayer] = usePaneView<'base' | 'fn'>(`${device.id}:keys.layer`, 'fn');
   // Each layer only where the model has it (keyRemap / fnLayer): a board
-  // with one of the two used to get both sub-tabs.
-  const layers = (['base', 'fn'] as const).filter((l) =>
+  // with one of the two used to get both sub-tabs. The Fn layer comes first,
+  // as the one most people come here to change; a board without one opens on
+  // Base.
+  const layers = (['fn', 'base'] as const).filter((l) =>
     gate(l === 'base' ? 'keys.base' : 'keys.fn', device),
   );
   const layer = layers.includes(picked) ? picked : (layers[0] ?? 'base');

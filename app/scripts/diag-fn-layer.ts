@@ -33,7 +33,7 @@ async function main() {
   );
   if (!cands.length) {
     console.error('No Compx vendor collection found — is the keyboard connected?');
-    console.error('Close SharkDeck / ATK HUB / qmk.top first; they hold the handle.');
+    console.error('Close SharkDeck / qmk.top first; they hold the handle.');
     process.exit(1);
   }
   const d = ATTACK_SHARK_R85HE;

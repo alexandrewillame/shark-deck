@@ -25,6 +25,7 @@ import { useT } from '../state/i18n';
 import { useStore } from '../state/store';
 import { isSubmitEnter } from '../state/shortcuts';
 import { useAnchoredPosition } from './usePortalPosition';
+import { useStuckHead } from './stickyHead';
 import { Icon } from './icons';
 import { useDragOrClick } from './useDragOrClick';
 import { ColorPickerField } from './ColorPickerField';
@@ -510,6 +511,7 @@ export function Panel({
   tip,
   actions,
   className,
+  stickyHead,
   children,
 }: {
   /** `ReactNode`, not `string`: the remap panel's heading names the selected
@@ -529,12 +531,21 @@ export function Panel({
   /** Extra classes on the panel box — `panel-board-first` is the one that
    *  matters: see keyboard-map.css. */
   className?: string;
+  /**
+   * Keep the heading line — title and `actions` — pinned under the pane's
+   * sticky bars while the body scrolls, for a panel long enough to scroll its
+   * own Apply out of reach (components/stickyHead.ts).
+   */
+  stickyHead?: boolean;
   children: ReactNode;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useStuckHead(ref, !!stickyHead);
+  const classes = ['panel', stickyHead && 'has-sticky-head', className].filter(Boolean).join(' ');
   return (
-    <div className={className ? `panel ${className}` : 'panel'}>
+    <div ref={ref} className={classes}>
       {(title || actions) && (
-        <h4>
+        <h4 className={stickyHead ? 'sticky-head' : undefined}>
           {title}
           {tip && <InfoDot text={tip} />}
           {actions && <span className="panel-actions">{actions}</span>}
@@ -735,8 +746,26 @@ export function TitleTabs<T extends string | number>({
    *  PaneHeader's `sub`, which passes it here for a TitleTabs heading. */
   info?: string;
 }) {
+  // A level-2 rail is a second sticky bar under the pane's header, so what
+  // pins below both (a panel heading — components/stickyHead.ts) needs its
+  // height too: published on the pane as `--pane-rail-h`, the way PaneHeader
+  // publishes `--pane-head-h`.
+  const railRef = useRef<HTMLHeadingElement>(null);
+  useLayoutEffect(() => {
+    const el = railRef.current;
+    const pane = el?.parentElement;
+    if (level !== 2 || !el || !pane) return;
+    const publish = () => pane.style.setProperty('--pane-rail-h', `${el.offsetHeight}px`);
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      pane.style.removeProperty('--pane-rail-h');
+    };
+  }, [level]);
   return (
-    <h2 className={level === 2 ? 'title-tabs level-2' : 'title-tabs'}>
+    <h2 ref={railRef} className={level === 2 ? 'title-tabs level-2' : 'title-tabs'}>
       {options.map((o, i) => {
         const btn = (
           <button

@@ -21,14 +21,49 @@ const idOf = (label: string): string =>
 export const presetKey = (model: string, zone: string, effectLabel: string): string =>
   `${model}/${zone}/${idOf(effectLabel)}`;
 
+/** Whose effect memory: a model, and whether this is a demo device of it. */
+export interface PresetOwner {
+  model: string;
+  simulated?: true;
+}
+
+/**
+ * A demo device's effect memory, for this session only. The settings file is
+ * keyed by model, and a demo device carries a real model's name — tuning Wave
+ * on the demo R85HE must not change what Wave comes back as on the real one
+ * (the main process keeps its demo records apart the same way:
+ * main/devices/demoScope.ts).
+ */
+const demoPresets = new Map<string, LightingPreset>();
+
 /** What this effect was last set to, if anything. */
 export function recallPreset(
   settings: AppSettings | null,
-  model: string,
+  owner: PresetOwner,
   zone: string,
   effectLabel: string,
 ): LightingPreset | undefined {
-  return settings?.lightingPresets?.[presetKey(model, zone, effectLabel)];
+  const key = presetKey(owner.model, zone, effectLabel);
+  return owner.simulated ? demoPresets.get(key) : settings?.lightingPresets?.[key];
+}
+
+/**
+ * Remember what an effect is set to. For a real device: the settings patch to
+ * write. For a demo device: kept here, and `null` — nothing to write.
+ */
+export function rememberPreset(
+  settings: AppSettings | null,
+  owner: PresetOwner,
+  zone: string,
+  effectLabel: string,
+  preset: LightingPreset,
+): Partial<AppSettings> | null {
+  const key = presetKey(owner.model, zone, effectLabel);
+  if (owner.simulated) {
+    demoPresets.set(key, preset);
+    return null;
+  }
+  return { lightingPresets: { ...(settings?.lightingPresets ?? {}), [key]: preset } };
 }
 
 /**

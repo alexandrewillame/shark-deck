@@ -113,7 +113,7 @@ async function main() {
   );
   if (!cols.length) {
     console.error('R85HE vendor collection not found — is the keyboard connected?');
-    console.error('Close SharkDeck / ATK HUB first (they hold the handle).');
+    console.error('Close SharkDeck first (it holds the handle).');
     process.exit(1);
   }
   const col = cols[0];

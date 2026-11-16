@@ -800,6 +800,52 @@
   margin: 0 0 10px;
   font-size: var(--fs-sm);
 }
+/* The search box over a picker (KeyPicker `searchable`): the magnifier sits
+   inside the field's left edge, the clear button inside its right. */
+.key-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 320px;
+  margin: 0 0 12px;
+}
+.key-search > svg {
+  position: absolute;
+  left: 9px;
+  color: var(--text-mut);
+  pointer-events: none;
+}
+.key-search > input[type='text'] {
+  flex: 1;
+  min-width: 0;
+  padding-left: 31px;
+  padding-right: 30px;
+}
+.key-search > input[type='text']:disabled {
+  opacity: 0.5;
+}
+.key-search-clear {
+  position: absolute;
+  right: 5px;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-mut);
+  cursor: pointer;
+}
+.key-search-clear:hover {
+  color: var(--text);
+  background: var(--bg-2);
+}
+.key-search-none {
+  margin: 0 0 10px;
+  font-size: var(--fs-sm);
+}
 /* The picker grid. Uniform squares, because they stand for keys — a row of
    buttons each sized to its own label read as a list of words. */
 .remap-picker {

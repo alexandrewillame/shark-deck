@@ -40,7 +40,7 @@ import { decodeQuad, quadFor } from './drivers/compx-keyboard';
 import { MT_HOLD_ZONE, MT_TAP_ZONE, isModTapEntry } from '@shared/key-zones';
 
 /**
- * Developer mode's simulated devices.
+ * Demo mode's simulated devices.
  *
  * The home grid, the config rail and every tab are driven entirely by the
  * `LiveDevice`/`Capability` pair the main process reports, so with nothing
@@ -171,7 +171,7 @@ interface VirtualState {
  *    on strictly `data === null`; `[]` and `{}` are fine. A missing seed would
  *    show up as a read-failure banner on a device that is supposedly online.
  *  - **Writes report `verified: 'match'`.** `useWrite()` toasts an error on
- *    `!ok` and a warning on `'mismatch'`, so anything else makes dev mode
+ *    `!ok` and a warning on `'mismatch'`, so anything else makes demo mode
  *    noisy. Each write merges into `state`, so the matching read reflects it.
  */
 export class VirtualDriver extends Driver {
@@ -179,7 +179,7 @@ export class VirtualDriver extends Driver {
    * One state per onboard slot, because that is what an onboard slot IS.
    *
    * A single shared state made every slot identical, so switching profiles in
-   * developer mode changed nothing on screen — and developer mode is this
+   * demo mode changed nothing on screen — and demo mode is this
    * repo's substitute for the rendering tests it does not have, so a feature
    * that cannot be seen there cannot be walked. Slots are seeded lazily: slot
    * 1 on construction, the rest as a copy of slot 1 the first time they are
@@ -189,7 +189,7 @@ export class VirtualDriver extends Driver {
    * A keyboard is the exception, because its slot carries its actuation
    * settings and nothing else (see `profileFieldsFor`): it keeps ONE state,
    * and only `magnetic` is swapped per slot — `slotMagnetic` below, exchanged
-   * in `setActiveProfile`. Otherwise developer mode would show a per-slot
+   * in `setActiveProfile`. Otherwise demo mode would show a per-slot
    * lighting or remap that the real board does not have.
    */
   private readonly slotStates = new Map<number, VirtualState>();
@@ -522,7 +522,7 @@ export class VirtualDriver extends Driver {
   /**
    * Simulates a real pairing rather than answering "done" immediately.
    *
-   * `{ linked: true }` on the first poll used to make dev mode succeed one
+   * `{ linked: true }` on the first poll used to make demo mode succeed one
    * second after the button press, which is exactly the bug the pane's state
    * machine now guards against — so it could never be exercised without
    * hardware. Instead: report the link DOWN for the first few seconds after
@@ -562,7 +562,7 @@ export class VirtualDriver extends Driver {
     return this.ack('SET_PROFILE', [slot]);
   }
   /** Mirrors the real driver: disabled stages are dropped rather than stored,
-   *  and the active stage is re-clamped onto what survives — so dev mode can't
+   *  and the active stage is re-clamped onto what survives — so demo mode can't
    *  drift from hardware on the one behaviour that caused a disabled stage to
    *  be applied. See compx-mouse-8k.ts's setDpiStages. */
   override async setDpiStages(stages: DpiStage[]): Promise<WriteResult> {

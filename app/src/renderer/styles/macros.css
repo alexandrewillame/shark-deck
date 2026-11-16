@@ -203,6 +203,11 @@
   flex-wrap: wrap;
   margin-bottom: 14px;
 }
+/* Pinned while the steps scroll (panes.css `.has-sticky-head`); with its 8px of
+   padding, the same 14px below it. */
+.macro-edit.has-sticky-head > .sticky-head {
+  margin-bottom: 6px;
+}
 /* The name field is wrapped in a Tooltip, so the flex sizing has to live on
    the wrapper — the input then fills it. */
 .macro-edit-head > .tt-wrap:has(> input.macro-name) {

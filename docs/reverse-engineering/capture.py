@@ -28,7 +28,7 @@ except ImportError:
 HERE = os.path.dirname(os.path.abspath(__file__))
 HUB_EXE = (r"C:\Program Files (x86)\ATTACK  SHARK MOUSE HUB"
            r"\ATTACK  SHARK MOUSE HUB\ATTACK  SHARK MOUSE HUB.exe")
-HUB_NAMES = ("ATTACK  SHARK MOUSE HUB.exe", "iot_driver_v215.exe", "ATK HUB.exe")
+HUB_NAMES = ("ATTACK  SHARK MOUSE HUB.exe", "iot_driver_v215.exe")
 
 packets: list[dict] = []
 

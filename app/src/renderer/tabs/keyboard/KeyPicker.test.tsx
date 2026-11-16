@@ -2,6 +2,55 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { KEY_GROUPS } from '@shared/keys';
 import { KeyPicker } from './KeyPicker';
+import { REMAP_GROUPS } from './remapGroups';
+
+/** The names of the key buttons on screen, in order. */
+const shownKeys = () =>
+  [...document.querySelectorAll('.remap-key')].map((b) => b.getAttribute('aria-label'));
+
+/**
+ * "Have a search box so the user can type the shortcut he wants and easily
+ * find it, instead of having to look through the whole list."
+ */
+describe('KeyPicker search', () => {
+  it('has no box unless asked for one', () => {
+    render(<KeyPicker onPick={vi.fn()} />);
+    expect(screen.queryByRole('textbox')).toBeNull();
+  });
+
+  it('narrows the list to what is typed, and the clear button brings it all back', () => {
+    render(<KeyPicker onPick={vi.fn()} groups={REMAP_GROUPS} searchable />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search keys…' }), {
+      target: { value: 'vol' },
+    });
+    expect(shownKeys()).toEqual(['Volume -', 'Volume +']);
+    fireEvent.click(screen.getByRole('button', { name: 'Clear the search' }));
+    expect(document.querySelectorAll('.row').length).toBe(REMAP_GROUPS.length);
+  });
+
+  it('says so when nothing matches', () => {
+    render(<KeyPicker onPick={vi.fn()} groups={REMAP_GROUPS} searchable />);
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'zzzz' } });
+    expect(screen.getByText('No key matches “zzzz”.')).toBeTruthy();
+    expect(shownKeys()).toEqual([]);
+  });
+
+  it('empties the box on Escape', () => {
+    render(<KeyPicker onPick={vi.fn()} groups={REMAP_GROUPS} searchable />);
+    const box = screen.getByRole('textbox') as HTMLInputElement;
+    fireEvent.change(box, { target: { value: 'f5' } });
+    expect(shownKeys()).toEqual(['F5']);
+    fireEvent.keyDown(box, { key: 'Escape' });
+    expect(box.value).toBe('');
+  });
+
+  it('picks nothing from what is typed into the box, while it listens', () => {
+    const onPick = vi.fn();
+    render(<KeyPicker onPick={onPick} listen searchable />);
+    fireEvent.keyDown(screen.getByRole('textbox'), { code: 'KeyV', key: 'v' });
+    expect(onPick).not.toHaveBeenCalled();
+  });
+});
 
 /**
  * "I pressed Choose for the Hold key and typed the key, and it did not select

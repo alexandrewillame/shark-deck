@@ -49,6 +49,25 @@ describe('the pane heading sticks to the top of the scrollport', () => {
     expect(body).toMatch(/z-index:\s*[1-9]/);
   });
 
+  it('pins a panel heading that holds Apply, under the pane bars, by their heights', () => {
+    // Remap's picker, the lighting panes and the macro editor run longer than
+    // the window; their Apply / Save lives on the heading line.
+    const base = bodyOf(panes, '.has-sticky-head > .sticky-head {');
+    expect(base, 'the pinned-heading rule moved').not.toBe('');
+    expect(base).toContain('position: sticky');
+    expect(base).toMatch(/z-index:\s*[1-9]/);
+    expect(
+      bodyOf(panes, '.pane:has(> .pane-head .title-tabs) .has-sticky-head > .sticky-head {'),
+    ).toContain('var(--pane-head-h');
+    const underRail = bodyOf(panes, '.pane:has(> .title-tabs) .has-sticky-head > .sticky-head,');
+    expect(underRail).toContain('var(--pane-head-h');
+    expect(underRail).toContain('var(--pane-rail-h');
+    // Opaque while pinned, so the list does not show through it.
+    expect(bodyOf(panes, '.has-sticky-head[data-stuck] > .sticky-head {')).toMatch(
+      /background:\s*var\(--bg-1\)/,
+    );
+  });
+
   it('leaves .pane declaring no scroll mechanism of its own', () => {
     // The trap. Sticky binds to the nearest ancestor that declares one, so an
     // `overflow` here would bind these headings to a box that never scrolls,

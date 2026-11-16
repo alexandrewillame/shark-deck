@@ -8,7 +8,7 @@ import { ColorPicker } from '../components/ColorPicker';
 import { BatteryPill, Tooltip } from '../components/common';
 import { ConnectDeviceButton } from '../components/ConnectDevice';
 import { Icon } from '../components/icons';
-import { hostFeatures } from '../state/host';
+import { canPickDevices } from '../state/host';
 import type { LiveDevice } from '@shared/types/live';
 
 import { sd } from '../state/bridge';
@@ -255,7 +255,7 @@ function Card({
               nobody acts on, taking a pill's worth of room from the ones they
               do. */}
           <ColorPicker
-            model={d.model}
+            deviceId={d.id}
             current={d.colorVariant}
             variants={d.ui.colorVariants}
             onPreview={setPreviewVariant}
@@ -409,12 +409,26 @@ export function DeviceGrid() {
     commitDrop();
   };
 
+  // Said once, over the grid, while demo mode has devices in it — and the
+  // way back out. Each demo card also says so in its own hint.
+  const demo = !!settings?.demoMode && devices.some((d) => d.simulated);
+  const exitDemo = () => void sd.setSettings({ demoMode: false }).then(setSettings);
+
   return (
     <div className="devicegrid-wrap" onDragOver={containerDragOver} onDrop={containerDrop}>
       <h2 style={{ fontSize: 18 }}>{t('grid.title')}</h2>
       <p className="sub" style={{ color: 'var(--text-dim)', fontSize: 12 }}>
         {t(devices.length === 1 ? 'grid.count' : 'grid.count.plural', { n: devices.length })}
       </p>
+      {demo && (
+        <div className="demo-strip" role="status">
+          <Icon name="info" size={12} />
+          <span>{t('demo.banner')}</span>
+          <button className="btn" onClick={exitDemo}>
+            {t('demo.exit')}
+          </button>
+        </div>
+      )}
       <div
         className={`grid ${entered ? 'entered' : ''}`}
         onDragOver={containerDragOver}
@@ -441,8 +455,9 @@ export function DeviceGrid() {
         ))}
       </div>
       {/* Browser edition: each device is reached only once picked in the
-          browser's own list — the welcome screen offers the first, this the rest. */}
-      {hostFeatures.devicePicker && (
+          browser's own list — the welcome screen offers the first, this the
+          rest. Not in a browser with no WebHID, where only the demo is here. */}
+      {canPickDevices() && (
         <div className="grid-connect">
           <ConnectDeviceButton label="web.connect.another" />
         </div>

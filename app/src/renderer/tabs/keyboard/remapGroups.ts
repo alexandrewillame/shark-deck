@@ -25,11 +25,13 @@ const consumer = (usages: number[]): KeyDef[] =>
     code: consumerAction(u),
   }));
 
-/** In the order the old row had them, then what it lacked. */
-const MEDIA = consumer([0xcd, 0xb5, 0xb6, 0xe2, 0xe9, 0xea, 0xb7, 0x183]);
+/** In the order a keyboard's media row has them: back before forward, down
+ *  before up — Previous, Play / Pause, Next, Stop, Mute, Volume -, Volume +. */
+const MEDIA = consumer([0xb6, 0xcd, 0xb5, 0xb7, 0xe2, 0xea, 0xe9, 0x183]);
 const LAUNCH = consumer([0x18a, 0x192, 0x194, 0x221]);
 const BROWSER = consumer([0x223, 0x224, 0x225, 0x227, 0x226, 0x22a]);
-const SCREEN = consumer([0x6f, 0x70]);
+/** Screen brightness -, then +. */
+const SCREEN = consumer([0x70, 0x6f]);
 
 export const REMAP_GROUPS: KeyGroup[] = [
   ...KEY_GROUPS.map((g) => {

@@ -32,7 +32,11 @@ describe('per-effect lighting memory', () => {
         'r85he/keyboard/LightBreath': { brightness: 25, speed: 50, color: [0, 255, 0] },
       },
     } as unknown as AppSettings;
-    const next = applyPreset(base, 'Breath', recallPreset(settings, 'r85he', 'keyboard', 'Breath'));
+    const next = applyPreset(
+      base,
+      'Breath',
+      recallPreset(settings, { model: 'r85he' }, 'keyboard', 'Breath'),
+    );
     expect(next.effect).toBe('Breath');
     expect(next.brightness).toBe(25);
     expect(next.color).toEqual([0, 255, 0]);

@@ -1,126 +1,182 @@
 import type { DeviceDescriptor } from '@shared/types/device';
 import { KEYBOARD_ROWS } from './catalog/generated/keyboard-rows';
 import { KEYBOARDS_BY_ID } from './catalog/keyboards';
-import { magneticWritable, slotLayoutFor } from './catalog/keyboard-builder';
+import { slotLayoutFor } from './catalog/keyboard-builder';
 import { HUB_CANDIDATES, HUB_MID_CLASS, hubMouseFor } from './catalog/hub-mice';
 import { GEARHUB_MICE, GEARHUB_UNSUPPORTED } from './catalog/gearhub-mice';
-import { jxcMouseRoster } from './catalog/jxc-mice';
+import { jxcMouseRoster, jxcUnconfirmedNames } from './catalog/jxc-mice';
+import { bekenRoster } from './catalog/beken-mice';
 
 /**
- * The supported-model tables of docs/devices/attack-shark-lineup.md, built
- * from the catalogues Shark Deck actually runs against — so the inventory
- * cannot say a model is driven when it is not. Written between the doc's
- * `generated:lineup` markers by `npm run lineup`; `lineup.test.ts` fails when
- * the doc and the catalogues disagree.
+ * The device tables of docs/devices/attack-shark-lineup.md, built from the
+ * catalogues Shark Deck actually runs against — so the list cannot say a model
+ * is supported when it is not. Written between the doc's `generated:lineup`
+ * markers by `npm run lineup`; `lineup.test.ts` fails when the doc and the
+ * catalogues disagree.
+ *
+ * Every row carries one status, with its colour (GitHub draws no cell colours,
+ * but it draws emoji in colour, in both themes), and the rows are sorted by it:
+ * what is tested first, what cannot be changed last.
  */
 
-/** art key -> the store's colour names (app/assets/devices/manifest.json). */
-export type Colours = Readonly<Record<string, readonly string[]>>;
+type Status = 'tested' | 'works' | 'partial' | 'recognised';
 
+const STATUS: Record<Status, { cell: string; rank: number }> = {
+  tested: { cell: '🟢 Tested', rank: 0 },
+  works: { cell: '🟡 Should work', rank: 1 },
+  partial: { cell: '🟠 Partial', rank: 2 },
+  recognised: { cell: '⚪ Recognised', rank: 3 },
+};
+
+/** Checked on a real unit: frames confirmed, read back, written. */
 const HARDWARE_CHECKED: ReadonlySet<string> = new Set(['attack-shark-r85he', 'attack-shark-v8']);
-const hex4 = (n: number) => n.toString(16).padStart(4, '0');
-const usb = (vid: number, pid: number) => `${hex4(vid)}:${hex4(pid)}`;
+
+interface Row {
+  status: Status;
+  name: string;
+  /** Tie-break within a name (keyboards: the model id). */
+  order: number;
+  cells: string[];
+}
+
 const cell = (s: string) => s.replace(/\|/g, '\\|');
+const shortName = (d: DeviceDescriptor) => d.displayName.replace(/^Attack Shark /, '');
 
-function support(d: DeviceDescriptor): string {
-  if (d.identity === 'unsupported' || d.driver === 'no-io') return 'named only';
-  return HARDWARE_CHECKED.has(d.model) ? '**checked on hardware**' : 'driven, not yet checked';
+function sorted(rows: Row[]): Row[] {
+  return [...rows].sort(
+    (a, b) =>
+      STATUS[a.status].rank - STATUS[b.status].rank ||
+      a.name.localeCompare(b.name) ||
+      a.order - b.order,
+  );
 }
 
-function colours(c: Colours, key: string | undefined): string {
-  const list = key ? c[key] : undefined;
-  return list?.length ? cell(list.join(', ')) : '—';
+function table(head: string[], rows: Row[]): string {
+  return [
+    `| ${head.join(' | ')} |`,
+    `|${head.map(() => '---').join('|')}|`,
+    ...sorted(rows).map((r) => `| ${[STATUS[r.status].cell, ...r.cells].join(' | ')} |`),
+  ].join('\n');
 }
 
-function keyboards(c: Colours): string {
-  const out = [
-    '| Model | Model id | USB | Command set | Switches | Key map | Wireless | Colours (photos) | Shark Deck |',
-    '|---|---|---|---|---|---|---|---|---|',
-  ];
-  const rows = [...KEYBOARD_ROWS].sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
-  for (const r of rows) {
+function keyboardRows(): Row[] {
+  return KEYBOARD_ROWS.map((r) => {
     const d = KEYBOARDS_BY_ID.get(r.id)!;
-    const status = slotLayoutFor(r).status;
-    const switches = !r.magnetic
-      ? 'mechanical'
-      : d.capabilities.includes('magneticSwitches')
-        ? 'Hall effect'
-        : magneticWritable(r)
-          ? 'Hall effect (no actuation menu yet)'
-          : 'Hall effect (the vendor offers no settings)';
-    const keyMap =
-      d.identity === 'unsupported'
-        ? '—'
-        : status === 'verified'
-          ? 'verified'
-          : status === 'certain'
-            ? 'imported, checked at connect'
-            : 'none: whole-board settings';
-    const radio =
-      [r.sleep24 && '2.4 GHz', r.sleepBT && 'Bluetooth'].filter(Boolean).join(', ') || 'no';
-    out.push(
-      `| ${cell(d.displayName.replace(/^Attack Shark /, ''))} | ${r.id} | ${usb(r.vid, r.pid)} | ${r.family} | ${switches} | ${keyMap} | ${radio} | ${colours(c, d.artKey ?? d.model)} | ${support(d)} |`,
-    );
-  }
-  return out.join('\n');
+    const layout = slotLayoutFor(r).status;
+    const radio = [r.sleep24 && '2.4 GHz', r.sleepBT && 'Bluetooth'].filter(Boolean).join(', ');
+    let status: Status;
+    let note = '';
+    if (d.identity === 'unsupported' || d.driver === 'no-io') {
+      status = 'recognised';
+      note = 'Its command set has no driver yet.';
+    } else if (HARDWARE_CHECKED.has(d.model)) {
+      status = 'tested';
+    } else if (layout === 'none') {
+      status = 'partial';
+      note = 'Whole-keyboard settings only: its key map is not known yet.';
+    } else if (r.magnetic && !d.capabilities.includes('magneticSwitches')) {
+      status = 'partial';
+      note = 'No actuation menu yet: its magnetic settings use other units.';
+    } else {
+      status = 'works';
+    }
+    return {
+      status,
+      name: shortName(d),
+      order: r.id,
+      cells: [
+        cell(shortName(d)),
+        String(r.id),
+        r.magnetic ? 'Hall effect' : 'mechanical',
+        radio || '—',
+        note,
+      ],
+    };
+  });
 }
 
-function mice(c: Colours): string {
-  const out = [
-    '| Model | Platform | USB | Identified by | Sensor | DPI | Colours (photos) | Shark Deck |',
-    '|---|---|---|---|---|---|---|---|',
-  ];
-  const row = (d: DeviceDescriptor, platform: string, by: string, endpoints: string) =>
-    out.push(
-      `| ${cell(d.displayName.replace(/^Attack Shark /, ''))} | ${platform} | ${endpoints} | ${by} | ${d.spec.dpi?.sensor ?? '—'} | ${d.spec.dpi ? `${d.spec.dpi.min}–${d.spec.dpi.max}` : '—'} | ${colours(c, d.artKey ?? d.model)} | ${support(d)} |`,
-    );
-  const hubIds = 'receiver 3554:f517, fb44, fb35; cable f515, f516, fb43';
-  row(hubMouseFor(5, 5), 'Compx Hub', 'cid 124, mid 5', hubIds);
-  row(hubMouseFor(11, 5), 'Compx Hub', 'cid 124, mid 11', hubIds);
-  row(hubMouseFor(20, 5), 'Compx Hub', 'cid 124, mid 20', hubIds);
+function mouseRows(): Row[] {
+  const rows: Row[] = [];
+  const add = (status: Status, name: string, d: DeviceDescriptor | null, note = '') =>
+    rows.push({
+      status,
+      name,
+      order: 0,
+      cells: [
+        cell(name),
+        d?.spec.dpi?.sensor ?? '—',
+        d?.spec.dpi ? `${d.spec.dpi.min}–${d.spec.dpi.max}` : '—',
+        note,
+      ],
+    });
+  const driven = (d: DeviceDescriptor) =>
+    add(HARDWARE_CHECKED.has(d.model) ? 'tested' : 'works', shortName(d), d);
+
+  // Compx Hub: the models whose number (mid) is known, by name.
+  for (const mid of [5, 11, 20]) driven(hubMouseFor(mid, 5));
+  // …and the ones still driven by the settings their sensor class shares.
   for (const [classKey, models] of Object.entries(HUB_CANDIDATES)) {
-    const mids = Object.entries(HUB_MID_CLASS)
-      .filter(([, v]) => `${v.sensor}-${v.maxDpi}` === classKey)
-      .map(([mid]) => mid);
-    const d = hubMouseFor(Number(mids[0]), 5);
+    const mid = Object.entries(HUB_MID_CLASS).find(
+      ([, v]) => `${v.sensor}-${v.maxDpi}` === classKey,
+    )![0];
+    const d = hubMouseFor(Number(mid), 5);
     for (const m of models) {
-      out.push(
-        `| ${cell(m.name)} | Compx Hub | ${hubIds} | cid 124, mid not yet known (one of ${mids.join(', ')}) | ${d.spec.dpi?.sensor} | ${d.spec.dpi?.min}–${d.spec.dpi?.max} | ${colours(c, m.artKey)} | driven by its sensor class, not yet checked |`,
+      add(
+        'partial',
+        m.name,
+        d,
+        'Its sensor’s common settings only: its model number is not known yet.',
       );
     }
   }
-  for (const d of new Set(GEARHUB_MICE.values())) {
-    const ids = [...GEARHUB_MICE].filter(([, x]) => x === d).map(([i]) => i);
-    row(d, 'GearHub-V5', `device id ${ids.join(', ')}`, 'cable 3151:4026, receiver 402d');
-  }
-  for (const [id, name] of GEARHUB_UNSUPPORTED) {
-    out.push(
-      `| ${cell(name.replace(/^Attack Shark /, ''))} (newer MCU) | GearHub | 3151:5043 | device id ${id} | — | — | ${colours(c, 'attack-shark-r2')} | named only |`,
+  for (const d of new Set(GEARHUB_MICE.values())) driven(d);
+  for (const [, name] of GEARHUB_UNSUPPORTED) {
+    add(
+      'recognised',
+      `${name.replace(/^Attack Shark /, '')} (newer chip)`,
+      null,
+      'Its command set has no driver yet.',
     );
   }
-  for (const d of jxcMouseRoster()) {
-    const cable = {
-      'attack-shark-r5-ultra': 0x46,
-      'attack-shark-r6': 0x21,
-      'attack-shark-r8': 0x3a,
-    }[d.model];
-    row(d, 'JXC', 'its PID', `cable 373e:${hex4(cable ?? 0)}, receiver ${hex4(d.pid)}`);
+  for (const d of jxcMouseRoster()) driven(d);
+  for (const name of jxcUnconfirmedNames()) {
+    add(
+      'recognised',
+      name,
+      null,
+      'Its USB ids are another brand’s too; shown until one is confirmed.',
+    );
   }
-  return out.join('\n');
+  for (const m of bekenRoster()) {
+    add(
+      'recognised',
+      m.name.replace(/^Attack Shark /, ''),
+      null,
+      'Beken chip: the settings protocol is not confirmed yet — [why](../protocol/mouse-beken.md).',
+    );
+  }
+  return rows;
 }
 
 /** The generated block, markers excluded. */
-export function lineupTables(c: Colours): string {
+export function lineupTables(): string {
+  const mice = mouseRows();
+  const keyboards = keyboardRows();
+  const count = (s: Status) => [...mice, ...keyboards].filter((r) => r.status === s).length;
   return [
-    '### Keyboards',
+    `**At a glance:** ${(['tested', 'works', 'partial', 'recognised'] as const)
+      .map((s) => `${STATUS[s].cell} ${count(s)}`)
+      .join(' · ')}`,
     '',
-    `${KEYBOARD_ROWS.length} Attack Shark model ids from the vendor's registry (via sharkfin).`,
+    '## Mice',
     '',
-    keyboards(c),
+    table(['Status', 'Model', 'Sensor', 'DPI', 'Notes'], mice),
     '',
-    '### Mice',
+    '## Keyboards',
     '',
-    mice(c),
+    'One row per firmware model id: a name can cover several versions (wired or wireless, Hall effect or mechanical), and Shark Deck tells them apart when the keyboard connects.',
+    '',
+    table(['Status', 'Model', 'Model id', 'Switches', 'Wireless', 'Notes'], keyboards),
   ].join('\n');
 }
 
@@ -128,21 +184,9 @@ export const LINEUP_START = '<!-- generated:lineup — `npm run lineup` rewrites
 export const LINEUP_END = '<!-- /generated:lineup -->';
 
 /** The doc with its generated block replaced. */
-export function withLineup(doc: string, c: Colours): string {
+export function withLineup(doc: string): string {
   const a = doc.indexOf(LINEUP_START);
   const b = doc.indexOf(LINEUP_END);
   if (a < 0 || b < a) throw new Error('lineup markers not found');
-  return doc.slice(0, a + LINEUP_START.length) + '\n\n' + lineupTables(c) + '\n\n' + doc.slice(b);
-}
-
-/** art key -> colour names, from the manifest's JSON. */
-export function coloursOf(manifest: {
-  models: Record<string, { variants: Record<string, { colour: string }> }>;
-}): Colours {
-  return Object.fromEntries(
-    Object.entries(manifest.models).map(([k, m]) => [
-      k,
-      Object.values(m.variants).map((v) => v.colour),
-    ]),
-  );
+  return doc.slice(0, a + LINEUP_START.length) + '\n\n' + lineupTables() + '\n\n' + doc.slice(b);
 }

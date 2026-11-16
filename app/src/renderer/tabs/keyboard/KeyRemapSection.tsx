@@ -525,6 +525,9 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
           become available", where an empty panel said nothing at all. */}
       <div className="keeps-selection">
         <Panel
+          // The picker below runs long: its heading — the key, Reset, Apply,
+          // Cancel — stays pinned while the list scrolls under it.
+          stickyHead
           title={
             <span className="remap-title">
               {layer === 'fn' ? t('remap.assign.fn') : t('remap.assign.base')}
@@ -639,6 +642,7 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
                 onPick={toggleUsage}
                 groups={REMAP_GROUPS}
                 disabled={!sel || selSlot === null}
+                searchable
               />
             </>
           )}

@@ -45,7 +45,8 @@ the desktop app.
 | V8 receiver firmware version | not shown — WebHID exposes no USB `bcdDevice` | same | same |
 
 Firefox and Safari have no WebHID, Brave turns it off by default, and phones
-cannot use it at all; the page says so instead of offering a dead button. Run
+cannot use it at all; the page says so, scans nothing, and links to the desktop
+app instead of offering a dead button (checked in Firefox, November 2026). Run
 the browser edition **or** the desktop app, not both: two programs polling the
 same device interleave their frames.
 
@@ -450,7 +451,7 @@ DevTools.
   it switched to Gaming and quitting it switched back. The switch card showed
   over a full-screen app (TextEdit) without taking focus. A stub Steam
   library was scanned (`Neon Drift` → `NeonDrift`).
-- The unpackaged build with Simulated devices (51 shapes), and the macro
+- The unpackaged build in demo mode (51 simulated shapes), and the macro
   recorder with ⌘, ⌥ and Caps Lock (see "App behaviour").
 - **The R85HE:** `smoke-hid.mjs` printed what it prints on Windows, line for
   line, and `npm run snapshot:kb` came back byte-identical to the Windows

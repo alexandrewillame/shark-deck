@@ -157,13 +157,14 @@ export const KEY_GROUPS: KeyGroup[] = [
   {
     label: 'Media',
     labelKey: 'keypick.group.media',
+    // Back before forward, down before up — the order a media row has them.
     keys: [
+      ['Prev', 'eb'],
       ['Play/Pause', 'e8'],
       ['Next', 'ea'],
-      ['Prev', 'eb'],
       ['Mute', 'ef'],
-      ['Vol +', 'ed'],
       ['Vol -', 'ee'],
+      ['Vol +', 'ed'],
     ].map(([label, code]) => ({ label: label!, code: code! })),
   },
 ];

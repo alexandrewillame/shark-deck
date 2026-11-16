@@ -64,7 +64,11 @@ export function DeviceTab({ device }: TabProps) {
           <Gated id="dev.identity" device={device}>
             <IdentityPanel device={device} />
           </Gated>
-          {hostFeatures.devicePicker && <BrowserAccessSection device={device} />}
+          {/* Not on a demo card: the browser grants by model, so forgetting
+              "this" device there would revoke a real one of the same model. */}
+          {hostFeatures.devicePicker && !device.simulated && (
+            <BrowserAccessSection device={device} />
+          )}
         </>
       ) : view === 'switches' && canSwapSwitches ? (
         <Gated id="dev.switches" device={device}>
@@ -82,7 +86,7 @@ export function DeviceTab({ device }: TabProps) {
                   used to repeat the heading word for word. */}
               <Row label={<span className="row-desc">{t('dev.colour.hint')}</span>}>
                 <ColorPicker
-                  model={device.model}
+                  deviceId={device.id}
                   current={device.colorVariant}
                   variants={device.ui.colorVariants}
                   onPreview={(v) => setArtColorPreview(device.id, v)}
@@ -97,7 +101,11 @@ export function DeviceTab({ device }: TabProps) {
           <Gated id="dev.restore" device={device}>
             <RestoreSection device={device} />
           </Gated>
-          {hostFeatures.devicePicker && <BrowserAccessSection device={device} />}
+          {/* Not on a demo card: the browser grants by model, so forgetting
+              "this" device there would revoke a real one of the same model. */}
+          {hostFeatures.devicePicker && !device.simulated && (
+            <BrowserAccessSection device={device} />
+          )}
         </>
       )}
     </HeroPane>

@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * open and publishes them on `LiveDevice`.
  *
  * Everything here runs against simulated devices on a mocked, empty node-hid
- * bus — same harness as manager-devmode.test.ts, including its assertion that
+ * bus — same harness as manager-demo.test.ts, including its assertion that
  * no per-model store is written (a poll reads; it must never write).
  */
 
@@ -20,7 +20,7 @@ vi.mock('node-hid', () => ({
 }));
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp/sharkdeck-test', isPackaged: false } }));
 
-const mockSettings = { devMode: true, language: 'en', batteryLowThreshold: 15 };
+const mockSettings = { demoMode: true, language: 'en', batteryLowThreshold: 15 };
 vi.mock('../settings', () => ({
   getSettingsSync: () => mockSettings,
   getSettings: async () => mockSettings,
@@ -61,7 +61,7 @@ describe('live device-state poll', () => {
 
   beforeEach(async () => {
     writes.length = 0;
-    mockSettings.devMode = true;
+    mockSettings.demoMode = true;
     mgr = new DeviceManager();
     mgr.configure({ allowSimulated: true }); // an unpackaged desktop build
     await scanOnce(mgr);

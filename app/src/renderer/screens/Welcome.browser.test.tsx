@@ -12,11 +12,13 @@ vi.mock('../state/host', () => ({
     overlay: false,
     mouseSettingsLink: false,
     ambientLighting: false,
-    simulatedDevices: false,
+    publicDemo: true,
     devicePicker: true,
   },
+  canPickDevices: () => 'hid' in navigator,
 }));
 
+import { DESKTOP_DOWNLOAD_URL } from '@shared/links';
 import { sdMock } from '../../../test/lib/sdStub';
 import { useStore } from '../state/store';
 import { LINUX_ACCESS_COMMANDS, Welcome } from './Welcome';
@@ -61,6 +63,39 @@ describe('Welcome, browser edition', () => {
     render(<Welcome />);
     expect(screen.getByText(/This browser cannot reach USB devices/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Connect a device/ })).toBeNull();
+  });
+
+  // Firefox: "HID enumeration failed: WebHID is not available in this browser —
+  // Shark Deck cannot read the USB HID bus. Try reconnecting the device, or
+  // restart the app." Under the explanation, as if something had broken.
+  it('draws no scan error there, and points to the desktop app instead', () => {
+    withWebHid(false);
+    useStore.setState({
+      scanDiag: {
+        totalCollections: 0,
+        vendorMatches: 0,
+        resolved: 0,
+        lastError: 'WebHID is not available in this browser',
+        unmatched: [],
+      },
+    });
+    render(<Welcome />);
+    expect(screen.queryByText(/HID enumeration failed/)).toBeNull();
+    expect(screen.queryByText(/restart the app/)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /Get the desktop app/ }));
+    expect(sdMock.openExternal).toHaveBeenCalledWith(DESKTOP_DOWNLOAD_URL);
+  });
+
+  // Demo mode is for those who know where it is (Settings, `#demo`): the
+  // welcome screen never offers it, whichever browser this is.
+  it('does not advertise demo mode', () => {
+    for (const hid of [true, false]) {
+      withWebHid(hid);
+      const { unmount } = render(<Welcome />);
+      expect(screen.queryByText(/demo/i)).toBeNull();
+      unmount();
+    }
   });
 
   it('hands Linux users the udev rule the desktop packages install', () => {

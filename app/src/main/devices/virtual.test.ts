@@ -9,7 +9,7 @@ import { isReadOnly } from './identity';
 import { VirtualDriver, virtualDescriptors } from './virtual';
 
 /**
- * Developer mode's simulated devices only earn their keep if the UI cannot
+ * Demo mode's simulated devices only earn their keep if the UI cannot
  * tell them from real hardware. Two properties matter, and both are easy to
  * regress silently by adding a capability without a matching seed:
  *
@@ -255,7 +255,7 @@ describe('VirtualDriver', () => {
 
       it('keeps per slot exactly what the slot carries', async () => {
         // A simulated device that shows the same values on every slot makes a
-        // profile switch look broken in developer mode, which is where every
+        // profile switch look broken in demo mode, which is where every
         // renderer change is walked — and one that shows DIFFERENT values
         // where the hardware has one register makes a shared setting look
         // per-profile. So: what `profileFieldsFor` says follows the slot does,

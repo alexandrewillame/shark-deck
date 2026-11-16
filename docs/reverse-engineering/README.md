@@ -1,9 +1,35 @@
 # Reverse-engineering captures
 
+## Any new device: the report tool's recording
+
+For a device on a protocol nobody has documented, the starting point is a
+recording its owner makes with `tools/SharkDeck-device-report.bat`: USBPcap
+records the official software at work, a step window tags each setting change
+with the value it set, and the tool keeps only that device's traffic (key
+presses blanked, mouse movement cut to a sample, serial number zeroed). Read it
+with
+
+```bash
+cd app && npm run device-report -- path/to/SharkDeck-recording-….zip
+```
+
+It unpacks next to the .zip and writes `dossier.md` there: the descriptors,
+each step's frames with their timing, what the software polls on its own,
+encodings fitted to the known values, and checksum candidates. The pictures of
+the official software are in `screens/`. Code: `app/src/main/devices/capture/`.
+
+Unlike the Frida harnesses below, which each targeted one vendor app, a USB
+recording works whatever the official software is built with, including one
+that does its I/O from a service. It needs USBPcap because Windows 11's own
+USB trace (`Microsoft-Windows-USB-UCX`, even with `FullDataBusTrace`) records
+requests and their lengths but no payload any more (checked 2026-11-15).
+
+## The first two devices
+
 Originally the `capture/` folder of the Python profile switcher (now in
 [`../../legacy/attack-shark-profile-switcher/`](../../legacy/attack-shark-profile-switcher/)).
 
-## V8 mouse (Qt "Mouse Hub")
+### V8 mouse (Qt "Mouse Hub")
 
 Runbook: [`CAPTURE-MOUSE.md`](CAPTURE-MOUSE.md). Use the step-driven harness
 (`capture-mouse.py` / `hook-mouse.js`) — the first-generation one
@@ -24,7 +50,7 @@ only as the evidence behind the one verified command.
 | `capture.py` / `hook.js` | First-generation time-driven harness. History. |
 | `session.jsonl` / `session-v8-2026-08-13.jsonl` | The one prior V8 capture (profile switching) + its preserved copy. Do not overwrite. |
 
-## R85HE keyboard (Electron "Driver v4")
+### R85HE keyboard (Electron "Driver v4")
 
 Driver v4's renderer never touches HID — it calls gRPC-web `sendMsg` and the
 native `iot_driver_v215.exe` does the I/O. So the harness targets that process.
