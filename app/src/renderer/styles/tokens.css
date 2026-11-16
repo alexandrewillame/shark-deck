@@ -14,8 +14,8 @@
 :root {
   /* The night: the dark theme's page and accent colours, under names that
      hold in BOTH themes. The app background reads these in either theme:
-     its scenes glow in them at night and are lit in them by day
-     (docs/design/background.md). Everything else reads the plain tokens
+     its scenes glow in them at night and are lit in them by day.
+     Everything else reads the plain tokens
      below, which the light theme overrides. A palette sets its own night
      colours in its `:root[data-palette]` block. */
   --night-bg: #0a0c10;

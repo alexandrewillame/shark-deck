@@ -29,8 +29,7 @@ import { BackupWaiverBanner } from '../components/BackupWaiverBanner';
  * Lighting / Device tabs (see tabs/index.tsx). Keyed by device id in App.tsx
  * so the active tab resets when you switch devices.
  *
- * Three layout rules to keep in mind when editing this, all explained in
- * docs/design/renderer-layout.md:
+ * Three layout rules to keep in mind when editing this:
  *
  *  - the device photo is ONE node that travels between tabs; each tab marks
  *    where it wants it with <ArtAnchor>, and `mode="keyboard"` hides it in

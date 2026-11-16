@@ -19,8 +19,6 @@ import { useStore } from './store';
  *    nothing would be lost, otherwise one prompt (components/LeaveDialog.tsx,
  *    rendered once by App) that keeps editing, discards, or — for a single
  *    change — applies it and then goes.
- *
- * Which exits ask, which do not and why: docs/design/leave-guard.md.
  */
 
 /** 'apply' writes it to the device; 'save' keeps it on this computer (a macro). */

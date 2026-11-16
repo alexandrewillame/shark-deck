@@ -133,8 +133,7 @@ require the symlink privilege. The old workaround is kept, unwired, as
 
 ## Develop further
 
-- Architecture, conventions and the capability model: [`app/README.md`](app/README.md),
-  and the design decisions in [`docs/design/`](docs/design/).
+- Architecture, conventions and the capability model: [`app/README.md`](app/README.md).
 - Wire protocol and its provenance tags: [`docs/protocol/README.md`](docs/protocol/README.md).
 - Per-OS support matrix, the udev rule, and unsigned-build workarounds:
   [`docs/platform-support.md`](docs/platform-support.md).

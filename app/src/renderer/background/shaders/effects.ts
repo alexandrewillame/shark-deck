@@ -9,8 +9,7 @@
  * light one. The day is not the night recoloured: a night shows only what
  * glows, so each effect has its own `if (uLight > 0.5)` branch that lights
  * the SAME fields as a material — smoke as a shaded volume, lava's crust as
- * rock in the sun — and so shows what the dark hides (docs/design/
- * background.md, "Light theme"). That branch comes after the fields it lights
+ * rock in the sun — and so shows what the dark hides. That branch comes after the fields it lights
  * and before the night's own arithmetic; it reads those fields rather than
  * recomputing them and shares no sum with the night, so the dark theme draws
  * exactly as it did. The compiler optimises both sides together, and each of

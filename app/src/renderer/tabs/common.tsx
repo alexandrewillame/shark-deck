@@ -615,8 +615,7 @@ export function ReadFailed() {
  *
  * `is-keyboard` tells styles/device-art.css to size the art column for a
  * keyboard's wider photo (`--hero-art-h`) rather than a mouse's taller one.
- * Keys, Actuation and Lighting's board panes deliberately do NOT use this —
- * see docs/design/renderer-layout.md.
+ * Keys, Actuation and Lighting's board panes deliberately do NOT use this.
  */
 export function HeroPane({
   device,

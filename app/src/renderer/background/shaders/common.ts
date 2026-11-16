@@ -16,8 +16,7 @@
  *   uDay        the day page, the light theme's `--bg`
  *   uLight      1 in the light theme: the scene is drawn in daylight. Every
  *               effect has its own daylight version, re-lit from the same
- *               fields rather than recoloured from the night (docs/design/
- *               background.md, "Light theme")
+ *               fields rather than recoloured from the night
  *   uIntensity  how strongly to draw, 0..1
  *   uPal        1 when uA/uB are the palette's, 0 for the natural pair — for
  *               what an effect has beyond its two colours: fire's white-hot

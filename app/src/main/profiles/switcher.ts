@@ -37,9 +37,6 @@ const RESUME_DEBOUNCE_MS = 750;
  * TRANSITIONS, and RE-APPLY the desired profile whenever a write fails. That
  * last one is the self-heal after a replug or sleep, and it is the point of
  * the feature.
- *
- * Background, and how this differs from the Python switcher it was generalised
- * from: docs/design/auto-switch.md.
  */
 export class Switcher extends EventEmitter {
   private timer: NodeJS.Timeout | null = null;
