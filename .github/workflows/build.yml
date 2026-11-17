@@ -36,7 +36,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        # macos-15, not macos-latest: since late October 2026 the macos-latest
+        # (macOS 26) jobs often wait 15 minutes for a machine and are cancelled.
+        os: [windows-latest, macos-15, ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
     # A packaging run takes ~5-10 minutes; without a limit a hung one would
