@@ -7,6 +7,7 @@ import { HubIdentify, NoIo, RoyuanIdentify } from './identify';
 import { Yc500Keyboard } from './yc500-keyboard';
 import { GearHubMouse } from './gearhub-mouse';
 import { JxcMouse } from './jxc-mouse';
+import { Beken8kMouse } from './beken-8k-mouse';
 
 type DriverCtor = new (ctx: DriverContext) => Driver;
 
@@ -21,6 +22,8 @@ export const DRIVERS: Readonly<Record<string, DriverCtor>> = {
   'gearhub-mouse': GearHubMouse,
   // Attack Shark's JXC mice on VID 0x373E, known by PID (jxc-mouse.ts).
   'jxc-mouse': JxcMouse,
+  // The X8 PRO's 8K receiver, the one Beken endpoint driven: write-only (beken-8k-mouse.ts).
+  'beken-8k-mouse': Beken8kMouse,
   // A device attached before it has identified sends nothing but identify;
   // a read-only card sends nothing at all (see drivers/identify.ts).
   'royuan-identify': RoyuanIdentify,

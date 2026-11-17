@@ -1432,6 +1432,8 @@ export const en = {
   'demo.banner': 'Demo mode: these devices are simulated, and nothing is sent to real hardware.',
   'demo.exit': 'Exit demo',
   'demo.noBackups': 'Demo devices keep no backups.',
+  'backup.waiver.writeOnly':
+    'This mouse cannot report any of its settings: the menus show what Shark Deck last sent to it (typical starting values until then), and each change sends its whole section as shown.',
 } as const;
 
 export type MessageKey = keyof typeof en;

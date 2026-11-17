@@ -13,6 +13,7 @@ const { KEYBOARDS } = await import('../../src/main/devices/catalog/keyboards');
 const { hubMouseRoster } = await import('../../src/main/devices/catalog/hub-mice');
 const { GEARHUB_MICE } = await import('../../src/main/devices/catalog/gearhub-mice');
 const { jxcMouseRoster } = await import('../../src/main/devices/catalog/jxc-mice');
+const { bekenMouseRoster } = await import('../../src/main/devices/catalog/beken-mice');
 
 /**
  * Invariant: a backup before the first write to any device.
@@ -42,6 +43,7 @@ const descriptors = [
   ...hubMouseRoster(),
   ...GEARHUB_MICE.values(),
   ...jxcMouseRoster(),
+  ...bekenMouseRoster(),
 ].filter((d) => d.identity !== 'unsupported');
 
 describe('backup policies', () => {

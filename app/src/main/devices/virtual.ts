@@ -34,6 +34,7 @@ import { KEYBOARDS } from './catalog/keyboards';
 import { hubMouseRoster } from './catalog/hub-mice';
 import { GEARHUB_MICE } from './catalog/gearhub-mice';
 import { jxcMouseRoster } from './catalog/jxc-mice';
+import { bekenMouseRoster } from './catalog/beken-mice';
 import { readOnly } from './identity';
 import { Driver, type MagneticWriteOpts, type TravelSample } from './drivers/base';
 import { decodeQuad, quadFor } from './drivers/compx-keyboard';
@@ -118,6 +119,7 @@ export function virtualDescriptors(): DeviceDescriptor[] {
     ...hubMouseRoster(),
     ...gearhub,
     ...jxcMouseRoster(),
+    ...bekenMouseRoster(),
     foreign,
   ].map((d) => ({
     ...d,

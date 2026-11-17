@@ -83,7 +83,9 @@ export interface MagneticWriteOpts {
  * - `partial`: the device cannot report some settings (`unreadable`). The
  *   rest is backed up (`required`, when readable), and the first write waits
  *   for the user's one-time OK per model + firmware (`acknowledgeNoBackup`),
- *   because a Restore cannot bring those settings back.
+ *   because a Restore cannot bring those settings back. With nothing
+ *   `required`, the device reports nothing at all: there is no backup to
+ *   take, the OK is the whole gate, and the menus show what was last sent.
  */
 export interface BackupPolicy {
   kind: 'full' | 'partial';

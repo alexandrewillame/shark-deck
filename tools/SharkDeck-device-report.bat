@@ -1267,7 +1267,7 @@ function FamilyText([string]$family) {
         'royuan' { 'ROYUAN chip (Attack Shark keyboards, GearHub mice) - Shark Deck knows this family' }
         'compx-hub' { 'Compx MOUSE HUB (the V8 and its successors) - Shark Deck knows this family' }
         'jxc' { 'JXC chip (R5 ULTRA, R6, R8) - Shark Deck knows this family' }
-        'beken' { 'Beken chip (the original X11 and others) - Shark Deck shows it, but cannot configure it yet' }
+        'beken' { 'Beken chip (the X8 PRO, the original X11 and others) - Shark Deck configures the X8 PRO through its 8K receiver, and shows the others' }
         default { 'a family Shark Deck does not know yet' }
     }
 }
@@ -1342,7 +1342,7 @@ function AskModel([string]$family, [int]$productId, [object[]]$interfaces) {
             return $result
         }
         'jxc' { $result.why = 'Not needed: on this chip the USB product id names the model.'; return $result }
-        'beken' { $result.why = 'Not asked: Shark Deck sends nothing to Beken mice - some of their commands put the mouse into its bootloader.'; return $result }
+        'beken' { $result.why = 'Not asked: this tool sends nothing to Beken mice - on some of them a wrong command starts the bootloader.'; return $result }
         default { $result.why = 'Not asked: Shark Deck sends nothing to a device of a family it does not know.'; return $result }
     }
 }

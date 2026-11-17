@@ -1350,4 +1350,6 @@ export const zhTW: Partial<Messages> = {
   'demo.banner': '示範模式：這些裝置是模擬的，不會傳送任何內容到真實硬體。',
   'demo.exit': '結束示範',
   'demo.noBackups': '示範裝置不保留備份。',
+  'backup.waiver.writeOnly':
+    '這款滑鼠無法回報任何設定：選單顯示的是 Shark Deck 最後傳送給它的值（在此之前為常見的初始值），每次變更都會依顯示內容傳送整個區段。',
 };

@@ -145,6 +145,25 @@ describe('ensureBackup', () => {
     expect(await other.mgr.ensureBackup('dev')).toBe(true);
   });
 
+  it('gates a device that reports nothing on the OK alone, and stores no empty backup', async () => {
+    const WRITE_ONLY: BackupPolicy = { kind: 'partial', required: [], unreadable: ['dpi'] };
+    const { mgr, live } = attach(WRITE_ONLY, {});
+    expect(await mgr.ensureBackup('dev')).toBe(false);
+    expect(live.backupWaiver).toEqual({ unreadable: ['dpi'], writeOnly: true });
+    expect(files.size).toBe(0);
+
+    await mgr.acknowledgeNoBackup('dev');
+    expect(live.backupWaiver).toBeUndefined();
+    expect(await mgr.ensureBackup('dev')).toBe(true);
+    expect(files.size).toBe(0);
+  });
+
+  it('still refuses a partial device that should report something and read nothing', async () => {
+    const { mgr } = attach(PARTIAL, {});
+    expect(await mgr.ensureBackup('dev')).toBe(false);
+    expect(files.size).toBe(0);
+  });
+
   it('never backs up a device that has not identified, or another brand', async () => {
     for (const identity of ['pending', 'foreign', 'unknown', 'unsupported'] as const) {
       const { mgr, driver } = attach(FULL, { profile1: 'aa', profile2: 'bb' });

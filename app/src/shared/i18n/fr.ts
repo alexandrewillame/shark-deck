@@ -1430,4 +1430,6 @@ export const fr: Partial<Messages> = {
   'demo.banner': 'Mode démo : ces appareils sont simulés, et rien n’est envoyé à un vrai appareil.',
   'demo.exit': 'Quitter la démo',
   'demo.noBackups': 'Les appareils de démo ne gardent pas de sauvegardes.',
+  'backup.waiver.writeOnly':
+    'Cette souris ne peut renvoyer aucun de ses réglages : les menus montrent ce que Shark Deck lui a envoyé en dernier (des valeurs de départ habituelles jusque-là), et chaque modification envoie toute sa section telle qu’affichée.',
 };

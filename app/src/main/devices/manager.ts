@@ -528,7 +528,14 @@ export class DeviceManager extends Emitter {
       try {
         const blocks = await e.driver.backup();
         const settings = Object.keys(blocks).filter((k) => !BACKUP_META_BLOCKS.has(k));
-        if (!settings.length) return false;
+        if (!settings.length) {
+          // A device that reports nothing at all (a write-only protocol, the
+          // X8 PRO's 8K receiver: drivers/beken-8k-mouse.ts) has no backup to
+          // take. Its partial policy requires nothing, so the user's one-time
+          // OK is the whole gate.
+          if (policy.kind === 'partial' && !policy.required.length) return this.waived(e);
+          return false;
+        }
         if (policy.kind === 'full' && policy.required.some((b) => !(b in blocks))) return false;
         blocks.identity = JSON.stringify({
           model,
@@ -584,7 +591,13 @@ export class DeviceManager extends Emitter {
     const ok =
       policy.kind !== 'partial' ||
       (await hasBackupWaiver(e.descriptor.model, await this.waiverFirmware(e)));
-    const want = ok ? undefined : { unreadable: policy.unreadable ?? [] };
+    const want = ok
+      ? undefined
+      : {
+          unreadable: policy.unreadable ?? [],
+          // a partial policy that requires nothing: the device reports nothing
+          ...(policy.required.length ? {} : { writeOnly: true }),
+        };
     if (JSON.stringify(e.live.backupWaiver) !== JSON.stringify(want)) {
       e.live.backupWaiver = want;
       this.emitChanged();

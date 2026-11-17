@@ -20,7 +20,7 @@ reads every change back. Own a 🟡 or 🟠 device? Tell us whether it works:
 
 <!-- generated:lineup — `npm run lineup` rewrites this block -->
 
-**At a glance:** 🟢 Tested 2 · 🟡 Should work 30 · 🟠 Partial 67 · ⚪ Recognised 8
+**At a glance:** 🟢 Tested 2 · 🟡 Should work 30 · 🟠 Partial 68 · ⚪ Recognised 7
 
 ## Mice
 
@@ -43,6 +43,7 @@ reads every change back. Own a 🟡 or 🟠 device? Tell us whether it works:
 | 🟠 Partial | RS6 ULTRA | PAW3955 | 50–52000 | Its sensor’s common settings only: its model number is not known yet. |
 | 🟠 Partial | V2 AIR | PAW3955 | 50–60000 | Its sensor’s common settings only: its model number is not known yet. |
 | 🟠 Partial | V5 | PAW3950 | 50–42000 | Its sensor’s common settings only: its model number is not known yet. |
+| 🟠 Partial | X8 PRO | — | 50–40000 | Through its 8K receiver, not its cable yet. It cannot report its settings: Shark Deck shows what it last sent — [more](../protocol/mouse-beken.md). |
 | 🟠 Partial | X8 ULTIMATE / X8 ULTRA | PAW3950 | 50–42000 | Its sensor’s common settings only: its model number is not known yet. |
 | ⚪ Recognised | M5 ULTRA (Attack Shark or MAMBASNAKE) | — | — | Its USB ids are another brand’s too; shown until one is confirmed. |
 | ⚪ Recognised | R1 / X6 / X3 | — | — | Beken chip: the settings protocol is not confirmed yet — [why](../protocol/mouse-beken.md). |
@@ -50,7 +51,6 @@ reads every change back. Own a 🟡 or 🟠 device? Tell us whether it works:
 | ⚪ Recognised | X1 | — | — | Beken chip: the settings protocol is not confirmed yet — [why](../protocol/mouse-beken.md). |
 | ⚪ Recognised | X11 | — | — | Beken chip: the settings protocol is not confirmed yet — [why](../protocol/mouse-beken.md). |
 | ⚪ Recognised | X8 PLUS | — | — | Beken chip: the settings protocol is not confirmed yet — [why](../protocol/mouse-beken.md). |
-| ⚪ Recognised | X8 PRO | — | — | Beken chip: the settings protocol is not confirmed yet — [why](../protocol/mouse-beken.md). |
 
 ## Keyboards
 
@@ -207,7 +207,7 @@ written to. Details: [`docs/protocol/README.md`](../protocol/README.md).
 | Compx "MOUSE HUB" | 3554 (receivers F517, FB44, FB35; cables F515, F516, FB43) | V8 and its successors | identify reply: cid 124 + model number (mid) + link |
 | GearHub-V5 | 3151 (cable 4026, receiver 402D) | R2, R3, X3 PRO (second revision) | device id (`0x8F`) |
 | JXC | 373E | R5 ULTRA, R6, R8 | the product id (no model read exists) |
-| Beken | 1D57 | X11, X8 PRO, X8 PLUS, X1, R1 / X6 / X3 | the product id — shown, not driven |
+| Beken | 1D57 (X8 PRO 8K receiver FA65) | X11, X8 PRO, X8 PLUS, X1, R1 / X6 / X3 | the product id — the X8 PRO driven through its 8K receiver, the rest shown |
 
 Menus follow the model, never its name: one marketing name can cover several
 firmware ids with different hardware (three X87 ULTRA ids, one of them

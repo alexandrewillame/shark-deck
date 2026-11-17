@@ -1437,4 +1437,6 @@ export const tr: Partial<Messages> = {
   'demo.banner': 'Demo modu: Bu cihazlar benzetimdir ve gerçek donanıma hiçbir şey gönderilmez.',
   'demo.exit': 'Demodan çık',
   'demo.noBackups': 'Demo cihazları yedek tutmaz.',
+  'backup.waiver.writeOnly':
+    'Bu fare ayarlarının hiçbirini bildiremez: menüler Shark Deck’in ona en son gönderdiğini gösterir (o zamana kadar olağan başlangıç değerleri) ve her değişiklik bölümünün tamamını gösterildiği gibi gönderir.',
 };

@@ -1352,4 +1352,6 @@ export const zhCN: Partial<Messages> = {
   'demo.banner': '演示模式：这些设备是模拟的，不会向真实硬件发送任何内容。',
   'demo.exit': '退出演示',
   'demo.noBackups': '演示设备不保留备份。',
+  'backup.waiver.writeOnly':
+    '这款鼠标无法回报任何设置：菜单显示的是 Shark Deck 最后发送给它的值（在此之前为常见的初始值），每次更改都会按显示内容发送整个部分。',
 };

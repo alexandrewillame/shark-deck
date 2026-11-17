@@ -92,7 +92,12 @@ export interface LiveDevice {
    * first write: it cannot report `unreadable` back, so a backup cannot hold
    * them (drivers/base.ts `BackupPolicy`). Cleared by `acknowledgeNoBackup`.
    */
-  backupWaiver?: { unreadable: Capability[] };
+  /**
+   * `writeOnly`: the device reports none of its settings (drivers/base.ts
+   * `BackupPolicy`, partial with nothing required), so what the menus show is
+   * what Shark Deck last sent — the banner says so.
+   */
+  backupWaiver?: { unreadable: Capability[]; writeOnly?: boolean };
   /** renderer-facing slice of the static spec — see DeviceUi */
   ui: DeviceUi;
   /**

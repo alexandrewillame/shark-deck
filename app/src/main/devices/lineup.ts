@@ -5,7 +5,7 @@ import { slotLayoutFor } from './catalog/keyboard-builder';
 import { HUB_CANDIDATES, HUB_MID_CLASS, hubMouseFor } from './catalog/hub-mice';
 import { GEARHUB_MICE, GEARHUB_UNSUPPORTED } from './catalog/gearhub-mice';
 import { jxcMouseRoster, jxcUnconfirmedNames } from './catalog/jxc-mice';
-import { bekenRoster } from './catalog/beken-mice';
+import { bekenDescriptorFor, bekenRoster } from './catalog/beken-mice';
 
 /**
  * The device tables of docs/devices/attack-shark-lineup.md, built from the
@@ -148,12 +148,23 @@ function mouseRows(): Row[] {
     );
   }
   for (const m of bekenRoster()) {
-    add(
-      'recognised',
-      m.name.replace(/^Attack Shark /, ''),
-      null,
-      'Beken chip: the settings protocol is not confirmed yet — [why](../protocol/mouse-beken.md).',
-    );
+    const name = m.name.replace(/^Attack Shark /, '');
+    const d = m.pids.map((pid) => bekenDescriptorFor(pid)).find((x) => x && x.driver !== 'no-io');
+    if (d) {
+      add(
+        'partial',
+        name,
+        d,
+        'Through its 8K receiver, not its cable yet. It cannot report its settings: Shark Deck shows what it last sent — [more](../protocol/mouse-beken.md).',
+      );
+    } else {
+      add(
+        'recognised',
+        name,
+        null,
+        'Beken chip: the settings protocol is not confirmed yet — [why](../protocol/mouse-beken.md).',
+      );
+    }
   }
   return rows;
 }

@@ -1447,4 +1447,6 @@ export const es: Partial<Messages> = {
     'Modo demo: estos dispositivos son simulados y no se envía nada a ningún dispositivo real.',
   'demo.exit': 'Salir de la demo',
   'demo.noBackups': 'Los dispositivos de demostración no guardan copias de seguridad.',
+  'backup.waiver.writeOnly':
+    'Este ratón no puede devolver ninguno de sus ajustes: los menús muestran lo último que Shark Deck le envió (valores iniciales habituales hasta entonces), y cada cambio envía toda su sección tal como se muestra.',
 };

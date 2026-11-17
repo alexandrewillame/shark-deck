@@ -28,12 +28,14 @@ USB id, and shows only the settings that model has.
   the X11 ULTRA, F1 AIR, R2, R3, X3 PRO, R5 ULTRA, R6 and R8 mice.
 - 🟠 **Partly supported:** about 60 keyboards (whole-keyboard settings only, until
   their key map is known) and the X8, V5, R11 ULTRA, RS3/RS6 ULTRA, V2 AIR,
-  MEGA B2 and R5 TURBO mice (their sensor's common settings).
-- ⚪ **Recognised, not configurable yet:** the Beken-based mice (the original
-  X11, X1, X8 PRO / PLUS, R1, X3, X6).
+  MEGA B2 and R5 TURBO mice (their sensor's common settings), and the X8 PRO
+  through its 8K receiver.
+- ⚪ **Recognised, not configurable yet:** the other Beken-based mice (the
+  original X11, X1, X8 PLUS, R1, X3, X6).
 
-Every change is read back, and a backup is taken first. The full list, model by
-model: [docs/devices/attack-shark-lineup.md](docs/devices/attack-shark-lineup.md).
+Where a device can report its settings, every change is read back and a backup
+is taken first. The full list, model by model:
+[docs/devices/attack-shark-lineup.md](docs/devices/attack-shark-lineup.md).
 Your device is missing, or only recognised? Run the
 [device report tool](docs/devices/attack-shark-lineup.md#missing-a-device) and
 send us its report. For a device Shark Deck cannot talk to yet, the tool also

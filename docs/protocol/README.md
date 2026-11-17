@@ -72,7 +72,7 @@ and is bound to a model only from the answer (`app/src/main/devices/registry.ts`
 | GearHub-V5 mice | 3151 | `0x8F` device id | [mouse-gearhub.md](mouse-gearhub.md) |
 | ROYUAN 2.4 GHz receivers | 3151 | their PID | [receiver-relay.md](receiver-relay.md) |
 | JXC mice | 373E | their PID (no model read) | [mouse-jxc.md](mouse-jxc.md) |
-| Beken mice | 1D57 | their PID — shown, not driven | [mouse-beken.md](mouse-beken.md) |
+| Beken mice | 1D57 | their PID — the X8 PRO's 8K receiver driven (it reports nothing back), the rest shown | [mouse-beken.md](mouse-beken.md) |
 
 ## Mouse — Compx 8K dongle (V8), `3554:F517`
 

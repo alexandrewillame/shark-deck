@@ -1461,4 +1461,6 @@ export const de: Partial<Messages> = {
   'demo.banner': 'Demo-Modus: Diese Geräte sind simuliert, an echte Hardware wird nichts gesendet.',
   'demo.exit': 'Demo beenden',
   'demo.noBackups': 'Demo-Geräte haben keine Sicherungen.',
+  'backup.waiver.writeOnly':
+    'Diese Maus kann keine ihrer Einstellungen melden: Die Menüs zeigen, was Shark Deck zuletzt an sie gesendet hat (bis dahin übliche Startwerte), und jede Änderung sendet ihren ganzen Abschnitt so, wie er angezeigt wird.',
 };

@@ -54,6 +54,7 @@ export function BackupWaiverBanner({ device }: { device: LiveDevice }) {
       <div className="waiver-text">
         <strong>{t('backup.waiver.title')}</strong>
         <p>{t('backup.waiver.body', { list: names.join(', ') })}</p>
+        {waiver.writeOnly && <p>{t('backup.waiver.writeOnly')}</p>}
       </div>
       <button
         className="btn primary"

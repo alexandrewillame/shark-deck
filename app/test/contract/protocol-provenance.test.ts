@@ -43,6 +43,7 @@ const PROTOCOL_MODULES = [
   'src/main/hid/checksum.ts',
   'src/main/hid/frame.ts',
   'src/main/hid/transport.ts',
+  'src/main/devices/drivers/beken-8k-mouse.ts',
   'src/main/devices/drivers/compx-he-keyboard.ts',
   'src/main/devices/drivers/compx-keyboard.ts',
   'src/main/devices/drivers/compx-mouse-8k.ts',

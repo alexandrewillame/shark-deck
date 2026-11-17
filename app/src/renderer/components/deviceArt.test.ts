@@ -36,7 +36,7 @@ const ALL: DeviceDescriptor[] = [
   ...hubMouseRoster(),
   ...GEARHUB_MICE.values(),
   ...jxcMouseRoster(),
-  ...[0xfa55, 0x2126, 0x2111, 0x2124].map((pid) => bekenDescriptorFor(pid)!),
+  ...[0xfa55, 0x2126, 0xfa65, 0x2111, 0x2124].map((pid) => bekenDescriptorFor(pid)!),
 ];
 
 describe('the photo files', () => {
