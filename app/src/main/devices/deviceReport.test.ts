@@ -49,6 +49,39 @@ describe('parseDeviceReport', () => {
   it('refuses a file that is not a report', () => {
     expect(() => parseDeviceReport('hello')).toThrow(/marker/);
   });
+
+  it('lays a Linux or macOS report’s raw descriptors out as Windows reports them', () => {
+    // tools/sharkdeck-device-report.sh: the X8 PRO's 8K receiver, its settings
+    // collection FF01:0002 with report 4 both ways, 63 bytes + the id.
+    const vendor =
+      '0601ff0902a101' + '8504' + '0901150026ff00750895' + '3f' + '8102' + '0901953f9102' + 'c0';
+    const r = parseDeviceReport(
+      reportText({
+        vid: '1D57',
+        pid: 'FA65',
+        release: '0118',
+        product: '2.4G 8K HS Receiver',
+        manufacturer: 'LXDDZ',
+        interfaces: [{ interface: 2, transport: 'usb', reportDescriptor: vendor }],
+        identify: null,
+      }),
+    );
+    expect(r.devices[0]!.interfaces).toEqual([
+      {
+        interface: 2,
+        usagePage: 'FF01',
+        usage: '0002',
+        kind: 'vendor (settings)',
+        inputBytes: 64,
+        outputBytes: 64,
+        featureBytes: 0,
+        inputIds: [4],
+        outputIds: [4],
+        featureIds: [],
+      },
+    ]);
+    expect(triageReport(r).join('\n')).toContain('already supported — Attack Shark X8 PRO');
+  });
 });
 
 describe('triageDevice', () => {

@@ -49,25 +49,46 @@ function shapes(messages: HidMessage[]): Map<string, HidMessage[]> {
 
 const int = (x: number) => Number.isInteger(x) && x >= 0 && x <= 0xffff;
 
-/** Ways a number can be written into a frame; each returns null where it does not apply. */
-function encodings(values: number[]): { name: string; f: (v: number) => number | null }[] {
+/**
+ * A way a number can be written into a frame: `f` returns null where it does
+ * not apply; `inv` reads a byte back as the value it stands for, for naming
+ * what a step really sent when it is the odd one out (rank encodings have none:
+ * a wrong value moves every rank).
+ */
+interface Encoding {
+  name: string;
+  f: (v: number) => number | null;
+  inv?: (b: number) => number | null;
+}
+
+function encodings(values: number[]): Encoding[] {
   const sorted = [...new Set(values)].sort((a, b) => a - b);
-  const list: { name: string; f: (v: number) => number | null }[] = [];
+  const list: Encoding[] = [];
   for (const k of [1, 2, 4, 5, 10, 20, 40, 50, 100, 200, 400, 1000])
     list.push({
       name: k === 1 ? 'the value itself' : `value × ${k}`,
       f: (v) => (int(v * k) ? v * k : null),
+      inv: (b) => b / k,
     });
   for (const k of [2, 4, 5, 8, 10, 16, 25, 50, 100])
-    list.push({ name: `value ÷ ${k}`, f: (v) => (int(v / k) ? v / k : null) });
+    list.push({ name: `value ÷ ${k}`, f: (v) => (int(v / k) ? v / k : null), inv: (b) => b * k });
   for (const k of [1, 10, 25, 50, 100])
-    list.push({ name: `value ÷ ${k} − 1`, f: (v) => (int(v / k - 1) ? v / k - 1 : null) });
+    list.push({
+      name: `value ÷ ${k} − 1`,
+      f: (v) => (int(v / k - 1) ? v / k - 1 : null),
+      inv: (b) => (b + 1) * k,
+    });
   for (const k of [1000, 8000])
-    list.push({ name: `${k} ÷ value`, f: (v) => (v && int(k / v) ? k / v : null) });
+    list.push({
+      name: `${k} ÷ value`,
+      f: (v) => (v && int(k / v) ? k / v : null),
+      inv: (b) => (b ? k / b : null),
+    });
   const low = sorted[0] ?? 1;
   list.push({
     name: `log2(value ÷ ${low})`,
     f: (v) => (low > 0 && int(Math.log2(v / low)) ? Math.log2(v / low) : null),
+    inv: (b) => low * 2 ** b,
   });
   list.push({ name: 'its rank among the values, from 0', f: (v) => sorted.indexOf(v) });
   list.push({ name: 'its rank among the values, from 1', f: (v) => sorted.indexOf(v) + 1 });
@@ -101,6 +122,8 @@ const PERMUTATIONS: [string, [number, number, number]][] = [
 export function analyzeSeries(
   points: SeriesPoint[],
   checksums = new Map<string, number[]>(),
+  /** Filled with step -> what its bytes say, for a step a nearly-fitting rule leaves out. */
+  odd?: Map<string, string>,
 ): string[] {
   const lines: string[] = [];
   const expected = points.map((p) => expectedOf(p.value, p.note));
@@ -151,6 +174,8 @@ export function analyzeSeries(
           moving.filter((at) => !sum.has(at)),
           length,
           sum,
+          points.map((p) => p.step),
+          odd,
         ),
       );
     }
@@ -165,28 +190,74 @@ function fits(
   moving: number[],
   length: number,
   checksum: Set<number>,
+  stepIds: string[] = [],
+  odd?: Map<string, string>,
 ): string[] {
   const out: string[] = [];
   const at = (r: { i: number }) => expected[r.i]!;
   const numbers = rows.filter((r) => at(r).kind === 'number');
   if (numbers.length >= 2 && new Set(numbers.map((r) => (at(r) as { n: number }).n)).size >= 2) {
     const values = numbers.map((r) => (at(r) as { n: number }).n);
+    const n = (r: { i: number }) => (at(r) as { n: number }).n;
     const single = new Set<string>();
+    // A step set by hand can be off — the owner set the lowest value without
+    // typing it, or picked the wrong entry — so a rule all but one or two steps
+    // follow is kept too, naming what the odd step's bytes really say.
+    const maxMiss = numbers.length >= 4 ? Math.min(2, Math.floor(numbers.length / 4)) : 0;
+    const nearly: {
+      line: string;
+      misses: number;
+      odd: { step: string; what: string }[];
+    }[] = [];
     for (const reader of readers) {
       for (const p of moving) {
         if (p + reader.width > length || checksum.has(p + reader.width - 1)) continue;
         for (const e of encodings(values)) {
-          if (!numbers.every((r) => e.f((at(r) as { n: number }).n) === reader.read(r.data, p)))
+          const misses = numbers.filter((r) => e.f(n(r)) !== reader.read(r.data, p));
+          const where = `${reader.name} ${p}${reader.width > 1 ? `–${p + 1}` : ''}`;
+          if (misses.length) {
+            if (
+              e.inv &&
+              misses.length <= maxMiss &&
+              numbers.length - misses.length >= 3 &&
+              !(
+                reader.width === 2 &&
+                single.has(`${reader.name.includes('big') ? p + 1 : p}/${e.name}`)
+              )
+            ) {
+              const said = misses.map((r) => {
+                const v = e.inv!(reader.read(r.data, p));
+                const what =
+                  v !== null && Number.isFinite(v)
+                    ? `its bytes say ${+v.toFixed(3)}`
+                    : 'its bytes say something else';
+                return {
+                  step: stepIds[r.i] ?? `step ${r.i + 1}`,
+                  what: `${what}, not ${n(r)}`,
+                  line: `${stepIds[r.i] ?? `step ${r.i + 1}`} asked for ${n(r)}, ${what}`,
+                };
+              });
+              nearly.push({
+                line: `  - fits all but ${misses.length} step${misses.length > 1 ? 's' : ''}: ${where} = ${e.name}. ${said.map((x) => x.line).join('; ')}: check its picture and note`,
+                misses: misses.length,
+                odd: said,
+              });
+              if (reader.width === 1) single.add(`${p}/${e.name}`);
+            }
             continue;
+          }
           // A 16-bit reading whose other byte never moved only restates a byte that fits.
           const low = reader.name.includes('big') ? p + 1 : p;
           if (reader.width === 2 && single.has(`${low}/${e.name}`)) continue;
           if (reader.width === 1) single.add(`${p}/${e.name}`);
-          out.push(
-            `  - fits: ${reader.name} ${p}${reader.width > 1 ? `–${p + 1}` : ''} = ${e.name}`,
-          );
+          out.push(`  - fits: ${where} = ${e.name}`);
         }
       }
+    }
+    if (!out.length && nearly.length) {
+      const best = nearly.sort((a, b) => a.misses - b.misses).slice(0, 3);
+      out.push(...best.map((x) => x.line));
+      for (const x of best[0]!.odd) odd?.set(x.step, x.what);
     }
   }
   const colors = rows.filter((r) => at(r).kind === 'color');

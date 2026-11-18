@@ -179,9 +179,18 @@ not claimed at all.
    one setting at a time, while USBPcap records what the software and the
    device say to each other, the device staying plugged in where it is. Only
    that device's traffic is kept, what you type on it is blanked out, and a
-   picture of the official software is taken at each step. It all goes into a
-   .zip on your Desktop, the report included. Look through the pictures before
-   sending it: anyone can download what is attached to an issue.
+   picture of the official software is taken at each step. Where only you can
+   see the value you set (a lowest or highest value, the one you use), the
+   window asks you to type it. It all goes into a .zip on your Desktop, the
+   report included. Look through the pictures before sending it: anyone can
+   download what is attached to an issue.
+
+   On **Linux or macOS**, run
+   [`tools/sharkdeck-device-report.sh`](../../tools/sharkdeck-device-report.sh)
+   in a terminal (`sh sharkdeck-device-report.sh`) instead: it saves the
+   report — the device's USB ids and its HID layout — on your Desktop, reading
+   only what the system already knows. A recording of the official software
+   needs Windows.
 3. [Open a "New device" issue](https://github.com/alexandrewillame/shark-deck/issues/new?template=new-device.yml)
    and attach the .zip (or, without a recording, the report the tool saved on
    your Desktop).

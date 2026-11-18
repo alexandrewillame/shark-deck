@@ -403,7 +403,7 @@ describe('the device report tool', () => {
       expect(['both', 'mouse', 'keyboard'], s.id).toContain(s.kind);
       for (const flag of s.flags.split(/[ ,]+/).filter(Boolean))
         expect(
-          ['window', 'auto15', 'repeat', 'attach', 'detect', 'undo', 'nochange'],
+          ['window', 'auto15', 'repeat', 'attach', 'detect', 'undo', 'nochange', 'ask'],
           s.id,
         ).toContain(flag);
       expect(s.text.length, s.id).toBeGreaterThan(10);

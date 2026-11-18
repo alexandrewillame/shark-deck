@@ -66,7 +66,8 @@ const micros = (iso: string) => Date.parse(iso) * 1000;
 const clock = (t: number) => new Date(t / 1000).toISOString().slice(11, 23);
 const seconds = (us: number) => `${us < 0 ? '−' : '+'}${(Math.abs(us) / 1e6).toFixed(3)} s`;
 
-const IDLE_STEPS = new Set(['start.idle', 'wl.idle']);
+// `wl.idle` is the older recordings' name for `conn.idle`.
+const IDLE_STEPS = new Set(['start.idle', 'conn.idle', 'wl.idle']);
 
 function signature(m: HidMessage): string {
   return `${m.device}|${m.kind}|${m.iface}|${m.reportId}|${hexOf(m.data, false)}`;
@@ -130,6 +131,94 @@ function requestLine(r: UsbRequest, from: number): string {
     .map((b) => b.toString(16).padStart(2, '0'))
     .join(' ');
   return `- \`${seconds(r.t - from)}\` USB ${kind} request \`${setup}\`${r.failed ? ' **failed**' : ''}${r.data.length ? `: \`${hexOf(r.data)}\`` : ''}`;
+}
+
+const sentFrame = (m: HidMessage) => m.out && !m.kind.startsWith('get-');
+
+/** The step asked for the value typed in its note (a lowest/highest, a value only the owner sees). */
+const ASKS_NOTE =
+  /type (it|that value|its settings|both|the value)[^.]* in the note|type the value it shows|or (to )?the (lowest|highest|closest|shortest|longest)/i;
+
+/**
+ * What the owner may have got wrong in a step — they set a value by hand and
+ * nothing checked it: changed it more than once, left no note where the step
+ * asked for one, or a "back" / "default" step that did not go back to where
+ * the setting was before its series began. Each is a line for the maintainer
+ * to check against the step's picture, not a conclusion.
+ */
+function stepWarnings(
+  s: RecordingStep,
+  shown: HidMessage[],
+  all: HidMessage[],
+  steps: RecordingStep[],
+  checksumAt: Map<string, number[]>,
+): { lines: string[]; mistakes: string[] } {
+  const out: string[] = [];
+  const mistakes: string[] = [];
+  const byShape = new Map<string, HidMessage[]>();
+  for (const m of shown.filter(sentFrame))
+    byShape.set(messageLabel(m), [...(byShape.get(messageLabel(m)) ?? []), m]);
+  // A setting step that sent nothing: already at that value, sent only on
+  // Apply / Save in a later step, or not done at all.
+  if (s.series && !byShape.size)
+    out.push(
+      '- ⚠ Nothing was sent to the device in this step: it may have been at that value already, the software may send only on Apply or Save, or it was not done — check its picture.',
+    );
+  for (const [shape, frames] of byShape) {
+    // One setting written twice, not two settings in one report: the same
+    // first two bytes (report id, command or length) and at most three other
+    // bytes apart, the value and its sums — another command, or another key
+    // or address, moves more.
+    const skip = new Set(checksumAt.get(shape) ?? []);
+    const apart = (a: Uint8Array, b: Uint8Array) =>
+      [...a.keys()].filter((i) => a[i] !== b[i] && !skip.has(i)).length;
+    let twice = 0;
+    frames.forEach((m, k) => {
+      const prev = frames
+        .slice(0, k)
+        .reverse()
+        .find((p) => p.data[0] === m.data[0] && p.data[1] === m.data[1]);
+      const d = prev ? apart(prev.data, m.data) : 0;
+      if (prev && d > 0 && d <= 3) twice++;
+    });
+    if (twice)
+      out.push(
+        `- ⚠ Changed more than once in this step (${twice + 1} ${shape} frames of the same setting): the last one is where it ended.`,
+      );
+  }
+  if (!s.note.trim() && ASKS_NOTE.test(s.text) && !/if it is not/i.test(s.text))
+    out.push(
+      '- ⚠ No note, though the step asked for the value: if it could not be set to the value asked, what it really was is in its bytes (see the series below) and its picture.',
+    );
+  if (/\.(back|default)$/.test(s.id)) {
+    const group = s.id.slice(0, s.id.lastIndexOf('.') + 1);
+    const first = steps.find((x) => x.id.startsWith(group) && x.status === 'done');
+    if (first && first !== s) {
+      const before = micros(first.start);
+      for (const [shape, frames] of byShape) {
+        const last = frames[frames.length - 1]!.data;
+        const earlier = all.filter(
+          (m) => sentFrame(m) && m.t < before && messageLabel(m) === shape,
+        );
+        if (!earlier.length) continue;
+        // The same kind of frame from before the series: the nearest, byte for byte.
+        const differing = (d: Uint8Array) =>
+          [...last.keys()].filter((i) => d[i] !== last[i] && !checksumAt.get(shape)?.includes(i));
+        const ref = earlier.reduceRight((best, m) =>
+          differing(m.data).length < differing(best.data).length ? m : best,
+        ).data;
+        const diff = differing(ref);
+        if (diff.length) {
+          out.push(
+            `- ⚠ This step was to put it back as it was before ${first.id}, but ${diff.length === 1 ? 'byte' : 'bytes'} ` +
+              `${diff.map((i) => `[${i}] ${ref[i]!.toString(16).padStart(2, '0')} → ${last[i]!.toString(16).padStart(2, '0')}`).join(', ')} ${diff.length === 1 ? 'differs' : 'differ'} from then: check its picture.`,
+          );
+          mistakes.push(`not back to where it was before ${first.id}`);
+        }
+      }
+    }
+  }
+  return { lines: out, mistakes };
 }
 
 /** Control requests worth reading: anything but descriptors and SET_IDLE. */
@@ -236,6 +325,9 @@ export function dossier(input: DossierInput): string {
       `This file read ${hid.messages.length} HID messages.`,
     '',
   );
+  // Filled once the steps are read: which of them to check against their picture.
+  const warningsAt = out.length;
+  out.push('');
 
   // ---- Devices
   out.push('## Devices', '');
@@ -309,7 +401,22 @@ export function dossier(input: DossierInput): string {
   }
   out.push('');
 
+  // ---- Checksums first: the warnings and the series below set their bytes apart.
+  const byShape = new Map<string, Uint8Array[]>();
+  for (const m of hid.messages) {
+    const key = `${m.out && !m.kind.startsWith('get-') ? 'sent' : 'received'}: ${messageLabel(m)}`;
+    byShape.set(key, [...(byShape.get(key) ?? []), m.data]);
+  }
+  const rules = new Map([...byShape].map(([key, frames]) => [key, findChecksums(frames)] as const));
+  const sentChecksums = new Map<string, number[]>();
+  for (const [key, found] of rules)
+    if (key.startsWith('sent: ') && found.length) sentChecksums.set(key.slice(6), found[0]!.at);
+
   // ---- Steps
+  const foreground = hid.messages.filter((m) => !background.has(m) && !blank(m));
+  /** Likely mistakes ("step — why"), and steps only worth a look. */
+  const mistakes: string[] = [];
+  const flagged: string[] = [];
   out.push('## Steps', '');
   out.push(
     '`→` sent to the device, `⇄` read from it (the bytes are its answer), `←` sent by the device on its own. Background messages are left out of each step.',
@@ -350,6 +457,16 @@ export function dossier(input: DossierInput): string {
         `${typed ? `; ${typed} key report${typed === 1 ? '' : 's'} blanked (what was typed)` : ''}.`,
       '',
     );
+    const warnings =
+      left || reverted
+        ? { lines: [], mistakes: [] }
+        : stepWarnings(s, shown, foreground, steps, sentChecksums);
+    const name = `${s.id}${s.attempt ? ` #${s.attempt + 1}` : ''}`;
+    for (const why of warnings.mistakes) mistakes.push(`${name} — ${why}`);
+    if (warnings.lines.length) {
+      if (!warnings.mistakes.length) flagged.push(name);
+      out.push(...warnings.lines, '');
+    }
     const timeline = [
       ...shown.map((m) => ({ t: m.t, line: messageLine(m, from) })),
       ...requests.map((r) => ({ t: r.t, line: requestLine(r, from) })),
@@ -366,22 +483,14 @@ export function dossier(input: DossierInput): string {
     );
   }
 
-  // ---- Checksums first: the series below set their bytes apart.
-  const byShape = new Map<string, Uint8Array[]>();
-  for (const m of hid.messages) {
-    const key = `${m.out && !m.kind.startsWith('get-') ? 'sent' : 'received'}: ${messageLabel(m)}`;
-    byShape.set(key, [...(byShape.get(key) ?? []), m.data]);
-  }
-  const rules = new Map([...byShape].map(([key, frames]) => [key, findChecksums(frames)] as const));
-  const sentChecksums = new Map<string, number[]>();
-  for (const [key, found] of rules)
-    if (key.startsWith('sent: ') && found.length) sentChecksums.set(key.slice(6), found[0]!.at);
-
   // ---- Series
   out.push('## Settings set to known values', '');
   const series = new Map<string, SeriesPoint[]>();
   for (const s of steps) {
     if (!s.series || s.status !== 'done') continue;
+    // "Back to what you use" names the step's suggestion, not what was set:
+    // only a note says that.
+    if (/\.back$/.test(s.id) && !s.note.trim()) continue;
     const from = micros(s.start);
     const to = micros(s.end);
     const point: SeriesPoint = {
@@ -394,12 +503,14 @@ export function dossier(input: DossierInput): string {
   }
   for (const [name, points] of series) {
     if (points.length < 2) continue;
+    const odd = new Map<string, string>();
     out.push(
       `### ${name}: ${points.map((p) => p.value || '?').join(', ')}`,
       '',
-      ...analyzeSeries(points, sentChecksums),
+      ...analyzeSeries(points, sentChecksums, odd),
       '',
     );
+    for (const [step, why] of odd) mistakes.push(`${step} — ${why}`);
   }
   if (![...series.values()].some((p) => p.length >= 2))
     out.push('No setting was set to two known values.', '');
@@ -418,5 +529,18 @@ export function dossier(input: DossierInput): string {
   if (!any)
     out.push('- No checksum rule fits every frame of any shape (or too few different frames).');
   out.push('');
+
+  // The owner set every value by hand and nothing checked it: say up front what to check.
+  const top: string[] = [];
+  if (mistakes.length)
+    top.push(
+      `**Likely mistakes by the owner** — check against the pictures: ${[...new Set(mistakes)].join('; ')}.`,
+    );
+  const rest = flagged.filter((f) => !mistakes.some((m) => m.startsWith(`${f} — `)));
+  if (rest.length)
+    top.push(
+      `**Also check** (no note where the step asked for one, changed more than once, or nothing sent — marked ⚠ below): ${rest.join(', ')}.`,
+    );
+  if (top.length) out[warningsAt] = `${top.join('\n\n')}\n`;
   return out.join('\n');
 }

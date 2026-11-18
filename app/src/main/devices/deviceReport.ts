@@ -2,6 +2,7 @@ import type { DeviceDescriptor } from '@shared/types/device';
 import { knownVendorIds, resolveDescriptor } from './registry';
 import { resolveIdentity } from './identity';
 import { list, type Recording } from './capture/dossier';
+import { parseReportDescriptor, usageName, type ReportType } from './capture/hidDescriptor';
 
 /**
  * Reading back a report from tools/SharkDeck-device-report.bat — what an
@@ -36,7 +37,8 @@ export interface ReportDevice {
   pid: string;
   release: string;
   product: string | null;
-  family: string;
+  /** Windows' report names the family; the Linux / macOS one does not. */
+  family?: string;
   interfaces: ReportInterface[];
   identify: {
     asked: boolean;
@@ -53,10 +55,56 @@ export interface ReportDevice {
 export interface DeviceReport {
   tool: string;
   version: number;
+  /** "linux" or "macos" from tools/sharkdeck-device-report.sh; absent from Windows' .bat. */
+  platform?: string;
   model: string;
   devices: ReportDevice[];
   /** Present when the owner also recorded the official software (tool version 2). */
   recording?: Recording;
+}
+
+/** What the Linux / macOS script reports of an interface: its raw report descriptor. */
+interface RawInterface {
+  interface: number | null;
+  transport?: string;
+  reportDescriptor: string;
+}
+
+const hex4 = (n: number) => n.toString(16).toUpperCase().padStart(4, '0');
+
+/**
+ * An interface's report descriptor, laid out the way Windows reports it: one
+ * entry per top-level collection, its sizes counting the report-id byte
+ * (Windows' `InputReportByteLength`), so the rest of the reader and the
+ * dossier treat a Linux or macOS report like the .bat's.
+ */
+export function interfacesFromDescriptor(raw: RawInterface): ReportInterface[] {
+  const bytes = Uint8Array.from(
+    (raw.reportDescriptor.match(/[0-9a-f]{2}/gi) ?? []).map((h) => parseInt(h, 16)),
+  );
+  const info = parseReportDescriptor(bytes);
+  return info.collections.map((c) => {
+    const of = (type: ReportType) =>
+      info.reports.filter(
+        (r) => r.type === type && r.usagePage === c.usagePage && r.usage === c.usage,
+      );
+    const size = (type: ReportType) => {
+      const rs = of(type);
+      return rs.length ? Math.max(...rs.map((r) => r.bytes)) + 1 : 0;
+    };
+    return {
+      interface: raw.interface,
+      usagePage: hex4(c.usagePage),
+      usage: hex4(c.usage),
+      kind: usageName(c.usagePage, c.usage),
+      inputBytes: size('input'),
+      outputBytes: size('output'),
+      featureBytes: size('feature'),
+      inputIds: of('input').map((r) => r.id),
+      outputIds: of('output').map((r) => r.id),
+      featureIds: of('feature').map((r) => r.id),
+    };
+  });
 }
 
 /** The JSON half of a report file. */
@@ -69,6 +117,11 @@ export function parseDeviceReport(text: string): DeviceReport {
     throw new Error(`not a device report: tool "${report.tool}"`);
   // PowerShell 5 writes a one-element array as the element itself.
   report.devices = list(report.devices);
+  for (const d of report.devices) {
+    d.interfaces = list(d.interfaces as (ReportInterface | RawInterface)[]).flatMap((i) =>
+      'reportDescriptor' in i && !('usagePage' in i) ? interfacesFromDescriptor(i) : [i],
+    ) as ReportInterface[];
+  }
   if (report.recording) report.recording.steps = list(report.recording.steps);
   return report;
 }

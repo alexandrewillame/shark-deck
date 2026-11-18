@@ -42,6 +42,35 @@ describe('reading an encoding off a series of steps', () => {
     );
   });
 
+  it('keeps a rule all but one step follow, and names what the odd step really sent', () => {
+    // The X8 PRO recording: "Set DPI stage 1 to 100, or to the lowest value it
+    // allows" — the owner set 50 and typed no note, so its bytes say 50.
+    const odd = new Map<string, string>();
+    const lines = analyzeSeries(
+      [
+        ...[400, 800, 1600, 3200, 1000, 6400].map((v) =>
+          point(String(v), [0x04, 0x01, v / 50 - 1, 0x0f]),
+        ),
+        point('100', [0x04, 0x01, 0x00, 0x0f]),
+      ],
+      undefined,
+      odd,
+    ).join('\n');
+    expect(lines).toContain('fits all but 1 step: byte 2 = value ÷ 50 − 1');
+    expect(lines).toContain('step.100 asked for 100, its bytes say 50');
+    expect([...odd]).toEqual([['step.100', 'its bytes say 50, not 100']]);
+  });
+
+  it('does not stretch a rule over a series that is mostly off', () => {
+    const lines = analyzeSeries(
+      [400, 800, 1600, 3200].map((v, i) =>
+        point(String(v), [0x04, 0x01, i < 2 ? v / 50 - 1 : 0x33 + i]),
+      ),
+    ).join('\n');
+    expect(lines).not.toContain('fits all but');
+    expect(lines).toContain('no simple encoding fits every step');
+  });
+
   it('finds a polling rate written as an interval, 1000 ÷ value', () => {
     const lines = analyzeSeries(
       [125, 250, 500, 1000].map((v) => point(String(v), [0x06, 0x09, 0x01, 1000 / v])),

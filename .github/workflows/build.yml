@@ -111,10 +111,10 @@ jobs:
         with:
           path: artifacts
 
-      # The device report tool goes up next to the installers: it is what
-      # someone with an unsupported device is asked to run (the lineup doc's
-      # "Missing a device?"). Only tools/ is needed; .gitattributes keeps the
-      # file's Windows line endings.
+      # The device report tools go up next to the installers: what someone
+      # with an unsupported device is asked to run (the lineup doc's "Missing
+      # a device?"), the .bat on Windows, the .sh on Linux and macOS. Only
+      # tools/ is needed; .gitattributes keeps each file's line endings.
       - uses: actions/checkout@v7
         with:
           sparse-checkout: tools
@@ -127,7 +127,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           { find artifacts -type f ! -name '*.blockmap' ! -name '*.yml' -print0
-            printf '%s\0' source/tools/SharkDeck-device-report.bat; } |
+            printf '%s\0' source/tools/SharkDeck-device-report.bat source/tools/sharkdeck-device-report.sh; } |
             xargs -0 gh release create "$GITHUB_REF_NAME" \
               --repo "$GITHUB_REPOSITORY" --draft --generate-notes \
               --title "Shark Deck $GITHUB_REF_NAME"

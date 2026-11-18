@@ -28,7 +28,7 @@ function frame(command: number, args: number[]): number[] {
 
 /** inPlace: recorded where it was plugged in, so with only the descriptors
  *  USBPcap writes in, instead of plugged in for the recording. */
-function recordingOf(inPlace = false) {
+function recordingOf(inPlace = false, withMistakes = false) {
   const b = new UsbPcapBuilder();
   const steps: RecordingStep[] = [];
   const interfaces = [
@@ -103,6 +103,35 @@ function recordingOf(inPlace = false) {
         ...new Array(13).fill(0),
       ]);
     });
+  if (withMistakes) {
+    // What owners do: "100, or the lowest it allows" set to 50 with no note…
+    step('dpi.s1.100', '100', 'dpi.s1', 3, (at) =>
+      b.control(at, 5, setReport(3, 4, 1, 17), frame(0x02, [0x00, 1])),
+    );
+    steps[steps.length - 1]!.text =
+      'Set DPI stage 1 to 100, or to the lowest value it allows (then type that value in the note).';
+    // …a lowest setting with no note…
+    step('lod.low', 'low', 'lod', 2, (at) =>
+      b.control(at, 5, setReport(3, 4, 1, 17), frame(0x0a, [1])),
+    );
+    steps[steps.length - 1]!.text =
+      'Set the lift-off distance to its lowest, and type it in the note.';
+    // …a switch clicked twice…
+    step('ripple.on', 'on', 'ripple', 2, (at) => {
+      b.control(at, 5, setReport(3, 4, 1, 17), frame(0x09, [0]));
+      b.control(at + 300_000, 5, setReport(3, 4, 1, 17), frame(0x09, [1]));
+    });
+    // …and a button "back to its default" set to another entry.
+    step('start.tour', '', '', 2, (at) =>
+      b.control(at, 5, setReport(3, 4, 1, 17), frame(0x08, [4, 0x06])),
+    );
+    step('btn.b4.middle', 'Middle click', 'btn.b4', 2, (at) =>
+      b.control(at, 5, setReport(3, 4, 1, 17), frame(0x08, [4, 0x03])),
+    );
+    step('btn.b4.default', 'Back', 'btn.b4', 2, (at) =>
+      b.control(at, 5, setReport(3, 4, 1, 17), frame(0x08, [4, 0x05])),
+    );
+  }
   for (const hz of [125, 500, 1000])
     step(`poll.${hz}`, String(hz), 'poll', 3, (at) =>
       b.control(at, 5, setReport(3, 4, 1, 17), frame(0x03, [1000 / hz])),
@@ -186,6 +215,29 @@ function recordingOf(inPlace = false) {
   };
   return { pcap: b.bytes(), recording };
 }
+
+describe('the dossier of a recording with the owner’s mistakes in it', () => {
+  const { pcap, recording } = recordingOf(false, true);
+  const text = dossier({ model: 'X11', recording, pcap });
+  const top = text.slice(0, text.indexOf('## Devices'));
+
+  it('names the likely mistakes up front: a value the bytes contradict, a default not restored', () => {
+    expect(top).toContain(
+      '**Likely mistakes by the owner** — check against the pictures: btn.b4.default — not back to where it was before btn.b4.middle; dpi.s1.100 — its bytes say 50, not 100.',
+    );
+    expect(text).toContain('fits all but 1 step: byte 3 = value ÷ 50. dpi.s1.100 asked for 100');
+    expect(text).toContain('byte [3] 06 → 05 differs from then');
+  });
+
+  it('lists the steps only worth a look: no note where one was asked, a setting changed twice', () => {
+    expect(top).toContain('**Also check**');
+    expect(top).toMatch(/: lod\.low, ripple\.on\./);
+    const ripple = text.slice(text.indexOf('### ripple.on'), text.indexOf('### start.tour'));
+    expect(ripple).toContain('⚠ Changed more than once in this step');
+    // Steps that send several commands at once are not "changed twice".
+    expect(top).not.toContain('start.tour');
+  });
+});
 
 describe('the dossier of a recording', () => {
   const { pcap, recording } = recordingOf();

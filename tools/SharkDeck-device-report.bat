@@ -889,12 +889,21 @@ public class SdWizard : Form {
     string lastNew;
     readonly Dictionary<IntPtr, ulong> lastShot = new Dictionary<IntPtr, ulong>();
 
-    readonly Label head = new Label(), body = new Label(), hint = new Label(), noteLabel = new Label(), status = new Label(), whereLabel = new Label(), signal = new Label();
-    readonly ProgressBar bar = new ProgressBar();
+    // The look: a night header, Shark Cyan for progress and the one main button.
+    static readonly Color Ink = Color.FromArgb(27, 39, 51), Muted = Color.FromArgb(91, 102, 112),
+        Line = Color.FromArgb(221, 227, 232), Paper = Color.FromArgb(244, 247, 249), Night = Color.FromArgb(11, 30, 45),
+        Accent = Color.FromArgb(25, 181, 201), AccentDark = Color.FromArgb(14, 124, 140), Off = Color.FromArgb(201, 211, 218);
+    readonly Panel header = new Panel(), progress = new Panel(), content = new Panel(), footer = new Panel();
+    readonly Label title = new Label(), groupLabel = new Label(), stepLabel = new Label(), body = new Label(), hint = new Label(),
+        noteLabel = new Label(), status = new Label(), whereLabel = new Label(), signal = new Label();
     readonly TextBox note = new TextBox();
     readonly Button done = new Button(), skip = new Button(), skipGroup = new Button(), back = new Button(), finish = new Button();
-    readonly LinkLabel change = new LinkLabel();
+    readonly LinkLabel change = new LinkLabel(), addNote = new LinkLabel();
     readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+    double progressFraction;
+    float dpiScale = 1f;
+    // The step needs the value the owner set ("ask", or a list's next entry): Done waits for it.
+    bool asking, noteShown;
 
     public SdWizard(SdStep[] steps, string shotsDir, string attachDir, string[] pcaps, int[] vids, string[] presentPaths) {
         this.steps = steps; this.shotsDir = shotsDir; this.attachDir = attachDir;
@@ -911,23 +920,45 @@ public class SdWizard : Form {
         MaximizeBox = false;
         TopMost = true;
         StartPosition = FormStartPosition.Manual;
-        ClientSize = new Size(560, 514);
+        ClientSize = new Size(600, 620);
+        BackColor = Color.White;
 
-        Place(head, 16, 10, 528, 22); head.ForeColor = Color.DimGray;
-        Place(bar, 16, 34, 528, 6);
-        Place(body, 16, 48, 528, 88); body.Font = new Font("Segoe UI", 12F);
-        Place(whereLabel, 16, 138, 528, 56); whereLabel.Font = new Font("Segoe UI", 9F); whereLabel.ForeColor = Color.FromArgb(0, 84, 147);
-        Place(hint, 16, 196, 528, 52); hint.ForeColor = Color.DimGray; hint.Font = new Font("Segoe UI", 9F);
-        Place(noteLabel, 16, 250, 528, 20); noteLabel.Font = new Font("Segoe UI", 9F);
-        noteLabel.Text = "Note (optional): the value you really set, an effect's name...";
-        Place(note, 16, 270, 528, 26);
-        Place(done, 16, 306, 104, 34); Place(skip, 126, 306, 156, 34); Place(skipGroup, 288, 306, 134, 34); Place(back, 428, 306, 116, 34);
-        back.Text = "Redo previous";
-        Place(signal, 16, 348, 528, 22); signal.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
-        Place(status, 16, 372, 528, 96); status.Font = new Font("Segoe UI", 9F); status.ForeColor = Color.DimGray;
-        Place(change, 16, 476, 400, 20); change.Font = new Font("Segoe UI", 9F);
+        header.Dock = DockStyle.Top; header.Height = 62; header.BackColor = Night;
+        title.Font = new Font("Segoe UI Semibold", 11F); title.ForeColor = Color.White; title.AutoSize = true; title.Location = new Point(20, 10);
+        groupLabel.Font = new Font("Segoe UI Semibold", 8.5F); groupLabel.ForeColor = Color.FromArgb(111, 211, 224); groupLabel.AutoSize = true; groupLabel.Location = new Point(21, 37);
+        stepLabel.Font = new Font("Segoe UI", 9F); stepLabel.ForeColor = Color.FromArgb(169, 184, 196); stepLabel.TextAlign = ContentAlignment.MiddleRight;
+        stepLabel.Size = new Size(260, 20); stepLabel.Location = new Point(320, 13);
+        header.Controls.Add(title); header.Controls.Add(groupLabel); header.Controls.Add(stepLabel);
+
+        progress.Dock = DockStyle.Top; progress.Height = 4; progress.BackColor = Line;
+        progress.Paint += delegate (object o, PaintEventArgs e) {
+            using (SolidBrush b = new SolidBrush(Accent)) e.Graphics.FillRectangle(b, 0, 0, (int)(progress.Width * progressFraction), progress.Height);
+        };
+
+        footer.Dock = DockStyle.Bottom; footer.Height = 124; footer.BackColor = Paper;
+        footer.Paint += delegate (object o, PaintEventArgs e) { using (Pen pen = new Pen(Line)) e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0); };
+        status.Font = new Font("Segoe UI", 8.5F); status.ForeColor = Muted; status.Location = new Point(20, 12); status.Size = new Size(560, 66);
+        change.Font = new Font("Segoe UI", 9F); change.LinkColor = AccentDark; change.AutoSize = true; change.Location = new Point(20, 90);
         change.Text = "Pictures of the wrong window? Click here.";
-        Place(finish, 424, 472, 120, 34); finish.Text = "Finish and save";
+        finish.Text = "Finish and save"; finish.Size = new Size(140, 32); finish.Location = new Point(440, 82); Secondary(finish);
+        footer.Controls.Add(status); footer.Controls.Add(change); footer.Controls.Add(finish);
+
+        content.Dock = DockStyle.Fill; content.BackColor = Color.White;
+        body.Font = new Font("Segoe UI", 13F); body.ForeColor = Ink; body.AutoSize = true;
+        whereLabel.Font = new Font("Segoe UI", 9F); whereLabel.ForeColor = Color.FromArgb(43, 93, 124); whereLabel.AutoSize = true;
+        noteLabel.Font = new Font("Segoe UI Semibold", 9.5F); noteLabel.ForeColor = Ink; noteLabel.AutoSize = true;
+        note.Font = new Font("Segoe UI", 11F); note.BorderStyle = BorderStyle.FixedSingle; note.Width = 320;
+        addNote.Font = new Font("Segoe UI", 9F); addNote.LinkColor = AccentDark; addNote.AutoSize = true; addNote.Text = "+ Add a note";
+        signal.Font = new Font("Segoe UI Semibold", 9.5F); signal.TextAlign = ContentAlignment.MiddleLeft; signal.Padding = new Padding(10, 0, 10, 0);
+        done.Size = new Size(120, 36); Primary(done);
+        skip.Size = new Size(176, 36); Secondary(skip);
+        skipGroup.Size = new Size(140, 36); Secondary(skipGroup);
+        back.Text = "\u2190  Redo previous"; back.Size = new Size(150, 28); Quiet(back);
+        hint.Font = new Font("Segoe UI", 9F); hint.ForeColor = Muted; hint.AutoSize = true;
+        foreach (Control c in new Control[] { body, whereLabel, noteLabel, note, addNote, signal, done, skip, skipGroup, back, hint }) content.Controls.Add(c);
+
+        // Docked from the last added: the header on top, the bar under it, the footer, then the rest.
+        Controls.Add(content); Controls.Add(footer); Controls.Add(progress); Controls.Add(header);
         AcceptButton = done;
         ResumeLayout(false);
 
@@ -937,6 +968,8 @@ public class SdWizard : Form {
         back.Click += delegate { OnBack(); };
         finish.Click += delegate { if (Confirm()) { closing = true; Close(); } };
         change.LinkClicked += delegate { Repick(); };
+        addNote.LinkClicked += delegate { noteShown = true; Relayout(); note.Focus(); };
+        note.TextChanged += delegate { if (asking && autoLeft == 0) SetDone(note.Text.Trim().Length > 0); };
         timer.Interval = 500;
         timer.Tick += delegate { OnTick(); };
         Shown += delegate {
@@ -944,14 +977,54 @@ public class SdWizard : Form {
             Location = new Point(wa.Right - Width - 12, wa.Bottom - Height - 12);
             timer.Start();
         };
-        Load += delegate { ShowStep(); };
+        Load += delegate {
+            using (Graphics g = CreateGraphics()) dpiScale = g.DpiX / 96f;
+            ShowStep();
+        };
         FormClosing += delegate (object sender, FormClosingEventArgs e) {
             if (!closing && !Confirm()) { e.Cancel = true; return; }
             timer.Stop();
         };
     }
 
-    void Place(Control c, int x, int y, int w, int h) { c.Location = new Point(x, y); c.Size = new Size(w, h); Controls.Add(c); }
+    int S(int v) { return (int)Math.Round(v * dpiScale); }
+
+    /** Lays the step out top to bottom, so a long instruction pushes the rest down instead of hiding it. */
+    void Relayout() {
+        int x = S(22), w = content.ClientSize.Width - 2 * x, y = S(20);
+        body.MaximumSize = new Size(w, 0); body.Location = new Point(x, y); y = body.Bottom + S(8);
+        whereLabel.Visible = whereLabel.Text.Length > 0;
+        if (whereLabel.Visible) { whereLabel.MaximumSize = new Size(w, 0); whereLabel.Location = new Point(x, y); y = whereLabel.Bottom + S(14); }
+        else y += S(6);
+        bool showNote = asking || noteShown;
+        noteLabel.Visible = showNote; note.Visible = showNote; addNote.Visible = !showNote;
+        if (showNote) { noteLabel.Location = new Point(x, y); y = noteLabel.Bottom + S(4); note.Location = new Point(x, y); y = note.Bottom + S(14); }
+        else { addNote.Location = new Point(x - S(2), y); y = addNote.Bottom + S(12); }
+        signal.Location = new Point(x, y); signal.Size = new Size(w, S(32)); y = signal.Bottom + S(12);
+        done.Location = new Point(x, y); skip.Location = new Point(done.Right + S(10), y); skipGroup.Location = new Point(skip.Right + S(10), y);
+        y = done.Bottom + S(8);
+        back.Location = new Point(x - S(4), y); y = back.Bottom + S(6);
+        hint.MaximumSize = new Size(w, 0); hint.Location = new Point(x, y);
+    }
+
+    void SetDone(bool on) { done.Enabled = on; done.BackColor = on ? AccentDark : Off; }
+
+    void SetSignal(Color back, Color fore, string text) { signal.BackColor = back; signal.ForeColor = fore; signal.Text = text; }
+
+    static void Primary(Button b) {
+        b.FlatStyle = FlatStyle.Flat; b.FlatAppearance.BorderSize = 0; b.UseVisualStyleBackColor = false;
+        b.BackColor = AccentDark; b.ForeColor = Color.White; b.Font = new Font("Segoe UI Semibold", 10F); b.Cursor = Cursors.Hand;
+    }
+
+    static void Secondary(Button b) {
+        b.FlatStyle = FlatStyle.Flat; b.FlatAppearance.BorderSize = 1; b.FlatAppearance.BorderColor = Line; b.UseVisualStyleBackColor = false;
+        b.BackColor = Color.White; b.ForeColor = Ink; b.Cursor = Cursors.Hand;
+    }
+
+    static void Quiet(Button b) {
+        b.FlatStyle = FlatStyle.Flat; b.FlatAppearance.BorderSize = 0; b.FlatAppearance.MouseOverBackColor = Paper; b.UseVisualStyleBackColor = false;
+        b.BackColor = Color.White; b.ForeColor = AccentDark; b.TextAlign = ContentAlignment.MiddleLeft; b.Font = new Font("Segoe UI", 9F); b.Cursor = Cursors.Hand;
+    }
 
     static bool Has(SdStep s, string flag) { return (" " + (s.Flags ?? "").Replace(",", " ") + " ").Contains(" " + flag + " "); }
     static string Iso(DateTime t) { return t.ToString("yyyy-MM-ddTHH:mm:ss.fff", CultureInfo.InvariantCulture) + "Z"; }
@@ -968,11 +1041,15 @@ public class SdWizard : Form {
         attempt = tries; stepStart = DateTime.UtcNow; note.Text = "";
         stepSent = SentAll; stepReceived = ReceivedAll;
         bool rep = Has(s, "repeat");
-        head.Text = s.Group + "   -   step " + (index + 1) + " of " + steps.Length;
-        bar.Value = Math.Min(100, index * 100 / Math.Max(1, steps.Length));
-        body.Text = s.Text;
+        title.Text = "Recording the " + DeviceName;
+        groupLabel.Text = s.Group.ToUpperInvariant();
+        stepLabel.Text = "Step " + (index + 1) + " of " + steps.Length;
+        progressFraction = Math.Min(1.0, (double)index / Math.Max(1, steps.Length));
+        progress.Invalidate();
+        // An ask step's own label says it: the instruction need not.
+        body.Text = Has(s, "ask") ? s.Text.Replace(" Type the value it shows now.", "") : s.Text;
         string w;
-        whereLabel.Text = Where.TryGetValue(s.Group, out w) ? "Where: " + w : "";
+        whereLabel.Text = Where.TryGetValue(s.Group, out w) ? "Where to find it: " + w : "";
         // Shown again by Redo previous after a change: what the first try set is
         // still on the device, so it is put back before the step is done again.
         puttingBack = redoing && tries > 0 && !rep && Changes(s);
@@ -983,19 +1060,25 @@ public class SdWizard : Form {
                 ? "Doing this step again. If the first try worked, just click Done. If not, first put it back the way it was before this step and click I put it back; then do the step again and click Done."
                 : tries > 0
                     ? "Doing this step again (try " + (tries + 1) + "). The first try is kept: if it worked, just click Done."
-                    : "Do only this in the official software, wait a second, then click Done. Not there? Click Not in my software.";
+                    : Has(s, "ask")
+                        ? "Do only this in the official software, then type the value it shows and click Done. Not there? Click Not in my software."
+                        : "Do only this in the official software, wait a second, then click Done. Not there? Click Not in my software.";
         done.Text = rep ? "Next one" : "Done";
         skip.Text = rep ? "Finished this list" : puttingBack ? "I put it back" : "Not in my software";
         skipGroup.Text = "Skip this group";
         back.Enabled = index > 0;
         autoLeft = Has(s, "auto15") ? 15 : 0;
-        done.Enabled = autoLeft == 0;
+        asking = Has(s, "ask") || rep;
+        noteShown = false;
+        noteLabel.Text = rep ? "Its name, and the value you set if any:" : "Type the value it shows now:";
+        SetDone(autoLeft == 0 && !asking);
         skip.Enabled = autoLeft == 0;
         if (autoLeft > 0) body.Text = s.Text + "\n" + autoLeft + " s";
         if (Has(s, "attach") && !Preview) {
             try { Directory.CreateDirectory(attachDir); Process.Start("explorer.exe", "\"" + attachDir + "\""); } catch (Exception) { }
         }
-        if (done.Enabled) done.Focus();
+        Relayout();
+        if (asking) note.Focus(); else if (done.Enabled) done.Focus();
         UpdateStatus();
     }
 
@@ -1015,6 +1098,18 @@ public class SdWizard : Form {
     public void OnDone() {
         if (index >= steps.Length) return;
         SdStep s = steps[index];
+        // The value the owner really set: Done waits for it (a script driving the preview does not).
+        if (asking && note.Text.Trim().Length == 0 && !Preview) { note.Focus(); return; }
+        // A change that never reached the device: the software waits for Apply or
+        // Save, or the step was not done. Asked once, so nothing passes unseen.
+        if (!Preview && Changes(s) && SentAll - stepSent == 0 && !puttingBack) {
+            DialogResult go = MessageBox.Show(this,
+                "Nothing reached the " + DeviceName + " in this step yet.\n\n" +
+                "Some software sends a change only on Apply or Save. Not in your software? Click No, then Not in my software.\n\n" +
+                "Done anyway?",
+                Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (go != DialogResult.Yes) return;
+        }
         if (Has(s, "window") && softwarePid == 0 && !Preview) {
             if (candidatePid != 0) {
                 if (!ConfirmCandidate()) {
@@ -1033,7 +1128,8 @@ public class SdWizard : Form {
         if (Has(s, "repeat")) {
             attempt++; stepStart = DateTime.UtcNow; note.Text = "";
             stepSent = SentAll; stepReceived = ReceivedAll;
-            head.Text = s.Group + "   -   step " + (index + 1) + " of " + steps.Length + "   -   " + attempt + " recorded";
+            stepLabel.Text = "Step " + (index + 1) + " of " + steps.Length + "  \u00b7  " + attempt + " recorded";
+            SetDone(false); note.Focus();
             return;
         }
         index++; ShowStep();
@@ -1048,6 +1144,7 @@ public class SdWizard : Form {
             puttingBack = false;
             stepStart = DateTime.UtcNow; stepSent = SentAll; stepReceived = ReceivedAll;
             hint.Text = "Now do the step again, then click Done.";
+            Relayout();
             skip.Text = "Not in my software";
             UpdateStatus();
             return;
@@ -1198,17 +1295,15 @@ public class SdWizard : Form {
         if (index < steps.Length && Changes(steps[index])) {
             double secs = (DateTime.UtcNow - stepStart).TotalSeconds;
             double expected = idleRate * secs;
-            if (sent >= 1 && sent >= expected + (idleRate > 0 ? 2 : 1)) {
-                signal.ForeColor = Color.ForestGreen;
-                signal.Text = "\u2714  The " + DeviceName + " received it (" + sent + " message" + (sent == 1 ? "" : "s") + "). Once the software shows it, click Done.";
-            } else if (secs > 8) {
-                signal.ForeColor = Color.DarkOrange;
-                signal.Text = "Nothing reached the " + DeviceName + " yet: some software sends a change only on Apply or Save.";
-            } else {
-                signal.ForeColor = Color.DimGray;
-                signal.Text = "Waiting for the software to send this to the " + DeviceName + "...";
-            }
-        } else signal.Text = "";
+            if (sent >= 1 && sent >= expected + (idleRate > 0 ? 2 : 1))
+                SetSignal(Color.FromArgb(231, 245, 236), Color.FromArgb(30, 123, 52),
+                    "\u2714  The " + DeviceName + " received it (" + sent + " message" + (sent == 1 ? "" : "s") + "). Once the software shows it, click Done.");
+            else if (secs > 8)
+                SetSignal(Color.FromArgb(255, 244, 229), Color.FromArgb(154, 91, 0),
+                    "Nothing reached the " + DeviceName + " yet: some software sends a change only on Apply or Save.");
+            else
+                SetSignal(Color.FromArgb(241, 243, 245), Muted, "Waiting for the software to send this to the " + DeviceName + "...");
+        } else SetSignal(Color.White, Muted, "");
         string text = "Recorded this step: " + sent + " message" + (sent == 1 ? "" : "s") + " to the " + DeviceName + ", " + got + " from it." +
             "   In all: " + SentAll + " to it, " + ReceivedAll + " from it.";
         text += "\nOnly the " + DeviceName + "'s USB traffic is recorded, and what you type on it is blanked when saved." +
@@ -1449,12 +1544,12 @@ dpi.s1.400|mouse|DPI|400|dpi.s1||Set DPI stage 1 to 400.
 dpi.s1.800|mouse|DPI|800|dpi.s1||Set DPI stage 1 to 800.
 dpi.s1.1600|mouse|DPI|1600|dpi.s1||Set DPI stage 1 to 1600.
 dpi.s1.3200|mouse|DPI|3200|dpi.s1||Set DPI stage 1 to 3200.
-dpi.s1.100|mouse|DPI|100|dpi.s1||Set DPI stage 1 to 100, or to the lowest value it allows (then type that value in the note).
+dpi.s1.100|mouse|DPI|100|dpi.s1|ask|Set DPI stage 1 to 100, or to the lowest value it allows. Type the value it shows now.
 dpi.s1.1000|mouse|DPI|1000|dpi.s1||Set DPI stage 1 to 1000.
 dpi.s1.6400|mouse|DPI|6400|dpi.s1||Set DPI stage 1 to 6400.
 dpi.s1.12000|mouse|DPI|12000|dpi.s1||Set DPI stage 1 to 12000.
-dpi.s1.max|mouse|DPI|max|dpi.s1||Set DPI stage 1 to the highest value it allows, and type that value in the note.
-dpi.s1.back|mouse|DPI|800|dpi.s1|undo|Set DPI stage 1 back to what you use (800 if unsure), and type it in the note if it is not 800.
+dpi.s1.max|mouse|DPI|max|dpi.s1|ask|Set DPI stage 1 to the highest value it allows. Type the value it shows now.
+dpi.s1.back|mouse|DPI||dpi.s1|undo ask|Set DPI stage 1 back to what you use (800 if unsure). Type the value it shows now.
 dpi.s2.1200|mouse|DPI|1200|dpi.s2||Set DPI stage 2 to 1200 (only stage 2).
 dpi.s2.2400|mouse|DPI|2400|dpi.s2||Set DPI stage 2 to 2400.
 dpi.s2.back|mouse|DPI|||undo|Set DPI stage 2 back to what you use.
@@ -1477,9 +1572,9 @@ poll.1000|both|Polling rate|1000|poll||Set the polling rate to 1000 Hz.
 poll.2000|both|Polling rate|2000|poll||Set the polling rate to 2000 Hz, if offered.
 poll.4000|both|Polling rate|4000|poll||Set the polling rate to 4000 Hz, if offered.
 poll.8000|both|Polling rate|8000|poll||Set the polling rate to 8000 Hz, if offered.
-poll.back|both|Polling rate|1000|poll|undo|Set the polling rate back to what you use (1000 Hz if unsure), and type it in the note if it is not 1000.
-lod.low|mouse|Sensor|low|lod||Set the lift-off distance (LOD) to its lowest setting (often 1 mm), and type it in the note.
-lod.high|mouse|Sensor|high|lod||Set the lift-off distance to its highest setting (often 2 mm), and type it in the note.
+poll.back|both|Polling rate||poll|undo ask|Set the polling rate back to what you use (1000 Hz if unsure). Type the value it shows now.
+lod.low|mouse|Sensor|low|lod|ask|Set the lift-off distance (LOD) to its lowest setting (often 1 mm). Type the value it shows now.
+lod.high|mouse|Sensor|high|lod|ask|Set the lift-off distance to its highest setting (often 2 mm). Type the value it shows now.
 lod.back|mouse|Sensor|||undo|Set the lift-off distance back to what you use.
 angle.on|mouse|Sensor|on|angle||Turn angle snapping (straight-line correction) on.
 angle.off|mouse|Sensor|off|angle|undo|Turn angle snapping off (back on afterwards, if you use it).
@@ -1489,13 +1584,18 @@ motion.on|mouse|Sensor|on|motion||Turn motion sync on.
 motion.off|mouse|Sensor|off|motion|undo|Turn motion sync off (back on afterwards, if you use it).
 mode.each|mouse|Sensor||sensor.mode|repeat|If the mouse has sensor or performance modes (Office, Gaming, Competitive...): choose the first one, type its name in the note, click Next one. Then the next mode, and so on.
 mode.back|mouse|Sensor|||undo|Choose the mode you use again.
-debounce.2|both|Response|2|debounce||Set the debounce time (button or key response) to 2 ms, or the closest value.
-debounce.8|both|Response|8|debounce||Set the debounce time to 8 ms, or the closest value.
-debounce.4|both|Response|4|debounce||Set the debounce time to 4 ms.
+debounce.min|both|Response|min|debounce|ask|Set the debounce time (button or key response, often in ms) to its lowest value. Type the value it shows now.
+debounce.max|both|Response|max|debounce|ask|Set the debounce time to its highest value. Type the value it shows now.
+debounce.8|both|Response|8|debounce|ask|Set the debounce time to 8 ms, or the closest value. Type the value it shows now.
+debounce.4|both|Response|4|debounce|ask|Set the debounce time to 4 ms, or the closest value. Type the value it shows now.
 debounce.back|both|Response|||undo|Set the debounce time back to what you use.
-sleep.1|both|Power|1|sleep||Set the sleep (power saving) time to 1 minute, or the shortest.
-sleep.10|both|Power|10|sleep||Set the sleep time to 10 minutes, or the closest.
+sleep.min|both|Power|min|sleep|ask|Set the sleep (power saving) time to its shortest. Type the value it shows now.
+sleep.max|both|Power|max|sleep|ask|Set the sleep time to its longest. Type the value it shows now.
+sleep.10|both|Power|10|sleep|ask|Set the sleep time to 10 minutes, or the closest. Type the value it shows now.
 sleep.back|both|Power|||undo|Set the sleep time back to what you use.
+deep.min|both|Power|min|deep|ask|If there is a second, deeper sleep time: set it to its shortest. Type the value it shows now.
+deep.max|both|Power|max|deep|ask|Set the deep sleep time to its longest. Type the value it shows now.
+deep.back|both|Power|||undo|Set the deep sleep time back to what you use.
 btn.b4.middle|mouse|Buttons|Middle click|btn.b4||Set the side button "Back" (button 4) to Middle click.
 btn.b4.right|mouse|Buttons|Right click|btn.b4||Set button 4 to Right click.
 btn.b4.key-a|mouse|Buttons|key A|btn.b4||Set button 4 to the keyboard key A.
@@ -1507,7 +1607,7 @@ btn.b4.next|mouse|Buttons|Next track|btn.b4||Set button 4 to Next track.
 btn.b4.dpi-up|mouse|Buttons|DPI up|btn.b4||Set button 4 to DPI up (or DPI cycle).
 btn.b4.dpi-down|mouse|Buttons|DPI down|btn.b4||Set button 4 to DPI down, if offered.
 btn.b4.scroll-up|mouse|Buttons|Scroll up|btn.b4||Set button 4 to Scroll up, if offered.
-btn.b4.fire|mouse|Buttons|Fire|btn.b4||Set button 4 to fire key (rapid fire), if offered, and type its settings in the note.
+btn.b4.fire|mouse|Buttons|Fire|btn.b4|ask|Set button 4 to fire key (rapid fire), if offered. Type its settings as the software shows them (clicks, speed).
 btn.b4.off|mouse|Buttons|Disabled|btn.b4||Set button 4 to Disabled (off).
 btn.b4.default|mouse|Buttons|Back|btn.b4|undo|Set button 4 back to its default (Back).
 btn.b5.key-b|mouse|Buttons|key B|||Set the side button "Forward" (button 5) to the keyboard key B.
@@ -1560,7 +1660,7 @@ side.back|both|Second light|||undo|Put the second light back as you had it.
 act.2.0|keyboard|Actuation|2.0|act.all||If keys have an adjustable actuation point: set all keys to 2.0 mm.
 act.3.5|keyboard|Actuation|3.5|act.all||Set all keys to 3.5 mm.
 act.0.5|keyboard|Actuation|0.5|act.all||Set all keys to 0.5 mm. That is very light: until the next step, a key just touched may type.
-act.back|keyboard|Actuation|2.0|act.all|undo|Set all keys back to what you use (2.0 mm if unsure), and type it in the note if it is not 2.0.
+act.back|keyboard|Actuation||act.all|undo ask|Set all keys back to what you use (2.0 mm if unsure). Type the value it shows now.
 act.esc|keyboard|Actuation|1.0|||Set only Esc to 1.0 mm.
 act.esc.undo|keyboard|Actuation|||undo|Set Esc back to the same as the other keys.
 rt.on|keyboard|Actuation|on|rt||Turn rapid trigger on for all keys.
@@ -1584,17 +1684,17 @@ calibrate|keyboard|Key modes|||nochange|Optional: run the key calibration, follo
 profile.2|both|Profiles|2|profile||Switch to onboard profile 2.
 profile.1|both|Profiles|1|profile|undo|Switch back to profile 1 (or the one you use).
 profile.export|both|Profiles|||attach|If the software can export your settings to a file: export one into the folder that just opened.
-wl.connect|both|Receiver|||detect|If the device has a USB receiver: unplug the cable, plug in the receiver, switch the device to 2.4 GHz and wait until the software shows it.
-wl.idle|both|Receiver|||auto15|Leave everything alone for 15 seconds.
-wl.dpi.1600|mouse|Receiver|1600|wl.dpi||Set DPI stage 1 to 1600.
-wl.dpi.800|mouse|Receiver|800|wl.dpi|undo|Set DPI stage 1 back to 800 (or what you use).
-wl.poll.500|both|Receiver|500|wl.poll||Set the polling rate to 500 Hz.
-wl.poll.1000|both|Receiver|1000|wl.poll|undo|Set the polling rate back to 1000 Hz (or what you use).
-wl.green|both|Receiver|#00FF00|||Set the lighting to static pure green (#00FF00).
-wl.light.back|both|Receiver|||undo|Put your own lighting back.
-wl.pair|both|Receiver|||nochange|If the software has a pairing button: click it and follow its instructions until the device works again.
+conn.other|both|Other connection|||detect|Now connect it the other way it can be connected. On its USB receiver now? Plug in its cable (and set its switch to wired, if it has one). On its cable now? Plug in its receiver and switch it to 2.4 GHz. Wait until the software shows it. Only one way? Click Not in my software.
+conn.idle|both|Other connection|||auto15|Leave everything alone for 15 seconds.
+conn.dpi.1600|mouse|Other connection|1600|conn.dpi||Set DPI stage 1 to 1600.
+conn.dpi.back|mouse|Other connection||conn.dpi|undo ask|Set DPI stage 1 back to what you use. Type the value it shows now.
+conn.poll.500|both|Other connection|500|conn.poll||Set the polling rate to 500 Hz.
+conn.poll.back|both|Other connection||conn.poll|undo ask|Set the polling rate back to what you use. Type the value it shows now.
+conn.green|both|Other connection|#00FF00|||Set the lighting to static pure green (#00FF00).
+conn.light.back|both|Other connection|||undo|Put your own lighting back.
+conn.pair|both|Other connection|||nochange|If the software has a pairing button for the receiver: click it and follow its instructions until the device works again.
 other.each|both|Anything else||other|repeat|Any setting not asked about yet: change it once, type its name and the new value in the note, click Next one. When none are left, click Finished this list.
-end.reset|both|Finish||||Optional, only if you do not mind losing your settings: restore the factory settings in the software.
+end.reset|both|Finish||||Restore the factory settings in the software (Reset, Reset Profile or Restore defaults): it tells Shark Deck the factory values. Your own settings come back from the file you exported, or set them again afterwards. Rather not? Click Not in my software.
 end.close|both|Finish||||Close the official software.
 '@
 
@@ -1622,7 +1722,7 @@ Actuation|keyboard|Attack Shark Driver v4: Keyboard Settings > Magnetic Switch S
 Key modes|keyboard|Attack Shark Driver v4: Keyboard Settings > Advanced Key Settings (DKS, MT, Toggle, SnapKey); calibration: the Travel Calibration button. Elsewhere: Advanced keys or Performance.
 Profiles|keyboard|Attack Shark Driver v4: the Profile 1 list on the Keyboard Settings page (the Profile menu on the left is your account). Elsewhere: Profile 1, 2, 3... at the top or the side.
 Profiles|mouse|Usually at the top or the side: Profile 1, 2, 3... or Config 1, 2, 3...
-Receiver|both|Usually where the software shows the connection: cable, 2.4 GHz receiver, Bluetooth.
+Other connection|both|Usually where the software shows the connection: cable, 2.4 GHz receiver, Bluetooth. A switch under the device often chooses it.
 Finish|keyboard|Attack Shark Driver v4: Restore Factory Settings, bottom right of the Keyboard Settings page.
 '@
 

@@ -22,6 +22,12 @@ body:
         anywhere, and saves a .zip on your Desktop: look through its pictures
         first, since anything attached here is public.
 
+        **On Linux or macOS:** run
+        [`sharkdeck-device-report.sh`](https://github.com/alexandrewillame/shark-deck/blob/main/tools/sharkdeck-device-report.sh)
+        in a terminal (`sh sharkdeck-device-report.sh`). It saves a report of the
+        device's USB ids and HID layout on your Desktop; a recording of the
+        official software needs Windows.
+
         Is your device already in the
         [list](https://github.com/alexandrewillame/shark-deck/blob/main/docs/devices/attack-shark-lineup.md)
         as 🟡 or 🟠? A report still helps: it can confirm what it is.
