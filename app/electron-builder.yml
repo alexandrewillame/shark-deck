@@ -74,7 +74,13 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: SharkDeck
+  # The brand is two words, and the Start menu search matches whole words: a
+  # shortcut named SharkDeck was not found by "shark deck". The program file
+  # keeps the product name (SharkDeck.exe), as do the files and the settings
+  # folder. An update renames the old shortcut; the uninstaller reads the name
+  # it installed from the registry.
+  shortcutName: Shark Deck
+  uninstallDisplayName: Shark Deck ${version}
   artifactName: ${productName}-Setup-${version}.${ext}
   # one logo everywhere — installer, uninstaller, header, and the running app
   installerIcon: assets/logo.ico
