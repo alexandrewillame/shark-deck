@@ -1,7 +1,7 @@
-# SharkDeck
+# Shark Deck
 
-An open-source, auditable configurator for Attack Shark keyboards and mice —
-a trustworthy replacement for the vendor's _Mouse Hub_ and _Driver v4_.
+An open-source, auditable configurator for Attack Shark keyboards and mice.
+This folder holds its source and its build.
 
 - **No network.** A strict CSP plus a `will-navigate` block; the app makes zero
   outbound connections. Model names and artwork are shipped locally instead of
