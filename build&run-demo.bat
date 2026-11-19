@@ -49,6 +49,10 @@ echo Build complete! Output is in ..\dist\
 
 
 taskkill /F /IM SharkDeck.exe /T >nul 2>&1
+rem Then the development build, in demo mode: one simulated device of each
+rem kind. Demo mode stays on for later development runs until it is switched
+rem off in Settings > General.
+set SHARKDECK_DEMO=1
 call npm run dev
 pause
 

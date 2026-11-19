@@ -479,6 +479,11 @@ async function bootstrap(): Promise<void> {
   });
   buildAppMenu();
   ensureDirs();
+  // run-demo.bat: a development build that opens in demo mode. Never in an
+  // installed app, which offers no demo mode at all.
+  if (isDev && process.env['SHARKDECK_DEMO'] === '1' && !getSettingsSync().demoMode) {
+    await setSettings({ demoMode: true });
+  }
   await seedDefaults(); // first-run only: "Desktop" / "Gaming" profiles
   await migrateRulesToProfiles(); // one-time upgrade: fold a pre-trigger-model rules.json in, if present
   await ensureDefaultProfile(); // one-time upgrade: flag the fallback profile on installs that predate isDefault
