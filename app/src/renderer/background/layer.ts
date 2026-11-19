@@ -22,6 +22,12 @@ const MAX_DPR = 2;
  *  Every one is shaded again each frame, and re-blurred behind every frosted
  *  panel; past this a big window draws slightly softer instead of slower. */
 const MAX_PIXELS = 4_100_000;
+/** With a software rasteriser (no GPU, or a browser not using it) every pixel
+ *  is shaded on the CPU. The background still moves there, from a tenth of the
+ *  pixels (the effects are soft, and CSS stretches them over the window) and at
+ *  half the rate. */
+const SOFTWARE_PIXELS = 360_000;
+const SOFTWARE_FPS = 15;
 
 /**
  * The background behind the app: one canvas, one renderer, and the loop that
@@ -31,10 +37,10 @@ const MAX_PIXELS = 4_100_000;
  * changed (the window, the palette, a setting) or, while the effect is
  * MOVING, at the effect's own rate. It is not moving — so it draws one still
  * frame and stops — when Animate is off (which, until the switch is first
- * set, is what the system's reduced-motion setting says: motion.ts), when the
- * GPU is a software rasteriser, and while the window is hidden. Time only
- * passes while it moves, so a background that stops and starts again carries
- * on where it was.
+ * set, is what the system's reduced-motion setting says: motion.ts), and
+ * while the window is hidden. On a software rasteriser it moves too, drawn
+ * smaller and slower (SOFTWARE_PIXELS). Time only passes while it moves, so a
+ * background that stops and starts again carries on where it was.
  *
  * A lost context (a GPU reset, a driver update) holds the loop until the
  * context comes back, then starts again from scratch.
@@ -140,7 +146,7 @@ export class BackgroundLayerController {
 
   /** Whether the effect is moving right now — see the class comment. */
   get moving(): boolean {
-    return this.s.animate && !this.sink?.software && !document.hidden;
+    return this.s.animate && !document.hidden;
   }
 
   private onTheme(): void {
@@ -159,13 +165,16 @@ export class BackgroundLayerController {
   }
 
   /** The drawing buffer: the window in device pixels, times the effect's
-   *  scale, within `MAX_PIXELS`. CSS stretches it back over the window. */
+   *  scale, within `MAX_PIXELS` (`SOFTWARE_PIXELS` on a software rasteriser,
+   *  at one pixel per CSS pixel at most). CSS stretches it back over the window. */
   private size(): void {
     const c = this.canvas;
     if (!c) return;
-    const dpr = Math.min(MAX_DPR, window.devicePixelRatio || 1);
+    const software = !!this.sink?.software;
+    const dpr = software ? 1 : Math.min(MAX_DPR, window.devicePixelRatio || 1);
+    const cap = software ? SOFTWARE_PIXELS : MAX_PIXELS;
     const want = window.innerWidth * window.innerHeight * (dpr * this.def.scale) ** 2;
-    const k = dpr * this.def.scale * Math.min(1, Math.sqrt(MAX_PIXELS / Math.max(1, want)));
+    const k = dpr * this.def.scale * Math.min(1, Math.sqrt(cap / Math.max(1, want)));
     const w = Math.max(1, Math.round(window.innerWidth * k));
     const h = Math.max(1, Math.round(window.innerHeight * k));
     if (c.width !== w || c.height !== h) {
@@ -204,7 +213,8 @@ export class BackgroundLayerController {
       this.dirty = true;
     }
 
-    const due = moving && now - this.lastDraw >= 1000 / this.def.fps - 2;
+    const fps = sink.software ? Math.min(this.def.fps, SOFTWARE_FPS) : this.def.fps;
+    const due = moving && now - this.lastDraw >= 1000 / fps - 2;
     let compiling = false;
     if (this.dirty || due) {
       const result = sink.draw({

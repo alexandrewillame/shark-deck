@@ -20,7 +20,7 @@ export type DrawResult = 'drawn' | 'pending' | 'failed';
 
 /** What draws frames — the WebGL renderer below, or a test's counter. */
 export interface FrameSink {
-  /** A software rasteriser: a still frame only, never a loop. */
+  /** A software rasteriser: drawn smaller and slower (layer.ts). */
   readonly software: boolean;
   draw(p: FrameParams): DrawResult;
   /** After a lost context comes back, everything on the GPU is gone. */
@@ -66,8 +66,9 @@ interface ParallelCompile {
   readonly COMPLETION_STATUS_KHR: number;
 }
 
-/** A renderer string that means no GPU at all: drawing every frame in
- *  software would load a CPU core to animate a background. */
+/** A renderer string that means no GPU at all (or a browser not using it, like
+ *  a Chrome showing "Microsoft Basic Render Driver"): every pixel is shaded on
+ *  the CPU, so the layer draws far fewer of them, less often. */
 const SOFTWARE = /swiftshader|llvmpipe|softpipe|software|basic render/i;
 
 /**

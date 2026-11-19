@@ -91,6 +91,20 @@ describe('BackgroundLayer', () => {
     expect(last.time).toBeGreaterThan(c.frames[0]!.time);
   });
 
+  it('moves on a software rasteriser too, from fewer pixels', async () => {
+    // Chrome without its GPU draws through "Microsoft Basic Render Driver":
+    // the background used to stand still there, with Animate on.
+    useStore.setState({ settings: settings({}) });
+    const c = counter();
+    const sink = { ...c.sink, software: true };
+    const { container } = render(<BackgroundLayer makeSink={() => sink} />);
+    await wait(300);
+    expect(c.frames.length).toBeGreaterThan(2);
+    expect(c.frames.at(-1)!.time).toBeGreaterThan(c.frames[0]!.time);
+    const canvas = container.querySelector('canvas')!;
+    expect(canvas.width * canvas.height).toBeLessThanOrEqual(360_000 * 1.01);
+  });
+
   it('holds one still frame where the system asks for reduced motion, until Animate is set', async () => {
     reducedMotion(true);
     useStore.setState({ settings: settings({ backgroundAnimate: undefined }) });
