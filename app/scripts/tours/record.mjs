@@ -2,7 +2,7 @@
 /**
  * Records the README walkthroughs, start to finish, with nobody at the keys:
  *
- *   npm run tours              every finished tour
+ *   npm run tours              every tour
  *   npm run tours -- tour3     just that one
  *
  * 1. starts the browser edition's dev server with the desktop look
@@ -29,22 +29,21 @@ const APP = resolve(HERE, '../..');
 const OUT = resolve(APP, '../docs/media/walkthrough');
 const SERVER = 'http://127.0.0.1:5181/';
 
-/** The finished tours: the recorder, its arguments, the file, the encoding. */
+/** A still background: only the cursor and the UI change between frames. */
+const STILL = ['--mode', 'delta', '--minimize', '--q', '80'];
+
+/** The tours: the recorder, its arguments, the file, the encoding. */
 const TOURS = {
-  tour3: {
-    script: 'tour3.cjs',
-    args: ['still'],
-    file: 'tour-3-auto-switch.webp',
-    // A still background: only the cursor and the UI change between frames.
-    encode: ['--mode', 'delta', '--minimize', '--q', '80'],
-  },
+  tour1: { script: 'tour1.cjs', args: [], file: 'tour-1-mouse.webp', encode: STILL },
+  tour2: { script: 'tour2.cjs', args: [], file: 'tour-2-keyboard.webp', encode: STILL },
+  tour3: { script: 'tour3.cjs', args: ['still'], file: 'tour-3-auto-switch.webp', encode: STILL },
 };
 
 const wanted = process.argv.slice(2);
 const names = wanted.length ? wanted : Object.keys(TOURS);
 for (const n of names) {
   if (!TOURS[n]) {
-    console.error(`No tour "${n}". Finished tours: ${Object.keys(TOURS).join(', ')}.`);
+    console.error(`No tour "${n}". Tours: ${Object.keys(TOURS).join(', ')}.`);
     process.exit(1);
   }
 }

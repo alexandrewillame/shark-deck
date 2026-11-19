@@ -1,6 +1,3 @@
-// UNFINISHED: written for the 2026-11-19 re-recording, which was stopped before
-// this story was ever run end to end. The README still shows the 2026-11-03
-// recording of this tour. Not run by record.mjs.
 // README tour 2 — the keyboard (Attack Shark R85HE): live key travel with rapid
 // trigger, moving the actuation point, macros, rainbow lighting. Story, pacing,
 // cursor path and camera zooms copied from the old

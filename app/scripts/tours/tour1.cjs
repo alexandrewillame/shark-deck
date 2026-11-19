@@ -1,6 +1,3 @@
-// UNFINISHED: written for the 2026-11-19 re-recording, which was stopped before
-// this story was ever run end to end. The README still shows the 2026-11-03
-// recording of this tour. Not run by record.mjs.
 // README tour 1 — the mouse (Attack Shark V8): polling rate, sensor settings,
 // angle snapping with its tooltip, mouse angle mode, key response time, then
 // the Buttons, Macros and Lighting pages. Story, pacing and cursor path copied
