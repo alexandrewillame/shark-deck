@@ -47,6 +47,12 @@ export const hostFeatures = {
   quitPrompt: desktop,
   /** Closing or reloading the page with a change nobody applied asks first, in the browser's own words. */
   unloadPrompt: !desktop,
+  /**
+   * "Check for updates", in Settings: it opens the latest release in the
+   * browser, the app itself fetching nothing. The browser edition updates
+   * itself (src/web/sw.ts), so it has no such button.
+   */
+  updateCheck: desktop,
 } as const;
 
 export type HostFeature = keyof typeof hostFeatures;

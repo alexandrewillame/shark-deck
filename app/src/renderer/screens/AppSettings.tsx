@@ -5,6 +5,7 @@ import { PaneHeader, Panel, Row, Toggle } from '../components/common';
 import { useStore } from '../state/store';
 import { useT } from '../state/i18n';
 import { hostFeatures } from '../state/host';
+import { DESKTOP_DOWNLOAD_URL, PROJECT_URL } from '@shared/links';
 
 import { sd } from '../state/bridge';
 
@@ -100,8 +101,21 @@ export function AppSettingsScreen() {
       )}
 
       <Panel title={t('set.about')}>
-        <Row label={t('set.about.version')}>
+        <Row
+          label={t('set.about.version')}
+          hint={hostFeatures.updateCheck ? t('set.about.updates.hint') : undefined}
+        >
           <span className="mono">{platformInfo?.appVersion ?? '—'}</span>
+          {hostFeatures.updateCheck && (
+            <button className="btn" onClick={() => void sd.openExternal(DESKTOP_DOWNLOAD_URL)}>
+              {t('set.about.updates')}
+            </button>
+          )}
+        </Row>
+        <Row label={t('set.about.project')} hint={t('set.about.project.hint')}>
+          <button className="btn" onClick={() => void sd.openExternal(PROJECT_URL)}>
+            {t('set.open')}
+          </button>
         </Row>
         <p className="hint">{t('set.about.license')}</p>
         {hostFeatures.devicePicker && <p className="hint">{t('set.about.browser')}</p>}

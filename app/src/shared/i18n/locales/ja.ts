@@ -1432,4 +1432,10 @@ export const ja: Partial<Messages> = {
   'demo.noBackups': 'デモデバイスにはバックアップがありません。',
   'backup.waiver.writeOnly':
     'このマウスは設定をまったく報告できません。メニューには Shark Deck が最後に送った値（それまでは一般的な初期値）が表示され、変更するたびにそのセクション全体が表示どおりに送られます。',
+  'set.about.updates': 'アップデートを確認',
+  'set.about.updates.hint':
+    'GitHub の最新リリースをブラウザーで開き、お使いのバージョンと比べられます。',
+  'set.about.project': 'GitHub',
+  'set.about.project.hint':
+    'ソースコード、対応デバイスの一覧、問題の報告やお使いのデバイスの対応依頼の窓口です。',
 };

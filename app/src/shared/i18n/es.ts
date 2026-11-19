@@ -1449,4 +1449,10 @@ export const es: Partial<Messages> = {
   'demo.noBackups': 'Los dispositivos de demostración no guardan copias de seguridad.',
   'backup.waiver.writeOnly':
     'Este ratón no puede devolver ninguno de sus ajustes: los menús muestran lo último que Shark Deck le envió (valores iniciales habituales hasta entonces), y cada cambio envía toda su sección tal como se muestra.',
+  'set.about.updates': 'Buscar actualizaciones',
+  'set.about.updates.hint':
+    'Abre la última versión publicada en GitHub, en tu navegador, para compararla con la tuya.',
+  'set.about.project': 'GitHub',
+  'set.about.project.hint':
+    'El código fuente, la lista de dispositivos compatibles y dónde informar de un problema o pedir que se añada tu dispositivo.',
 };

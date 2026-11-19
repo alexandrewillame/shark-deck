@@ -1354,4 +1354,8 @@ export const zhCN: Partial<Messages> = {
   'demo.noBackups': '演示设备不保留备份。',
   'backup.waiver.writeOnly':
     '这款鼠标无法回报任何设置：菜单显示的是 Shark Deck 最后发送给它的值（在此之前为常见的初始值），每次更改都会按显示内容发送整个部分。',
+  'set.about.updates': '检查更新',
+  'set.about.updates.hint': '在浏览器中打开 GitHub 上的最新版本，与您当前的版本对照。',
+  'set.about.project': 'GitHub',
+  'set.about.project.hint': '源代码、支持的设备列表，以及报告问题或申请支持您的设备的地方。',
 };

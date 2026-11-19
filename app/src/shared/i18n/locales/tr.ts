@@ -1439,4 +1439,10 @@ export const tr: Partial<Messages> = {
   'demo.noBackups': 'Demo cihazları yedek tutmaz.',
   'backup.waiver.writeOnly':
     'Bu fare ayarlarının hiçbirini bildiremez: menüler Shark Deck’in ona en son gönderdiğini gösterir (o zamana kadar olağan başlangıç değerleri) ve her değişiklik bölümünün tamamını gösterildiği gibi gönderir.',
+  'set.about.updates': 'Güncellemeleri denetle',
+  'set.about.updates.hint':
+    'GitHub’daki en son sürümü tarayıcınızda açar; elinizdeki sürümle karşılaştırabilirsiniz.',
+  'set.about.project': 'GitHub',
+  'set.about.project.hint':
+    'Kaynak kodu, desteklenen cihazların listesi ve bir sorunu bildirebileceğiniz ya da cihazınız için destek isteyebileceğiniz yer.',
 };

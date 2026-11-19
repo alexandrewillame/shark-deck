@@ -1432,4 +1432,10 @@ export const fr: Partial<Messages> = {
   'demo.noBackups': 'Les appareils de démo ne gardent pas de sauvegardes.',
   'backup.waiver.writeOnly':
     'Cette souris ne peut renvoyer aucun de ses réglages : les menus montrent ce que Shark Deck lui a envoyé en dernier (des valeurs de départ habituelles jusque-là), et chaque modification envoie toute sa section telle qu’affichée.',
+  'set.about.updates': 'Rechercher des mises à jour',
+  'set.about.updates.hint':
+    'Ouvre la dernière version publiée sur GitHub, dans votre navigateur, à comparer avec la vôtre.',
+  'set.about.project': 'GitHub',
+  'set.about.project.hint':
+    'Le code source, la liste des périphériques pris en charge, et où signaler un problème ou demander la prise en charge de votre périphérique.',
 };

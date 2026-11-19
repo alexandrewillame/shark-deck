@@ -1434,6 +1434,12 @@ export const en = {
   'demo.noBackups': 'Demo devices keep no backups.',
   'backup.waiver.writeOnly':
     'This mouse cannot report any of its settings: the menus show what Shark Deck last sent to it (typical starting values until then), and each change sends its whole section as shown.',
+  'set.about.updates': 'Check for updates',
+  'set.about.updates.hint':
+    'Opens the latest release on GitHub, in your browser, next to the version you have.',
+  'set.about.project': 'GitHub',
+  'set.about.project.hint':
+    'The source code, the list of supported devices, and where to report a problem or ask for your device.',
 } as const;
 
 export type MessageKey = keyof typeof en;

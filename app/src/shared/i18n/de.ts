@@ -1463,4 +1463,10 @@ export const de: Partial<Messages> = {
   'demo.noBackups': 'Demo-Geräte haben keine Sicherungen.',
   'backup.waiver.writeOnly':
     'Diese Maus kann keine ihrer Einstellungen melden: Die Menüs zeigen, was Shark Deck zuletzt an sie gesendet hat (bis dahin übliche Startwerte), und jede Änderung sendet ihren ganzen Abschnitt so, wie er angezeigt wird.',
+  'set.about.updates': 'Nach Updates suchen',
+  'set.about.updates.hint':
+    'Öffnet die neueste Version auf GitHub in Ihrem Browser, zum Vergleich mit Ihrer Version.',
+  'set.about.project': 'GitHub',
+  'set.about.project.hint':
+    'Der Quellcode, die Liste der unterstützten Geräte und die Stelle, an der Sie ein Problem melden oder Ihr Gerät anfragen können.',
 };

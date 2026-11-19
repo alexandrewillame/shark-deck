@@ -1414,4 +1414,10 @@ export const ko: Partial<Messages> = {
   'demo.noBackups': '데모 장치는 백업을 보관하지 않습니다.',
   'backup.waiver.writeOnly':
     '이 마우스는 설정을 전혀 알려 주지 못합니다. 메뉴에는 Shark Deck가 마지막으로 보낸 값(그 전까지는 일반적인 시작값)이 표시되며, 변경할 때마다 해당 섹션 전체가 표시된 그대로 전송됩니다.',
+  'set.about.updates': '업데이트 확인',
+  'set.about.updates.hint':
+    'GitHub의 최신 릴리스를 브라우저에서 열어 지금 버전과 비교할 수 있습니다.',
+  'set.about.project': 'GitHub',
+  'set.about.project.hint':
+    '소스 코드, 지원 장치 목록, 그리고 문제를 신고하거나 내 장치 지원을 요청하는 곳입니다.',
 };

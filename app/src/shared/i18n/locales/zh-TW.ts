@@ -1352,4 +1352,8 @@ export const zhTW: Partial<Messages> = {
   'demo.noBackups': '示範裝置不保留備份。',
   'backup.waiver.writeOnly':
     '這款滑鼠無法回報任何設定：選單顯示的是 Shark Deck 最後傳送給它的值（在此之前為常見的初始值），每次變更都會依顯示內容傳送整個區段。',
+  'set.about.updates': '檢查更新',
+  'set.about.updates.hint': '在瀏覽器中開啟 GitHub 上的最新版本，與您目前的版本對照。',
+  'set.about.project': 'GitHub',
+  'set.about.project.hint': '原始碼、支援的裝置清單，以及回報問題或申請支援您的裝置的地方。',
 };
