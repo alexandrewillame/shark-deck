@@ -178,8 +178,9 @@ not claimed at all.
    needs. A small window then walks you through the official software,
    one setting at a time, while USBPcap records what the software and the
    device say to each other, the device staying plugged in where it is. Only
-   that device's traffic is kept, what you type on it is blanked out, and a
-   picture of the official software is taken at each step. Where only you can
+   that device's traffic is kept, what you type on it is blanked as it is
+   recorded (never saved), and a picture of the official software is taken at
+   each step, after you have checked it is the right window. Where only you can
    see the value you set (a lowest or highest value, the one you use), the
    window asks you to type it. It all goes into a .zip on your Desktop, the
    report included. Look through the pictures before sending it: anyone can

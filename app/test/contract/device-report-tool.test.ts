@@ -309,11 +309,11 @@ describe('the device report tool', () => {
     );
     // Messages the software sends: class requests on the control pipe, and data
     // on interrupt OUT pipes (the V8 family's way); none is a device write of ours.
-    expect(recorder).toContain(
-      'if (type == 0x21 || type == 0xA1) Interlocked.Increment(ref sent);',
-    );
-    expect(recorder).toContain(
-      'else if ((ep & 0x80) == 0 && !up) Interlocked.Increment(ref sent);',
+    // Counted one message at a time as it is written, typing left out (SdPcap.Live).
+    expect(recordingCs).toContain('return s[0] == 0x21 || s[0] == 0xA1 ? 1 : 0;');
+    expect(recordingCs).toContain('if ((ep & 0x80) == 0) return up ? 0 : 1;');
+    expect(recorder).toMatch(
+      /int kind = live\.See\(rec\);\s*if \(kind == 1\) Interlocked\.Increment\(ref sent\);/,
     );
     // All it sent is in the file before the file is read.
     expect(fn('RecordingPhase')).toMatch(/\$r\.Process\.Kill\(\)[\s\S]*?\$r\.Finish\(\)/);
@@ -342,17 +342,35 @@ describe('the device report tool', () => {
       recordingCs.indexOf('void Repick()'),
     );
     expect(recordingCs.match(/softwarePid = candidatePid/g)).toHaveLength(1);
-    expect(confirm.indexOf('MessageBox.Show')).toBeLessThan(
+    expect(confirm).toContain(
+      'if (!AskIsSoftware(candidatePid, candidateName, candidateTitle)) { candidatePid = 0; return false; }',
+    );
+    expect(confirm.indexOf('AskIsSoftware(')).toBeLessThan(
       confirm.indexOf('softwarePid = candidatePid'),
     );
-    expect(confirm).toContain('if (yes != DialogResult.Yes)');
+    // The question shows the window, from memory: that picture is never saved.
+    const ask = recordingCs.slice(
+      recordingCs.indexOf('bool AskIsSoftware('),
+      recordingCs.indexOf('void Repick()'),
+    );
+    expect(ask).toContain('SdShot.Snapshot(pid)');
+    expect(ask).not.toMatch(/\.Save\(|WriteAllBytes/);
+    // Another window takes over only once it is confirmed: until then the
+    // pictures go on as they were, and no stray window becomes a candidate.
+    const repick = recordingCs.slice(
+      recordingCs.indexOf('void Repick()'),
+      recordingCs.indexOf('static string ImagePath('),
+    );
+    expect(repick).not.toContain('softwarePid = 0');
+    expect(repick).toContain(
+      'picking = softwarePid == 0 && index < steps.Length && Has(steps[index], "window");',
+    );
   });
 
   it('says in the step window what is recorded and what is not, and where each setting is', () => {
     expect(recordingCs).toContain('public class SdRecorder');
-    expect(recordingCs).toContain(
-      'Other devices, other windows and what you type elsewhere are not recorded.',
-    );
+    expect(recordingCs).toContain('"Only the " + DeviceName + "\'s USB messages');
+    expect(recordingCs).toContain('is blanked as soon as it is recorded, so it is never saved.');
     // "Redo previous" keeps what the step being left saw, for the reader.
     expect(recordingCs).toContain('Record(steps[index], "left", stepStart)');
     // Every place named belongs to a group of the steps.
@@ -391,6 +409,16 @@ describe('the device report tool', () => {
     // Keyboard and mouse collections become privacy rules, from what Windows says they are.
     expect(text).toContain("[SdPcap]::AddRule($device, $mi, 'keyboard', $ids)");
     expect(text).toContain("[SdPcap]::AddRule($device, $mi, 'mouse', $ids)");
+    // Blanked as it is recorded, never only when saved: the rules are set
+    // before the first recorder starts, and each message is seen before it is written.
+    const rec = fn('RecordingPhase');
+    expect(rec.indexOf('SetPrivacyRules @(PresentPaths')).toBeGreaterThan(-1);
+    expect(rec.indexOf('SetPrivacyRules @(PresentPaths')).toBeLessThan(
+      rec.indexOf('New-Object SdRecorder('),
+    );
+    expect(recordingCs).toMatch(
+      /int kind = live\.See\(rec\);[\s\S]*?Write\(rec, 0, rec\.Length\);/,
+    );
   });
 
   it('has a step table the maintainer’s reader can line up', () => {

@@ -29,12 +29,13 @@ exit /b %ERRORLEVEL%
 #  one setting at a time, while USBPcap (a free USB capture driver) records
 #  what the software and the device say to each other, the device staying
 #  plugged in where it is. Only that device's traffic is kept, and what you
-#  type on it is blanked out. With a picture of the official software at each
-#  step, that recording is what a driver is written from; the report goes
-#  into its .zip. USBPcap missing? With your OK, the tool installs it: it
-#  downloads the official installer, runs it only if it is byte for byte the
-#  file Wireshark ships, makes sure Windows accepts its driver (and takes it
-#  out again at once if not), and carries on by itself after the restart.
+#  type on it is blanked as it is recorded, never saved. With a picture of the
+#  official software at each step, that recording is what a driver is written
+#  from; the report goes into its .zip. USBPcap missing? With your OK, the tool
+#  installs it: it downloads the official installer, runs it only if it is byte
+#  for byte the file Wireshark ships, makes sure Windows accepts its driver
+#  (and takes it out again at once if not), and carries on by itself after the
+#  restart.
 #
 #  The tool itself changes nothing on the device and sends nothing anywhere;
 #  its one download is that installer. Never a question to a device of a
@@ -465,14 +466,68 @@ public class SdPcapResult {
 public static class SdPcap {
     class Rule { public string Device; public int Iface; public string Kind; public int[] Ids; }
     static readonly List<Rule> rules = new List<Rule>();
+    // The recorders read the rules on their own threads while they are set.
+    static readonly object gate = new object();
 
-    public static void ClearRules() { rules.Clear(); }
+    public static void ClearRules() { lock (gate) rules.Clear(); }
 
     /** An input collection to keep private: "keyboard" (blanked) or "mouse" (a
      *  sample kept), on one interface, for these report ids (none = all). */
     public static void AddRule(string device, int iface, string kind, int[] ids) {
         Rule r = new Rule(); r.Device = device.ToUpperInvariant(); r.Iface = iface; r.Kind = kind; r.Ids = ids == null ? new int[0] : ids;
-        rules.Add(r);
+        lock (gate) rules.Add(r);
+    }
+
+    /** The same rules while recording, one message at a time: what is typed on a
+     *  keyboard collection is blanked before it is written anywhere, and the
+     *  step window counts only the rest (typing and pointer movement are not
+     *  what the official software says). See() answers 1 for a message to the
+     *  device, 2 for one from it, 0 for anything else. */
+    public class Live {
+        readonly Dictionary<int, Dev> devs = new Dictionary<int, Dev>();
+        readonly Dictionary<ulong, byte[]> setups = new Dictionary<ulong, byte[]>();
+
+        public int See(byte[] rec) {
+            int hl = BitConverter.ToUInt16(rec, 16);
+            if (hl < 27 || 16 + hl > rec.Length) return 0;
+            ulong irp = BitConverter.ToUInt64(rec, 18);
+            bool up = (rec[32] & 1) == 1;
+            int bus = BitConverter.ToUInt16(rec, 33), addr = BitConverter.ToUInt16(rec, 35);
+            int ep = rec[37], transfer = rec[38];
+            int at = 16 + hl;
+            int len = (int)Math.Min((long)BitConverter.ToUInt32(rec, 39), (long)(rec.Length - at));
+            int key = (bus << 16) | addr;
+            Dev d;
+            if (!devs.TryGetValue(key, out d)) { d = new Dev(); devs[key] = d; }
+            if (transfer == 2) {
+                int stage = hl >= 28 ? rec[43] : -1;
+                if (stage == 0 && !up && len >= 8) {
+                    byte[] s = new byte[8]; Buffer.BlockCopy(rec, at, s, 0, 8);
+                    setups[irp] = s;
+                    return s[0] == 0x21 || s[0] == 0xA1 ? 1 : 0; // a class request: SET_REPORT, GET_REPORT
+                }
+                byte[] q;
+                if (stage == 3 && up && setups.TryGetValue(irp, out q)) {
+                    setups.Remove(irp);
+                    if (q[0] == 0x80 && q[1] == 6 && q[3] == 1 && len >= 12) {
+                        string name = (rec[at + 8] | rec[at + 9] << 8).ToString("X4") + ":" + (rec[at + 10] | rec[at + 11] << 8).ToString("X4");
+                        if (d.Known && d.Name != name) { d = new Dev(); devs[key] = d; } // the address went to another device
+                        d.Known = true; d.Name = name;
+                    } else if (q[0] == 0x80 && q[1] == 6 && q[3] == 2 && len >= 9) ReadConfig(rec, at, len, d);
+                }
+                return 0;
+            }
+            if (transfer != 1 || len <= 0) return 0;
+            if ((ep & 0x80) == 0) return up ? 0 : 1;
+            if (!up) return 0;
+            if (!d.Known) return 2;
+            int iface;
+            if (!d.EpIface.TryGetValue(ep, out iface)) iface = -1;
+            Rule rule = RuleFor(d, iface, rec[at]);
+            if (rule == null) return 2;
+            if (rule.Kind == "keyboard") for (int i = at + (rule.Ids.Length > 0 ? 1 : 0); i < at + len; i++) rec[i] = 0;
+            return 0;
+        }
     }
 
     class Dev {
@@ -614,7 +669,9 @@ public static class SdPcap {
 
     static Rule RuleFor(Dev d, int iface, int firstByte) {
         bool any = false, keyboard = false;
-        foreach (Rule r in rules) {
+        Rule[] all;
+        lock (gate) all = rules.ToArray();
+        foreach (Rule r in all) {
             if (r.Device != d.Name) continue;
             if (r.Kind == "keyboard") keyboard = true;
             if (r.Iface != iface) continue;
@@ -709,6 +766,28 @@ public static class SdShot {
         return files;
     }
 
+    /** The biggest window of a program, as a picture held in memory: what the
+     *  owner is asked about before any picture is saved. Null if it has none. */
+    public static Bitmap Snapshot(uint pid) {
+        IntPtr best = IntPtr.Zero; long area = 0; RECT br = new RECT();
+        foreach (IntPtr h in WindowsOf(pid)) {
+            RECT r;
+            if (!GetWindowRect(h, out r)) continue;
+            long a = (long)(r.R - r.L) * (r.B - r.T);
+            if (a > area) { area = a; best = h; br = r; }
+        }
+        if (best == IntPtr.Zero) return null;
+        int w = br.R - br.L, hh = br.B - br.T;
+        Bitmap bmp = new Bitmap(w, hh, PixelFormat.Format24bppRgb);
+        using (Graphics g = Graphics.FromImage(bmp)) {
+            IntPtr dc = g.GetHdc();
+            bool ok = PrintWindow(best, dc, 2); // PW_RENDERFULLCONTENT
+            g.ReleaseHdc(dc);
+            if (!ok || Blank(bmp)) g.CopyFromScreen(br.L, br.T, 0, 0, new Size(w, hh));
+        }
+        return bmp;
+    }
+
     static bool Blank(Bitmap b) {
         int sx = Math.Max(1, b.Width / 8), sy = Math.Max(1, b.Height / 8);
         for (int y = sy / 2; y < b.Height; y += sy)
@@ -733,10 +812,12 @@ public static class SdShot {
 
 /** One USBPcapCMD capture. USBPcapCMD keeps a file it writes to locked, so
  *  the step window could not read it while recording: its capture comes
- *  through its standard output instead ("-o -"), is written to the file as it
- *  comes, and counted for the step window: messages to the device (class
- *  requests on its control pipe, data on its interrupt OUT pipes) and reports
- *  from it (data on its interrupt IN pipes). */
+ *  through its standard output instead ("-o -"), is written to the file one
+ *  message at a time, and counted for the step window: messages to the device
+ *  (class requests on its control pipe, data on its interrupt OUT pipes) and
+ *  reports from it (data on its interrupt IN pipes). What is typed on the
+ *  device is blanked before it is written (SdPcap.Live), so it never reaches
+ *  the disk, and it is not counted. */
 public class SdRecorder {
     public Process Process;
     FileStream file;
@@ -745,6 +826,7 @@ public class SdRecorder {
     byte[] pending = new byte[1 << 16];
     int pendingLength;
     bool header = true, lost;
+    readonly SdPcap.Live live = new SdPcap.Live();
 
     public long Sent { get { return Interlocked.Read(ref sent); } }
     public long Received { get { return Interlocked.Read(ref received); } }
@@ -776,13 +858,11 @@ public class SdRecorder {
         byte[] buffer = new byte[65536];
         try {
             int n;
-            while ((n = input.Read(buffer, 0, buffer.Length)) > 0) {
-                file.Write(buffer, 0, n);
-                file.Flush();
-                Take(buffer, n);
-            }
+            while ((n = input.Read(buffer, 0, buffer.Length)) > 0) Take(buffer, n);
         } catch (Exception) {
         } finally {
+            // A message cut short when USBPcapCMD stopped: kept as it came.
+            try { if (pendingLength > 0) file.Write(pending, 0, pendingLength); } catch (Exception) { }
             try { file.Dispose(); } catch (Exception) { }
         }
     }
@@ -793,8 +873,10 @@ public class SdRecorder {
         if (file != null) try { file.Dispose(); } catch (Exception) { }
     }
 
+    /** Splits what came into messages: each one blanked if typed, counted, then
+     *  written (the file is null for a replay). */
     void Take(byte[] data, int n) {
-        if (lost) return;
+        if (lost) { Write(data, 0, n); return; }
         if (pendingLength + n > pending.Length) {
             byte[] bigger = new byte[Math.Max(pending.Length * 2, pendingLength + n)];
             Buffer.BlockCopy(pending, 0, bigger, 0, pendingLength);
@@ -805,36 +887,34 @@ public class SdRecorder {
         int at = 0;
         if (header) {
             if (pendingLength < 24) return;
+            Write(pending, 0, 24);
             at = 24;
             header = false;
         }
         while (pendingLength - at >= 16) {
             int incl = BitConverter.ToInt32(pending, at + 8);
-            if (incl < 27 || incl > (1 << 24)) { lost = true; return; } // not a record: counting stops, the file does not
+            if (incl < 27 || incl > (1 << 24)) {
+                // Not a message: counting stops, and the rest goes to the file as it comes.
+                lost = true;
+                Write(pending, at, pendingLength - at);
+                pendingLength = 0;
+                return;
+            }
             if (pendingLength - at - 16 < incl) break;
-            Count(pending, at + 16, incl);
+            byte[] rec = new byte[16 + incl];
+            Buffer.BlockCopy(pending, at, rec, 0, rec.Length);
+            int kind = live.See(rec);
+            if (kind == 1) Interlocked.Increment(ref sent);
+            else if (kind == 2) Interlocked.Increment(ref received);
+            Write(rec, 0, rec.Length);
             at += 16 + incl;
         }
+        if (file != null) file.Flush();
         Buffer.BlockCopy(pending, at, pending, 0, pendingLength - at);
         pendingLength -= at;
     }
 
-    void Count(byte[] b, int o, int length) {
-        int hl = BitConverter.ToUInt16(b, o);
-        if (hl < 27 || hl > length) return;
-        bool up = (b[o + 16] & 1) == 1;
-        int ep = b[o + 21], transfer = b[o + 22];
-        long data = BitConverter.ToUInt32(b, o + 23);
-        if (transfer == 2) {
-            if (hl >= 28 && b[o + 27] == 0 && !up && length >= hl + 8) {
-                int type = b[o + hl];
-                if (type == 0x21 || type == 0xA1) Interlocked.Increment(ref sent);
-            }
-        } else if (transfer == 1 && data > 0) {
-            if ((ep & 0x80) != 0 && up) Interlocked.Increment(ref received);
-            else if ((ep & 0x80) == 0 && !up) Interlocked.Increment(ref sent);
-        }
-    }
+    void Write(byte[] b, int offset, int count) { if (file != null && count > 0) file.Write(b, offset, count); }
 }
 
 public class SdStep { public string Id, Kind, Group, Value, Series, Flags, Text; }
@@ -871,6 +951,8 @@ public class SdWizard : Form {
     public bool FinishedAll, Preview;
     /** The device, as the steps name it ("the R85HE"). */
     public string DeviceName = "device";
+    /** A keyboard: the footer says what becomes of what is typed on it. */
+    public bool Keyboard;
     /** Where each group's settings usually are, by group name; shown under the step. */
     public readonly Dictionary<string, string> Where = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     uint softwarePid; bool picking = true, closing;
@@ -895,7 +977,11 @@ public class SdWizard : Form {
         Accent = Color.FromArgb(25, 181, 201), AccentDark = Color.FromArgb(14, 124, 140), Off = Color.FromArgb(201, 211, 218);
     readonly Panel header = new Panel(), progress = new Panel(), content = new Panel(), footer = new Panel();
     readonly Label title = new Label(), groupLabel = new Label(), stepLabel = new Label(), body = new Label(), hint = new Label(),
-        noteLabel = new Label(), status = new Label(), whereLabel = new Label(), signal = new Label();
+        noteLabel = new Label(), whereLabel = new Label(), signal = new Label();
+    // The footer, one row each: what is recorded, what is pictured, what becomes of typing.
+    readonly Label recKey = new Label(), recVal = new Label(), picKey = new Label(), picVal = new Label(), keysKey = new Label(), keysVal = new Label();
+    // Done is the main button, except while a change is being put back.
+    bool doneIsPrimary = true;
     readonly TextBox note = new TextBox();
     readonly Button done = new Button(), skip = new Button(), skipGroup = new Button(), back = new Button(), finish = new Button();
     readonly LinkLabel change = new LinkLabel(), addNote = new LinkLabel();
@@ -935,13 +1021,15 @@ public class SdWizard : Form {
             using (SolidBrush b = new SolidBrush(Accent)) e.Graphics.FillRectangle(b, 0, 0, (int)(progress.Width * progressFraction), progress.Height);
         };
 
-        footer.Dock = DockStyle.Bottom; footer.Height = 124; footer.BackColor = Paper;
+        footer.Dock = DockStyle.Bottom; footer.Height = 112; footer.BackColor = Paper;
         footer.Paint += delegate (object o, PaintEventArgs e) { using (Pen pen = new Pen(Line)) e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0); };
-        status.Font = new Font("Segoe UI", 8.5F); status.ForeColor = Muted; status.Location = new Point(20, 12); status.Size = new Size(560, 66);
-        change.Font = new Font("Segoe UI", 9F); change.LinkColor = AccentDark; change.AutoSize = true; change.Location = new Point(20, 90);
-        change.Text = "Pictures of the wrong window? Click here.";
-        finish.Text = "Finish and save"; finish.Size = new Size(140, 32); finish.Location = new Point(440, 82); Secondary(finish);
-        footer.Controls.Add(status); footer.Controls.Add(change); footer.Controls.Add(finish);
+        recKey.Text = "RECORDING"; picKey.Text = "PICTURES"; keysKey.Text = "TYPING";
+        foreach (Label k in new Label[] { recKey, picKey, keysKey }) { k.Font = new Font("Segoe UI Semibold", 7.5F); k.ForeColor = Muted; k.AutoSize = true; footer.Controls.Add(k); }
+        foreach (Label v in new Label[] { recVal, picVal, keysVal }) { v.Font = new Font("Segoe UI", 9F); v.ForeColor = Ink; v.AutoSize = true; footer.Controls.Add(v); }
+        change.Font = new Font("Segoe UI", 9F); change.LinkColor = AccentDark; change.AutoSize = true;
+        finish.Text = "Finish and save"; finish.Size = new Size(140, 32); Secondary(finish);
+        footer.Controls.Add(change); footer.Controls.Add(finish);
+        footer.Resize += delegate { LayoutFooter(); };
 
         content.Dock = DockStyle.Fill; content.BackColor = Color.White;
         body.Font = new Font("Segoe UI", 13F); body.ForeColor = Ink; body.AutoSize = true;
@@ -956,6 +1044,9 @@ public class SdWizard : Form {
         back.Text = "\u2190  Redo previous"; back.Size = new Size(150, 28); Quiet(back);
         hint.Font = new Font("Segoe UI", 9F); hint.ForeColor = Muted; hint.AutoSize = true;
         foreach (Control c in new Control[] { body, whereLabel, noteLabel, note, addNote, signal, done, skip, skipGroup, back, hint }) content.Controls.Add(c);
+        // Laid out again whenever the step area changes size: the first step was
+        // laid out before its width was known, in a narrow column.
+        content.Resize += delegate { Relayout(); };
 
         // Docked from the last added: the header on top, the bar under it, the footer, then the rest.
         Controls.Add(content); Controls.Add(footer); Controls.Add(progress); Controls.Add(header);
@@ -1005,9 +1096,56 @@ public class SdWizard : Form {
         y = done.Bottom + S(8);
         back.Location = new Point(x - S(4), y); y = back.Bottom + S(6);
         hint.MaximumSize = new Size(w, 0); hint.Location = new Point(x, y);
+        // A long step makes the window taller (its bottom edge stays put), so
+        // nothing ends up under the footer.
+        // Only once the step area has its real width: laid out narrower, the text
+        // runs long and would make the window grow for nothing.
+        int need = hint.Bottom + S(16) - content.ClientSize.Height;
+        if (need > 0 && Visible && content.Width >= ClientSize.Width - 2) {
+            Rectangle wa = Screen.FromControl(this).WorkingArea;
+            int bottom = Bottom, h = Math.Min(Height + need, wa.Height);
+            if (h > Height) { Height = h; Top = Math.Max(wa.Top, bottom - h); }
+        }
     }
 
-    void SetDone(bool on) { done.Enabled = on; done.BackColor = on ? AccentDark : Off; }
+    /** The footer: a label on the left and what it says beside it, one row
+     *  each, Finish on the right. Taller when a row takes two lines. */
+    void LayoutFooter() {
+        int x = S(20), vx = S(104), right = footer.ClientSize.Width - S(20);
+        int w = right - finish.Width - S(16) - vx, y = S(14);
+        foreach (Label[] row in new Label[][] { new Label[] { recKey, recVal }, new Label[] { picKey, picVal }, new Label[] { keysKey, keysVal } }) {
+            bool on = row[1].Text.Length > 0;
+            row[0].Visible = on; row[1].Visible = on;
+            if (!on) continue;
+            row[1].MaximumSize = new Size(w, 0);
+            row[1].Location = new Point(vx, y);
+            row[0].Location = new Point(x, y + S(2));
+            y = row[1].Bottom;
+            if (row[1] == picVal && change.Visible) {
+                // The link after the text when it fits, under it when not.
+                if (picVal.Right + S(8) + change.Width <= vx + w) change.Location = new Point(picVal.Right + S(6), picVal.Top);
+                else { change.Location = new Point(vx, y + S(2)); y = change.Bottom; }
+            }
+            y += S(7);
+        }
+        int h = Math.Max(y + S(7), finish.Height + S(28));
+        if (Math.Abs(footer.Height - h) > S(2)) footer.Height = h;
+        finish.Location = new Point(right - finish.Width, (footer.ClientSize.Height - finish.Height) / 2);
+    }
+
+    void SetDone(bool on) {
+        done.Enabled = on;
+        if (doneIsPrimary) done.BackColor = on ? AccentDark : Off;
+        else { done.BackColor = Color.White; done.ForeColor = on ? Ink : Off; }
+    }
+
+    /** Which of Done and the second button is the main one, the one Enter presses. */
+    void SetMain(bool doneMain) {
+        doneIsPrimary = doneMain;
+        if (doneMain) { Primary(done); Secondary(skip); AcceptButton = done; }
+        else { Primary(skip); Secondary(done); AcceptButton = skip; }
+        SetDone(done.Enabled);
+    }
 
     void SetSignal(Color back, Color fore, string text) { signal.BackColor = back; signal.ForeColor = fore; signal.Text = text; }
 
@@ -1018,7 +1156,7 @@ public class SdWizard : Form {
 
     static void Secondary(Button b) {
         b.FlatStyle = FlatStyle.Flat; b.FlatAppearance.BorderSize = 1; b.FlatAppearance.BorderColor = Line; b.UseVisualStyleBackColor = false;
-        b.BackColor = Color.White; b.ForeColor = Ink; b.Cursor = Cursors.Hand;
+        b.BackColor = Color.White; b.ForeColor = Ink; b.Font = new Font("Segoe UI", 10F); b.Cursor = Cursors.Hand;
     }
 
     static void Quiet(Button b) {
@@ -1040,6 +1178,7 @@ public class SdWizard : Form {
         foreach (SdStepResult r in Results) if (r.Id == s.Id && r.Status == "done") tries++;
         attempt = tries; stepStart = DateTime.UtcNow; note.Text = "";
         stepSent = SentAll; stepReceived = ReceivedAll;
+        SetSignal(Color.White, Muted, "");
         bool rep = Has(s, "repeat");
         title.Text = "Recording the " + DeviceName;
         groupLabel.Text = s.Group.ToUpperInvariant();
@@ -1071,6 +1210,8 @@ public class SdWizard : Form {
         asking = Has(s, "ask") || rep;
         noteShown = false;
         noteLabel.Text = rep ? "Its name, and the value you set if any:" : "Type the value it shows now:";
+        // Putting the first try back comes first: its button is the one that stands out.
+        SetMain(!puttingBack);
         SetDone(autoLeft == 0 && !asking);
         skip.Enabled = autoLeft == 0;
         if (autoLeft > 0) body.Text = s.Text + "\n" + autoLeft + " s";
@@ -1078,7 +1219,7 @@ public class SdWizard : Form {
             try { Directory.CreateDirectory(attachDir); Process.Start("explorer.exe", "\"" + attachDir + "\""); } catch (Exception) { }
         }
         Relayout();
-        if (asking) note.Focus(); else if (done.Enabled) done.Focus();
+        if (asking) note.Focus(); else if (puttingBack) skip.Focus(); else if (done.Enabled) done.Focus();
         UpdateStatus();
     }
 
@@ -1144,8 +1285,10 @@ public class SdWizard : Form {
             puttingBack = false;
             stepStart = DateTime.UtcNow; stepSent = SentAll; stepReceived = ReceivedAll;
             hint.Text = "Now do the step again, then click Done.";
-            Relayout();
             skip.Text = "Not in my software";
+            SetMain(true);
+            Relayout();
+            if (done.Enabled) done.Focus();
             UpdateStatus();
             return;
         }
@@ -1234,27 +1377,56 @@ public class SdWizard : Form {
         } catch (Exception) { }
     }
 
-    /** Whether the window last clicked is the official software: asked, and
-     *  only then pictured. */
+    /** Whether the window last clicked is the official software: asked with a
+     *  picture of it, and only then pictured at each step. */
     bool ConfirmCandidate() {
-        DialogResult yes = MessageBox.Show(this,
-            "Pictures will be taken of this window at each step, and of nothing else:\n\n" +
-            (candidateTitle.Length > 0 ? candidateTitle : "(a window without a title)") + "   (" + candidateName + ")\n\n" +
-            "Is it the official software for your device?",
-            Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-        if (yes != DialogResult.Yes) { candidatePid = 0; return false; }
+        if (!AskIsSoftware(candidatePid, candidateName, candidateTitle)) { candidatePid = 0; return false; }
         softwarePid = candidatePid; SoftwareName = candidateName; SoftwareTitle = candidateTitle;
         SoftwarePath = ImagePath(candidatePid); picking = false;
         UpdateStatus();
         return true;
     }
 
-    /** Pictures of another window: the owner clicks on it, then says it is the one. */
+    /** The question, with the picture that would be taken: a window's name says
+     *  little. The picture is only shown here, never saved. */
+    bool AskIsSoftware(uint pid, string name, string windowTitle) {
+        Bitmap shot = null;
+        try { shot = SdShot.Snapshot(pid); } catch (Exception) { }
+        using (Form f = new Form()) {
+            f.AutoScaleDimensions = new SizeF(96F, 96F); f.AutoScaleMode = AutoScaleMode.Dpi;
+            f.Text = Text; f.Font = Font; f.BackColor = Color.White;
+            f.FormBorderStyle = FormBorderStyle.FixedDialog; f.MinimizeBox = false; f.MaximizeBox = false;
+            f.ShowInTaskbar = false; f.TopMost = true; f.StartPosition = FormStartPosition.CenterScreen;
+            f.ClientSize = new Size(560, 480);
+            Label q = new Label(); q.Text = "Is this the official software for your " + DeviceName + "?";
+            q.Font = new Font("Segoe UI Semibold", 12F); q.ForeColor = Ink; q.AutoSize = true; q.Location = new Point(20, 16);
+            PictureBox pic = new PictureBox(); pic.Location = new Point(20, 52); pic.Size = new Size(520, 300);
+            pic.SizeMode = PictureBoxSizeMode.Zoom; pic.BackColor = Paper; pic.Image = shot;
+            Label who = new Label();
+            who.Text = windowTitle.Length == 0 ? name + "   \u00b7   a window without a title"
+                : windowTitle == name ? name : windowTitle + "   \u00b7   " + name;
+            who.ForeColor = Muted; who.AutoEllipsis = true; who.Size = new Size(520, 20); who.Location = new Point(20, 360);
+            Label what = new Label(); what.Text = "If it is, a picture of this window is taken at each step, and of nothing else.";
+            what.ForeColor = Ink; what.Size = new Size(520, 22); what.Location = new Point(20, 384);
+            Button yes = new Button(); yes.Text = "Yes, it is"; Primary(yes); yes.Size = new Size(130, 36); yes.Location = new Point(20, 424);
+            yes.DialogResult = DialogResult.Yes;
+            Button no = new Button(); no.Text = "No, I will click another"; Secondary(no); no.Size = new Size(200, 36); no.Location = new Point(160, 424);
+            no.DialogResult = DialogResult.No;
+            f.Controls.AddRange(new Control[] { q, pic, who, what, yes, no });
+            f.AcceptButton = yes; f.CancelButton = no;
+            try { return f.ShowDialog(this) == DialogResult.Yes; } finally { if (shot != null) shot.Dispose(); }
+        }
+    }
+
+    /** Pictures of another window: the owner clicks on it, sees it, and says it
+     *  is the one. Until then the pictures go on as they were. */
     void Repick() {
-        softwarePid = 0; SoftwareName = ""; candidatePid = 0; picking = true;
+        candidatePid = 0; picking = true;
         UpdateStatus();
         MessageBox.Show(this, "Click once on the official software's window, then click OK here.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-        if (candidatePid != 0) ConfirmCandidate();
+        if (candidatePid != 0 && candidatePid != softwarePid) ConfirmCandidate();
+        candidatePid = 0;
+        picking = softwarePid == 0 && index < steps.Length && Has(steps[index], "window");
         UpdateStatus();
     }
 
@@ -1289,8 +1461,26 @@ public class SdWizard : Form {
     /** What is being recorded, as it is: so the owner knows a step reached the
      *  device, and what is not recorded at all. */
     void UpdateStatus() {
-        if (Preview) { status.Text = "Preview: nothing is recorded."; change.Visible = false; return; }
-        long sent = SentAll - stepSent, got = ReceivedAll - stepReceived;
+        long sent = SentAll - stepSent;
+        recVal.Text = Preview ? "Nothing: this is a preview."
+            : "Only the " + DeviceName + "'s USB messages   \u00b7   " + (SentAll == 0 ? "none sent to it yet" : SentAll + " sent to it")
+              + (lastNew != null ? "   \u00b7   also " + lastNew + ", plugged in just now" : "");
+        bool windowStep = index < steps.Length && Has(steps[index], "window");
+        if (softwarePid != 0) {
+            picVal.Text = SoftwareName + " only   \u00b7   " + shotCount + " so far";
+            change.Text = "Wrong window?"; change.Visible = true;
+        } else if (picking) {
+            picVal.Text = candidatePid != 0 && windowStep
+                ? candidateName + "? Done shows you its picture first."
+                : "None yet: click once on the official software's window.";
+            change.Visible = false;
+        } else {
+            picVal.Text = "None";
+            change.Text = "Pick a window"; change.Visible = !Preview;
+        }
+        keysVal.Text = Keyboard ? "What you type on the " + DeviceName + " is blanked as soon as it is recorded, so it is never saved." : "";
+        LayoutFooter();
+        if (Preview) return;
         // Whether the step reached the device: more than the software sends on its own.
         if (index < steps.Length && Changes(steps[index])) {
             double secs = (DateTime.UtcNow - stepStart).TotalSeconds;
@@ -1304,16 +1494,6 @@ public class SdWizard : Form {
             else
                 SetSignal(Color.FromArgb(241, 243, 245), Muted, "Waiting for the software to send this to the " + DeviceName + "...");
         } else SetSignal(Color.White, Muted, "");
-        string text = "Recorded this step: " + sent + " message" + (sent == 1 ? "" : "s") + " to the " + DeviceName + ", " + got + " from it." +
-            "   In all: " + SentAll + " to it, " + ReceivedAll + " from it.";
-        text += "\nOnly the " + DeviceName + "'s USB traffic is recorded, and what you type on it is blanked when saved." +
-            " Other devices, other windows and what you type elsewhere are not recorded.";
-        if (softwarePid != 0) text += "\nPictures of " + SoftwareName + ", and of nothing else: " + shotCount + ".";
-        else if (candidatePid != 0) text += "\nOfficial software: " + candidateName + "? Done asks you to confirm it.";
-        else if (picking) text += "\nClick once on the official software's window.";
-        if (lastNew != null) text += "\nNew connection seen: " + lastNew;
-        status.Text = text;
-        change.Visible = softwarePid != 0;
     }
 
     List<string> Shoot(SdStep s, int attemptNo) {
@@ -1799,7 +1979,7 @@ function OfferRecording($report, [string[]]$readable, [string]$reportFile, [stri
     if (-not $asked) {
         Say '  Next, the recording: a small window walks you through the official software, one setting' White
         Say '  at a time, while USBPcap (a free USB capture driver) records what goes over the cable.' White
-        Say '  About 30 minutes. Only this device''s traffic is kept, what you type on it is blanked out,' White
+        Say '  About 30 minutes. Only this device''s traffic is kept, what you type on it is blanked as it is recorded,' White
         Say '  and nothing is sent anywhere.' DarkGray
         if ($spoken) { Say '  Shark Deck already speaks this family''s language: a recording shows what is new.' DarkGray }
         $a = Read-Host '  Record now? [Y/n]'
@@ -2181,6 +2361,20 @@ function PresentPaths([string[]]$devices) {
     @([SdHid]::Paths() | Where-Object { $p = $_; @($devices | Where-Object { $p -match ('vid_{0}&pid_{1}' -f ($_ -split ':')) }).Count -gt 0 })
 }
 
+# What to keep private, from Windows' description of each interface: what is
+# typed on a keyboard collection is blanked, a mouse collection's movement cut
+# to a sample. Set before recording, so typing is blanked as it is recorded.
+function SetPrivacyRules($interfaces) {
+    foreach ($i in @($interfaces)) {
+        if (-not $i) { continue }
+        $mi = if ($i.Path -match 'mi_([0-9a-f]{2})') { [Convert]::ToInt32($Matches[1], 16) } else { 0 }
+        $ids = [int[]]@($i.InputIds | Where-Object { $_ -ne 0 })
+        $device = '{0:X4}:{1:X4}' -f $i.Vid, $i.Pid
+        if ($i.UsagePage -eq 1 -and $i.Usage -eq 6) { [SdPcap]::AddRule($device, $mi, 'keyboard', $ids) }
+        elseif ($i.UsagePage -eq 1 -and $i.Usage -eq 2) { [SdPcap]::AddRule($device, $mi, 'mouse', $ids) }
+    }
+}
+
 function HidePrivatePath([string]$path) { if (-not $path) { return $path }; $path -replace '^[A-Za-z]:\\Users\\[^\\]+', '%USERPROFILE%' }
 
 function Pack([string]$dir, [string]$zip) {
@@ -2268,6 +2462,8 @@ function RecordingPhase([string]$token) {
     $pcaps = New-Object System.Collections.Generic.List[string]
     $recorders = New-Object System.Collections.Generic.List[SdRecorder]
     $plugged = @()
+    [SdPcap]::ClearRules()
+    SetPrivacyRules @(PresentPaths $targets.ToArray() | ForEach-Object { [SdHid]::Describe($_) })
     try {
         # One recorder per USB controller. Each keeps what is plugged in from now
         # on; the device's own controller also keeps the device, by its address,
@@ -2297,6 +2493,7 @@ function RecordingPhase([string]$token) {
             if ($paths.Count -eq 0) { Say '  Nothing was plugged in. Run the tool again when you are ready.' Red; [void](Read-Host '  Press Enter to close'); return }
             $plugged = @($paths | ForEach-Object { [SdHid]::Describe($_) })
             foreach ($i in $plugged) { $n = '{0:X4}:{1:X4}' -f $i.Vid, $i.Pid; if (-not $targets.Contains($n)) { $targets.Add($n) } }
+            SetPrivacyRules $plugged
             Start-Sleep -Seconds 3
         } else {
             Start-Sleep -Seconds 1
@@ -2321,6 +2518,7 @@ function RecordingPhase([string]$token) {
         $vids = [int[]]@($targets | ForEach-Object { [Convert]::ToInt32(($_ -split ':')[0], 16) } | Select-Object -Unique)
         $wizard = [SdWizard]::new((StepList $kind), (Join-Path $recDir 'screens'), (Join-Path $recDir 'attach'), $pcaps.ToArray(), $vids, [string[]]@([SdHid]::Paths()))
         $wizard.DeviceName = $(if ($state.report.model) { $state.report.model } elseif ($first.product) { $first.product } else { 'device' })
+        $wizard.Keyboard = $kind -eq 'keyboard'
         $wizard.Recorders = $recorders.ToArray()
         $where = WhereFor $kind
         foreach ($g in $where.Keys) { $wizard.Where[$g] = $where[$g] }
@@ -2336,20 +2534,15 @@ function RecordingPhase([string]$token) {
 
     Say ''
     Say '  Recording stopped. Keeping only your device''s part of it...' Cyan
-    # Keep it private: what is typed on a keyboard collection is blanked, a mouse
-    # collection's movement cut to a sample. Windows says which is which.
+    # Keep it private, once more with everything now known (a connection
+    # plugged in during the recording included): typing blanked, and what was
+    # blanked while recording stays blank; mouse movement cut to a sample.
     $described = New-Object System.Collections.Generic.List[SdHidInterface]
     foreach ($p in [SdHid]::Paths()) { $i = [SdHid]::Describe($p); if ($targets.Contains(('{0:X4}:{1:X4}' -f $i.Vid, $i.Pid))) { $described.Add($i) } }
     foreach ($i in $wizard.NewInterfaces) { $described.Add($i); $n = '{0:X4}:{1:X4}' -f $i.Vid, $i.Pid; if (-not $targets.Contains($n)) { $targets.Add($n) } }
     foreach ($i in $plugged) { $described.Add($i) }
     [SdPcap]::ClearRules()
-    foreach ($i in $described) {
-        $mi = if ($i.Path -match 'mi_([0-9a-f]{2})') { [Convert]::ToInt32($Matches[1], 16) } else { 0 }
-        $ids = [int[]]@($i.InputIds | Where-Object { $_ -ne 0 })
-        $device = '{0:X4}:{1:X4}' -f $i.Vid, $i.Pid
-        if ($i.UsagePage -eq 1 -and $i.Usage -eq 6) { [SdPcap]::AddRule($device, $mi, 'keyboard', $ids) }
-        elseif ($i.UsagePage -eq 1 -and $i.Usage -eq 2) { [SdPcap]::AddRule($device, $mi, 'mouse', $ids) }
-    }
+    SetPrivacyRules $described
     $filtered = [SdPcap]::Filter($pcaps.ToArray(), (Join-Path $recDir 'capture.pcap'), $targets.ToArray())
     Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
 
