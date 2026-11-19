@@ -17,6 +17,7 @@
     "start": "electron-vite preview",
     "dev:web": "vite --config vite.web.config.ts",
     "tours": "node scripts/tours/record.mjs",
+    "ci:retry": "node scripts/ci-retry.mjs",
     "build:web": "vite build --config vite.web.config.ts",
     "preview:web": "vite preview --config vite.web.config.ts",
     "pack": "node scripts/kill-running-app.mjs && electron-vite build && electron-builder --dir && node scripts/organize-dist.mjs",

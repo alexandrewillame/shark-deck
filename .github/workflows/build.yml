@@ -36,9 +36,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-15, not macos-latest: since late October 2026 the macos-latest
-        # (macOS 26) jobs often wait 15 minutes for a machine and are cancelled.
-        os: [windows-latest, macos-15, ubuntu-latest]
+        # GitHub sometimes hands out no macOS machine at all (macos-15 and
+        # macos-latest alike): the job is cancelled after 15 minutes with no
+        # step run. `npm run ci:retry` re-runs such a run until it gets one.
+        os: [windows-latest, macos-latest, ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
     # A packaging run takes ~5-10 minutes; without a limit a hung one would
