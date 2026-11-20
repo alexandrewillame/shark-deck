@@ -1209,7 +1209,8 @@ public class SdWizard : Form {
         autoLeft = Has(s, "auto15") ? 15 : 0;
         asking = Has(s, "ask") || rep;
         noteShown = false;
-        noteLabel.Text = rep ? "Its name, and the value you set if any:" : "Type the value it shows now:";
+        noteLabel.Text = Has(s, "describe") ? "What you did, and what you expected:"
+            : rep ? "Its name, and the value you set if any:" : "Type the value it shows now:";
         // Putting the first try back comes first: its button is the one that stands out.
         SetMain(!puttingBack);
         SetDone(autoLeft == 0 && !asking);
@@ -1776,22 +1777,22 @@ sleep.back|both|Power|||undo|Set the sleep time back to what you use.
 deep.min|both|Power|min|deep|ask|If there is a second, deeper sleep time: set it to its shortest. Type the value it shows now.
 deep.max|both|Power|max|deep|ask|Set the deep sleep time to its longest. Type the value it shows now.
 deep.back|both|Power|||undo|Set the deep sleep time back to what you use.
-btn.b4.middle|mouse|Buttons|Middle click|btn.b4||Set the side button "Back" (button 4) to Middle click.
-btn.b4.right|mouse|Buttons|Right click|btn.b4||Set button 4 to Right click.
-btn.b4.key-a|mouse|Buttons|key A|btn.b4||Set button 4 to the keyboard key A.
-btn.b4.ctrl-c|mouse|Buttons|Ctrl+C|btn.b4||Set button 4 to the shortcut Ctrl + C.
-btn.b4.vol-up|mouse|Buttons|Volume up|btn.b4||Set button 4 to Volume up.
-btn.b4.vol-down|mouse|Buttons|Volume down|btn.b4||Set button 4 to Volume down.
-btn.b4.play|mouse|Buttons|Play/Pause|btn.b4||Set button 4 to Play / Pause.
-btn.b4.next|mouse|Buttons|Next track|btn.b4||Set button 4 to Next track.
-btn.b4.dpi-up|mouse|Buttons|DPI up|btn.b4||Set button 4 to DPI up (or DPI cycle).
-btn.b4.dpi-down|mouse|Buttons|DPI down|btn.b4||Set button 4 to DPI down, if offered.
-btn.b4.scroll-up|mouse|Buttons|Scroll up|btn.b4||Set button 4 to Scroll up, if offered.
-btn.b4.fire|mouse|Buttons|Fire|btn.b4|ask|Set button 4 to fire key (rapid fire), if offered. Type its settings as the software shows them (clicks, speed).
-btn.b4.off|mouse|Buttons|Disabled|btn.b4||Set button 4 to Disabled (off).
-btn.b4.default|mouse|Buttons|Back|btn.b4|undo|Set button 4 back to its default (Back).
-btn.b5.key-b|mouse|Buttons|key B|||Set the side button "Forward" (button 5) to the keyboard key B.
-btn.b5.default|mouse|Buttons|Forward||undo|Set button 5 back to its default (Forward).
+btn.b4.middle|mouse|Buttons|Middle click|btn.b4||Set button 4, the side button nearer the FRONT of the mouse ("Forward"), to Middle click.
+btn.b4.right|mouse|Buttons|Right click|btn.b4||Set button 4 (front side button) to Right click.
+btn.b4.key-a|mouse|Buttons|key A|btn.b4||Set button 4 (front side button) to the keyboard key A.
+btn.b4.ctrl-c|mouse|Buttons|Ctrl+C|btn.b4||Set button 4 (front side button) to the shortcut Ctrl + C.
+btn.b4.vol-up|mouse|Buttons|Volume up|btn.b4||Set button 4 (front side button) to Volume up.
+btn.b4.vol-down|mouse|Buttons|Volume down|btn.b4||Set button 4 (front side button) to Volume down.
+btn.b4.play|mouse|Buttons|Play/Pause|btn.b4||Set button 4 (front side button) to Play / Pause.
+btn.b4.next|mouse|Buttons|Next track|btn.b4||Set button 4 (front side button) to Next track.
+btn.b4.dpi-up|mouse|Buttons|DPI up|btn.b4||Set button 4 (front side button) to DPI up (or DPI cycle).
+btn.b4.dpi-down|mouse|Buttons|DPI down|btn.b4||Set button 4 (front side button) to DPI down, if offered.
+btn.b4.scroll-up|mouse|Buttons|Scroll up|btn.b4||Set button 4 (front side button) to Scroll up, if offered.
+btn.b4.fire|mouse|Buttons|Fire|btn.b4|ask|Set button 4 (front side button) to fire key (rapid fire), if offered. Type its settings as the software shows them (clicks, speed).
+btn.b4.off|mouse|Buttons|Disabled|btn.b4||Set button 4 (front side button) to Disabled (off).
+btn.b4.default|mouse|Buttons|Forward|btn.b4|undo|Set button 4 (front side button) back to its default (Forward).
+btn.b5.key-b|mouse|Buttons|key B|||Set button 5, the side button nearer the REAR of the mouse ("Back"), to the keyboard key B.
+btn.b5.default|mouse|Buttons|Back||undo|Set button 5 (rear side button) to its default again (Back).
 btn.mid.key-c|mouse|Buttons|key C|||Set the middle button (wheel click) to the keyboard key C.
 btn.mid.default|mouse|Buttons|Middle click||undo|Set the middle button back to Middle click.
 btn.reset|mouse|Buttons||||Optional, only if you do not mind losing your own button settings: restore all buttons to their defaults at once.
@@ -1917,9 +1918,17 @@ function WhereFor([string]$kind) {
     $map
 }
 
-function StepList([string]$kind) {
+# A short recording of one thing the owner chooses, described in the notes:
+# a setting Shark Deck lacks, or one that does not work in it.
+$CustomStepTable = @'
+start.open|both|Start|||window|Open the official software for your device and wait until it shows the device. Click once on its window, then click Done here.
+custom.each|both|Your recording|||repeat,describe|Do one thing in the official software: the setting Shark Deck should learn, or the one that does not work in it. Write in the note what you did (and what you expected), click Next one, then do the next thing. When you are done, click Finished this list.
+end.close|both|Finish||||Close the official software.
+'@
+
+function StepList([string]$kind, [string]$table = $StepTable) {
     $list = New-Object System.Collections.Generic.List[SdStep]
-    foreach ($line in ($StepTable -split "`r?`n")) {
+    foreach ($line in ($table -split "`r?`n")) {
         $f = $line -split '\|', 7
         if ($f.Count -lt 7) { continue }
         if ($f[1] -ne 'both' -and $f[1] -ne $kind) { continue }
@@ -1984,8 +1993,14 @@ function OfferRecording($report, [string[]]$readable, [string]$reportFile, [stri
         if ($spoken) { Say '  Shark Deck already speaks this family''s language: a recording shows what is new.' DarkGray }
         $a = Read-Host '  Record now? [Y/n]'
         if ($a -match '^\s*[nN]') { return 'declined' }
-    }
-    $state = [ordered]@{ report = $report; readable = $readable; reportFile = $reportFile; outDir = $outDir }
+        Say ''
+        Say '  What to record:' White
+        Say '    1  Everything, one setting at a time (about 30 minutes): for a device Shark Deck does not know yet.' White
+        Say '    2  Something specific (a few minutes): a setting missing from Shark Deck, or one that does not work.' White
+        Say '       You do it in the official software and write in a note what you did.' DarkGray
+        $custom = (Read-Host '  1 or 2 [1]') -match '^\s*2'
+    } else { $custom = $false }
+    $state = [ordered]@{ report = $report; readable = $readable; reportFile = $reportFile; outDir = $outDir; custom = $custom }
     # Missing, or only half there: its files without its driver (after an uninstall, say).
     if (-not (FindUsbPcap) -or (UsbPcapDriver) -eq 'missing') {
         $installed = InstallUsbPcap $state
@@ -2516,7 +2531,8 @@ function RecordingPhase([string]$token) {
         Say '  It stays on top of the others. Keep this window open until the end.' DarkGray
         [System.Windows.Forms.Application]::EnableVisualStyles()
         $vids = [int[]]@($targets | ForEach-Object { [Convert]::ToInt32(($_ -split ':')[0], 16) } | Select-Object -Unique)
-        $wizard = [SdWizard]::new((StepList $kind), (Join-Path $recDir 'screens'), (Join-Path $recDir 'attach'), $pcaps.ToArray(), $vids, [string[]]@([SdHid]::Paths()))
+        $table = if ($state.custom) { $CustomStepTable } else { $StepTable }
+        $wizard = [SdWizard]::new((StepList $kind $table), (Join-Path $recDir 'screens'), (Join-Path $recDir 'attach'), $pcaps.ToArray(), $vids, [string[]]@([SdHid]::Paths()))
         $wizard.DeviceName = $(if ($state.report.model) { $state.report.model } elseif ($first.product) { $first.product } else { 'device' })
         $wizard.Keyboard = $kind -eq 'keyboard'
         $wizard.Recorders = $recorders.ToArray()
