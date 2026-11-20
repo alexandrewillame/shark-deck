@@ -42,9 +42,9 @@ That report is what we add devices from.
 
 [alexandrewillame.github.io/shark-deck](https://alexandrewillame.github.io/shark-deck/)
 is the same app with nothing to install. Open it in Chrome, Edge or Opera on a
-computer, click **Connect a device** and pick your mouse or keyboard. Per-game
-switching and the tray icon need the desktop app, and Firefox and Safari cannot
-reach USB devices ([details](docs/platform-support.md#browser-edition-webhid)).
+computer, click **Connect a device** and pick your mouse or keyboard. Limitations: 
+Per-game switching and the tray icon need the desktop app, and Firefox and Safari 
+cannot reach USB devices ([details](docs/platform-support.md#browser-edition-webhid)).
 
 ## Walkthrough
 
