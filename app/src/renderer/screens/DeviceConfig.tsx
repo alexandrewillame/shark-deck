@@ -23,6 +23,7 @@ import { confirmLeave } from '../state/leaveGuard';
 
 import { sd } from '../state/bridge';
 import { BackupWaiverBanner } from '../components/BackupWaiverBanner';
+import { SupportInvite } from '../components/SupportInvite';
 
 /**
  * The capability-driven Profile / Buttons / Keys / Actuation / Macros /
@@ -267,6 +268,9 @@ export function DeviceConfig({ device }: { device: LiveDevice }) {
                 </div>
               )}
               <BackupWaiverBanner device={device} />
+              {active !== 'device' && (
+                <SupportInvite device={device} variant="strip" onOpen={() => goToTab('device')} />
+              )}
               {device.online && failedCount > 0 && (
                 <div className="readfail-banner">
                   <span>{t('cfg.readFailed')}</span>

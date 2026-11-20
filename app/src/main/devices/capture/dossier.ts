@@ -35,7 +35,10 @@ export interface RecordingStep {
 export interface Recording {
   version: number;
   kind: string;
-  usbpcap: string;
+  /** USBPcap's version (Windows); null from the Linux tool, which says `capture`. */
+  usbpcap: string | null;
+  /** How the Linux tool recorded: usbmon, the kernel, tcpdump's version. */
+  capture?: string;
   started: string;
   ended: string;
   finishedAllSteps: boolean;
@@ -298,7 +301,7 @@ export function dossier(input: DossierInput): string {
 
   out.push(`# Recording: ${input.model || 'unnamed device'} (${rec.kind})`, '');
   out.push(
-    `Recorded ${rec.started} to ${rec.ended} with USBPcap ${rec.usbpcap}. ` +
+    `Recorded ${rec.started} to ${rec.ended} with ${rec.capture ?? `USBPcap ${rec.usbpcap}`}. ` +
       `${steps.filter((s) => s.status === 'done').length} steps done, ` +
       `${steps.filter((s) => s.status === 'not-offered').length} not in the software, ` +
       `${steps.filter((s) => s.status === 'skipped').length} skipped` +
@@ -309,8 +312,14 @@ export function dossier(input: DossierInput): string {
       `Official software: ${sw.process}${sw.product ? `: ${sw.product} ${sw.version ?? ''}` : ''}` +
         `${sw.company ? `, ${sw.company}` : ''}${sw.file ? ` (${sw.folder ?? ''}\\${sw.file}${sw.sha256 ? `, SHA-256 ${sw.sha256}` : ''})` : ''}.`,
     );
-  } else out.push('No picture of the official software: its window was never picked.');
-  if (rec.inPlace)
+  } else if (rec.capture) out.push('The owner did not name the official software.');
+  else out.push('No picture of the official software: its window was never picked.');
+  if (rec.inPlace && rec.capture)
+    out.push(
+      'Recorded where it was plugged in, without unplugging it: the tool wrote in its device, ' +
+        'configuration and report descriptors as Linux holds them, but not its names.',
+    );
+  else if (rec.inPlace)
     out.push(
       'Recorded where it was plugged in, without unplugging it: USBPcap wrote in its device and ' +
         'configuration descriptors, but its report descriptors and names are not in the capture. ' +

@@ -3,7 +3,7 @@ import { Driver } from './base';
 import { CompxMouse8K } from './compx-mouse-8k';
 import { CompxKeyboard } from './compx-keyboard';
 import { CompxHeKeyboard } from './compx-he-keyboard';
-import { HubIdentify, NoIo, RoyuanIdentify } from './identify';
+import { BekenIdentify, HubIdentify, NoIo, RoyuanIdentify } from './identify';
 import { Yc500Keyboard } from './yc500-keyboard';
 import { GearHubMouse } from './gearhub-mouse';
 import { JxcMouse } from './jxc-mouse';
@@ -32,6 +32,8 @@ export const DRIVERS: Readonly<Record<string, DriverCtor>> = {
   // a read-only card sends nothing at all (see drivers/identify.ts).
   'royuan-identify': RoyuanIdentify,
   'hub-identify': HubIdentify,
+  // The Beken receiver several brands share: listens for the mouse's model byte.
+  'beken-identify': BekenIdentify,
   'no-io': NoIo,
 };
 

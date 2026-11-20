@@ -184,8 +184,26 @@ describe('the Beken mice', () => {
     expect(resolveDescriptor(0x1d57, 0x2126)?.driver).toBe('beken-8k-mouse-cable');
   });
 
-  it('leave the receiver several brands share alone', () => {
-    expect(resolveDescriptor(0x1d57, 0xfa60)).toBeNull();
+  it('wait, on the receiver several brands share, for the mouse to say what it is', () => {
+    // Pending, on the notification collection, with a driver that only listens.
+    expect(resolveDescriptor(0x1d57, 0xfa60)).toMatchObject({
+      identity: 'pending',
+      driver: 'beken-identify',
+      usagePage: 0x000a,
+      capabilities: [],
+    });
+    const endpoint = { vid: 0x1d57, pid: 0xfa60 };
+    expect(resolveIdentity(endpoint, { family: 'beken', model: 0x55 })).toMatchObject({
+      displayName: 'Attack Shark X11',
+      driver: 'beken-x11-mouse',
+      usagePage: 0x000b,
+    });
+    // Another brand's mouse, or a model with no driver: a card, nothing written.
+    expect(resolveIdentity(endpoint, { family: 'beken', model: 0x33 }).driver).toBe('no-io');
+    expect(resolveIdentity(endpoint, { family: 'beken', model: 0x07 })).toMatchObject({
+      displayName: 'Attack Shark X11 SE',
+      identity: 'unsupported',
+    });
   });
 });
 

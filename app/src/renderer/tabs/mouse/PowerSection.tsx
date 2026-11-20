@@ -35,6 +35,13 @@ export function PowerSection({ device }: TabProps) {
     setData(next);
     (opts?.drag ? queue : commit)(t('power.title'), () => sd.setPower(device.id, next));
   };
+  // A mouse with a second, deeper sleep (its radio off): the Beken mice.
+  const deepPresets = device.ui.deepSleepPresets ?? [];
+  const applyDeep = (sec: number) => {
+    const next: PowerSettings = { ...d, deepSleepSec: sec };
+    setData(next);
+    commit(t('power.title'), () => sd.setPower(device.id, next));
+  };
   return (
     // The explanation sits on the heading's info dot with its picture, as on
     // PollRateSection — `power.sub` was already that dot's text, it just had
@@ -59,6 +66,24 @@ export function PowerSection({ device }: TabProps) {
           </button>
         ))}
       </div>
+      {deepPresets.length > 0 && (
+        <>
+          <div className="label" style={{ margin: '14px 0 8px' }}>
+            {t('power.deepAfter')}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {deepPresets.map((p) => (
+              <button
+                key={p}
+                className={`btn ${p === d.deepSleepSec ? 'primary' : ''}`}
+                onClick={() => applyDeep(p)}
+              >
+                {fmtSecs(p, t('power.never'))}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </Panel>
   );
 }

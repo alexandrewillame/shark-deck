@@ -34,6 +34,7 @@ const { bekenMouseRoster } = await import('../../src/main/devices/catalog/beken-
 const NEVER_WRITES: Record<string, string> = {
   'royuan-identify': 'sends only the identify command until the device says what it is',
   'hub-identify': 'sends only the identify command until the device says what it is',
+  'beken-identify': 'sends nothing: listens for the model byte the mouse sends unasked',
   'no-io': 'a read-only card: no I/O at all',
 };
 

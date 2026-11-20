@@ -254,6 +254,8 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
 
 export class HidChannel {
   private dev: HID.HIDAsync | null = null;
+  /** The announcement collection's handle (`opts.events`), opened on the first `readEvent`. */
+  private evDev: HID.HIDAsync | null = null;
   private opening: Promise<HID.HIDAsync> | null = null;
   /**
    * Set by `close()`, and never cleared — a channel is closed for good.
@@ -297,6 +299,12 @@ export class HidChannel {
        * Absent, every path below is byte-for-byte what it was.
        */
       relay?: { target: number };
+      /**
+       * The collection the device announces things on unasked (a Beken mouse:
+       * its battery, its DPI stage, the answer to a write), read beside the
+       * settings one by `readEvent`. Read-only: nothing is written there.
+       */
+      events?: HidCandidate;
     } = {},
   ) {
     this.key = candidate.serialNumber || candidate.path;
@@ -367,6 +375,15 @@ export class HidChannel {
     this.disposed = true;
     this.dev = null;
     this.opening = null;
+    const ev = this.evDev;
+    this.evDev = null;
+    if (ev) {
+      try {
+        void ev.close().catch(() => undefined);
+      } catch {
+        /* already closed */
+      }
+    }
     if (!dev) return;
     try {
       let timer: NodeJS.Timeout | undefined;
@@ -447,13 +464,48 @@ export class HidChannel {
     this.opening = null;
     // `close()` THROWS synchronously on an already-closed handle rather than
     // rejecting, so this needs the try as well as the catch.
-    try {
-      void dev?.close().catch(() => undefined);
-    } catch {
-      /* already closed */
+    for (const d of [dev, this.evDev]) {
+      try {
+        void d?.close().catch(() => undefined);
+      } catch {
+        /* already closed */
+      }
     }
+    this.evDev = null;
     this.log?.('rx', this.key, '', `channel wedged (${reason})`);
     this.opts.onWedged?.(reason);
+  }
+
+  /**
+   * One report from the device's announcement collection (`opts.events`), or
+   * null when none is waiting. The system keeps what arrived while nobody
+   * read, so a caller drains what it needs. Null too on a channel without one.
+   */
+  readEvent(timeoutMs = 0): Promise<Uint8Array | null> {
+    return this.run(async () => {
+      const where = this.opts.events;
+      if (!where || this.disposed) return null;
+      if (!this.evDev) {
+        try {
+          this.evDev = await HID.HIDAsync.open(where.path, { nonExclusive: true });
+        } catch {
+          return null;
+        }
+      }
+      const ev = this.evDev;
+      try {
+        const data = await this.bounded('read', this.readDeadline(timeoutMs), () =>
+          ev.read(timeoutMs),
+        );
+        if (!data || data.length === 0) return null;
+        const buf = Uint8Array.from(data);
+        this.log?.('rx', this.key, toHex(buf), 'event');
+        return buf;
+      } catch (err) {
+        if (err instanceof HidWedgedError) throw err;
+        return null;
+      }
+    });
   }
 
   /** Runs `fn` as the next link in this channel's serialization chain. A

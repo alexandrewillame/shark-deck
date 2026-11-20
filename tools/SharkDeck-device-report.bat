@@ -48,6 +48,8 @@ exit /b %ERRORLEVEL%
 #    SharkDeck-device-report.bat --all-known          every device of a family Shark Deck knows
 #    ... --no-query                                   never ask the model question
 #    ... --record / --no-record                       record without asking / never offer it
+#    ... --steps deep,macro,specific                  record only the steps whose ids start with
+#                                                     these words ('specific': one thing you choose)
 #    ... --out C:\some\folder                         where the report goes (default: the Desktop)
 #    SharkDeck-device-report.bat --preview-steps mouse   walk the recording steps; nothing is recorded
 #    SharkDeck-device-report.bat --resume-recording      carry on with a recording set aside for a restart
@@ -1550,7 +1552,7 @@ function FamilyText([string]$family) {
 
 # Parses "--device 1D57:FA55 --no-query --out C:\x" from the .bat's arguments.
 function ReadFlags([string]$line) {
-    $flags = @{ Device = $null; AllKnown = $false; NoQuery = $false; Out = $null; Record = $false; NoRecord = $false; RecordingOf = $null; SetupOf = $null; Preview = $null; Resume = $false }
+    $flags = @{ Device = $null; AllKnown = $false; NoQuery = $false; Out = $null; Record = $false; NoRecord = $false; Steps = $null; RecordingOf = $null; SetupOf = $null; Preview = $null; Resume = $false }
     $words = @(if ($line) { $line.Trim() -split '\s+' })
     for ($i = 0; $i -lt $words.Count; $i++) {
         switch ($words[$i].ToLowerInvariant()) {
@@ -1560,6 +1562,11 @@ function ReadFlags([string]$line) {
             '--out' { $i++; $flags.Out = $words[$i].Trim('"') }
             '--record' { $flags.Record = $true }
             '--no-record' { $flags.NoRecord = $true }
+            '--steps' {
+                $i++
+                $flags.Steps = if ($i -lt $words.Count) { $words[$i].ToLowerInvariant() } else { '' }
+                if ($flags.Steps -notmatch '^[a-z]+(,[a-z]+)*$') { throw '--steps takes words, like deep,macro,specific' }
+            }
             '--recording-of' { $i++; $flags.RecordingOf = $words[$i] }
             '--usbpcap-setup' { $i++; $flags.SetupOf = $words[$i] }
             '--resume-recording' { $flags.Resume = $true }
@@ -1926,6 +1933,25 @@ custom.each|both|Your recording|||repeat,describe|Do one thing in the official s
 end.close|both|Finish||||Close the official software.
 '@
 
+# The steps Shark Deck asks an owner for by name (--steps deep,macro,specific):
+# opening the software, every step whose id starts with one of the words, the
+# "something specific" step for 'specific', then closing the software.
+function StepTableFor([string]$steps) {
+    $want = @($steps -split ',' | Where-Object { $_ })
+    $lines = @($StepTable -split "`r?`n")
+    $out = New-Object System.Collections.Generic.List[string]
+    foreach ($line in $lines) {
+        $id = ($line -split '\|', 2)[0]
+        if ($id -eq 'end.close') { continue }
+        if ($id -eq 'start.open' -or $want -contains ($id -split '\.', 2)[0]) { $out.Add($line) }
+    }
+    if ($want -contains 'specific') {
+        foreach ($line in @($CustomStepTable -split "`r?`n")) { if ($line -like 'custom.each|*') { $out.Add($line) } }
+    }
+    foreach ($line in $lines) { if ($line -like 'end.close|*') { $out.Add($line) } }
+    $out -join "`r`n"
+}
+
 function StepList([string]$kind, [string]$table = $StepTable) {
     $list = New-Object System.Collections.Generic.List[SdStep]
     foreach ($line in ($table -split "`r?`n")) {
@@ -1981,7 +2007,7 @@ function ExplainUsbPcap([string]$why) {
 
 # After the report: offers a recording, and starts it with administrator rights.
 # Returns 'declined', 'started', 'restart' or 'needs-usbpcap'.
-function OfferRecording($report, [string[]]$readable, [string]$reportFile, [string]$outDir, [bool]$asked) {
+function OfferRecording($report, [string[]]$readable, [string]$reportFile, [string]$outDir, [bool]$asked, [string]$steps) {
     $families = @($report.devices | ForEach-Object { $_.family })
     $spoken = @($families | Where-Object { $SpokenFamilies -contains $_ }).Count -eq $families.Count
     Say ''
@@ -1993,6 +2019,12 @@ function OfferRecording($report, [string[]]$readable, [string]$reportFile, [stri
         if ($spoken) { Say '  Shark Deck already speaks this family''s language: a recording shows what is new.' DarkGray }
         $a = Read-Host '  Record now? [Y/n]'
         if ($a -match '^\s*[nN]') { return 'declined' }
+    }
+    if ($steps) {
+        Say ''
+        Say ('  Shark Deck asked for a short recording, of these settings only: ' + ($steps -replace ',', ', ') + '.') White
+        $custom = $false
+    } elseif (-not $asked) {
         Say ''
         Say '  What to record:' White
         Say '    1  Everything, one setting at a time (about 30 minutes): for a device Shark Deck does not know yet.' White
@@ -2000,7 +2032,7 @@ function OfferRecording($report, [string[]]$readable, [string]$reportFile, [stri
         Say '       You do it in the official software and write in a note what you did.' DarkGray
         $custom = (Read-Host '  1 or 2 [1]') -match '^\s*2'
     } else { $custom = $false }
-    $state = [ordered]@{ report = $report; readable = $readable; reportFile = $reportFile; outDir = $outDir; custom = $custom }
+    $state = [ordered]@{ report = $report; readable = $readable; reportFile = $reportFile; outDir = $outDir; custom = $custom; steps = $steps }
     # Missing, or only half there: its files without its driver (after an uninstall, say).
     if (-not (FindUsbPcap) -or (UsbPcapDriver) -eq 'missing') {
         $installed = InstallUsbPcap $state
@@ -2531,7 +2563,7 @@ function RecordingPhase([string]$token) {
         Say '  It stays on top of the others. Keep this window open until the end.' DarkGray
         [System.Windows.Forms.Application]::EnableVisualStyles()
         $vids = [int[]]@($targets | ForEach-Object { [Convert]::ToInt32(($_ -split ':')[0], 16) } | Select-Object -Unique)
-        $table = if ($state.custom) { $CustomStepTable } else { $StepTable }
+        $table = if ($state.steps) { StepTableFor $state.steps } elseif ($state.custom) { $CustomStepTable } else { $StepTable }
         $wizard = [SdWizard]::new((StepList $kind $table), (Join-Path $recDir 'screens'), (Join-Path $recDir 'attach'), $pcaps.ToArray(), $vids, [string[]]@([SdHid]::Paths()))
         $wizard.DeviceName = $(if ($state.report.model) { $state.report.model } elseif ($first.product) { $first.product } else { 'device' })
         $wizard.Keyboard = $kind -eq 'keyboard'
@@ -2820,7 +2852,7 @@ foreach ($l in $readable) { Say "  $l" }
 
 $recording = 'declined'
 if (-not $flags.NoRecord -and ($interactive -or $flags.Record)) {
-    $recording = OfferRecording $report $readable $file $outDir $flags.Record
+    $recording = OfferRecording $report $readable $file $outDir $flags.Record $flags.Steps
 }
 
 # The report goes into the recording's .zip; it is saved on its own only when

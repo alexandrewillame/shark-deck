@@ -1,4 +1,5 @@
-import type { FirmwareInfo, WriteResult } from '@shared/types/live';
+import type { FirmwareInfo, LiveState, WriteResult } from '@shared/types/live';
+import type { Macro } from '@shared/types/macros';
 import type {
   ButtonMapping,
   DpiStage,
@@ -6,6 +7,7 @@ import type {
   SensorSettings,
 } from '@shared/types/mouse-settings';
 import type { Capability } from '@shared/types/capability';
+import type { LightingSettings } from '@shared/types/lighting';
 import { applicableDpiStages } from '@shared/mouse-wire';
 import { toHex } from '../../hid/frame';
 import { Driver, delay, fmtVersion, type BackupPolicy } from './base';
@@ -170,6 +172,20 @@ export const SEED_DPI: readonly number[] = dpiData(
 
 /** Data-byte offsets in the power block; bytes 0–5 are carried unchanged. */
 const P = { SLEEP: 6, DEBOUNCE: 7 } as const;
+
+/**
+ * Deep sleep, 1–60 min: the high half of byte 1, then that of byte 2 — the
+ * X11's recording (1, 60, 2 and 3 min) and the X8 PRO's (its pages showed 11
+ * and 4 min as `b8` and `48`). The low halves are carried unchanged.
+ */
+export function deepSleepOf(p: readonly number[]): number {
+  return (((p[1] ?? 0) >> 4) << 4) | ((p[2] ?? 0) >> 4);
+}
+export function putDeepSleep(p: number[], minutes: number): void {
+  const m = Math.max(1, Math.min(60, Math.round(minutes)));
+  p[1] = ((p[1] ?? 0) & 0x0f) | ((m >> 4) << 4);
+  p[2] = ((p[2] ?? 0) & 0x0f) | ((m & 0x0f) << 4);
+}
 /** Bytes 0–5 as recorded; sleep 1 min (half-minutes), key response 8 ms (÷ 2). */
 export const SEED_POWER: readonly number[] = [0x00, 0x03, 0xa8, 0x00, 0xff, 0x00, 0x02, 0x04];
 
@@ -212,7 +228,81 @@ export const SEED_BUTTONS: readonly number[] = [
   0x0a, 0x09,
 ].flatMap((a) => [a, 0x00, 0x00]);
 
-const ACT = { DISABLED: 0x01, KEY: 0x11 } as const;
+const ACT = { DISABLED: 0x01, KEY: 0x11, MACRO: 0x12 } as const;
+
+/**
+ * The macro, as the X8 PRO's vendor software sent it (both recordings,
+ * macro.assign and macro.repeat): its slot byte `0x11`, then 106 data bytes —
+ * four zeros, the repeat count, the event count, two bytes an event (the
+ * delay after it in ms, its top bit set on a release; the key's usage) — and
+ * their 16-bit sum. The vendor's editor shows each event with its own delay
+ * ("A Pushed 100, A Release 10, B Pushed 100, B Release 1" = `64 04 8a 04 64 05
+ * 81 05`). One macro: the vendor software gave its first `0x11`, and its
+ * button `12 00 11`. Keyboard keys only — a mouse button's encoding is not in
+ * either recording.
+ */
+const MACRO_SLOT = 0x11;
+const MACRO_DATA = 106;
+export const BEKEN_MACRO_MAX_EVENTS = (MACRO_DATA - 6) / 2;
+const MACRO_DELAY_MAX = 0x7f;
+
+/** A macro's 106 data bytes, or why this mouse cannot hold it. */
+export function encodeBekenMacro(m: Macro): number[] | string {
+  const events: { up: boolean; usage: number; delay: number }[] = [];
+  for (const s of m.steps) {
+    if (s.type === 'delay') {
+      const last = events[events.length - 1];
+      if (last) last.delay += Math.max(0, Math.round(s.ms ?? 0));
+      continue;
+    }
+    if (s.type !== 'key') return 'A macro on this mouse takes keyboard keys only.';
+    const usage = typeof s.value === 'number' ? s.value : parseInt(String(s.value ?? ''), 16);
+    if (!Number.isInteger(usage) || usage <= 0 || usage > 0xff) {
+      return `This mouse cannot send the key ${String(s.value)} in a macro.`;
+    }
+    events.push({ up: s.action === 'up', usage, delay: 0 });
+  }
+  if (!events.length) return 'The macro has no key in it.';
+  if (events.length > BEKEN_MACRO_MAX_EVENTS) {
+    return `A macro on this mouse holds ${BEKEN_MACRO_MAX_EVENTS} key events at most.`;
+  }
+  if (events.some((e) => e.delay > MACRO_DELAY_MAX)) {
+    return `A delay in a macro on this mouse is ${MACRO_DELAY_MAX} ms at most.`;
+  }
+  const data = new Array<number>(MACRO_DATA).fill(0);
+  data[4] = Math.max(1, Math.min(0xff, Math.round(m.repeatCount || 1)));
+  data[5] = events.length;
+  events.forEach((e, i) => {
+    data[6 + 2 * i] = (e.up ? 0x80 : 0) | Math.max(1, e.delay);
+    data[7 + 2 * i] = e.usage;
+  });
+  return data;
+}
+
+const pad64 = (b: number[]) => Uint8Array.from([...b, ...new Array<number>(64 - b.length).fill(0)]);
+
+/** On the cable: two feature reports 9, `09 40 11 <page> <data…>`, the second ending with the sum. */
+export function bekenCableMacroFrames(data: readonly number[]): Uint8Array[] {
+  const s = sum16(data);
+  return [
+    pad64([0x09, 0x40, MACRO_SLOT, 0x00, ...data.slice(0, 60)]),
+    pad64([0x09, 0x40, MACRO_SLOT, 0x01, ...data.slice(60), s >> 8, s & 0xff]),
+  ];
+}
+
+/**
+ * Through the 8K receiver: two output reports 4, `04 40 00 09 6f 11 <data 56>`
+ * and `04 39 01 <data 50> <its sum>`, each closed by the sum of its own bytes.
+ */
+export function bekenReceiverMacroFrames(data: readonly number[]): Uint8Array[] {
+  const ds = sum16(data);
+  const first = [0x04, 0x40, 0x00, 0x09, 0x6f, MACRO_SLOT, ...data.slice(0, 56)];
+  const second = [0x04, 0x39, 0x01, ...data.slice(56), ds >> 8, ds & 0xff];
+  return [first, second].map((f) => {
+    const fs = sum16(f);
+    return pad64([...f, fs >> 8, fs & 0xff]);
+  });
+}
 
 /** `button` children (vendor values) <-> action byte. */
 const MOUSE_BUTTON: ReadonlyMap<number, number> = new Map([
@@ -272,6 +362,9 @@ export function encodeBekenButton(m: ButtonMapping): [number, number, number] | 
     case 'disable':
       action = ACT.DISABLED;
       break;
+    case 'macro':
+      if ((m.macroSlot ?? 0) !== 0) return 'This mouse holds one macro.';
+      return [ACT.MACRO, 0x00, MACRO_SLOT];
     case 'combo': {
       const keys = (m.combo ?? []).filter((k) => !isModifier(k));
       if (keys.length !== 1) return 'A shortcut on this mouse is one key, with any modifiers.';
@@ -290,6 +383,9 @@ export function encodeBekenButton(m: ButtonMapping): [number, number, number] | 
 export function decodeBekenButton([action, mods, usage]: number[]): ButtonMapping {
   const a = action ?? ACT.DISABLED;
   if (a === ACT.DISABLED) return { actionKey: 'disable', action: a };
+  if (a === ACT.MACRO) {
+    return { actionKey: 'macro', action: a, macroSlot: (usage ?? MACRO_SLOT) - MACRO_SLOT };
+  }
   if (a === ACT.KEY) {
     const combo: number[] = [];
     for (let bit = 0; bit < 8; bit++) if (((mods ?? 0) >> bit) & 1) combo.push(0xe0 + bit);
@@ -336,7 +432,7 @@ export class Beken8kMouse extends Driver {
   protected ackTimeoutMs = 3000;
   /** The least time between two frames. */
   protected minGapMs = 1000;
-  private lastSentAt = 0;
+  protected lastSentAt = 0;
   private readonly blocks = new Map<BlockKey, number[]>();
 
   // — what a model may do its own way (BekenX11Mouse) ---------------------------
@@ -517,10 +613,24 @@ export class Beken8kMouse extends Driver {
   override async setDpiStages(stages: DpiStage[]): Promise<WriteResult> {
     const live = applicableDpiStages(stages).slice(0, STAGES);
     if (!live.length) return this.refuse('At least one DPI stage has to stay on.');
-    const d = await this.block('dpi');
+    const d = await this.dpiBlock();
     d[D.MASK] = (1 << live.length) - 1;
     live.forEach((s, i) => this.putStageDpi(d, i, s.dpi));
     return this.send('dpi', d);
+  }
+
+  /**
+   * The DPI block to change, on the stage the mouse last said it is on: a
+   * change sends the active stage too, and through the receiver the block is
+   * only what Shark Deck last sent — the X8 PRO's owner saw every sensor
+   * change put the mouse back on that stage.
+   */
+  protected async dpiBlock(): Promise<number[]> {
+    const d = await this.block('dpi');
+    await this.listen();
+    const stage = this.heard.stage;
+    if (stage && stage <= STAGES) d[D.ACTIVE] = stage;
+    return d;
   }
 
   // — sensor switches (the DPI block's first two bytes) ----------------------
@@ -533,7 +643,7 @@ export class Beken8kMouse extends Driver {
     if (s.lod !== undefined && s.lod !== 0 && s.lod !== 1) {
       return this.refuse(`lift-off code ${s.lod} is not one this sensor has`);
     }
-    const d = await this.block('dpi');
+    const d = await this.dpiBlock();
     this.putSensor(d, s);
     return this.send('dpi', d);
   }
@@ -558,14 +668,19 @@ export class Beken8kMouse extends Driver {
 
   override async readPower(): Promise<PowerSettings> {
     const p = await this.block('power');
-    return { sleepTimerSec: (p[P.SLEEP] ?? 2) * 30, never: false };
+    return {
+      sleepTimerSec: (p[P.SLEEP] ?? 2) * 30,
+      never: false,
+      deepSleepSec: deepSleepOf(p) * 60,
+    };
   }
 
-  /** In half-minutes, 30 s to 30 min (the owner's slider); no "never". */
+  /** Sleep in half-minutes, 30 s to 30 min (the owner's slider); no "never". Deep sleep in minutes. */
   override async setPower(pw: PowerSettings): Promise<WriteResult> {
     const half = Math.max(1, Math.min(60, Math.round((pw.sleepTimerSec || 30) / 30)));
     const p = await this.block('power');
     p[P.SLEEP] = half;
+    if (pw.deepSleepSec) putDeepSleep(p, pw.deepSleepSec / 60);
     return this.send('power', p);
   }
 
@@ -604,6 +719,111 @@ export class Beken8kMouse extends Driver {
     return this.send('buttons', b);
   }
 
+  // — what the mouse says unasked ----------------------------------------------
+
+  /** Its last battery report, and the stage (1-based) it last said it is on. */
+  protected heard: { battery?: { level: number; charging: boolean }; stage?: number } = {};
+
+  /**
+   * Takes what the mouse announced since the last look, on its announcement
+   * collection (DeviceDescriptor.events; both recordings): `03 <model> 40
+   * <state> <percent>` every 2 s — state 3 on the cable, charging — and `03
+   * <model> 10 <stage>` when its DPI button moves. Nothing is sent.
+   */
+  protected async listen(): Promise<void> {
+    for (let i = 0; i < 64; i++) {
+      const r = await this.ch.readEvent(0).catch(() => null);
+      if (!r) return;
+      if (r[0] !== 0x03 || r.length < 4) continue;
+      const [, , what, a, b] = r;
+      if (what === 0x40 && b !== undefined) {
+        this.heard.battery = { level: Math.min(100, b), charging: a === 0x03 };
+      }
+      if (what === 0x10 && a !== undefined && a >= 1 && a <= STAGES) this.heard.stage = a;
+    }
+  }
+
+  override async getBattery(): Promise<{
+    level: number | null;
+    charging: boolean;
+    raw?: number | null;
+    millivolts?: number | null;
+  }> {
+    await this.listen();
+    const b = this.heard.battery;
+    return { level: b?.level ?? null, charging: b?.charging ?? false, raw: null, millivolts: null };
+  }
+
+  /** The stage it is on, as it announced it: nothing is sent. */
+  override async readLiveState(): Promise<LiveState | null> {
+    await this.listen();
+    const s = this.heard.stage;
+    return { activeDpiStage: s ? s - 1 : null, dpiStageCount: null, pollRate: null };
+  }
+
+  // — its macro (report 9): never read back by the vendor software -------------
+
+  override async readMacros(): Promise<Macro[]> {
+    const kept = (await this.state?.get('beken8k.macro').catch(() => undefined)) as
+      Macro | null | undefined;
+    return kept && Array.isArray(kept.steps) ? [{ ...kept, id: 'onboard-0' }] : [];
+  }
+
+  override async saveMacro(m: Macro): Promise<WriteResult> {
+    const data = encodeBekenMacro(m);
+    if (typeof data === 'string') return this.refuse(data);
+    const r = await this.sendMacro(data);
+    if (r.ok)
+      await this.state?.set('beken8k.macro', { ...m, id: 'onboard-0' }).catch(() => undefined);
+    return r;
+  }
+
+  /** The vendor software only took the macro off its button: the mouse keeps the data. */
+  override async deleteMacro(): Promise<WriteResult> {
+    await this.state?.set('beken8k.macro', null).catch(() => undefined);
+    return { ok: true, verified: 'unverified' };
+  }
+
+  /**
+   * Through the receiver: the two reports, a frame's gap apart; it answered
+   * the first `c0` (it has it) and the second `c0` then `c1` (the mouse took it).
+   */
+  protected async sendMacro(data: number[]): Promise<WriteResult> {
+    const frames = bekenReceiverMacroFrames(data);
+    const log = frames.map((f) => toHex(f));
+    for (const [n, tx] of frames.entries()) {
+      const last = n === frames.length - 1;
+      const wait = this.lastSentAt + this.minGapMs - Date.now();
+      if (wait > 0) await delay(wait);
+      const r = await this.ch.transaction(async (io): Promise<WriteResult | null> => {
+        for (let i = 0; i < 64 && (await io.read(1, BEKEN_8K_FRAME_LEN)); i++);
+        try {
+          await io.write(tx);
+        } catch (e) {
+          return { ok: false, verified: 'unverified', error: String(e), frames: log };
+        } finally {
+          this.lastSentAt = Date.now();
+        }
+        const deadline = Date.now() + this.ackTimeoutMs;
+        while (Date.now() < deadline) {
+          const a = ackOf(
+            (await io.read(
+              Math.max(1, Math.min(250, deadline - Date.now())),
+              BEKEN_8K_FRAME_LEN,
+            )) ?? new Uint8Array(0),
+          );
+          if (!a) continue;
+          if (!a.ok) break;
+          if (a.stage === 'got' && !last) return null;
+          if (a.stage === 'done') return { ok: true, verified: 'match', frames: log };
+        }
+        return { ok: false, verified: 'unverified', error: NOT_CONFIRMED, frames: log };
+      });
+      if (r) return r;
+    }
+    return { ok: false, verified: 'unverified', error: NOT_CONFIRMED, frames: log };
+  }
+
   // — backup -------------------------------------------------------------------
 
   /** Nothing can be read, so nothing backs up: the user's one-time OK is the gate. */
@@ -618,6 +838,7 @@ export class Beken8kMouse extends Driver {
       'sleepTimer',
       'mouseDebounce',
       'buttonRemap',
+      'macros',
     ];
     return { kind: 'partial', required: [], unreadable };
   }
@@ -745,6 +966,25 @@ export class Beken8kCableMouse extends Beken8kMouse {
     return this.send('poll', [((kept ?? 0x74) & 0xf0) | n]);
   }
 
+  /** On the cable: the two feature reports 200 ms apart, as the vendor software sent them. */
+  protected override async sendMacro(data: number[]): Promise<WriteResult> {
+    const frames = bekenCableMacroFrames(data);
+    const log = frames.map((f) => toHex(f));
+    for (const [n, f] of frames.entries()) {
+      if (n) await delay(this.macroGapMs);
+      try {
+        await this.ch.write(f);
+      } catch (e) {
+        return { ok: false, verified: 'unverified', error: String(e), frames: log };
+      }
+    }
+    // The mouse answers on its announcement collection only (`03 08 50 00 09`).
+    return { ok: true, verified: 'unverified', frames: log };
+  }
+
+  /** The vendor software's gap between a macro's two reports. */
+  protected macroGapMs = 200;
+
   /** Over the cable, the release is the mouse's own firmware. */
   override async getFirmware(): Promise<FirmwareInfo> {
     const release = this.ch.descriptorRelease;
@@ -860,7 +1100,18 @@ export function parseX11Settings(r: ArrayLike<number>): Partial<Record<BlockKey,
 }
 
 const X11_POWER_UNREAD =
-  'The mouse did not report its settings. This one is stored with its lighting, which Shark Deck does not set yet, so it is left alone rather than reset the lighting. Reconnect the mouse and try again.';
+  'The mouse did not report its settings. Sleep, key response and lighting are stored together on it, so Shark Deck leaves them alone rather than reset the others. Reconnect the mouse and try again.';
+
+/**
+ * The X11's light, in the power block (its recording): the effect in byte 0's
+ * high half (0 off, 1 static, 2 breathing, 3 neon, 4 colour breathing,
+ * 5 static colour, 6 mixed breathing), the speed in byte 1's low half (1 the
+ * fastest to 5 the slowest), the brightness in byte 2's low half (1 to 8), the
+ * colour in bytes 3–5. The high halves of bytes 1 and 2 are deep sleep,
+ * carried unchanged.
+ */
+const X11_LIGHT = { EFFECT: 0, SPEED: 1, BRIGHTNESS: 2, RGB: 3, EFFECTS: 7 } as const;
+const within = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /**
  * The X11 on its cable (1D57:FA55), from its owner's recording of the vendor
@@ -869,20 +1120,23 @@ const X11_POWER_UNREAD =
  * switches and polling as 1000 ÷ the rate.
  *
  * Its buttons: slot 6 is button 4, the front side button (factory `06`,
- * Forward), slot 7 is button 5, the rear one (factory `05`, Backward), slot 5
- * the DPI button. That rests on those factory actions — the vendor's reset and
- * the mouse's own read agree — since the owner's steps mixed the two side
- * buttons up (the report tool named them the wrong way round then).
+ * Forward), slot 7 is button 5, the rear one (factory `05`, Backward); the
+ * vendor software numbers them so, button 4 "Adelante" drawn on the front
+ * one (its pages, in the recording). The owner's steps mixed the two up (the
+ * report tool named them the wrong way round then); the factory actions, the
+ * vendor's reset, its read and its pages agree. Slot 5, the DPI button, is
+ * not one the vendor software lets you remap, so neither does Shark Deck.
  *
  * It is read the way the vendor software reads it: every block at once, in
  * report 10 (`parseX11Settings`); each change is read back the same way. The
- * power block also holds the lighting, which Shark Deck does not drive yet,
- * so sleep and key response go out only as the mouse has just reported that
- * block. Not driven yet: the lighting, macros, and its receiver (1D57:FA60,
- * which other brands' mice share).
+ * power block holds sleep, key response, deep sleep and the light together,
+ * so it goes out only as the mouse has just reported it. The same driver
+ * runs through its receiver (1D57:FA60, which other brands' mice share) once
+ * the mouse has said it is an X11 (drivers/identify.ts BekenIdentify): the
+ * receiver carries the very same reports. Not driven yet: its macros.
  *
- * provenance: ported-from-vendor — every frame reproduces the 1D57:FA55
- * recording (beken-8k-mouse.test.ts); not yet run on a mouse.
+ * provenance: ported-from-vendor — every frame reproduces the 1D57:FA55 /
+ * 1D57:FA60 recording (beken-8k-mouse.test.ts); not yet run on a mouse.
  */
 export class BekenX11Mouse extends Beken8kCableMouse {
   private lastRead: {
@@ -890,8 +1144,74 @@ export class BekenX11Mouse extends Beken8kCableMouse {
     blocks: Promise<Partial<Record<BlockKey, number[]>>>;
   } | null = null;
 
+  /** Left, right, middle, button 4 (slot 6: front, Forward), button 5 (slot 7:
+   *  rear, Backward) — the five the vendor software numbers and lets you remap. */
   protected override get slots(): readonly number[] {
-    return [0, 1, 2, 6, 7, 5];
+    return [0, 1, 2, 6, 7];
+  }
+
+  /** How long the vendor software waited before sending a change again. */
+  protected resendMs = 500;
+
+  /**
+   * Through the receiver a mouse that has just woken can drop a change: the
+   * vendor software sent it again 500 ms later until the mouse took it (its
+   * recording, conn.light.back). So does Shark Deck, while the mouse reads back
+   * something else — three times at most.
+   */
+  protected override async transmit(key: BlockKey, data: number[]): Promise<WriteResult> {
+    let r = await super.transmit(key, data);
+    for (let i = 1; i < 3 && r.ok && r.verified === 'mismatch'; i++) {
+      await delay(this.resendMs);
+      const again = await super.transmit(key, data);
+      r = { ...again, frames: [...(r.frames ?? []), ...(again.frames ?? [])] };
+    }
+    return r;
+  }
+
+  // — its light (the power block's first six bytes) ---------------------------
+
+  override async readLighting(): Promise<LightingSettings[]> {
+    const p = await this.block('power');
+    const effect = (p[X11_LIGHT.EFFECT] ?? 0) >> 4;
+    const speed = within((p[X11_LIGHT.SPEED] ?? 0x03) & 0x0f, 1, 5);
+    const bright = within((p[X11_LIGHT.BRIGHTNESS] ?? 0x08) & 0x0f, 1, 8);
+    return [
+      {
+        zone: 'body',
+        effect: String(effect),
+        brightness: Math.round(((bright - 1) * 100) / 7),
+        speed: (5 - speed) * 25,
+        color: [p[X11_LIGHT.RGB] ?? 0, p[X11_LIGHT.RGB + 1] ?? 0, p[X11_LIGHT.RGB + 2] ?? 0],
+        enabled: effect !== 0,
+      },
+    ];
+  }
+
+  /** Speed 0–100 to the wire's 5–1, brightness 0–100 to 1–8; sent only as the
+   *  mouse has just reported the block (it holds sleep and key response). */
+  override async setLighting(l: LightingSettings): Promise<WriteResult> {
+    const effect = l.enabled === false ? 0 : Number(l.effect);
+    if (!Number.isInteger(effect) || effect < 0 || effect >= X11_LIGHT.EFFECTS) {
+      return this.refuse(`This mouse has no light effect ${l.effect}.`);
+    }
+    if (!(await this.readBlock('power'))) return this.refuse(X11_POWER_UNREAD);
+    const p = await this.block('power');
+    const speed = 5 - Math.round(within(l.speed, 0, 100) / 25);
+    const bright = 1 + Math.round((within(l.brightness, 0, 100) * 7) / 100);
+    p[X11_LIGHT.EFFECT] = (effect << 4) | ((p[X11_LIGHT.EFFECT] ?? 0) & 0x0f);
+    p[X11_LIGHT.SPEED] = ((p[X11_LIGHT.SPEED] ?? 0) & 0xf0) | speed;
+    p[X11_LIGHT.BRIGHTNESS] = ((p[X11_LIGHT.BRIGHTNESS] ?? 0) & 0xf0) | bright;
+    l.color.forEach((c, i) => {
+      p[X11_LIGHT.RGB + i] = within(Math.round(c), 0, 255);
+    });
+    return this.send('power', p);
+  }
+
+  /** Its light cannot be backed up either (`backup()` holds nothing). */
+  override backupPolicy(): BackupPolicy {
+    const base = super.backupPolicy();
+    return { ...base, unreadable: [...(base.unreadable ?? []), 'mouseLighting'] };
   }
 
   protected override seed(key: BlockKey): readonly number[] {

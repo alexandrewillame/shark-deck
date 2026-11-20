@@ -123,8 +123,8 @@ SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1d57", TAG+="uaccess"
 Every family except the R85HE's and the V8's is driven from protocol
 documentation only — unverified on every OS (see
 [`devices/attack-shark-lineup.md`](devices/attack-shark-lineup.md)). Of the
-Beken mice, the X8 PRO (8K receiver and cable) and the original X11 (cable)
-are opened, from Windows recordings of their vendor software. Through the
+Beken mice, the X8 PRO (8K receiver and cable) and the original X11 (cable
+and receiver) are opened, from Windows recordings of their vendor software. Through the
 receiver the settings are plain output reports on a vendor collection, which
 WebHID can reach in principle; over a cable they are feature reports, which
 WebHID may not reach (both untested). The others are never opened.

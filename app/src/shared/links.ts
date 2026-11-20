@@ -11,3 +11,6 @@ export const DESKTOP_DOWNLOAD_URL =
 
 /** The project: its source, its list of supported devices, its issues. */
 export const PROJECT_URL = 'https://github.com/alexandrewillame/shark-deck';
+
+/** How to help add a device: the device report tool and the "New device" request. */
+export const MISSING_DEVICE_URL = `${PROJECT_URL}/blob/main/docs/devices/attack-shark-lineup.md#missing-a-device`;

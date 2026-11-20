@@ -3,6 +3,7 @@ import type { IdentityKey } from './identity-key';
 import { KEYBOARDS_BY_ID, foreignBrand } from './catalog/keyboards';
 import { ATTACK_SHARK_CID, HUB_CABLE_PIDS, hubMouseFor } from './catalog/hub-mice';
 import { GEARHUB_MICE, GEARHUB_UNSUPPORTED, onGearhubEndpoint } from './catalog/gearhub-mice';
+import { bekenReceiverDescriptor } from './catalog/beken-mice';
 
 /**
  * Turn an identify answer into the descriptor a device is driven with.
@@ -48,6 +49,7 @@ export function resolveIdentity(
       brand ? `${brand}, model id ${key.modelId}` : `model id ${key.modelId}`,
     );
   }
+  if (key.family === 'beken') return bekenReceiverDescriptor(key.model);
   if (key.cid !== ATTACK_SHARK_CID) {
     return readOnly(endpoint, 'mouse', 'foreign', `vendor ${key.cid}, model ${key.mid}`);
   }

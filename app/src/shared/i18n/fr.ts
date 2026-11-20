@@ -1438,4 +1438,51 @@ export const fr: Partial<Messages> = {
   'set.about.project': 'GitHub',
   'set.about.project.hint':
     'Le code source, la liste des périphériques pris en charge, et où signaler un problème ou demander la prise en charge de votre périphérique.',
+  'light.mouseFx.static': 'Statique',
+  'light.mouseFx.breathing': 'Respiration',
+  'light.mouseFx.neon': 'Néon',
+  'light.mouseFx.colourBreathing': 'Respiration en couleurs',
+  'light.mouseFx.staticColour': 'Couleur statique',
+  'light.mouseFx.mixedBreathing': 'Respiration mixte',
+  'support.title.add': 'Aidez à l’ajouter',
+  'support.title.complete': 'Aidez à compléter sa prise en charge',
+  'support.title.name': 'Aidez à identifier cette souris',
+  'support.body.all':
+    'L’outil de rapport de périphérique enregistre ce que le logiciel officiel envoie pendant que vous changez chaque réglage une fois : une trentaine de minutes, sous Windows. Joignez l’enregistrement à une demande « New device » sur GitHub, et ce modèle pourra être ajouté.',
+  'support.body.unknown':
+    'Un rapport de périphérique suffit en général pour l’ajouter : il prend une minute, n’enregistre rien, et vous le joignez à une demande « New device » sur GitHub.',
+  'support.body.class':
+    'Shark Deck ne connaît cette souris que par son capteur : il propose les réglages de toute souris dotée de ce capteur. Un rapport de périphérique en donne le modèle : il prend une minute, n’enregistre rien, et vous le joignez à une demande sur GitHub.',
+  'support.gaps': 'Pas encore dans Shark Deck : {list}.',
+  'support.body.steps':
+    'L’outil de rapport de périphérique peut enregistrer seulement ceux-ci : vous les réglez dans le logiciel officiel pendant qu’il enregistre ce que le logiciel envoie. Quelques minutes, sous Windows ; joignez ensuite l’enregistrement à une demande sur GitHub.',
+  'support.body.specific':
+    'Quelque chose ne fonctionne pas comme prévu ? L’outil de rapport de périphérique l’enregistre depuis le logiciel officiel en quelques minutes, sous Windows ; joignez ensuite l’enregistrement à une demande sur GitHub.',
+  'support.action.all': 'Enregistrer ce périphérique',
+  'support.action.report': 'Créer un rapport de périphérique',
+  'support.action.steps': 'Enregistrer ce qui manque',
+  'support.action.specific': 'Enregistrer un problème',
+  'support.howto': 'Comment ça marche',
+  'support.strip.mouse': 'Pas encore dans Shark Deck pour cette souris : {list}.',
+  'support.strip.keyboard': 'Pas encore dans Shark Deck pour ce clavier : {list}.',
+  'support.strip.class':
+    'Shark Deck ne connaît cette souris que par son capteur : certains de ses réglages peuvent manquer.',
+  'support.strip.add': 'Aidez à les ajouter',
+  'support.strip.name': 'Aidez à l’identifier',
+  'support.gap.keymap':
+    'sa disposition des touches (en attendant, seulement les réglages de tout le clavier)',
+  'support.gap.actuation': 'ses réglages d’actionnement',
+  'support.gap.lighting': 'l’éclairage',
+  'support.gap.macros': 'les macros',
+  'support.gap.deepSleep': 'la veille profonde',
+  'support.gap.buttonActions': 'certaines actions de bouton',
+  'support.gap.receiver': 'son récepteur sans fil',
+  'support.confirm':
+    'Shark Deck se ferme d’abord, pour que seul le logiciel officiel parle au périphérique pendant l’enregistrement. Rouvrez ensuite Shark Deck depuis le menu Démarrer.',
+  'support.confirm.ok': 'Fermer Shark Deck et démarrer',
+  'support.unix':
+    'Sur cet ordinateur, l’outil crée le rapport de périphérique ; enregistrer le logiciel officiel nécessite Windows.',
+  'support.opened': 'L’outil de rapport de périphérique s’est ouvert dans une fenêtre de terminal.',
+  'support.failed': 'Impossible de démarrer l’outil de rapport de périphérique : {error}',
+  'power.deepAfter': 'Veille profonde après',
 };

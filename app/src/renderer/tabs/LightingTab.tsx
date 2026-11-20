@@ -1163,37 +1163,51 @@ function BodyLightPane({ device }: TabProps) {
     setL(next);
     commit(t('light.body.title'), () => sd.setLighting(device.id, next));
   };
+  // A model with effects of its own (the X11's) shows, per effect, only the
+  // controls that effect has, and no idle-off rows; else the V8 family's list.
+  const own = device.ui.bodyLight?.effects;
+  const fx = own?.find((e) => String(e.value) === l.effect);
+  const shows = (what: 'brightness' | 'speed' | 'color') => !own || !!fx?.[what];
+  const effects = own
+    ? own.map((e) => ({ value: String(e.value), label: t(e.labelKey as never) }))
+    : LIGHT_MODES.map((m) => ({ value: String(m.value), label: m.label }));
   return (
     <Panel>
       <Row label={t('common.effect')}>
-        <Select
-          value={l.effect}
-          options={LIGHT_MODES.map((m) => ({ value: String(m.value), label: m.label }))}
-          onChange={(v) => set({ effect: v })}
-        />
+        <Select value={l.effect} options={effects} onChange={(v) => set({ effect: v })} />
       </Row>
-      <Row label={t('common.brightness')}>
-        <Slider value={l.brightness} min={0} max={100} onChange={(v) => set({ brightness: v })} />
-      </Row>
-      <Row label={t('common.speed')}>
-        <Slider value={l.speed} min={0} max={100} onChange={(v) => set({ speed: v })} />
-      </Row>
-      <Row label={t('common.colour')}>
-        <ColorField value={l.color} onChange={(color) => set({ color })} />
-      </Row>
-      <Row label={t('light.body.moveOff')}>
-        <Toggle on={!!l.offWhenMoving} onChange={(v) => set({ offWhenMoving: v })} />
-      </Row>
-      <Row label={t('light.body.offAfter')}>
-        <Select
-          value={l.offTimeoutSec ?? 0}
-          options={[
-            { value: 0, label: t('power.never') },
-            ...LIGHT_OFF_TIMEOUTS.map((o) => ({ value: o.value * 10, label: o.label })),
-          ]}
-          onChange={(v) => set({ offTimeoutSec: Number(v) })}
-        />
-      </Row>
+      {shows('brightness') && (
+        <Row label={t('common.brightness')}>
+          <Slider value={l.brightness} min={0} max={100} onChange={(v) => set({ brightness: v })} />
+        </Row>
+      )}
+      {shows('speed') && (
+        <Row label={t('common.speed')}>
+          <Slider value={l.speed} min={0} max={100} onChange={(v) => set({ speed: v })} />
+        </Row>
+      )}
+      {shows('color') && (
+        <Row label={t('common.colour')}>
+          <ColorField value={l.color} onChange={(color) => set({ color })} />
+        </Row>
+      )}
+      {!own && (
+        <>
+          <Row label={t('light.body.moveOff')}>
+            <Toggle on={!!l.offWhenMoving} onChange={(v) => set({ offWhenMoving: v })} />
+          </Row>
+          <Row label={t('light.body.offAfter')}>
+            <Select
+              value={l.offTimeoutSec ?? 0}
+              options={[
+                { value: 0, label: t('power.never') },
+                ...LIGHT_OFF_TIMEOUTS.map((o) => ({ value: o.value * 10, label: o.label })),
+              ]}
+              onChange={(v) => set({ offTimeoutSec: Number(v) })}
+            />
+          </Row>
+        </>
+      )}
     </Panel>
   );
 }

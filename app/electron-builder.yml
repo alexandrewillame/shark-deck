@@ -65,6 +65,11 @@ win:
       arch: [x64]
     - target: portable # single self-contained .exe, no install
       arch: [x64]
+  # The device report tool, which a device's "Help add it" button starts
+  # (main/reportTool.ts): it records the official software, Windows only.
+  extraResources:
+    - from: ../tools/SharkDeck-device-report.bat
+      to: tools/SharkDeck-device-report.bat
   files:
     - '!node_modules/node-hid/prebuilds/{HID-darwin-x64,HID-darwin-arm64,HID-linux-x64,HID-linux-arm64,HID-linux-arm,HID-linux-x64-musl,HID_hidraw-linux-x64,HID_hidraw-linux-arm64,HID_hidraw-linux-arm,HID_hidraw-linux-x64-musl}/**'
 
@@ -113,6 +118,11 @@ mac:
   target:
     - { target: dmg, arch: [arm64, x64] }
     - { target: zip, arch: [arm64, x64] }
+  # The device report tool (report only: the official software is Windows'),
+  # started from a device's "Help add it" button (main/reportTool.ts).
+  extraResources:
+    - from: ../tools/sharkdeck-device-report.sh
+      to: tools/sharkdeck-device-report.sh
   files:
     - '!node_modules/node-hid/prebuilds/{HID-win32-x64,HID-win32-ia32,HID-win32-arm64,HID-linux-x64,HID-linux-arm64,HID-linux-arm,HID-linux-x64-musl,HID_hidraw-linux-x64,HID_hidraw-linux-arm64,HID_hidraw-linux-arm,HID_hidraw-linux-x64-musl}/**'
 
@@ -161,6 +171,9 @@ linux:
       to: udev/60-sharkdeck.rules
     - from: scripts/linux/install-udev-rules.sh
       to: udev/install-udev-rules.sh
+    # The device report tool, started from a device's "Help add it" button.
+    - from: ../tools/sharkdeck-device-report.sh
+      to: tools/sharkdeck-device-report.sh
   files:
     - '!node_modules/node-hid/prebuilds/{HID-win32-x64,HID-win32-ia32,HID-win32-arm64,HID-darwin-x64,HID-darwin-arm64}/**'
 

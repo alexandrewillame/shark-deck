@@ -1455,4 +1455,51 @@ export const es: Partial<Messages> = {
   'set.about.project': 'GitHub',
   'set.about.project.hint':
     'El código fuente, la lista de dispositivos compatibles y dónde informar de un problema o pedir que se añada tu dispositivo.',
+  'light.mouseFx.static': 'Estático',
+  'light.mouseFx.breathing': 'Respiración',
+  'light.mouseFx.neon': 'Neón',
+  'light.mouseFx.colourBreathing': 'Respiración de color',
+  'light.mouseFx.staticColour': 'Color estático',
+  'light.mouseFx.mixedBreathing': 'Respiración mixta',
+  'support.title.add': 'Ayuda a añadirlo',
+  'support.title.complete': 'Ayuda a completar su compatibilidad',
+  'support.title.name': 'Ayuda a identificar este ratón',
+  'support.body.all':
+    'La herramienta de informe de dispositivos graba lo que envía el software oficial mientras cambias cada ajuste una vez: unos 30 minutos, en Windows. Adjunta la grabación a una solicitud «New device» en GitHub y se podrá añadir este modelo.',
+  'support.body.unknown':
+    'Un informe del dispositivo suele bastar para añadirlo: tarda un minuto, no graba nada y lo adjuntas a una solicitud «New device» en GitHub.',
+  'support.body.class':
+    'Shark Deck solo conoce este ratón por su sensor, así que ofrece los ajustes de cualquier ratón con ese sensor. Un informe del dispositivo indica el modelo: tarda un minuto, no graba nada y lo adjuntas a una solicitud en GitHub.',
+  'support.gaps': 'Aún no está en Shark Deck: {list}.',
+  'support.body.steps':
+    'La herramienta de informe de dispositivos puede grabar solo esto: lo ajustas en el software oficial mientras graba lo que envía el software. Unos minutos, en Windows; después adjunta la grabación a una solicitud en GitHub.',
+  'support.body.specific':
+    '¿Algo no funciona como debería? La herramienta de informe de dispositivos lo graba desde el software oficial en unos minutos, en Windows; después adjunta la grabación a una solicitud en GitHub.',
+  'support.action.all': 'Grabar este dispositivo',
+  'support.action.report': 'Crear un informe del dispositivo',
+  'support.action.steps': 'Grabar lo que falta',
+  'support.action.specific': 'Grabar un problema',
+  'support.howto': 'Cómo funciona',
+  'support.strip.mouse': 'Aún no está en Shark Deck para este ratón: {list}.',
+  'support.strip.keyboard': 'Aún no está en Shark Deck para este teclado: {list}.',
+  'support.strip.class':
+    'Shark Deck solo conoce este ratón por su sensor: puede que falten algunos de sus ajustes.',
+  'support.strip.add': 'Ayuda a añadirlos',
+  'support.strip.name': 'Ayuda a identificarlo',
+  'support.gap.keymap': 'su mapa de teclas (hasta entonces, solo ajustes de todo el teclado)',
+  'support.gap.actuation': 'sus ajustes de actuación',
+  'support.gap.lighting': 'la iluminación',
+  'support.gap.macros': 'las macros',
+  'support.gap.deepSleep': 'el reposo profundo',
+  'support.gap.buttonActions': 'algunas acciones de botón',
+  'support.gap.receiver': 'su receptor inalámbrico',
+  'support.confirm':
+    'Shark Deck se cierra primero, para que solo el software oficial hable con el dispositivo mientras se graba. Después, vuelve a abrir Shark Deck desde el menú Inicio.',
+  'support.confirm.ok': 'Cerrar Shark Deck y empezar',
+  'support.unix':
+    'En este ordenador, la herramienta crea el informe del dispositivo; grabar el software oficial requiere Windows.',
+  'support.opened':
+    'La herramienta de informe de dispositivos se abrió en una ventana de terminal.',
+  'support.failed': 'No se pudo iniciar la herramienta de informe de dispositivos: {error}',
+  'power.deepAfter': 'Reposo profundo tras',
 };

@@ -6,6 +6,7 @@
  */
 import type { Capability } from './capability';
 import type {
+  BodyLightEffect,
   ButtonMapEntry,
   ConnectionType,
   DeviceColorVariant,
@@ -15,6 +16,7 @@ import type {
   LodOption,
   MagneticSpec,
   Provenance,
+  SupportPlan,
 } from './device';
 import type { KeyLayoutEntry } from './keys';
 
@@ -179,6 +181,10 @@ export interface DeviceUi {
   dpiDynamicModes?: { value: number; label: string }[];
   /** body-light-strip zones (future mice with `mouseLighting`) */
   bodyLightZones?: string[];
+  /** the model's own light effects (DeviceSpec.bodyLight) */
+  bodyLight?: { effects: BodyLightEffect[] };
+  /** deep-sleep choices in seconds (DeviceSpec.deepSleepPresets) */
+  deepSleepPresets?: number[];
   /** cosmetic colour/edition photos available for this model, empty if none */
   colorVariants: DeviceColorVariant[];
   /** the photo set (shared/device-art.ts): `DeviceDescriptor.artKey`, else the model */
@@ -191,6 +197,8 @@ export interface DeviceUi {
    *  record's own delay field, so the same step list costs a different number
    *  of slots on each. */
   macroLimits?: MacroLimits;
+  /** What its owner can record to help support it; absent: nothing to ask. */
+  support?: SupportPlan;
 }
 
 export interface MacroLimits {

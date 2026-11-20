@@ -43,7 +43,8 @@ export function resolveDescriptor(vid: number, pid: number): DeviceDescriptor | 
   if (vid === COMPX_8K_DONGLE_VID) return provisionalHub(pid);
   // The JXC firmware has no model-id read: its PID is its identity.
   if (vid === JXC_VID) return jxcDescriptorFor(pid);
-  // Beken: named cards only, no driver (catalog/beken-mice.ts).
+  // Beken: the PID names the model; the receiver several brands share waits
+  // for its mouse to say what it is (catalog/beken-mice.ts).
   if (vid === BEKEN_VID) return bekenDescriptorFor(pid);
   return null;
 }

@@ -4,7 +4,8 @@ X11, X11 SE, X11 PRO V2, R1, X6, X3, X3 MAX, X3 PRO (first revision), X1,
 X8 SE, X8 PLUS, X8 PRO, G3, G3 PRO, V3, V3 PRO, V6.
 
 **Shark Deck drives two of them: the X8 PRO through its 8K receiver
-(`1D57:FA65`) and on its cable (`2126`), and the X11 on its cable (`FA55`)**,
+(`1D57:FA65`) and on its cable (`2126`), and the X11 on its cable (`FA55`) and
+through its receiver (`FA60`)**,
 `app/src/main/devices/drivers/beken-8k-mouse.ts`. The others it shows and never
 talks to (`app/src/main/devices/catalog/beken-mice.ts`): a
 card with the model's name where its PID is its own, "Not supported yet",
@@ -21,10 +22,13 @@ frame Shark Deck sends reproduces a recorded one byte for byte
 `ported-from-vendor`, and 🟠 in the lineup until its owner has tried it.
 
 **Transport.** Output report 4 on the vendor collection `FF01:0002`
-(interface 2), 64 bytes; the receiver answers on input report 4. The mouse's
-events come on `FF00:0001` as input report 3, which Shark Deck does not read
-yet: `03 08 40 01 <percent>` (battery, every 2 s; `08` is the X8 PRO's model
-byte) and `03 08 10 <stage>` (the DPI button).
+(interface 2), 64 bytes; the receiver answers on input report 4. The mouse
+says things unasked on `FF00:0001`, input report 3, which Shark Deck reads
+beside the settings collection (`DeviceDescriptor.events`): `03 08 40 <state>
+<percent>` (the battery, every 2 s; state 3 on the cable, charging; `08` is the
+X8 PRO's model byte) and `03 08 10 <stage>` (the DPI button). The stage it
+announces is the one Shark Deck sends with the next DPI-block change, so a
+change no longer moves the mouse back to the stage Shark Deck last sent.
 
 **Frame.** `04 <len> 00 <cmd> <inner> 01 <body…> <sum>`:
 
@@ -51,7 +55,7 @@ whole block as shown; the confirmation before the first write says so.
 | `0x05` | power | 8 data bytes: `00 03 a8 00 ff 00` (meaning unknown, sent back unchanged), sleep in half-minutes, key response in 2 ms units; then their sum and 2 zeros. |
 | `0x06` | polling | `<code> <FF − code> 00 00 00 00`: 125 Hz `14`, 250 `24`, 500 `34`, 1000 `44`, 2000 `54`, 4000 `64`, 8000 `74`. |
 | `0x08` | buttons | 18 slots `[action, modifiers, usage]`, then their sum. Slots 0–2 left, right, middle; 3 the DPI button; 4 forward; 5 backward; 6 `3c` (unknown); 16–17 the wheel. |
-| `0x09` | macros | Two reports (byte 2 `00`, then `01`): an index, the repeat count, the event count, then `[delay or flag, key]` pairs. Not decoded far enough to send. |
+| `0x09` | macros | Two reports: `04 40 00 09 6f 11 <data 56>` and `04 39 01 <data 50> <sum16 of the data>`, each closed by the sum of its own bytes. The data, 106 bytes: four zeros, the repeat count, the event count, then two bytes an event — the delay after it in ms (7 bits), its top bit set on a release, then the key's usage. `11` is the macro's slot: the vendor software gave its first macro `11` and its button `12 00 11`. The receiver answers the first report `c0` only, the second `c0` then `c1`. |
 | `0x0C` | ? | `0c 0a 01 fe 01 fe 00 00 00 00`, sent before every whole-profile write. Never sent by Shark Deck. |
 
 Button actions recorded: `01` off, `02` left, `03` right, `04` middle, `05`
@@ -62,9 +66,11 @@ from the defaults and the run of codes: `0a` scroll down, `0d` DPI loop, `16`
 previous, `19` stop, `1a` mute.
 
 Profiles live in the vendor software: switching one rewrites every block
-(`0x0C`, `0x04`, `0x05`, `0x06`, `0x08`, a second apart). The vendor's
-"Reset Profile", the cable (`2126`), deep sleep, the key-response and sleep
-sliders' maxima and macros are not in the recording yet.
+(`0x0C`, `0x04`, `0x05`, `0x06`, `0x08`, a second apart). Its macro editor
+shows each event with its own delay ("A Pushed 100, A Release 10, B Pushed
+100, B Release 1" is `64 04 8a 04 64 05 81 05`); a mouse button in a macro,
+and a delay above 127 ms, are in neither recording, so Shark Deck refuses
+them. Neither recording has the vendor's "Reset Profile".
 
 ## The X8 PRO on its cable (2126)
 
@@ -103,10 +109,15 @@ low half only.
   where they are, and the first driver, which followed the tool's names, had
   4 and 5 swapped.
 - Power: sleep in half-minutes (1–60: 30 s – 30 min), key response in ms ÷ 2
-  (2–25: 4–50 ms). Deep sleep (10–60 min on the owner's slider) was not
-  recorded.
+  (2–25: 4–50 ms), deep sleep in minutes in the high halves of bytes 1 and 2,
+  as on the X11: the vendor's pages showed 11 min as `b8` and 4 min as `48`
+  in byte 2 (below the 10 min its owner gave as the slider's end).
+- Macros: the receiver's data as feature report 9, two reports of 64 bytes,
+  `09 40 11 00 <data 60>` and `09 40 11 01 <data 46> <sum16>`, 200 ms apart;
+  the mouse answers `03 08 50 00 09` on its announcement collection
+  (`000A:0000` on the cable).
 
-## The X11 on its cable (FA55)
+## The X11 (cable FA55, receiver FA60)
 
 From an owner's recording of the same vendor software, 1.0.0.2 (95 steps,
 2026-11-19, [issue #2](https://github.com/alexandrewillame/shark-deck/issues/2)),
@@ -138,31 +149,56 @@ way, when a tab opens and after each change.
 - The switches: byte 0 bit 0 is angle snapping, byte 1 bit 0 ripple control.
   No lift-off or motion sync.
 - Polling: one code, 1000 ÷ the rate (`08` 125 Hz, `04`, `02`, `01` 1000 Hz).
-- Button slots: 0 Left, 1 Right, 2 Middle, 5 the DPI button, **6 Forward
-  (button 4, the front side button, factory `06`), 7 Backward (button 5, the
-  rear one, factory `05`)**, 16–17 the wheel. The owner's steps mixed the two
-  side buttons up (the report tool still named them the wrong way round then),
-  so this rests on the factory actions, which the vendor's reset and the
-  mouse's own read agree on. The owner's test will confirm it.
-- The power block holds the lighting too: the high half of byte 0 is the
+- Button slots: 0 Left, 1 Right, 2 Middle, **6 Forward (button 4, the front
+  side button, factory `06`), 7 Backward (button 5, the rear one, factory
+  `05`)**, 16–17 the wheel, 5 the DPI button. The vendor software lists five
+  buttons and draws "4 Adelante" (Forward) on the front one and "5 Atrás" on
+  the rear one (its pages, in the recording); it does not let you remap the
+  DPI button, and neither does Shark Deck. The owner's steps mixed the two
+  side buttons up (the report tool still named them the wrong way round
+  then); the factory actions, the vendor's reset, its read and its pages
+  agree.
+- The power block holds the light too: the high half of byte 0 is the
   effect (0 off, 1 static, 2 breathing, 3 neon, 4 colour breathing, 5 static
-  colour, 6 mixed breathing — the owner's names), the low halves of bytes 1
-  and 2 the speed and brightness, bytes 3–5 the colour. Deep sleep, 1–60 min, is
-  the high half of byte 1 then that of byte 2 (`01 38`: 3 min). Then sleep in
-  half-minutes and key response in ms ÷ 2, as on the X8 PRO. Shark Deck does not
-  set the lighting yet, so it sends this block only as the mouse has just
-  reported it.
+  colour, 6 mixed breathing — the vendor software's names, through its
+  owner's Spanish), the low half of byte 1 the speed (1 the fastest to 5 the
+  slowest), that of byte 2 the brightness (1 to 8), bytes 3–5 the colour.
+  Static takes a brightness and a colour, breathing a speed and a colour,
+  static colour a brightness, neon a speed (the software's pages). Deep
+  sleep, 1–60 min, is the high half of byte 1 then that of byte 2 (`01 38`:
+  3 min). Then sleep in half-minutes and key response in ms ÷ 2, as on the
+  X8 PRO. Since the block holds all of that, Shark Deck sends it only as the
+  mouse has just reported it.
 - The active stage is the DPI block's byte 21, 1-based; the factory has
   stage 2.
 
 **Input report 3** carries `03 55 …` (`55` is the X11's model byte):
-`40 <state> <percent>` every 2 s (the battery, as the community tools read it),
-`10 <stage>` when the DPI button moves, `50 00 <report>` after each block
-written.
+`40 <state> <percent>` every 2 s (the battery; state 3 on the cable), `10
+<stage>` when the DPI button moves, `50 00 <report>` after each block written.
+Shark Deck reads the battery and the stage there, sending nothing.
 
-Not driven yet: the lighting, macros (`0x09`, in the recording), the vendor's
-reset (`0c 0a 01 fe 01 fe` on report 12, then every block), and the receiver
-`FA60`, which other brands' mice share (its frames are the cable's, padded).
+**Macros** are the X8 PRO's (above): the same vendor software, the same
+report sizes. Its owner built one in the software's macro manager but did not
+put it on a button, so nothing was sent: the X11's are inferred from the
+X8 PRO's recordings.
+
+**Through its receiver (FA60).** The receiver ("2.4G Wireless Device" by
+LXDDZ) is one other brands' mice use too, and it does not say what is behind
+it. The mouse does, unasked: byte 1 of its notifications on input report 3 is
+its model (`55`), and they come on a collection of their own (`000A:0000`).
+So Shark Deck opens that one first and sends nothing; only on `55` does it
+open the settings collection (`000B:0000`) and drive the mouse — another
+model's byte gives a named card, an unknown one an "Unrecognised" card, and
+nothing is written to either. Through the receiver the vendor software read
+report 10 and sent the cable's very blocks, padded to the receiver's report
+sizes (56, 15, 9, 59 bytes). Once, a mouse just woken answered a change with
+`03 55 00 00 01` then `03 55 01 00 00`, and the software sent the change
+again 500 ms later until `03 55 50 00 05` came; Shark Deck sends it again
+while the mouse reads back otherwise.
+
+Not driven yet: the vendor's reset (`0c 0a 01 fe 01 fe` on report 12, then
+every block), and a mouse button in a macro (its owner's macro had one, but
+it was never sent).
 
 ## The others: why there is no driver yet
 
@@ -199,7 +235,7 @@ reset (`0c 0a 01 fe 01 fe` on report 12, then every block), and the receiver
 | `0x05` | light mode / speed / brightness / RGB, sleep (half-minutes), debounce (ms / 2) | yes |
 | `0x06` | poll rate: `06 09 01 code FF−code`, 08=125 … 01=1000 (X8 PRO differs) | yes |
 | `0x08` | 18 button slots `[action, mods, usage]` | yes, slot order caveats |
-| `0x09` | macros, three pages | **no** on the X11 |
+| `0x09` | macros (the X8 PRO's two pages, above) | no |
 | `0x0B` | firmware version (X8 PRO) | read by the vendor software on the X8 PRO and the X11 (`0b 08 01 10`); writing it unpairs |
 | `0x10` | **bootloader — never** | — |
 | `0xA0` | read-permission mailbox | — |

@@ -31,7 +31,7 @@ describe('docs/devices/attack-shark-lineup.md', () => {
 
   it('lists the original X11 as itself, not as the X11 ULTRA it is not', () => {
     const tables = lineupTables();
-    expect(tables).toMatch(/^\| 🟠 Partial \| X11 \|/m);
+    expect(tables).toMatch(/^\| 🟡 Should work \| X11 \|/m);
     expect(tables).toMatch(/^\| 🟡 Should work \| X11 ULTRA \|/m);
   });
 });

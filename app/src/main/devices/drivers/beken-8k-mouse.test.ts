@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ButtonMapping, DpiStage } from '@shared/types/mouse-settings';
+import type { LightingSettings } from '@shared/types/lighting';
+import type { Macro } from '@shared/types/macros';
 
 vi.mock('node-hid', () => ({
   default: { devicesAsync: async () => [], HIDAsync: { open: vi.fn() } },
@@ -10,6 +12,11 @@ const {
   Beken8kMouse,
   BekenX11Mouse,
   BEKEN_8K_POLL,
+  bekenCableMacroFrames,
+  bekenReceiverMacroFrames,
+  deepSleepOf,
+  encodeBekenMacro,
+  putDeepSleep,
   SEED_BUTTONS,
   bekenFrame,
   decodeBekenButton,
@@ -20,7 +27,9 @@ const {
   encodeX11Dpi,
   parseX11Settings,
 } = await import('./beken-8k-mouse');
-const { bekenMouseRoster } = await import('../catalog/beken-mice');
+const { bekenDescriptorFor, bekenMouseRoster, bekenReceiverDescriptor } =
+  await import('../catalog/beken-mice');
+const { BekenIdentify } = await import('./identify');
 
 /**
  * Every frame here is verbatim from the owner's recording of the vendor's
@@ -75,10 +84,12 @@ const ACK_GOT = frame('04 06 c0 01 00 cb');
 const ACK_DONE = frame('04 06 c1 01 00 cc');
 const ACK_REFUSED = frame('04 06 c1 00 00 cb');
 
-/** A channel whose receiver answers every frame with `answers`, and a kept-state store. */
+/** A channel whose receiver answers every frame with `answers`, and a kept-state store;
+ *  `events` holds what the mouse announces on its own collection. */
 function rig(answers: Uint8Array[] = [ACK_GOT, ACK_DONE], kept: Record<string, number[]> = {}) {
   const sent: Uint8Array[] = [];
   const queue: Uint8Array[] = [];
+  const events: Uint8Array[] = [];
   const io = {
     write: async (f: Uint8Array) => {
       sent.push(f);
@@ -95,6 +106,7 @@ function rig(answers: Uint8Array[] = [ACK_GOT, ACK_DONE], kept: Record<string, n
   };
   const channel = {
     transaction: <T>(fn: (x: typeof io) => Promise<T>) => fn(io),
+    readEvent: async () => events.shift() ?? null,
     descriptorRelease: 0x0118,
   };
   const drv = new Beken8kMouse({
@@ -104,7 +116,7 @@ function rig(answers: Uint8Array[] = [ACK_GOT, ACK_DONE], kept: Record<string, n
     state,
   });
   Object.assign(drv as unknown as Record<string, number>, { minGapMs: 0, ackTimeoutMs: 40 });
-  return { drv, sent, store, queue };
+  return { drv, sent, store, queue, events };
 }
 
 /** A block's data bytes as the recorded frame carries them. */
@@ -192,7 +204,7 @@ describe('Beken8kMouse writes, against the recording', () => {
     const b = rig(undefined, { power: powerData(REC.powerDeb4) });
     await b.drv.setPower({ sleepTimerSec: 600 });
     expect(hexOf(b.sent[0]!)).toBe(hexOf(frame(REC.powerSleep10)));
-    expect(await b.drv.readPower()).toEqual({ sleepTimerSec: 600, never: false });
+    expect(await b.drv.readPower()).toMatchObject({ sleepTimerSec: 600, never: false });
   });
 
   it('sends every recorded polling step', async () => {
@@ -305,7 +317,6 @@ describe('Beken8kMouse: what it keeps, and when', () => {
     expect((await drv.setButtonMapping(4, { actionKey: 'combo', action: 5, combo: [] })).ok).toBe(
       false,
     );
-    expect((await drv.setButtonMapping(4, { actionKey: 'macro', action: 6 })).ok).toBe(false);
     expect((await drv.setButtonMapping(6, { actionKey: 'disable', action: 0 })).ok).toBe(false);
     expect((await drv.setSensor({ lod: 2 })).ok).toBe(false);
     expect(sent).toEqual([]);
@@ -374,6 +385,7 @@ describe('Beken8kCableMouse, against the cable recording', () => {
     const channel = {
       transaction: <T>(fn: (x: typeof io) => Promise<T>) => fn(io),
       write: io.write,
+      readEvent: async () => null,
       descriptorRelease: 0x1103,
     };
     const store = new Map<string, unknown>();
@@ -386,6 +398,7 @@ describe('Beken8kCableMouse, against the cable recording', () => {
         set: async (k: string, v: unknown) => void store.set(k, v),
       },
     });
+    Object.assign(drv as unknown as Record<string, number>, { macroGapMs: 0 });
     /** The blocks written, read requests left out. */
     const writes = () => sent.filter((f) => f[0] !== 0xa0).map(hexOf);
     return { drv, sent, writes };
@@ -494,11 +507,18 @@ describe('BekenX11Mouse, against the X11 recording', () => {
   /**
    * A mouse that answers report 10 with `answer` and keeps every block it is
    * sent (null: one that never answers). `refuseFirstAsk` turns down the first
-   * read request, as the mouse did the vendor software's.
+   * read request, as the mouse did the vendor software's; `dropFirst` loses
+   * the first change, as a mouse just woken did through the receiver;
+   * `receiver` drives the X11 through its receiver (1D57:FA60).
    */
-  function x11Rig(answer: string | null, refuseFirstAsk = false) {
+  function x11Rig(
+    answer: string | null,
+    refuseFirstAsk = false,
+    { dropFirst = false, receiver = false } = {},
+  ) {
     const sent: Uint8Array[] = [];
     let refused = !refuseFirstAsk;
+    let dropped = !dropFirst;
     let now = answer;
     const io = {
       write: async (f: Uint8Array) => {
@@ -508,6 +528,10 @@ describe('BekenX11Mouse, against the X11 recording', () => {
         }
         sent.push(f);
         if (!now || f[0] === 0xa0) return;
+        if (!dropped) {
+          dropped = true;
+          return;
+        }
         const m = parseX11Settings(bytes(now));
         const data = (n: number) => [...f.subarray(3, 3 + n)];
         if (f[0] === 0x04) m.dpi = data(47);
@@ -525,11 +549,14 @@ describe('BekenX11Mouse, against the X11 recording', () => {
     const channel = {
       transaction: <T>(fn: (x: typeof io) => Promise<T>) => fn(io),
       write: io.write,
+      readEvent: async () => null,
       descriptorRelease: 0x0110,
     };
     const store = new Map<string, unknown>();
     const drv = new BekenX11Mouse({
-      descriptor: bekenMouseRoster().find((d) => d.model === 'attack-shark-x11')!,
+      descriptor: receiver
+        ? bekenReceiverDescriptor(0x55)
+        : bekenMouseRoster().find((d) => d.model === 'attack-shark-x11')!,
       channel: channel as never,
       onWarning: () => undefined,
       state: {
@@ -537,7 +564,11 @@ describe('BekenX11Mouse, against the X11 recording', () => {
         set: async (k: string, v: unknown) => void store.set(k, v),
       },
     });
-    Object.assign(drv as unknown as Record<string, number>, { readWaitMs: 0 });
+    Object.assign(drv as unknown as Record<string, number>, {
+      readWaitMs: 0,
+      resendMs: 0,
+      macroGapMs: 0,
+    });
     const writes = () => sent.filter((f) => f[0] !== 0xa0).map(hexOf);
     const asks = () => sent.filter((f) => f[0] === 0xa0).map(hexOf);
     return { drv, writes, asks };
@@ -713,8 +744,10 @@ describe('BekenX11Mouse, against the X11 recording', () => {
     const b = await drv.readButtons();
     expect(b[3]).toMatchObject({ actionKey: 'button', param: 0x1000 }); // Forward
     expect(b[4]).toMatchObject({ actionKey: 'button', param: 0x0800 }); // Backward
-    expect(b[5]).toMatchObject({ actionKey: 'dpiSwitch', param: 0x0100 });
-    expect(Object.keys(b)).toHaveLength(6);
+    // The five the vendor software numbers ("4 Adelante" on the front one);
+    // the DPI button (slot 5) is not one of them.
+    expect(Object.keys(b)).toHaveLength(5);
+    expect((await drv.setButtonMapping(5, { actionKey: 'disable', action: 0 })).ok).toBe(false);
   });
 
   // btn.b4.*: slot 6 changed each time, slot 7 left at Middle click (04) by the step before.
@@ -758,6 +791,155 @@ describe('BekenX11Mouse, against the X11 recording', () => {
     expect(await drv.getFirmware()).toEqual({ device: 'v1.10', receiver: null });
   });
 
+  // — its light, in the power block -------------------------------------------
+
+  /** Report 10 as AT_START with this power block. */
+  const withPower = (hex: string) =>
+    report10(START.poll![0]!, START.dpi!, [...bytes(hex)], START.buttons!);
+  const light = (p: Partial<LightingSettings>): LightingSettings => ({
+    zone: 'body',
+    effect: '1',
+    brightness: 100,
+    speed: 50,
+    color: [0, 255, 0],
+    enabled: true,
+    ...p,
+  });
+
+  it('reads its light: effect, brightness 1–8, speed 1 (fast) – 5 (slow), colour', async () => {
+    const { drv } = x11Rig(withPower('10 03 a8 ff 00 00 01 02'));
+    expect(await drv.readLighting()).toEqual([light({ color: [255, 0, 0] })]);
+    const b = x11Rig(withPower('30 05 a1 ff ff ff 01 02'));
+    expect(await b.drv.readLighting()).toEqual([
+      light({ effect: '3', brightness: 0, speed: 0, color: [255, 255, 255] }),
+    ]);
+  });
+
+  it.each([
+    // [step, block before, change, recorded frame]
+    [
+      'light.each #2 (Static)',
+      '00 03 a8 00 ff 00 01 02',
+      {},
+      '05 0f 01 10 03 a8 00 ff 00 01 02 01 bd',
+    ],
+    [
+      'light.red',
+      '10 03 a8 00 ff 00 01 02',
+      { color: [255, 0, 0] },
+      '05 0f 01 10 03 a8 ff 00 00 01 02 01 bd',
+    ],
+    [
+      'light.dim',
+      '10 03 a8 ff ff ff 01 02',
+      { brightness: 0, color: [255, 255, 255] },
+      '05 0f 01 10 03 a1 ff ff ff 01 02 03 b4',
+    ],
+    [
+      'light.slow (Neon)',
+      '30 03 a8 ff ff ff 01 02',
+      { effect: '3', speed: 0, color: [255, 255, 255] },
+      '05 0f 01 30 05 a8 ff ff ff 01 02 03 dd',
+    ],
+    [
+      'light.fast',
+      '30 05 a8 ff ff ff 01 02',
+      { effect: '3', speed: 100, color: [255, 255, 255] },
+      '05 0f 01 30 01 a8 ff ff ff 01 02 03 d9',
+    ],
+    [
+      'light.off',
+      '30 01 a8 ff ff ff 01 02',
+      { effect: '0', speed: 100, color: [255, 255, 255] },
+      '05 0f 01 00 01 a8 ff ff ff 01 02 03 a9',
+    ],
+  ] as [string, string, Partial<LightingSettings>, string][])(
+    'sends %s as recorded',
+    async (_, before, change, recorded) => {
+      const { drv, writes } = x11Rig(withPower(before));
+      const r = await drv.setLighting(light(change));
+      expect(writes()).toEqual([recorded]);
+      expect(r).toMatchObject({ ok: true, verified: 'match' });
+    },
+  );
+
+  it('keeps deep sleep (the high halves of bytes 1 and 2) when the light changes', async () => {
+    // deep.max: 60 min is 3 and c in the high halves.
+    const { drv, writes } = x11Rig(withPower('30 31 c8 ff 78 00 02 02'));
+    await drv.setLighting(light({ effect: '3', speed: 0, brightness: 100, color: [255, 120, 0] }));
+    expect(writes()[0]!.split(' ').slice(3, 11).join(' ')).toBe('30 35 c8 ff 78 00 02 02');
+  });
+
+  it('leaves the light alone when the mouse does not report its block', async () => {
+    const { drv, writes } = x11Rig(null);
+    expect((await drv.setLighting(light({}))).ok).toBe(false);
+    expect(writes()).toEqual([]);
+  });
+
+  it('sends a change again when the mouse dropped it, as the vendor software did', async () => {
+    const { drv, writes } = x11Rig(AT_START, false, { dropFirst: true });
+    const r = await drv.setPollRate(500);
+    expect(writes()).toEqual(['06 09 01 02 fd 00 00 00 00', '06 09 01 02 fd 00 00 00 00']);
+    expect(r).toMatchObject({ ok: true, verified: 'match' });
+  });
+
+  // — through its receiver (1D57:FA60) -------------------------------------------
+
+  it('waits, through the shared receiver, for the mouse to say what it is', () => {
+    const pending = bekenDescriptorFor(0xfa60)!;
+    expect([pending.identity, pending.driver, pending.usagePage, pending.usage]).toEqual([
+      'pending',
+      'beken-identify',
+      0x000a,
+      0x0000,
+    ]);
+    const x11 = bekenReceiverDescriptor(0x55);
+    expect([x11.model, x11.pid, x11.driver, x11.usagePage, x11.connection]).toEqual([
+      'attack-shark-x11',
+      0xfa60,
+      'beken-x11-mouse',
+      0x000b,
+      '2.4g',
+    ]);
+    expect(bekenReceiverDescriptor(0x08)).toMatchObject({
+      displayName: 'Attack Shark X8 PRO',
+      identity: 'unsupported',
+      driver: 'no-io',
+    });
+    expect(bekenReceiverDescriptor(0x33)).toMatchObject({ identity: 'unknown', driver: 'no-io' });
+  });
+
+  it('hears the model byte in the notifications, and sends nothing', async () => {
+    const sent: Uint8Array[] = [];
+    const queue = [bytes('03 55 40 02 64')];
+    const channel = {
+      readInput: async () => queue.shift() ?? null,
+      write: async (f: Uint8Array) => void sent.push(f),
+      request: async () => null,
+    };
+    const drv = new BekenIdentify({
+      descriptor: bekenDescriptorFor(0xfa60)!,
+      channel: channel as never,
+      onWarning: () => undefined,
+    });
+    expect(await drv.identify()).toEqual({ family: 'beken', model: 0x55 });
+    // Nothing heard: nothing known yet.
+    expect(await drv.identify()).toBeNull();
+    expect(sent).toEqual([]);
+  });
+
+  it('sends the very frames of the cable through the receiver (conn.dpi.1600, conn.green)', async () => {
+    const a = x11Rig(AT_START, false, { receiver: true });
+    await a.drv.setDpiStages(withStage(await a.drv.readDpiStages(), 0, 1600));
+    // The receiver's report is 56 bytes: the system pads the 52 with zeros.
+    expect(a.writes()).toEqual([
+      dpi('00 00 3f 20 20 25 25 38 4b 75 81 01 01 00 00 00 00 00 01 00 00 01', '0f 7b'),
+    ]);
+    const b = x11Rig(withPower('10 01 a8 ff ff ff 01 02'), false, { receiver: true });
+    await b.drv.setLighting(light({ speed: 100 }));
+    expect(b.writes()).toEqual(['05 0f 01 10 01 a8 00 ff 00 01 02 01 bb']);
+  });
+
   it('encodes DPI in steps of 42.5, doubled and doubled again near the top', () => {
     const recorded: [number, number, boolean, boolean][] = [
       [50, 0x01, false, false],
@@ -782,5 +964,130 @@ describe('BekenX11Mouse, against the X11 recording', () => {
       const e = encodeX11Dpi(v);
       expect(decodeX11Dpi(e.raw, e.double, e.quad)).toBe(v);
     }
+  });
+});
+
+/**
+ * Macros, deep sleep and what the mouse announces unasked, from the X8 PRO's
+ * two recordings (receiver 2026-11-16, cable 2026-11-19) and the X11's: every
+ * expected frame is a recorded one.
+ */
+describe('Beken mice: macros, deep sleep, announcements', () => {
+  const bytes = (hex: string) => Uint8Array.from(hex.split(' ').map((h) => parseInt(h, 16)));
+  const z = (n: number) => ' 00'.repeat(n);
+  /** "A down, A up, B down, B up", each with the delay after it. */
+  const ab = (downA: number, upA: number, downB: number, upB: number, repeatCount = 1): Macro => ({
+    id: 'lib-1',
+    name: 'T1',
+    repeatCount,
+    steps: [
+      { type: 'key', action: 'down', value: 0x04 },
+      { type: 'delay', ms: downA },
+      { type: 'key', action: 'up', value: 0x04 },
+      { type: 'delay', ms: upA },
+      { type: 'key', action: 'down', value: 0x05 },
+      { type: 'delay', ms: downB },
+      { type: 'key', action: 'up', value: 0x05 },
+      { type: 'delay', ms: upB },
+    ],
+  });
+  // The receiver's two reports (FA65, macro.assign and macro.repeat).
+  const RX = (repeat: string, s0: string, s1: string, f1: string) => [
+    `04 40 00 09 6f 11 00 00 00 00 ${repeat} 04 0a 04 81 04 0a 05 81 05${z(42)} ${s0}`,
+    `04 39 01${z(50)} ${s1} ${f1}${z(7)}`,
+  ];
+  // The cable's two feature reports 9 (2126, macro.assign and macro.repeat).
+  const CABLE = (repeat: string, sum: string) => [
+    `09 40 11 00 00 00 00 00 ${repeat} 04 64 04 8a 04 64 05 81 05${z(46)}`,
+    `09 40 11 01${z(46)} ${sum}${z(12)}`,
+  ];
+
+  it('encodes a macro the way the vendor software sent it', () => {
+    const data = encodeBekenMacro(ab(100, 10, 100, 1)) as number[];
+    expect(bekenCableMacroFrames(data).map(hexOf)).toEqual(CABLE('01', '01 ea'));
+    const rx = encodeBekenMacro(ab(10, 1, 10, 1)) as number[];
+    expect(bekenReceiverMacroFrames(rx).map(hexOf)).toEqual(RX('01', '01 fa', '01 2d', '00 6c'));
+    expect(
+      bekenReceiverMacroFrames(encodeBekenMacro(ab(10, 1, 10, 1, 3)) as number[]).map(hexOf),
+    ).toEqual(RX('03', '01 fc', '01 2f', '00 6e'));
+  });
+
+  it('refuses what the mouse cannot hold', () => {
+    expect(encodeBekenMacro({ ...ab(100, 10, 100, 1), steps: [] })).toMatch(/no key/);
+    expect(
+      encodeBekenMacro({
+        ...ab(1, 1, 1, 1),
+        steps: [{ type: 'mouse', action: 'down', value: 1 }],
+      }),
+    ).toMatch(/keyboard keys only/);
+    expect(encodeBekenMacro(ab(200, 10, 100, 1))).toMatch(/127 ms at most/);
+  });
+
+  it('sends a macro through the receiver: the first report answered c0, the second c0 then c1', async () => {
+    const { drv, sent } = rig();
+    const r = await drv.saveMacro(ab(10, 1, 10, 1));
+    expect(sent.map(hexOf)).toEqual(RX('01', '01 fa', '01 2d', '00 6c'));
+    expect(r).toMatchObject({ ok: true, verified: 'match' });
+    expect((await drv.readMacros()).map((m) => [m.id, m.name])).toEqual([['onboard-0', 'T1']]);
+    await drv.deleteMacro();
+    expect(await drv.readMacros()).toEqual([]);
+  });
+
+  it('puts the macro on button 4 (the front one) as recorded', async () => {
+    // macro.assign through the receiver, slot 4 then holding Forward (06).
+    const kept = [...SEED_BUTTONS];
+    kept.splice(3 * 4, 3, 0x06, 0x00, 0x00);
+    const { drv, sent } = rig(undefined, { buttons: kept });
+    await drv.setButtonMapping(3, { actionKey: 'macro', action: 6, macroSlot: 0 });
+    expect(hexOf(sent[0]!)).toBe(hexOf(frame(buttons('06 00 00', '12 00 11', '00 97 01 b6'))));
+    expect((await drv.readButtons())[3]).toMatchObject({ actionKey: 'macro', macroSlot: 0 });
+  });
+
+  it('sends a macro on the X8 PRO cable and the X11 as two feature reports', async () => {
+    const cable = new Beken8kCableMouse({
+      descriptor: bekenMouseRoster()[1]!,
+      channel: { write: async (f: Uint8Array) => void sentA.push(f) } as never,
+      onWarning: () => undefined,
+    });
+    const sentA: Uint8Array[] = [];
+    Object.assign(cable as unknown as Record<string, number>, { macroGapMs: 0 });
+    await cable.saveMacro(ab(100, 10, 100, 1, 3));
+    expect(sentA.map(hexOf)).toEqual(CABLE('03', '01 ec'));
+    const sentB: Uint8Array[] = [];
+    const x11 = new BekenX11Mouse({
+      descriptor: bekenReceiverDescriptor(0x55),
+      channel: { write: async (f: Uint8Array) => void sentB.push(f) } as never,
+      onWarning: () => undefined,
+    });
+    Object.assign(x11 as unknown as Record<string, number>, { macroGapMs: 0 });
+    await x11.saveMacro(ab(100, 10, 100, 1));
+    // Inferred: the same vendor software and report sizes as the X8 PRO's cable.
+    expect(sentB.map(hexOf)).toEqual(CABLE('01', '01 ea'));
+  });
+
+  it('reads and sends deep sleep: the high halves of the power block’s bytes 1 and 2', async () => {
+    // The X8 PRO through its receiver: its pages said 4 min and 20.5 min sleep (other.each).
+    const a = rig(undefined, { power: [0x00, 0x06, 0xb8, 0x00, 0xff, 0x00, 0x01, 0x02] });
+    expect((await a.drv.readPower()).deepSleepSec).toBe(11 * 60);
+    await a.drv.setPower({ sleepTimerSec: 1230, deepSleepSec: 240 });
+    expect(hexOf(a.sent[0]!)).toBe(
+      hexOf(frame('04 14 00 05 0f 01 00 06 48 00 ff 00 29 02 01 78 00 00 02 1e')),
+    );
+    // Its deep sleep at 1, 60 and 2 min: the X11's deep.min, deep.max and deep.back.
+    expect(deepSleepOf([0x30, 0x01, 0x18])).toBe(1);
+    expect(deepSleepOf([0x30, 0x31, 0xc8])).toBe(60);
+    const p = [0x30, 0x31, 0xc8, 0xff, 0x78, 0x00, 0x02, 0x02];
+    putDeepSleep(p, 2);
+    expect(p.slice(0, 3)).toEqual([0x30, 0x01, 0x28]);
+  });
+
+  it('shows the battery and the DPI stage the mouse announces, and keeps that stage', async () => {
+    const { drv, sent, events } = rig();
+    events.push(bytes('03 08 40 03 64'), bytes('03 08 10 03 00'));
+    expect(await drv.getBattery()).toMatchObject({ level: 100, charging: true });
+    expect(await drv.readLiveState()).toMatchObject({ activeDpiStage: 2 });
+    // A sensor change sends the stage the mouse is on, not the one Shark Deck last sent.
+    await drv.setSensor({ motionSync: true });
+    expect(sent[0]![6 + 21]).toBe(3);
   });
 });

@@ -10,11 +10,13 @@
  */
 import type { DeviceDescriptor } from '@shared/types/device';
 import { mouseButtonMap } from './catalog/mouse-buttons';
+import { supportPlan } from './support';
 import type { DeviceUi, MacroLimits } from '@shared/types/live';
 import { PERFORMANCE_TIMEOUTS } from '@shared/mouse-options';
 import { artKeyOf, colorVariantsOf } from '@shared/device-art';
 import { SWITCH_CHOICES_DEFAULT } from '@shared/keyboard-switches';
 import { KB_MACRO_MAX_STEPS } from './drivers/compx-keyboard';
+import { BEKEN_MACRO_MAX_EVENTS } from './drivers/beken-8k-mouse';
 import {
   V8_MACRO_MAX_STEPS,
   V8_MACRO_NAME_MAX,
@@ -51,6 +53,11 @@ export const MACRO_LIMITS: Record<string, MacroLimits> = {
   // reports it as "Onboard macro" (see compx-keyboard.ts), hence no nameMax.
   'compx-keyboard': { maxSteps: KB_MACRO_MAX_STEPS, slots: 1, delaysConsumeSteps: true },
   'compx-he-keyboard': { maxSteps: KB_MACRO_MAX_STEPS, slots: 1, delaysConsumeSteps: true },
+  // The Beken mice (X8 PRO, X11): one macro of 50 key events, each carrying the
+  // delay after it, and no name on the mouse (drivers/beken-8k-mouse.ts).
+  'beken-8k-mouse': { maxSteps: BEKEN_MACRO_MAX_EVENTS, slots: 1, delaysConsumeSteps: false },
+  'beken-8k-mouse-cable': { maxSteps: BEKEN_MACRO_MAX_EVENTS, slots: 1, delaysConsumeSteps: false },
+  'beken-x11-mouse': { maxSteps: BEKEN_MACRO_MAX_EVENTS, slots: 1, delaysConsumeSteps: false },
 };
 
 /** A Hub mouse's slot count follows its sensor (shared/mouse-wire.ts `hubMacroSlots`). */
@@ -77,6 +84,7 @@ function coarseBand(d: DeviceDescriptor): { coarseAbove?: { dpi: number; step: n
 export function deviceUi(d: DeviceDescriptor): DeviceUi {
   const s = d.spec;
   const radioRate = s.pollRates?.length ? s.pollRates : [125, 250, 500, 1000];
+  const support = supportPlan(d);
   return {
     profileCount: s.profileCount ?? 4,
     pollRates: radioRate,
@@ -112,8 +120,11 @@ export function deviceUi(d: DeviceDescriptor): DeviceUi {
     sensorModes: s.sensorModes,
     dpiDynamicModes: s.dpiDynamicModes,
     bodyLightZones: s.bodyLightZones,
+    bodyLight: s.bodyLight,
+    deepSleepPresets: s.deepSleepPresets,
     macroLimits: d.capabilities.includes('macros') ? macroLimitsFor(d) : undefined,
     ...(d.identity && d.identity !== 'exact' ? { identity: d.identity } : {}),
     ...(d.identityNote ? { identityNote: d.identityNote } : {}),
+    ...(support ? { support } : {}),
   };
 }

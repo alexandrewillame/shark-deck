@@ -1438,4 +1438,50 @@ export const ja: Partial<Messages> = {
   'set.about.project': 'GitHub',
   'set.about.project.hint':
     'ソースコード、対応デバイスの一覧、問題の報告やお使いのデバイスの対応依頼の窓口です。',
+  'light.mouseFx.static': 'スタティック',
+  'light.mouseFx.breathing': '呼吸',
+  'light.mouseFx.neon': 'ネオン',
+  'light.mouseFx.colourBreathing': 'カラー呼吸',
+  'light.mouseFx.staticColour': 'スタティックカラー',
+  'light.mouseFx.mixedBreathing': 'ミックス呼吸',
+  'support.title.add': '追加に協力する',
+  'support.title.complete': '対応の完成に協力する',
+  'support.title.name': 'このマウスの特定に協力する',
+  'support.body.all':
+    'デバイスレポートツールは、各設定を一度ずつ変更する間に公式ソフトウェアが送る内容を記録します（Windowsで約30分）。記録を GitHub の「New device」リクエストに添付すれば、このモデルを追加できます。',
+  'support.body.unknown':
+    '追加にはたいていデバイスレポートで十分です。1分で終わり、何も記録せず、GitHub の「New device」リクエストに添付するだけです。',
+  'support.body.class':
+    'Shark Deck はこのマウスをセンサーでしか識別できないため、そのセンサーを持つマウスに共通の設定を表示しています。デバイスレポートでモデルが分かります。1分で終わり、何も記録せず、GitHub のリクエストに添付するだけです。',
+  'support.gaps': 'Shark Deck で未対応: {list}。',
+  'support.body.steps':
+    'デバイスレポートツールで、これらだけを記録できます。公式ソフトウェアで設定している間に、ソフトウェアが送る内容を記録します。Windowsで数分。その後、記録を GitHub のリクエストに添付してください。',
+  'support.body.specific':
+    'うまく動かないものがありますか？デバイスレポートツールなら、公式ソフトウェアから数分で記録できます（Windows）。その後、記録を GitHub のリクエストに添付してください。',
+  'support.action.all': 'このデバイスを記録',
+  'support.action.report': 'デバイスレポートを作成',
+  'support.action.steps': '不足分を記録',
+  'support.action.specific': '問題を記録',
+  'support.howto': '仕組み',
+  'support.strip.mouse': 'このマウスで Shark Deck が未対応: {list}。',
+  'support.strip.keyboard': 'このキーボードで Shark Deck が未対応: {list}。',
+  'support.strip.class':
+    'Shark Deck はこのマウスをセンサーでしか識別できません。一部の設定がない場合があります。',
+  'support.strip.add': '追加に協力する',
+  'support.strip.name': '特定に協力する',
+  'support.gap.keymap': 'キー配置（それまではキーボード全体の設定のみ）',
+  'support.gap.actuation': 'アクチュエーション設定',
+  'support.gap.lighting': 'ライティング',
+  'support.gap.macros': 'マクロ',
+  'support.gap.deepSleep': 'ディープスリープ',
+  'support.gap.buttonActions': '一部のボタン動作',
+  'support.gap.receiver': 'ワイヤレスレシーバー',
+  'support.confirm':
+    '記録中に公式ソフトウェアだけがデバイスと通信するよう、まず Shark Deck が終了します。その後、スタートメニューから Shark Deck を再度開いてください。',
+  'support.confirm.ok': 'Shark Deck を終了して開始',
+  'support.unix':
+    'このコンピューターでは、ツールはデバイスレポートを作成します。公式ソフトウェアの記録には Windows が必要です。',
+  'support.opened': 'デバイスレポートツールがターミナルウィンドウで開きました。',
+  'support.failed': 'デバイスレポートツールを起動できませんでした: {error}',
+  'power.deepAfter': 'ディープスリープまで',
 };

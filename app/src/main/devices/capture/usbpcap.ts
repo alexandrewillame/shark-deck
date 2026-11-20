@@ -49,6 +49,9 @@ export function readPcap(file: Uint8Array): UsbPacket[] {
   if (!format) throw new Error('not a classic pcap file (pcapng is not read here)');
   const [le, nano] = format;
   const link = v.getUint32(20, le);
+  if (link === LINKTYPE_USB_LINUX_MMAPPED || link === LINKTYPE_USB_LINUX) {
+    return readUsbmon(file, v, le, nano, link === LINKTYPE_USB_LINUX_MMAPPED ? 64 : 48);
+  }
   if (link !== LINKTYPE_USBPCAP) throw new Error(`pcap link type ${link}, not USBPcap (249)`);
 
   const out: UsbPacket[] = [];
@@ -77,6 +80,57 @@ export function readPcap(file: Uint8Array): UsbPacket[] {
       transfer: TRANSFER_TYPES[transfer] ?? 'other',
       stage: transfer === 2 && headerLength >= 28 ? file[start + 27]! : null,
       data: file.subarray(start + headerLength, start + headerLength + dataLength),
+    });
+  }
+  return out;
+}
+
+/** Linux's usbmon, as tcpdump writes it: tools/sharkdeck-device-report.sh's recordings. */
+export const LINKTYPE_USB_LINUX = 189;
+export const LINKTYPE_USB_LINUX_MMAPPED = 220;
+const USBMON_TYPES: TransferType[] = ['isochronous', 'interrupt', 'control', 'bulk'];
+
+/**
+ * A usbmon capture's records as USBPcap's: `S` a submit, `C` a completion; a
+ * control submit's setup packet (the header's, when its flag says it is
+ * there) goes before its OUT data as stage 0, a control completion is
+ * stage 3. The header is in the capturing machine's byte order, little-endian
+ * on every machine the tool runs on.
+ */
+function readUsbmon(
+  file: Uint8Array,
+  v: DataView,
+  le: boolean,
+  nano: boolean,
+  headerLength: number,
+): UsbPacket[] {
+  const out: UsbPacket[] = [];
+  for (let at = 24; at + 16 <= file.byteLength;) {
+    const sec = v.getUint32(at, le);
+    const frac = v.getUint32(at + 4, le);
+    const incl = v.getUint32(at + 8, le);
+    const start = at + 16;
+    if (start + incl > file.byteLength) break;
+    at = start + incl;
+    if (incl < headerLength) continue;
+    const type = file[start + 8]!;
+    const xfer = file[start + 9]!;
+    const transfer = USBMON_TYPES[xfer] ?? 'other';
+    const up = type !== 0x53; // 'S'
+    const payload = file.subarray(start + headerLength, start + incl);
+    const setupPresent = transfer === 'control' && !up && file[start + 14] === 0;
+    out.push({
+      t: sec * 1e6 + (nano ? Math.floor(frac / 1000) : frac),
+      irp: v.getBigUint64(start, true),
+      status: v.getInt32(start + 28, true),
+      fn: 0,
+      up,
+      bus: v.getUint16(start + 12, true),
+      dev: file[start + 11]!,
+      ep: file[start + 10]!,
+      transfer,
+      stage: transfer === 'control' ? (up ? 3 : 0) : null,
+      data: setupPresent ? concat(file.subarray(start + 40, start + 48), payload) : payload,
     });
   }
   return out;

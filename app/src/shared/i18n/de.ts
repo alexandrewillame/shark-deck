@@ -1469,4 +1469,50 @@ export const de: Partial<Messages> = {
   'set.about.project': 'GitHub',
   'set.about.project.hint':
     'Der Quellcode, die Liste der unterstützten Geräte und die Stelle, an der Sie ein Problem melden oder Ihr Gerät anfragen können.',
+  'light.mouseFx.static': 'Statisch',
+  'light.mouseFx.breathing': 'Atmen',
+  'light.mouseFx.neon': 'Neon',
+  'light.mouseFx.colourBreathing': 'Farbatmen',
+  'light.mouseFx.staticColour': 'Statische Farbe',
+  'light.mouseFx.mixedBreathing': 'Gemischtes Atmen',
+  'support.title.add': 'Hilf, es hinzuzufügen',
+  'support.title.complete': 'Hilf, die Unterstützung zu vervollständigen',
+  'support.title.name': 'Hilf, diese Maus zu benennen',
+  'support.body.all':
+    'Das Gerätebericht-Tool zeichnet auf, was die offizielle Software sendet, während du jede Einstellung einmal änderst: etwa 30 Minuten, unter Windows. Hänge die Aufzeichnung an eine „New device“-Anfrage auf GitHub an, dann kann dieses Modell hinzugefügt werden.',
+  'support.body.unknown':
+    'Ein Gerätebericht reicht meist, um es hinzuzufügen: Er dauert eine Minute, zeichnet nichts auf, und du hängst ihn an eine „New device“-Anfrage auf GitHub an.',
+  'support.body.class':
+    'Shark Deck kennt diese Maus nur an ihrem Sensor und bietet daher die Einstellungen, die jede Maus mit diesem Sensor hat. Ein Gerätebericht nennt das Modell: Er dauert eine Minute, zeichnet nichts auf, und du hängst ihn an eine Anfrage auf GitHub an.',
+  'support.gaps': 'Noch nicht in Shark Deck: {list}.',
+  'support.body.steps':
+    'Das Gerätebericht-Tool kann genau diese aufzeichnen: Du stellst sie in der offiziellen Software ein, während es aufzeichnet, was die Software sendet. Ein paar Minuten, unter Windows; danach hängst du die Aufzeichnung an eine Anfrage auf GitHub an.',
+  'support.body.specific':
+    'Funktioniert etwas nicht wie erwartet? Das Gerätebericht-Tool zeichnet es in ein paar Minuten aus der offiziellen Software auf, unter Windows; danach hängst du die Aufzeichnung an eine Anfrage auf GitHub an.',
+  'support.action.all': 'Dieses Gerät aufzeichnen',
+  'support.action.report': 'Gerätebericht erstellen',
+  'support.action.steps': 'Fehlendes aufzeichnen',
+  'support.action.specific': 'Ein Problem aufzeichnen',
+  'support.howto': 'So funktioniert es',
+  'support.strip.mouse': 'Für diese Maus noch nicht in Shark Deck: {list}.',
+  'support.strip.keyboard': 'Für diese Tastatur noch nicht in Shark Deck: {list}.',
+  'support.strip.class':
+    'Shark Deck kennt diese Maus nur an ihrem Sensor: Einige ihrer Einstellungen können fehlen.',
+  'support.strip.add': 'Hilf beim Hinzufügen',
+  'support.strip.name': 'Hilf, sie zu benennen',
+  'support.gap.keymap': 'ihre Tastenbelegung (bis dahin nur Einstellungen für die ganze Tastatur)',
+  'support.gap.actuation': 'ihre Auslöseeinstellungen',
+  'support.gap.lighting': 'Beleuchtung',
+  'support.gap.macros': 'Makros',
+  'support.gap.deepSleep': 'Tiefschlaf',
+  'support.gap.buttonActions': 'einige Tastenaktionen',
+  'support.gap.receiver': 'ihr Funkempfänger',
+  'support.confirm':
+    'Shark Deck schließt sich zuerst, damit während der Aufzeichnung nur die offizielle Software mit dem Gerät spricht. Öffne Shark Deck danach wieder über das Startmenü.',
+  'support.confirm.ok': 'Shark Deck schließen und starten',
+  'support.unix':
+    'Auf diesem Computer erstellt das Tool den Gerätebericht; die offizielle Software aufzuzeichnen erfordert Windows.',
+  'support.opened': 'Das Gerätebericht-Tool wurde in einem Terminalfenster geöffnet.',
+  'support.failed': 'Das Gerätebericht-Tool konnte nicht gestartet werden: {error}',
+  'power.deepAfter': 'Tiefschlaf nach',
 };

@@ -152,11 +152,11 @@ function mouseRows(): Row[] {
     const d = m.pids.map((pid) => bekenDescriptorFor(pid)).find((x) => x && x.driver !== 'no-io');
     if (d) {
       add(
-        'partial',
+        d.model === 'attack-shark-x11' ? 'works' : 'partial',
         name,
         d,
         d.model === 'attack-shark-x11'
-          ? 'On its cable, not through its receiver yet. Lighting and macros are not driven yet — [more](../protocol/mouse-beken.md).'
+          ? 'On its cable and through its receiver — [more](../protocol/mouse-beken.md).'
           : 'Through its 8K receiver and on its cable. Through the receiver it cannot report its settings: Shark Deck shows what it last sent. On the cable it reads them — [more](../protocol/mouse-beken.md).',
       );
     } else {

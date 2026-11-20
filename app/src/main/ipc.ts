@@ -13,6 +13,7 @@ import { scanGames } from './profiles/gameScan';
 import { listRunningProcesses } from './profiles/processScan';
 import { getSettingsSync, setSettings } from './settings';
 import { allowQuit, setPendingChanges } from './quitGuard';
+import { openReportTool } from './reportTool';
 import { platform } from './platform';
 import { bundleExecutableName } from './platform/mac';
 import {
@@ -176,6 +177,19 @@ const desktopHandlers = {
   quitApp: () => {
     allowQuit();
     app.quit();
+  },
+  // The renderer asked first ("Shark Deck closes"): on Windows the tool
+  // records the official software, which must be the only one talking to the
+  // device, so the app quits once the tool's window is up.
+  openReportTool: async (deviceId: string) => {
+    const r = await openReportTool(deviceId);
+    if (r.quitting) {
+      setTimeout(() => {
+        allowQuit();
+        app.quit();
+      }, 1500);
+    }
+    return r;
   },
 } satisfies { [K in HostMethods]: Handler };
 

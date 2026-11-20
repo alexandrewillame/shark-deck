@@ -12,4 +12,11 @@
  */
 export type IdentityKey =
   | { family: 'royuan'; modelId: number }
-  | { family: 'compx-hub'; cid: number; mid: number; link: number };
+  | { family: 'compx-hub'; cid: number; mid: number; link: number }
+  /**
+   * `beken`: a mouse behind the Beken receiver several brands share
+   * (1D57:FA60), which says what it is unasked: byte 1 of every notification
+   * on input report 3 (`03 55 40 …` every 2 s from the X11) —
+   * `ported-from-vendor`, the X11's recording.
+   */
+  | { family: 'beken'; model: number };

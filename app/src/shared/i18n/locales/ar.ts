@@ -1418,4 +1418,49 @@ export const ar: Partial<Messages> = {
   'set.about.project': 'GitHub',
   'set.about.project.hint':
     'الشيفرة المصدرية، وقائمة الأجهزة المدعومة، والمكان الذي تبلّغ فيه عن مشكلة أو تطلب دعم جهازك.',
+  'light.mouseFx.static': 'ثابت',
+  'light.mouseFx.breathing': 'تنفس',
+  'light.mouseFx.neon': 'نيون',
+  'light.mouseFx.colourBreathing': 'تنفس ملون',
+  'light.mouseFx.staticColour': 'لون ثابت',
+  'light.mouseFx.mixedBreathing': 'تنفس مختلط',
+  'support.title.add': 'ساعد في إضافته',
+  'support.title.complete': 'ساعد في إكمال دعمه',
+  'support.title.name': 'ساعد في تحديد هذا الماوس',
+  'support.body.all':
+    'تسجّل أداة تقرير الجهاز ما يرسله البرنامج الرسمي بينما تغيّر كل إعداد مرة واحدة: نحو 30 دقيقة على Windows. أرفق التسجيل بطلب «New device» على GitHub، ويمكن عندها إضافة هذا الطراز.',
+  'support.body.unknown':
+    'يكفي عادةً تقرير الجهاز لإضافته: يستغرق دقيقة، ولا يسجّل شيئًا، وترفقه بطلب «New device» على GitHub.',
+  'support.body.class':
+    'يعرف Shark Deck هذا الماوس من مستشعره فقط، لذا يعرض الإعدادات المشتركة لكل ماوس بهذا المستشعر. يحدّد تقرير الجهاز الطراز: يستغرق دقيقة، ولا يسجّل شيئًا، وترفقه بطلب على GitHub.',
+  'support.gaps': 'غير متاح بعد في Shark Deck: {list}.',
+  'support.body.steps':
+    'يمكن لأداة تقرير الجهاز تسجيل هذه فقط: تضبطها في البرنامج الرسمي بينما تسجّل الأداة ما يرسله البرنامج. بضع دقائق على Windows؛ ثم أرفق التسجيل بطلب على GitHub.',
+  'support.body.specific':
+    'هل هناك ما لا يعمل كما ينبغي؟ تسجّله أداة تقرير الجهاز من البرنامج الرسمي في بضع دقائق على Windows؛ ثم أرفق التسجيل بطلب على GitHub.',
+  'support.action.all': 'سجّل هذا الجهاز',
+  'support.action.report': 'أنشئ تقرير الجهاز',
+  'support.action.steps': 'سجّل ما ينقص',
+  'support.action.specific': 'سجّل مشكلة',
+  'support.howto': 'كيف يعمل',
+  'support.strip.mouse': 'غير متاح بعد في Shark Deck لهذا الماوس: {list}.',
+  'support.strip.keyboard': 'غير متاح بعد في Shark Deck لهذه اللوحة: {list}.',
+  'support.strip.class': 'يعرف Shark Deck هذا الماوس من مستشعره فقط: قد تنقص بعض إعداداته.',
+  'support.strip.add': 'ساعد في إضافتها',
+  'support.strip.name': 'ساعد في تحديده',
+  'support.gap.keymap': 'خريطة المفاتيح (حتى ذلك الحين، إعدادات اللوحة كاملة فقط)',
+  'support.gap.actuation': 'إعدادات نقطة التفعيل',
+  'support.gap.lighting': 'الإضاءة',
+  'support.gap.macros': 'الماكرو',
+  'support.gap.deepSleep': 'السكون العميق',
+  'support.gap.buttonActions': 'بعض إجراءات الأزرار',
+  'support.gap.receiver': 'جهاز الاستقبال اللاسلكي',
+  'support.confirm':
+    'يُغلق Shark Deck أولًا، كي لا يتحدث مع الجهاز أثناء التسجيل إلا البرنامج الرسمي. افتح Shark Deck مجددًا بعد ذلك من قائمة ابدأ.',
+  'support.confirm.ok': 'أغلق Shark Deck وابدأ',
+  'support.unix':
+    'على هذا الحاسوب تنشئ الأداة تقرير الجهاز؛ أما تسجيل البرنامج الرسمي فيتطلب Windows.',
+  'support.opened': 'فُتحت أداة تقرير الجهاز في نافذة طرفية.',
+  'support.failed': 'تعذّر تشغيل أداة تقرير الجهاز: {error}',
+  'power.deepAfter': 'السكون العميق بعد',
 };

@@ -364,6 +364,13 @@ export interface Api {
   setPendingChanges(pending: boolean): Promise<void>;
   /** Quit without asking again: the user answered the renderer's prompt. */
   quitApp(): Promise<void>;
+  /**
+   * Starts the device report tool for this device, set to what Shark Deck
+   * still lacks for it (main/reportTool.ts). On Windows the app then closes,
+   * so only the official software talks to the device (`quitting`). The
+   * desktop only: the browser edition answers `ok: false`.
+   */
+  openReportTool(deviceId: string): Promise<{ ok: boolean; error?: string; quitting?: boolean }>;
 
   // ---- diagnostics -------------------------------------------------
   getFrameLog(): Promise<FrameLogEntry[]>;

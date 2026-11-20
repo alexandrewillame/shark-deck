@@ -232,6 +232,12 @@ export const GATES = {
   'dev.pair': { tab: 'device', view: 'device', when: (d) => d.wireless && has(d, 'pairing') },
   'dev.restore': { tab: 'device', view: 'device', when: (d) => has(d, 'restore') },
   'dev.identity': { tab: 'device', view: 'device', when: (d) => !configurable(d) },
+  // Help Shark Deck support it: what it lacks, and the device report tool.
+  'dev.support': {
+    tab: 'device',
+    view: 'device',
+    when: (d) => configurable(d) && !!d.ui.support && d.ui.support.level !== 'none',
+  },
 } satisfies Record<string, GateDef>;
 
 export type GateId = keyof typeof GATES;

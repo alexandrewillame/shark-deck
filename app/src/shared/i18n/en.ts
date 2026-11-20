@@ -1440,6 +1440,52 @@ export const en = {
   'set.about.project': 'GitHub',
   'set.about.project.hint':
     'The source code, the list of supported devices, and where to report a problem or ask for your device.',
+  'light.mouseFx.static': 'Static',
+  'light.mouseFx.breathing': 'Breathing',
+  'light.mouseFx.neon': 'Neon',
+  'light.mouseFx.colourBreathing': 'Colour breathing',
+  'light.mouseFx.staticColour': 'Static colour',
+  'light.mouseFx.mixedBreathing': 'Mixed breathing',
+  'support.title.add': 'Help add it',
+  'support.title.complete': 'Help complete its support',
+  'support.title.name': 'Help name this mouse',
+  'support.body.all':
+    'The device report tool records what the official software sends while you change each setting once: about 30 minutes, on Windows. Attach the recording to a "New device" request on GitHub, and this model can be added.',
+  'support.body.unknown':
+    'A device report is usually enough to add it: it takes a minute, records nothing, and you attach it to a "New device" request on GitHub.',
+  'support.body.class':
+    'Shark Deck knows this mouse by its sensor only, so it offers the settings every mouse with that sensor has. A device report names the model: it takes a minute, records nothing, and you attach it to a request on GitHub.',
+  'support.gaps': 'Not in Shark Deck yet: {list}.',
+  'support.body.steps':
+    'The device report tool can record just these: you set them in the official software while it records what the software sends. A few minutes, on Windows; then attach the recording to a request on GitHub.',
+  'support.body.specific':
+    'Something not working as it should? The device report tool records it from the official software in a few minutes, on Windows; then attach the recording to a request on GitHub.',
+  'support.action.all': 'Record this device',
+  'support.action.report': 'Make a device report',
+  'support.action.steps': 'Record what is missing',
+  'support.action.specific': 'Record a problem',
+  'support.howto': 'How it works',
+  'support.strip.mouse': 'Not in Shark Deck yet for this mouse: {list}.',
+  'support.strip.keyboard': 'Not in Shark Deck yet for this keyboard: {list}.',
+  'support.strip.class':
+    'Shark Deck knows this mouse by its sensor only: some of its settings may be missing.',
+  'support.strip.add': 'Help add them',
+  'support.strip.name': 'Help name it',
+  'support.gap.keymap': 'its key map (whole-keyboard settings only until then)',
+  'support.gap.actuation': 'its actuation settings',
+  'support.gap.lighting': 'lighting',
+  'support.gap.macros': 'macros',
+  'support.gap.deepSleep': 'deep sleep',
+  'support.gap.buttonActions': 'some button actions',
+  'support.gap.receiver': 'its wireless receiver',
+  'support.confirm':
+    'Shark Deck closes first, so that only the official software talks to the device while it records. Open Shark Deck again afterwards from the Start menu.',
+  'support.confirm.ok': 'Close Shark Deck and start',
+  'support.unix':
+    'On this computer the tool makes the device report; recording the official software needs Windows.',
+  'support.opened': 'The device report tool opened in a terminal window.',
+  'support.failed': 'The device report tool could not be started: {error}',
+  'power.deepAfter': 'Deep sleep after',
 } as const;
 
 export type MessageKey = keyof typeof en;

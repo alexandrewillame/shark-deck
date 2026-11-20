@@ -10,6 +10,7 @@ import { PairSection } from './device/PairSection';
 import { RestoreSection } from './device/RestoreSection';
 import { BrowserAccessSection } from './device/BrowserAccessSection';
 import { IdentityPanel } from './device/IdentityPanel';
+import { SupportInvite } from '../components/SupportInvite';
 import { hostFeatures } from '../state/host';
 import { SwitchTypeSection } from './keyboard/SwitchTypeSection';
 import { gate } from '@shared/menuGates';
@@ -76,6 +77,9 @@ export function DeviceTab({ device }: TabProps) {
         </Gated>
       ) : (
         <>
+          <Gated id="dev.support" device={device}>
+            <SupportInvite device={device} variant="panel" />
+          </Gated>
           {/* The colourway picker also sits on the Home card, where it is a
               hover affordance on a small photo. This is where someone goes to
               look at one device, so it belongs here too — same control, same

@@ -1445,4 +1445,50 @@ export const tr: Partial<Messages> = {
   'set.about.project': 'GitHub',
   'set.about.project.hint':
     'Kaynak kodu, desteklenen cihazların listesi ve bir sorunu bildirebileceğiniz ya da cihazınız için destek isteyebileceğiniz yer.',
+  'light.mouseFx.static': 'Sabit',
+  'light.mouseFx.breathing': 'Nefes',
+  'light.mouseFx.neon': 'Neon',
+  'light.mouseFx.colourBreathing': 'Renkli nefes',
+  'light.mouseFx.staticColour': 'Sabit renk',
+  'light.mouseFx.mixedBreathing': 'Karışık nefes',
+  'support.title.add': 'Eklenmesine yardım et',
+  'support.title.complete': 'Desteğinin tamamlanmasına yardım et',
+  'support.title.name': 'Bu farenin tanınmasına yardım et',
+  'support.body.all':
+    "Cihaz raporu aracı, her ayarı bir kez değiştirirken resmî yazılımın gönderdiklerini kaydeder: Windows'ta yaklaşık 30 dakika. Kaydı GitHub'daki bir “New device” isteğine ekle; böylece bu model eklenebilir.",
+  'support.body.unknown':
+    "Eklemek için genellikle bir cihaz raporu yeterlidir: bir dakika sürer, hiçbir şey kaydetmez ve onu GitHub'daki bir “New device” isteğine eklersin.",
+  'support.body.class':
+    "Shark Deck bu fareyi yalnızca sensöründen tanıyor; bu yüzden o sensöre sahip her farenin ayarlarını sunar. Bir cihaz raporu modeli belirtir: bir dakika sürer, hiçbir şey kaydetmez ve onu GitHub'daki bir isteğe eklersin.",
+  'support.gaps': "Henüz Shark Deck'te yok: {list}.",
+  'support.body.steps':
+    "Cihaz raporu aracı yalnızca bunları kaydedebilir: sen bunları resmî yazılımda ayarlarken o, yazılımın gönderdiklerini kaydeder. Windows'ta birkaç dakika; ardından kaydı GitHub'daki bir isteğe ekle.",
+  'support.body.specific':
+    "Bir şey olması gerektiği gibi çalışmıyor mu? Cihaz raporu aracı bunu Windows'ta birkaç dakikada resmî yazılımdan kaydeder; ardından kaydı GitHub'daki bir isteğe ekle.",
+  'support.action.all': 'Bu cihazı kaydet',
+  'support.action.report': 'Cihaz raporu oluştur',
+  'support.action.steps': 'Eksik olanı kaydet',
+  'support.action.specific': 'Bir sorunu kaydet',
+  'support.howto': 'Nasıl çalışır',
+  'support.strip.mouse': "Bu fare için henüz Shark Deck'te yok: {list}.",
+  'support.strip.keyboard': "Bu klavye için henüz Shark Deck'te yok: {list}.",
+  'support.strip.class':
+    'Shark Deck bu fareyi yalnızca sensöründen tanıyor: bazı ayarları eksik olabilir.',
+  'support.strip.add': 'Eklenmelerine yardım et',
+  'support.strip.name': 'Tanınmasına yardım et',
+  'support.gap.keymap': 'tuş haritası (o zamana kadar yalnızca tüm klavye ayarları)',
+  'support.gap.actuation': 'tetikleme ayarları',
+  'support.gap.lighting': 'aydınlatma',
+  'support.gap.macros': 'makrolar',
+  'support.gap.deepSleep': 'derin uyku',
+  'support.gap.buttonActions': 'bazı tuş eylemleri',
+  'support.gap.receiver': 'kablosuz alıcısı',
+  'support.confirm':
+    "Kayıt sırasında cihazla yalnızca resmî yazılımın konuşması için Shark Deck önce kapanır. Ardından Shark Deck'i Başlat menüsünden yeniden aç.",
+  'support.confirm.ok': "Shark Deck'i kapat ve başlat",
+  'support.unix':
+    'Bu bilgisayarda araç cihaz raporunu oluşturur; resmî yazılımı kaydetmek Windows gerektirir.',
+  'support.opened': 'Cihaz raporu aracı bir terminal penceresinde açıldı.',
+  'support.failed': 'Cihaz raporu aracı başlatılamadı: {error}',
+  'power.deepAfter': 'Derin uyku süresi',
 };

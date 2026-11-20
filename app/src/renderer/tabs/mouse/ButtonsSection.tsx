@@ -89,12 +89,18 @@ export function ButtonsSection({
     });
   };
 
+  // A shortcut with no key yet is nothing a mouse can take (the Beken mice
+  // refused it with an error the moment "Combo key" was chosen): it is only
+  // shown, and goes out once a key is in it.
+  const writeCombo = (i: number, m: ButtonMapping) =>
+    m.combo?.length ? write(i, m) : setData({ ...cur, [i]: m });
+
   const chooseAction = (i: number, key: string) => {
     const def = BUTTON_ACTION_BY_KEY[key]!;
     const m: ButtonMapping = { actionKey: key, action: def.wire ?? 0 };
     if (def.children) m.param = def.children[0]!.value;
     if (def.fire) m.fire = { times: 3, interval: 50 };
-    if (def.combo) m.combo = [];
+    if (def.combo) return writeCombo(i, { ...m, combo: [] });
     write(i, m);
   };
 
@@ -203,7 +209,7 @@ export function ButtonsSection({
                     const combo = [...(m?.combo ?? [])];
                     if (v) combo[slot] = parseInt(v, 16);
                     else combo.splice(slot, 1);
-                    write(i, { ...m!, combo: combo.filter((x) => x != null) });
+                    writeCombo(i, { ...m!, combo: combo.filter((x) => x != null) });
                   }}
                 />
               ))}

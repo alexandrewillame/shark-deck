@@ -53,6 +53,9 @@ export const hostFeatures = {
    * itself (src/web/sw.ts), so it has no such button.
    */
   updateCheck: desktop,
+  /** Starting the device report tool for a device (main/reportTool.ts); the
+   *  browser edition links to its page instead. */
+  reportTool: desktop,
 } as const;
 
 export type HostFeature = keyof typeof hostFeatures;

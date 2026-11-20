@@ -95,6 +95,101 @@ describe('reading a USBPcap recording', () => {
   });
 });
 
+/**
+ * Linux's usbmon, as tcpdump writes it for tools/sharkdeck-device-report.sh
+ * (link type 220): a 64-byte header a record, `S` submit / `C` completion,
+ * a control submit's setup packet in the header.
+ */
+describe('reading a Linux (usbmon) recording', () => {
+  /** One usbmon record: header fields as the kernel lays them out, then the data. */
+  const record = (
+    id: number,
+    type: 'S' | 'C',
+    xfer: number,
+    ep: number,
+    status: number,
+    setup: number[] | null,
+    data: number[],
+  ) => {
+    const h = new Uint8Array(64);
+    const v = new DataView(h.buffer);
+    v.setBigUint64(0, BigInt(id), true);
+    h[8] = type.charCodeAt(0);
+    h[9] = xfer;
+    h[10] = ep;
+    h[11] = 5; // devnum
+    v.setUint16(12, 3, true); // busnum
+    h[14] = setup ? 0 : 0x2d; // '-': no setup
+    v.setInt32(28, status, true);
+    v.setUint32(32, data.length, true);
+    v.setUint32(36, data.length, true);
+    if (setup) h.set(setup, 40);
+    return Uint8Array.from([...h, ...data]);
+  };
+  const pcap = (records: Uint8Array[]) => {
+    const head = new Uint8Array(24);
+    const v = new DataView(head.buffer);
+    v.setUint32(0, 0xa1b2c3d4, true);
+    v.setUint16(4, 2, true);
+    v.setUint16(6, 4, true);
+    v.setUint32(16, 65535, true);
+    v.setUint32(20, 220, true);
+    const parts: number[] = [...head];
+    records.forEach((r, i) => {
+      const rh = new DataView(new ArrayBuffer(16));
+      rh.setUint32(0, 1_800_000_000 + i, true);
+      rh.setUint32(4, 0, true);
+      rh.setUint32(8, r.length, true);
+      rh.setUint32(12, r.length, true);
+      parts.push(...new Uint8Array(rh.buffer), ...r);
+    });
+    return Uint8Array.from(parts);
+  };
+
+  it('pairs a feature report and its answer, and reads an input report', () => {
+    const setReport = [0x21, 0x09, 0x04, 0x03, 0x02, 0x00, 0x08, 0x00];
+    const getReport = [0xa1, 0x01, 0x0a, 0x03, 0x02, 0x00, 0x80, 0x00];
+    const ask = [0xa0, 0x0a, 0x80, 0x00, 0x01, 0x00, 0x00, 0x00];
+    const answer = [0x0a, 0x80, 0x01, 0x01, 0xfe];
+    const transfers = transfersOf(
+      readPcap(
+        pcap([
+          record(1, 'S', 2, 0x00, -115, setReport, ask),
+          record(1, 'C', 2, 0x00, 0, null, []),
+          record(2, 'S', 2, 0x80, -115, getReport, []),
+          record(2, 'C', 2, 0x80, 0, null, answer),
+          record(3, 'C', 1, 0x83, 0, null, [0x03, 0x55, 0x40, 0x02, 0x64]),
+        ]),
+      ),
+    );
+    expect(
+      transfers.map((t) => [t.kind, t.in, t.setup?.request ?? null, hexOf(t.data, false)]),
+    ).toEqual([
+      ['control', false, 0x09, 'a0 0a 80 00 01 00 00 00'],
+      ['control', true, 0x01, '0a 80 01 01 fe'],
+      ['interrupt', true, null, '03 55 40 02 64'],
+    ]);
+    expect(transfers.map((t) => [t.bus, t.dev, t.status])).toEqual([
+      [3, 5, 0],
+      [3, 5, 0],
+      [3, 5, 0],
+    ]);
+  });
+
+  it('keeps a stalled request as failed', () => {
+    const setReport = [0x21, 0x09, 0xa0, 0x03, 0x02, 0x00, 0x08, 0x00];
+    const [t] = transfersOf(
+      readPcap(
+        pcap([
+          record(1, 'S', 2, 0x00, -115, setReport, [0xa0, 0x0b, 0x08, 0, 0, 0, 0, 0]),
+          record(1, 'C', 2, 0x00, -32, null, []),
+        ]),
+      ),
+    );
+    expect(t!.status).toBe(-32);
+  });
+});
+
 describe('HID report descriptors', () => {
   it('reads a boot keyboard', () => {
     const k = parseReportDescriptor(Uint8Array.from(KEYBOARD_REPORT_DESCRIPTOR));

@@ -20,7 +20,7 @@ reads every change back. Own a 🟡 or 🟠 device? Tell us whether it works:
 
 <!-- generated:lineup — `npm run lineup` rewrites this block -->
 
-**At a glance:** 🟢 Tested 2 · 🟡 Should work 30 · 🟠 Partial 69 · ⚪ Recognised 6
+**At a glance:** 🟢 Tested 2 · 🟡 Should work 31 · 🟠 Partial 68 · ⚪ Recognised 6
 
 ## Mice
 
@@ -34,6 +34,7 @@ reads every change back. Own a 🟡 or 🟠 device? Tell us whether it works:
 | 🟡 Should work | R5 ULTRA | PAW3950 | 100–42000 |  |
 | 🟡 Should work | R6 | PAW3950 | 100–42000 |  |
 | 🟡 Should work | R8 | PAW3950 | 100–42000 |  |
+| 🟡 Should work | X11 | — | 50–22000 | On its cable and through its receiver — [more](../protocol/mouse-beken.md). |
 | 🟡 Should work | X11 ULTRA | PAW3950 | 50–42000 |  |
 | 🟡 Should work | X3 PRO | PAW3395 | 50–26000 |  |
 | 🟠 Partial | MEGA B2 | PAW3955 | 50–60000 | Its sensor’s common settings only: its model number is not known yet. |
@@ -43,7 +44,6 @@ reads every change back. Own a 🟡 or 🟠 device? Tell us whether it works:
 | 🟠 Partial | RS6 ULTRA | PAW3955 | 50–52000 | Its sensor’s common settings only: its model number is not known yet. |
 | 🟠 Partial | V2 AIR | PAW3955 | 50–60000 | Its sensor’s common settings only: its model number is not known yet. |
 | 🟠 Partial | V5 | PAW3950 | 50–42000 | Its sensor’s common settings only: its model number is not known yet. |
-| 🟠 Partial | X11 | — | 50–22000 | On its cable, not through its receiver yet. Lighting and macros are not driven yet — [more](../protocol/mouse-beken.md). |
 | 🟠 Partial | X8 PRO | — | 50–40000 | Through its 8K receiver and on its cable. Through the receiver it cannot report its settings: Shark Deck shows what it last sent. On the cable it reads them — [more](../protocol/mouse-beken.md). |
 | 🟠 Partial | X8 ULTIMATE / X8 ULTRA | PAW3950 | 50–42000 | Its sensor’s common settings only: its model number is not known yet. |
 | ⚪ Recognised | M5 ULTRA (Attack Shark or MAMBASNAKE) | — | — | Its USB ids are another brand’s too; shown until one is confirmed. |
@@ -163,6 +163,12 @@ not claimed at all.
 
 ## Missing a device?
 
+Shark Deck asks by itself: a device it does not support, or not fully, has a
+**Help add it** (or **Help complete its support**) panel in its Device tab,
+whose button starts the tool below for that device, set to what is missing.
+On macOS and Linux it makes the report; a recording needs Windows, where the
+official software runs. Or by hand:
+
 1. Download [`tools/SharkDeck-device-report.bat`](../../tools/SharkDeck-device-report.bat)
    (Windows; also attached to each release) and run it. Windows may warn about
    a file from the internet: **More info → Run anyway**. It finds your device
@@ -222,7 +228,7 @@ written to. Details: [`docs/protocol/README.md`](../protocol/README.md).
 | Compx "MOUSE HUB" | 3554 (receivers F517, FB44, FB35; cables F515, F516, FB43) | V8 and its successors | identify reply: cid 124 + model number (mid) + link |
 | GearHub-V5 | 3151 (cable 4026, receiver 402D) | R2, R3, X3 PRO (second revision) | device id (`0x8F`) |
 | JXC | 373E | R5 ULTRA, R6, R8 | the product id (no model read exists) |
-| Beken | 1D57 (X8 PRO: 8K receiver FA65, cable 2126; X11: cable FA55) | X11, X8 PRO, X8 PLUS, X1, R1 / X6 / X3 | the product id — the X8 PRO and the X11 driven, the rest shown |
+| Beken | 1D57 (X8 PRO: 8K receiver FA65, cable 2126; X11: cable FA55, receiver FA60) | X11, X8 PRO, X8 PLUS, X1, R1 / X6 / X3 | the product id; behind the receiver FA60, which other brands use too, the model byte the mouse sends unasked — the X8 PRO and the X11 driven, the rest shown |
 
 Menus follow the model, never its name: one marketing name can cover several
 firmware ids with different hardware (three X87 ULTRA ids, one of them

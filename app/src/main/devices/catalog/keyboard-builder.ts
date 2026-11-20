@@ -218,6 +218,23 @@ export function buildKeyboardDescriptor(row: KeyboardRow): DeviceDescriptor {
       ...(magnetic ? { magnetic: magneticSpec(row) } : {}),
       ...(row.switchTypes.length ? { supportedSwitches: row.switchTypes.map((s) => s.code) } : {}),
       ...(wireless ? { wireless: true } : {}),
+      ...(supported && (!addressable || (row.magnetic && !magnetic))
+        ? {
+            support: {
+              gaps: [
+                ...(addressable ? [] : (['keymap'] as const)),
+                ...(row.magnetic && !magnetic ? (['actuation'] as const) : []),
+              ],
+              // The keys' own steps show where a key sits; the software's
+              // pages, its picture of the board.
+              record: [
+                ...(addressable ? [] : ['start', 'key', 'perkey']),
+                ...(row.magnetic && !magnetic ? ['act', 'rt', 'dz', 'dks', 'mt', 'tgl'] : []),
+                'specific',
+              ],
+            },
+          }
+        : {}),
     },
   };
 }

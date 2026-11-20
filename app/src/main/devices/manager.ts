@@ -665,11 +665,12 @@ export class DeviceManager extends Emitter {
     id: string,
     vc: HidCandidate,
     descriptor: DeviceDescriptor,
+    events?: HidCandidate | null,
   ): Promise<void> {
     const prev = entry.live;
     void entry.channel.close();
     entry.descriptor = descriptor;
-    entry.channel = this.newChannel(id, vc, descriptor);
+    entry.channel = this.newChannel(id, vc, descriptor, events);
     entry.driver = createDriver({
       descriptor,
       channel: entry.channel,
@@ -736,6 +737,20 @@ export class DeviceManager extends Emitter {
         relay: e.descriptor.relay,
         capabilities: next.capabilities.filter((c) => c !== 'restore'),
       };
+    }
+    // Identified on one collection, driven on another: the Beken receiver
+    // several brands share hears its mouse say what it is on its notification
+    // collection, and takes settings on another (catalog/beken-mice.ts). No
+    // such collection: stay pending, and ask again on the next pass.
+    if (
+      !readOnly &&
+      (next.usagePage !== e.descriptor.usagePage || next.usage !== e.descriptor.usage)
+    ) {
+      const all = await enumerate(next.vid, next.pid);
+      const vc = findVendorCollection(all, next.vid, next.pid, next.usagePage, next.usage);
+      if (!vc) return;
+      await e.channel.close();
+      e.channel = this.newChannel(prev.id, vc, next, DeviceManager.eventsOf(all, next));
     }
     e.descriptor = next;
     e.driver = createDriver({
@@ -827,11 +842,13 @@ export class DeviceManager extends Emitter {
       // vendor id for its dongle and its USB-C endpoint, so the VID/PID pair
       // cannot tell them apart — without this a cabled mouse showed up as a
       // 2.4 GHz device with a battery pill it has no battery for.
-      connection: descriptor.wired
-        ? 'usb'
-        : descriptor.vid === COMPX_8K_DONGLE_VID || descriptor.relay
-          ? '2.4g'
-          : 'usb',
+      connection:
+        descriptor.connection ??
+        (descriptor.wired
+          ? 'usb'
+          : descriptor.vid === COMPX_8K_DONGLE_VID || descriptor.relay
+            ? '2.4g'
+            : 'usb'),
       // A read-only card reads nothing, battery included: no pill to show.
       wireless:
         descriptor.wired || isReadOnly(descriptor)
@@ -875,7 +892,12 @@ export class DeviceManager extends Emitter {
     };
   }
 
-  private newChannel(id: string, vc: HidCandidate, descriptor: DeviceDescriptor): HidChannel {
+  private newChannel(
+    id: string,
+    vc: HidCandidate,
+    descriptor: DeviceDescriptor,
+    events?: HidCandidate | null,
+  ): HidChannel {
     return new HidChannel(
       vc,
       (dir, _deviceKey, hex, note) => frameLog.push({ deviceId: id, dir, hex, note }),
@@ -890,8 +912,24 @@ export class DeviceManager extends Emitter {
         // A receiver carries the device's packets; the channel runs its
         // handshake around every one (hid/transport.ts).
         ...(descriptor.relay ? { relay: descriptor.relay } : {}),
+        // Where the device announces things unasked (a Beken mouse).
+        ...(events ? { events } : {}),
       },
     );
+  }
+
+  /** A device's announcement collection (`DeviceDescriptor.events`), among those enumerated. */
+  private static eventsOf(all: HidCandidate[], d: DeviceDescriptor): HidCandidate | null {
+    if (!d.events) return null;
+    const c = all.find(
+      (x) =>
+        x.vendorId === d.vid &&
+        x.productId === d.pid &&
+        x.usagePage === d.events!.usagePage &&
+        x.usage === d.events!.usage &&
+        !!x.path,
+    );
+    return c ?? null;
   }
 
   /**
@@ -1031,15 +1069,32 @@ export class DeviceManager extends Emitter {
         // DIFFERENT endpoint than the one that died (unplug the cable and the
         // dongle is what is left), so adopt its descriptor too rather than
         // driving a USB-C descriptor over a 2.4 GHz channel.
-        await this.adoptEndpoint(existing, id, vc, descriptor);
+        await this.adoptEndpoint(
+          existing,
+          id,
+          vc,
+          descriptor,
+          DeviceManager.eventsOf(allCollections, descriptor),
+        );
         changed = true;
       } else if (existing && DeviceManager.prefersEndpoint(existing.descriptor, descriptor)) {
         // Both endpoints of one device are enumerated this pass; the cable
         // takes over from the dongle.
-        await this.adoptEndpoint(existing, id, vc, descriptor);
+        await this.adoptEndpoint(
+          existing,
+          id,
+          vc,
+          descriptor,
+          DeviceManager.eventsOf(allCollections, descriptor),
+        );
         changed = true;
       } else if (!existing) {
-        const channel = this.newChannel(id, vc, descriptor);
+        const channel = this.newChannel(
+          id,
+          vc,
+          descriptor,
+          DeviceManager.eventsOf(allCollections, descriptor),
+        );
         const driver = createDriver({
           descriptor,
           channel,

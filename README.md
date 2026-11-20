@@ -24,16 +24,17 @@ telemetry, and it works offline.
 **[Full list, model by model](docs/devices/attack-shark-lineup.md)**
 
 - 🟢 **Tested:** the R85HE keyboard and the V8 mouse.
-- 🟡 **Should work:** about 20 more keyboards, and the X11 ULTRA, F1 AIR, R2, R3,
-  X3 PRO, R5 ULTRA, R6 and R8 mice.
+- 🟡 **Should work:** about 20 more keyboards, and the X11 ULTRA, original X11,
+  F1 AIR, R2, R3, X3 PRO, R5 ULTRA, R6 and R8 mice.
 - 🟠 **Partly supported:** about 60 keyboards (whole-keyboard settings only), and
-  the X8, X8 PRO, original X11, V5, R11 ULTRA, RS3/RS6 ULTRA, V2 AIR, MEGA B2 and
-  R5 TURBO mice.
+  the X8, X8 PRO, V5, R11 ULTRA, RS3/RS6 ULTRA, V2 AIR, MEGA B2 and R5 TURBO
+  mice.
 - ⚪ **Recognised only:** the X1, X8 PLUS, R1, X3 and X6.
 
-**Your device is not listed, or only partly supported?** Run the
-[device report tool](docs/devices/attack-shark-lineup.md#missing-a-device), then
-attach the file it saves to a
+**Your device is not listed, or only partly supported?** Its Device tab in
+Shark Deck starts the
+[device report tool](docs/devices/attack-shark-lineup.md#missing-a-device) for
+it; or run the tool yourself. Then attach the file it saves to a
 [new device request](https://github.com/alexandrewillame/shark-deck/issues/new?template=new-device.yml).
 That report is what we add devices from.
 

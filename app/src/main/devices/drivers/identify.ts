@@ -47,5 +47,25 @@ export class HubIdentify extends Driver {
   }
 }
 
+/**
+ * The Beken receiver several brands share (1D57:FA60): nothing is sent at all.
+ * The mouse behind it says what it is on its own, on the notification
+ * collection this endpoint is opened on: `03 <model> …` (its battery every
+ * 2 s, a DPI change, a write's answer). The system keeps those reports while
+ * nobody reads, so each look takes what came since the last one.
+ */
+export class BekenIdentify extends Driver {
+  override async identify(): Promise<IdentityKey | null> {
+    for (let i = 0; i < 64; i++) {
+      const r = await this.ch.readInput(i === 0 ? 300 : 20);
+      if (!r) return null;
+      if (r[0] === 0x03 && r.length >= 3 && r[1] !== undefined) {
+        return { family: 'beken', model: r[1] };
+      }
+    }
+    return null;
+  }
+}
+
 /** A read-only card (another brand, an unknown id, an unsupported command set): no I/O at all. */
 export class NoIo extends Driver {}

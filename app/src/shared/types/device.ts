@@ -87,6 +87,12 @@ export interface DeviceDescriptor {
    * Set from the receiver's PID (registry.ts) and kept through identification.
    */
   relay?: { target: number };
+  /** How the endpoint reaches the computer, where its VID cannot say (a
+   *  Beken receiver): wins over the derivation in the manager's live device. */
+  connection?: ConnectionType;
+  /** The collection the device announces things on unasked — its battery,
+   *  its DPI stage (a Beken mouse) — read beside the settings one. */
+  events?: { usagePage: number; usage: number };
   /** relative art path under assets/devices, or null for the generic silhouette */
   art: string | null;
   /** cosmetic colour/edition photos available for this model, if any — see DeviceColorVariant */
@@ -235,6 +241,11 @@ export interface DeviceSpec {
   dpiDynamicModes?: { value: number; label: string }[];
   /** body-light-strip zones (future mice with `mouseLighting`) */
   bodyLightZones?: string[];
+  /** A mouse light with effects of its own (the X11's), each with the
+   *  controls it has; absent: the V8 family's list and idle-off rows. */
+  bodyLight?: { effects: BodyLightEffect[] };
+  /** Deep-sleep choices in seconds (PowerSettings.deepSleepSec); absent: none. */
+  deepSleepPresets?: number[];
   /**
    * Physical position of each mouse button, for numbered badges laid over
    * the device's own product photo instead of a plain numbered list — see
@@ -244,6 +255,42 @@ export interface DeviceSpec {
    * on the photo.
    */
   buttonMap?: ButtonMapEntry[];
+  /** What this model still lacks, and what its owner can record to help
+   *  (main/devices/support.ts). */
+  support?: { gaps: SupportGap[]; record: RecordingPlan };
+}
+
+/** One effect of a mouse light (`DeviceSpec.bodyLight`): its wire value, its
+ *  name, and which of brightness, speed and colour it takes. */
+export interface BodyLightEffect {
+  value: number;
+  label: string;
+  labelKey: string;
+  brightness?: boolean;
+  speed?: boolean;
+  color?: boolean;
+}
+
+/** A part of a device Shark Deck does not cover yet, as its owner is told. */
+export type SupportGap =
+  'keymap' | 'actuation' | 'lighting' | 'macros' | 'deepSleep' | 'buttonActions' | 'receiver';
+
+/**
+ * What the device report tool is asked to do (tools/SharkDeck-device-report.bat):
+ * `report` the report alone (USB ids and the model question, nothing
+ * recorded); `all` every recording step; `specific` a short recording of one
+ * thing the owner chooses; a list: only the steps whose id starts with one of
+ * these words (`deep`, `macro`…), `specific` adding that step at the end.
+ */
+export type RecordingPlan = 'report' | 'all' | 'specific' | string[];
+
+/** What a device's owner can do to help Shark Deck support it (DeviceUi.support). */
+export interface SupportPlan {
+  /** `none`: nothing is configured (a read-only card); `partial`: some is;
+   *  `class`: a Hub mouse known by its sensor only, which a report names. */
+  level: 'none' | 'partial' | 'class';
+  gaps: SupportGap[];
+  record: RecordingPlan;
 }
 
 /** One selectable lift-off distance: the byte written to the device and its mm label. */

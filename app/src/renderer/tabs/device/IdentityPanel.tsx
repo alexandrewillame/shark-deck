@@ -1,6 +1,7 @@
 import type { MessageKey } from '@shared/i18n';
 import type { TabProps } from '../common';
 import { Panel, Row } from '../../components/common';
+import { SupportInvite } from '../../components/SupportInvite';
 import { useT } from '../../state/i18n';
 
 const hex4 = (n: number) => n.toString(16).toUpperCase().padStart(4, '0');
@@ -40,6 +41,7 @@ export function IdentityPanel({ device }: TabProps) {
           {hex4(device.vid)}:{hex4(device.pid)}
         </span>
       </Row>
+      <SupportInvite device={device} variant="identity" />
     </Panel>
   );
 }
