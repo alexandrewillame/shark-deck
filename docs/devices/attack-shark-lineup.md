@@ -20,7 +20,7 @@ reads every change back. Own a 🟡 or 🟠 device? Tell us whether it works:
 
 <!-- generated:lineup — `npm run lineup` rewrites this block -->
 
-**At a glance:** 🟢 Tested 2 · 🟡 Should work 30 · 🟠 Partial 68 · ⚪ Recognised 7
+**At a glance:** 🟢 Tested 2 · 🟡 Should work 30 · 🟠 Partial 69 · ⚪ Recognised 6
 
 ## Mice
 
@@ -43,13 +43,13 @@ reads every change back. Own a 🟡 or 🟠 device? Tell us whether it works:
 | 🟠 Partial | RS6 ULTRA | PAW3955 | 50–52000 | Its sensor’s common settings only: its model number is not known yet. |
 | 🟠 Partial | V2 AIR | PAW3955 | 50–60000 | Its sensor’s common settings only: its model number is not known yet. |
 | 🟠 Partial | V5 | PAW3950 | 50–42000 | Its sensor’s common settings only: its model number is not known yet. |
-| 🟠 Partial | X8 PRO | — | 50–40000 | Through its 8K receiver, not its cable yet. It cannot report its settings: Shark Deck shows what it last sent — [more](../protocol/mouse-beken.md). |
+| 🟠 Partial | X11 | — | 50–22000 | On its cable, not through its receiver yet. Lighting and macros are not driven yet — [more](../protocol/mouse-beken.md). |
+| 🟠 Partial | X8 PRO | — | 50–40000 | Through its 8K receiver and on its cable. Through the receiver it cannot report its settings: Shark Deck shows what it last sent. On the cable it reads them — [more](../protocol/mouse-beken.md). |
 | 🟠 Partial | X8 ULTIMATE / X8 ULTRA | PAW3950 | 50–42000 | Its sensor’s common settings only: its model number is not known yet. |
 | ⚪ Recognised | M5 ULTRA (Attack Shark or MAMBASNAKE) | — | — | Its USB ids are another brand’s too; shown until one is confirmed. |
 | ⚪ Recognised | R1 / X6 / X3 | — | — | Beken chip: the settings protocol is not confirmed yet — [why](../protocol/mouse-beken.md). |
 | ⚪ Recognised | R2 (newer chip) | — | — | Its command set has no driver yet. |
 | ⚪ Recognised | X1 | — | — | Beken chip: the settings protocol is not confirmed yet — [why](../protocol/mouse-beken.md). |
-| ⚪ Recognised | X11 | — | — | Beken chip: the settings protocol is not confirmed yet — [why](../protocol/mouse-beken.md). |
 | ⚪ Recognised | X8 PLUS | — | — | Beken chip: the settings protocol is not confirmed yet — [why](../protocol/mouse-beken.md). |
 
 ## Keyboards
@@ -182,9 +182,12 @@ not claimed at all.
    recorded (never saved), and a picture of the official software is taken at
    each step, after you have checked it is the right window. Where only you can
    see the value you set (a lowest or highest value, the one you use), the
-   window asks you to type it. It all goes into a .zip on your Desktop, the
-   report included. Look through the pictures before sending it: anyone can
-   download what is attached to an issue.
+   window asks you to type it. To show us just one setting that is missing or
+   does not work in Shark Deck, choose "Something specific" instead: you do it
+   in the official software and write in a note what you did, in a few minutes.
+   It all goes into a .zip on your Desktop, the report included. Look through
+   the pictures before sending it: anyone can download what is attached to an
+   issue.
 
    On **Linux or macOS**, run
    [`tools/sharkdeck-device-report.sh`](../../tools/sharkdeck-device-report.sh)
@@ -198,14 +201,16 @@ not claimed at all.
 
 A device that speaks a protocol Shark Deck already knows can usually be added
 from the report alone, as 🟡 until its owner confirms it. One on a protocol
-nobody has documented yet (the original X11, on its Beken chip) is written from
-its recording, and stays 🟡 until its owner has tried a test version.
+nobody has documented yet (the X8 PRO and the X11, on their Beken chips) is
+written from its recording, and stays 🟠 until its owner has tried a test
+version.
 
 ## How devices are recognised
 
 The USB vendor and product id only say which protocol **family** a device
-speaks — `3151:5029` is about a hundred boards of several brands, and
-`3554:F517` is both the V8's receiver and another brand's mouse. So a device
+speaks — `3151:5029` is about a hundred boards of several brands, and `3554`
+is the chip maker's id, not Attack Shark's, so another brand's mouse on the
+same chip can report the V8 receiver's `3554:F517`. So a device
 attaches as "Identifying…", is sent nothing but its family's identify command,
 and is bound to a model only by what its firmware answers. Another brand's
 device on the same chip gets a "Not an Attack Shark device" card and is never
@@ -217,7 +222,7 @@ written to. Details: [`docs/protocol/README.md`](../protocol/README.md).
 | Compx "MOUSE HUB" | 3554 (receivers F517, FB44, FB35; cables F515, F516, FB43) | V8 and its successors | identify reply: cid 124 + model number (mid) + link |
 | GearHub-V5 | 3151 (cable 4026, receiver 402D) | R2, R3, X3 PRO (second revision) | device id (`0x8F`) |
 | JXC | 373E | R5 ULTRA, R6, R8 | the product id (no model read exists) |
-| Beken | 1D57 (X8 PRO 8K receiver FA65) | X11, X8 PRO, X8 PLUS, X1, R1 / X6 / X3 | the product id — the X8 PRO driven through its 8K receiver, the rest shown |
+| Beken | 1D57 (X8 PRO: 8K receiver FA65, cable 2126; X11: cable FA55) | X11, X8 PRO, X8 PLUS, X1, R1 / X6 / X3 | the product id — the X8 PRO and the X11 driven, the rest shown |
 
 Menus follow the model, never its name: one marketing name can cover several
 firmware ids with different hardware (three X87 ULTRA ids, one of them

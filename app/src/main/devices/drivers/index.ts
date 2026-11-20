@@ -7,7 +7,7 @@ import { HubIdentify, NoIo, RoyuanIdentify } from './identify';
 import { Yc500Keyboard } from './yc500-keyboard';
 import { GearHubMouse } from './gearhub-mouse';
 import { JxcMouse } from './jxc-mouse';
-import { Beken8kMouse } from './beken-8k-mouse';
+import { Beken8kCableMouse, Beken8kMouse, BekenX11Mouse } from './beken-8k-mouse';
 
 type DriverCtor = new (ctx: DriverContext) => Driver;
 
@@ -24,6 +24,10 @@ export const DRIVERS: Readonly<Record<string, DriverCtor>> = {
   'jxc-mouse': JxcMouse,
   // The X8 PRO's 8K receiver, the one Beken endpoint driven: write-only (beken-8k-mouse.ts).
   'beken-8k-mouse': Beken8kMouse,
+  // The same mouse on its cable: the same blocks as feature reports, and readable.
+  'beken-8k-mouse-cable': Beken8kCableMouse,
+  // The X11 on its cable: the same protocol, its own encodings, nothing read.
+  'beken-x11-mouse': BekenX11Mouse,
   // A device attached before it has identified sends nothing but identify;
   // a read-only card sends nothing at all (see drivers/identify.ts).
   'royuan-identify': RoyuanIdentify,

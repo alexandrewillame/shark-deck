@@ -122,6 +122,10 @@ export function decodeBekenDpi(raw: number, doubled: boolean): number {
   return (raw + 1) * (doubled ? 100 : 50);
 }
 
+/** The block's eight colours. The mouse lights stage i (1-based) with entry i,
+ *  whatever is sent: green, blue, yellow, cyan, magenta, orange-red — the
+ *  owner's order, and the vendor software sends no colour change. Entry 0 and
+ *  7 are not a stage's. */
 const COLOURS = [
   [0xff, 0x00, 0x00],
   [0x00, 0xff, 0x00],
@@ -189,11 +193,18 @@ const SEED_POLL = BEKEN_8K_POLL[1000]!;
 // — buttons (0x08): 18 slots of [action, modifiers, usage] -----------------
 
 /**
- * Shark Deck's button i -> its slot: Left, Right, Middle, Forward, Backward,
- * the vendor software's own five (it offers no other). Slot 3 is the DPI
- * button, 6 an unknown `3c`, 7–15 unused, 16–17 the wheel.
+ * Shark Deck's button i -> its slot: Left, Right, Middle, button 4 = Forward
+ * (the side button nearer the front), button 5 = Backward (the one nearer the
+ * rear), the DPI button underneath. Slot 5 is the front button, slot 4 the
+ * rear one. How we know: the report tool used to call the rear button
+ * "button 4 (Back)" and the front one "button 5 (Forward)", the reverse of the
+ * vendor software's numbers; the owner's "button 4" steps went to slot 5 and
+ * his "button 5" steps to slot 4. The first driver trusted the tool's names and
+ * swapped the two; the owner's test of it showed Shark Deck's button 4 acting
+ * on the rear button, whose factory action is Backward (`05`). Slot 6 is an
+ * unknown `3c`, 7–15 unused, 16–17 the wheel.
  */
-export const BEKEN_8K_BUTTON_SLOTS = [0, 1, 2, 4, 5] as const;
+export const BEKEN_8K_BUTTON_SLOTS = [0, 1, 2, 5, 4, 3] as const;
 
 /** The default map, as the recording restored it. */
 export const SEED_BUTTONS: readonly number[] = [
@@ -208,8 +219,8 @@ const MOUSE_BUTTON: ReadonlyMap<number, number> = new Map([
   [0x0100, 0x02], // left
   [0x0200, 0x03], // right
   [0x0400, 0x04], // wheel click
-  [0x0800, 0x06], // backward
-  [0x1000, 0x05], // forward
+  [0x0800, 0x05], // backward: slot 4's default
+  [0x1000, 0x06], // forward: slot 5's default
 ]);
 /** `dpiSwitch`: DPI loop is the DPI button's own default (inferred), + and − recorded. */
 const DPI_SWITCH: ReadonlyMap<number, number> = new Map([
@@ -328,11 +339,60 @@ export class Beken8kMouse extends Driver {
   private lastSentAt = 0;
   private readonly blocks = new Map<BlockKey, number[]>();
 
+  // — what a model may do its own way (BekenX11Mouse) ---------------------------
+
+  /** Shark Deck's button i -> its slot in the button block. */
+  protected get slots(): readonly number[] {
+    return BEKEN_8K_BUTTON_SLOTS;
+  }
+
+  /** A block until one has gone out. */
+  protected seed(key: BlockKey): readonly number[] {
+    return SEEDS[key];
+  }
+
+  /** Stage i's DPI, as the DPI block holds it. */
+  protected stageDpi(d: readonly number[], i: number): number {
+    return decodeBekenDpi(
+      (d[D.LOW + i] ?? 0) | ((d[D.HIGH + i] ?? 0) << 8),
+      (((d[D.DOUBLED] ?? 0) >> i) & 1) === 1,
+    );
+  }
+
+  protected putStageDpi(d: number[], i: number, dpi: number): void {
+    const { raw, doubled } = encodeBekenDpi(dpi);
+    d[D.LOW + i] = raw & 0xff;
+    d[D.HIGH + i] = raw >> 8;
+    d[D.DOUBLED] = doubled ? (d[D.DOUBLED] ?? 0) | (1 << i) : (d[D.DOUBLED] ?? 0) & ~(1 << i);
+  }
+
+  /** The sensor switches, the DPI block's first two bytes. */
+  protected sensorOf(d: readonly number[]): SensorSettings {
+    const a = d[D.FLAGS_A] ?? 0;
+    const b = d[D.FLAGS_B] ?? 0;
+    return {
+      lod: a & LOD_2MM ? 1 : 0,
+      rippleControl: (a & RIPPLE) !== 0,
+      angleSnapping: (b & ANGLE) !== 0,
+      motionSync: (b & MOTION) !== 0,
+    };
+  }
+
+  protected putSensor(d: number[], s: SensorSettings): void {
+    const set = (at: number, bit: number, on: boolean | undefined) => {
+      if (on !== undefined) d[at] = on ? (d[at] ?? 0) | bit : (d[at] ?? 0) & ~bit;
+    };
+    set(D.FLAGS_A, LOD_2MM, s.lod === undefined ? undefined : s.lod === 1);
+    set(D.FLAGS_A, RIPPLE, s.rippleControl);
+    set(D.FLAGS_B, ANGLE, s.angleSnapping);
+    set(D.FLAGS_B, MOTION, s.motionSync);
+  }
+
   /** A block as it last went out, else its seed. */
-  private async block(key: BlockKey): Promise<number[]> {
+  protected async block(key: BlockKey): Promise<number[]> {
     const have = this.blocks.get(key);
     if (have) return [...have];
-    const seed = SEEDS[key];
+    const seed = this.seed(key);
     const kept = await this.state?.get(`beken8k.${key}`).catch(() => undefined);
     const ok =
       Array.isArray(kept) &&
@@ -358,8 +418,21 @@ export class Beken8kMouse extends Driver {
     }
   }
 
+  /** A block as the mouse has it now: kept for the next change, on every connection. */
+  protected async remember(key: BlockKey, data: readonly number[]): Promise<void> {
+    this.blocks.set(key, [...data]);
+    await this.state?.set(`beken8k.${key}`, [...data]).catch(() => undefined);
+  }
+
   /** Send a block whole; it is kept only once the mouse has said it took it. */
-  private async send(key: BlockKey, data: number[]): Promise<WriteResult> {
+  protected async send(key: BlockKey, data: number[]): Promise<WriteResult> {
+    const result = await this.transmit(key, data);
+    if (result.ok) await this.remember(key, data);
+    return result;
+  }
+
+  /** The block on the wire, through the receiver: a frame, then its two answers. */
+  protected async transmit(key: BlockKey, data: number[]): Promise<WriteResult> {
     const tx = this.frameFor(key, data);
     const frames = [toHex(tx)];
     const wait = this.lastSentAt + this.minGapMs - Date.now();
@@ -400,14 +473,10 @@ export class Beken8kMouse extends Driver {
         frames,
       };
     });
-    if (result.ok) {
-      this.blocks.set(key, [...data]);
-      await this.state?.set(`beken8k.${key}`, [...data]).catch(() => undefined);
-    }
     return result;
   }
 
-  private refuse(error: string): WriteResult {
+  protected refuse(error: string): WriteResult {
     return { ok: false, verified: 'unverified', error };
   }
 
@@ -434,11 +503,13 @@ export class Beken8kMouse extends Driver {
     const mask = d[D.MASK] ?? 0x3f;
     return Array.from({ length: STAGES }, (_, i) => ({
       index: i,
-      dpi: decodeBekenDpi(
-        (d[D.LOW + i] ?? 0) | ((d[D.HIGH + i] ?? 0) << 8),
-        (((d[D.DOUBLED] ?? 0) >> i) & 1) === 1,
-      ),
-      color: [d[D.RGB + 3 * i] ?? 0, d[D.RGB + 3 * i + 1] ?? 0, d[D.RGB + 3 * i + 2] ?? 0],
+      dpi: this.stageDpi(d, i),
+      // Stage i lights with colour entry i + 1 (see COLOURS).
+      color: [
+        d[D.RGB + 3 * (i + 1)] ?? 0,
+        d[D.RGB + 3 * (i + 1) + 1] ?? 0,
+        d[D.RGB + 3 * (i + 1) + 2] ?? 0,
+      ],
       enabled: ((mask >> i) & 1) === 1,
     }));
   }
@@ -448,27 +519,14 @@ export class Beken8kMouse extends Driver {
     if (!live.length) return this.refuse('At least one DPI stage has to stay on.');
     const d = await this.block('dpi');
     d[D.MASK] = (1 << live.length) - 1;
-    live.forEach((s, i) => {
-      const { raw, doubled } = encodeBekenDpi(s.dpi);
-      d[D.LOW + i] = raw & 0xff;
-      d[D.HIGH + i] = raw >> 8;
-      d[D.DOUBLED] = doubled ? (d[D.DOUBLED] ?? 0) | (1 << i) : (d[D.DOUBLED] ?? 0) & ~(1 << i);
-    });
+    live.forEach((s, i) => this.putStageDpi(d, i, s.dpi));
     return this.send('dpi', d);
   }
 
   // — sensor switches (the DPI block's first two bytes) ----------------------
 
   override async readSensor(): Promise<SensorSettings> {
-    const d = await this.block('dpi');
-    const a = d[D.FLAGS_A] ?? 0;
-    const b = d[D.FLAGS_B] ?? 0;
-    return {
-      lod: a & LOD_2MM ? 1 : 0,
-      rippleControl: (a & RIPPLE) !== 0,
-      angleSnapping: (b & ANGLE) !== 0,
-      motionSync: (b & MOTION) !== 0,
-    };
+    return this.sensorOf(await this.block('dpi'));
   }
 
   override async setSensor(s: SensorSettings): Promise<WriteResult> {
@@ -476,27 +534,24 @@ export class Beken8kMouse extends Driver {
       return this.refuse(`lift-off code ${s.lod} is not one this sensor has`);
     }
     const d = await this.block('dpi');
-    const set = (at: number, bit: number, on: boolean | undefined) => {
-      if (on !== undefined) d[at] = on ? (d[at] ?? 0) | bit : (d[at] ?? 0) & ~bit;
-    };
-    set(D.FLAGS_A, LOD_2MM, s.lod === undefined ? undefined : s.lod === 1);
-    set(D.FLAGS_A, RIPPLE, s.rippleControl);
-    set(D.FLAGS_B, ANGLE, s.angleSnapping);
-    set(D.FLAGS_B, MOTION, s.motionSync);
+    this.putSensor(d, s);
     return this.send('dpi', d);
   }
 
   // — polling -------------------------------------------------------------------
 
+  /** The byte's high half is the rate through the receiver; the low half is the
+   *  cable's (Beken8kCableMouse), carried unchanged. */
   override async readPollRate(): Promise<number | null> {
     const [code] = await this.block('poll');
-    return POLL_FROM_WIRE[code ?? SEED_POLL] ?? null;
+    return POLL_FROM_WIRE[((code ?? SEED_POLL) & 0xf0) | 0x04] ?? null;
   }
 
   override async setPollRate(hz: number): Promise<WriteResult> {
     const code = BEKEN_8K_POLL[hz];
     if (code === undefined) return this.refuse(`poll rate not offered: ${hz} Hz`);
-    return this.send('poll', [code]);
+    const [kept] = await this.block('poll');
+    return this.send('poll', [(code & 0xf0) | ((kept ?? SEED_POLL) & 0x0f || 0x04)]);
   }
 
   // — sleep and key response (the power block) ----------------------------------
@@ -506,9 +561,9 @@ export class Beken8kMouse extends Driver {
     return { sleepTimerSec: (p[P.SLEEP] ?? 2) * 30, never: false };
   }
 
-  /** In half-minutes, from 30 s; the vendor slider has no "never". */
+  /** In half-minutes, 30 s to 30 min (the owner's slider); no "never". */
   override async setPower(pw: PowerSettings): Promise<WriteResult> {
-    const half = Math.max(1, Math.min(20, Math.round((pw.sleepTimerSec || 30) / 30)));
+    const half = Math.max(1, Math.min(60, Math.round((pw.sleepTimerSec || 30) / 30)));
     const p = await this.block('power');
     p[P.SLEEP] = half;
     return this.send('power', p);
@@ -519,7 +574,7 @@ export class Beken8kMouse extends Driver {
     return (p[P.DEBOUNCE] ?? 4) * 2;
   }
 
-  /** Sent as ms ÷ 2: 4–8 ms were recorded. */
+  /** Sent as ms ÷ 2: 4–50 ms (50 recorded over the cable as 0x19). */
   override async setDebounce(ms: number): Promise<WriteResult> {
     const r = this.d.spec.debounceRange ?? { min: 4, max: 8 };
     const v = Math.max(r.min, Math.min(r.max, Math.round(ms / 2) * 2));
@@ -533,14 +588,14 @@ export class Beken8kMouse extends Driver {
   override async readButtons(): Promise<Record<number, ButtonMapping>> {
     const b = await this.block('buttons');
     const out: Record<number, ButtonMapping> = {};
-    BEKEN_8K_BUTTON_SLOTS.forEach((slot, i) => {
+    this.slots.forEach((slot, i) => {
       out[i] = decodeBekenButton(b.slice(3 * slot, 3 * slot + 3));
     });
     return out;
   }
 
   override async setButtonMapping(button: number, m: ButtonMapping): Promise<WriteResult> {
-    const slot = BEKEN_8K_BUTTON_SLOTS[button];
+    const slot = this.slots[button];
     if (slot === undefined) return this.refuse(`no button ${button + 1}`);
     const bytes = encodeBekenButton(m);
     if (typeof bytes === 'string') return this.refuse(bytes);
@@ -569,5 +624,378 @@ export class Beken8kMouse extends Driver {
 
   override async backup(): Promise<Record<string, string>> {
     return {};
+  }
+}
+
+// — the cable (1D57:2126) -------------------------------------------------------
+
+/** The cable's feature report for each block, and the zeros its length counts
+ *  (the padding the receiver's frames carry). */
+const CABLE: Record<Exclude<BlockKey, 'poll'>, { id: number; pad: number }> = {
+  dpi: { id: 0x04, pad: 4 },
+  power: { id: 0x05, pad: 2 },
+  buttons: { id: 0x08, pad: 0 },
+};
+const CABLE_POLL = 0x06;
+/** `a0 <id> <len> 00 01` asks for a block; `a0 01` answers that it is ready. */
+const CABLE_READ = 0xa0;
+/** The blocks the vendor software reads over the cable, and their report length. */
+const CABLE_READS: Partial<Record<BlockKey, number>> = { dpi: 0x38, power: 0x0f, poll: 0x09 };
+
+/** A block as the cable takes it: `<id> <len> 01 <data> <sum16>`. */
+export function bekenCableFrame(
+  key: Exclude<BlockKey, 'poll'>,
+  data: readonly number[],
+): Uint8Array {
+  const { id, pad } = CABLE[key];
+  const s = sum16(data);
+  return Uint8Array.from([id, 3 + data.length + 2 + pad, 0x01, ...data, s >> 8, s & 0xff]);
+}
+
+/** Polling over the cable: `06 09 01 <code> <0xFF − code> 00 00 00 00`. */
+export const bekenCablePollFrame = (code: number): Uint8Array =>
+  Uint8Array.from([CABLE_POLL, 0x09, 0x01, code, 0xff - code, 0, 0, 0, 0]);
+
+/** The cable's own rates: the poll byte's low half (the high half is the receiver's). */
+export const BEKEN_CABLE_POLL: Readonly<Record<number, number>> = {
+  125: 1,
+  250: 2,
+  500: 3,
+  1000: 4,
+};
+const CABLE_POLL_FROM = Object.fromEntries(
+  Object.entries(BEKEN_CABLE_POLL).map(([hz, n]) => [n, Number(hz)]),
+);
+
+/**
+ * The X8 PRO on its cable (1D57:2126): the receiver's blocks, as feature
+ * reports on the cable's 000B:0000 collection (`bekenCableFrame`). The cable
+ * also answers reads, the way the vendor software reads polling, the DPI block
+ * and the power block when it starts. So every change starts from the mouse's
+ * own block — its active stage included, where the receiver can only send the
+ * stage it last sent — and is read back. The buttons are never read (the
+ * recording has no such read): they are kept as through the receiver.
+ *
+ * provenance: ported-from-vendor — every frame reproduces the 1D57:2126
+ * recording of 2026-11-19 (beken-8k-mouse.test.ts); not yet run on a mouse.
+ */
+export class Beken8kCableMouse extends Beken8kMouse {
+  /** One block off the mouse, its data checked against its sum; null if it did not answer. */
+  protected async readBlock(key: BlockKey): Promise<number[] | null> {
+    const len = CABLE_READS[key];
+    if (len === undefined) return null;
+    const id = key === 'poll' ? CABLE_POLL : CABLE[key].id;
+    return this.ch.transaction(async (io) => {
+      await io.write(Uint8Array.from([CABLE_READ, id, len, 0x00, 0x01, 0x00, 0x00, 0x00]));
+      let ready = false;
+      for (let i = 0; i < 10 && !ready; i++) {
+        await delay(i === 0 ? 50 : 100);
+        const st = await io.readFeature(CABLE_READ, 8);
+        ready = !!st && st[0] === CABLE_READ && st[1] === 0x01;
+      }
+      if (!ready) return null;
+      const r = await io.readFeature(id, len);
+      if (!r || r[0] !== id || r[1] !== len || r[2] !== 0x01) return null;
+      if (key === 'poll') return (r[3] ?? 0) + (r[4] ?? 0) === 0xff ? [r[3] ?? 0] : null;
+      const n = len - 3 - 2 - CABLE[key].pad;
+      const data = [...r.subarray(3, 3 + n)];
+      return sum16(data) === (((r[3 + n] ?? 0) << 8) | (r[4 + n] ?? 0)) ? data : null;
+    });
+  }
+
+  /** The block as the mouse has it just after a change. */
+  protected readBack(key: BlockKey): Promise<number[] | null> {
+    return this.readBlock(key);
+  }
+
+  /** The mouse's own block where the cable reads it; else as kept. */
+  protected override async block(key: BlockKey): Promise<number[]> {
+    const read = await this.readBlock(key).catch(() => null);
+    if (read) {
+      await this.remember(key, read);
+      return [...read];
+    }
+    return super.block(key);
+  }
+
+  /** The block as a feature report, then read back where the cable allows it. */
+  protected override async transmit(key: BlockKey, data: number[]): Promise<WriteResult> {
+    const tx = key === 'poll' ? bekenCablePollFrame(data[0] ?? 0x74) : bekenCableFrame(key, data);
+    const frames = [toHex(tx)];
+    try {
+      await this.ch.write(tx);
+    } catch (e) {
+      return { ok: false, verified: 'unverified', error: String(e), frames };
+    }
+    const back = await this.readBack(key).catch(() => null);
+    if (!back) return { ok: true, verified: 'unverified', frames };
+    const same = back.length === data.length && back.every((b, i) => b === data[i]);
+    return { ok: true, verified: same ? 'match' : 'mismatch', frames };
+  }
+
+  override async readPollRate(): Promise<number | null> {
+    const [code] = await this.block('poll');
+    return CABLE_POLL_FROM[(code ?? 0x74) & 0x0f] ?? null;
+  }
+
+  override async setPollRate(hz: number): Promise<WriteResult> {
+    const n = BEKEN_CABLE_POLL[hz];
+    if (n === undefined) return this.refuse(`poll rate not offered over the cable: ${hz} Hz`);
+    const [kept] = await this.block('poll');
+    return this.send('poll', [((kept ?? 0x74) & 0xf0) | n]);
+  }
+
+  /** Over the cable, the release is the mouse's own firmware. */
+  override async getFirmware(): Promise<FirmwareInfo> {
+    const release = this.ch.descriptorRelease;
+    return { device: release === undefined ? null : fmtVersion(release), receiver: null };
+  }
+}
+
+// — the X11 (1D57:FA55, on its cable) ---------------------------------------------
+
+/**
+ * The X11's DPI: about 42.5 DPI a step, floored as the vendor software floors
+ * it; a stage's HIGH byte set doubles the step (85), and its bit in both flag
+ * bytes (D.DOUBLED and the byte after it) doubles it again (170), up to 22000.
+ * Every value its owner set comes out byte for byte: 50 → 1, 400 → 9,
+ * 800 → 18, 1600 → 37, 3200 → 75, 6400 → 150, 12000 → 141 doubled, 22000 → 129
+ * doubled twice (beken-8k-mouse.test.ts).
+ */
+export function encodeX11Dpi(dpi: number): { raw: number; double: boolean; quad: boolean } {
+  const v = Math.max(50, Math.min(22000, Math.round(dpi)));
+  if (v < 42.5 * 256) return { raw: Math.max(1, Math.floor(v / 42.5)), double: false, quad: false };
+  if (v < 85 * 256) return { raw: Math.floor(v / 85), double: true, quad: false };
+  return { raw: Math.min(255, Math.floor(v / 170)), double: true, quad: true };
+}
+
+/** The value a stage shows: the first multiple of 50 that encodes to it, or 22000 at the top. */
+export function decodeX11Dpi(raw: number, double: boolean, quad: boolean): number {
+  const top = encodeX11Dpi(22000);
+  if (raw === top.raw && double && quad) return 22000;
+  const unit = 42.5 * (double ? 2 : 1) * (quad ? 2 : 1);
+  return Math.ceil((raw * unit) / 50) * 50;
+}
+
+/** The X11's blocks as the vendor software's factory reset wrote them (its recording). */
+const X11_SEEDS: Record<BlockKey, readonly number[]> = {
+  dpi: [
+    0x00,
+    0x01,
+    0x3f,
+    0x20,
+    0x20,
+    0x12,
+    0x25,
+    0x38,
+    0x4b,
+    0x75,
+    0x81,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x01,
+    0x00,
+    0x00,
+    0x02,
+    ...COLOURS.flat(),
+    0x02,
+  ],
+  power: [0x00, 0x03, 0xa8, 0x00, 0xff, 0x00, 0x01, 0x04],
+  poll: [0x01],
+  buttons: [
+    0x02, 0x03, 0x04, 0x01, 0x01, 0x0d, 0x06, 0x05, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x09, 0x0a,
+  ].flatMap((a) => [a, 0x00, 0x00]),
+};
+
+/** The X11's switches: angle snapping and ripple control, each a byte's bit 0. */
+const X11_ANGLE = 0;
+const X11_RIPPLE = 1;
+
+/** Polling: 1000 ÷ the rate. */
+export const BEKEN_X11_POLL: Readonly<Record<number, number>> = { 125: 8, 250: 4, 500: 2, 1000: 1 };
+
+/** The X11's one read: report 10, 128 bytes, every block in it. */
+const X11_ALL = { id: 0x0a, len: 0x80 } as const;
+/** How long one read of report 10 answers for every block: a tab's first reads come together. */
+const X11_READ_FOR_MS = 2000;
+
+/**
+ * Report 10 as the X11 answered it when the vendor software started (its
+ * recording): `0a 80 01`, the polling code and its complement, then the DPI
+ * block (its 47 bytes and a zero), the power block and the button block, each
+ * followed by its sum, low byte first; zeros to 128 bytes. Every block is the
+ * one the software's next change then sent, that change aside. A block whose
+ * sum does not hold, or that is all zeros, is left out. Button slots the
+ * mouse holds as `00 00 00` come back as `01 00 00` (off): the vendor software
+ * sends them so.
+ */
+export function parseX11Settings(r: ArrayLike<number>): Partial<Record<BlockKey, number[]>> {
+  const at = (i: number): number => r[i] ?? 0;
+  if (at(0) !== X11_ALL.id || at(1) !== X11_ALL.len || at(2) !== 0x01) return {};
+  const out: Partial<Record<BlockKey, number[]>> = {};
+  if (r.length >= 5 && at(3) !== 0 && at(3) + at(4) === 0xff) out.poll = [at(3)];
+  const take = (from: number, n: number, summed = n): number[] | null => {
+    if (r.length < from + summed + 2) return null;
+    const sum = at(from + summed) | (at(from + summed + 1) << 8);
+    const data = Array.from({ length: n }, (_, i) => at(from + i));
+    return sum16(r, from, from + summed) === sum && data.some((b) => b !== 0) ? data : null;
+  };
+  const dpi = take(5, 47, 48);
+  const power = take(55, 8);
+  const buttons = take(65, 54);
+  if (dpi) out.dpi = dpi;
+  if (power) out.power = power;
+  if (buttons) {
+    out.buttons = buttons.map((b, i, all) =>
+      i % 3 === 0 && !b && !all[i + 1] && !all[i + 2] ? ACT.DISABLED : b,
+    );
+  }
+  return out;
+}
+
+const X11_POWER_UNREAD =
+  'The mouse did not report its settings. This one is stored with its lighting, which Shark Deck does not set yet, so it is left alone rather than reset the lighting. Reconnect the mouse and try again.';
+
+/**
+ * The X11 on its cable (1D57:FA55), from its owner's recording of the vendor
+ * software (2026-11-19, issue #2): the X8 PRO's cable protocol — the same
+ * feature reports, the same blocks — with its own DPI steps, its own two
+ * switches and polling as 1000 ÷ the rate.
+ *
+ * Its buttons: slot 6 is button 4, the front side button (factory `06`,
+ * Forward), slot 7 is button 5, the rear one (factory `05`, Backward), slot 5
+ * the DPI button. That rests on those factory actions — the vendor's reset and
+ * the mouse's own read agree — since the owner's steps mixed the two side
+ * buttons up (the report tool named them the wrong way round then).
+ *
+ * It is read the way the vendor software reads it: every block at once, in
+ * report 10 (`parseX11Settings`); each change is read back the same way. The
+ * power block also holds the lighting, which Shark Deck does not drive yet,
+ * so sleep and key response go out only as the mouse has just reported that
+ * block. Not driven yet: the lighting, macros, and its receiver (1D57:FA60,
+ * which other brands' mice share).
+ *
+ * provenance: ported-from-vendor — every frame reproduces the 1D57:FA55
+ * recording (beken-8k-mouse.test.ts); not yet run on a mouse.
+ */
+export class BekenX11Mouse extends Beken8kCableMouse {
+  private lastRead: {
+    at: number;
+    blocks: Promise<Partial<Record<BlockKey, number[]>>>;
+  } | null = null;
+
+  protected override get slots(): readonly number[] {
+    return [0, 1, 2, 6, 7, 5];
+  }
+
+  protected override seed(key: BlockKey): readonly number[] {
+    return X11_SEEDS[key];
+  }
+
+  /** The vendor software asked whether the read was ready 300 ms after asking for it. */
+  protected readWaitMs = 300;
+
+  /**
+   * Report 10, asked for as the vendor software asks: `a0 0a 80 00 01`, again
+   * 200 ms later when the mouse turns the request down (it turned down the
+   * software's first one each time), then `a0 01` awaited.
+   */
+  private readAll(fresh: boolean): Promise<Partial<Record<BlockKey, number[]>>> {
+    const now = Date.now();
+    if (!fresh && this.lastRead && now - this.lastRead.at < X11_READ_FOR_MS) {
+      return this.lastRead.blocks;
+    }
+    const ask = Uint8Array.from([CABLE_READ, X11_ALL.id, X11_ALL.len, 0x00, 0x01, 0, 0, 0]);
+    const blocks = this.ch
+      .transaction(async (io) => {
+        for (let attempt = 1; ; attempt++) {
+          try {
+            await io.write(ask);
+            break;
+          } catch (e) {
+            if (attempt === 3) throw e;
+            await delay(200);
+          }
+        }
+        let ready = false;
+        for (let i = 0; i < 10 && !ready; i++) {
+          await delay(i === 0 ? this.readWaitMs : 100);
+          const st = await io.readFeature(CABLE_READ, 8);
+          ready = !!st && st[0] === CABLE_READ && st[1] === 0x01;
+        }
+        if (!ready) return {};
+        const r = await io.readFeature(X11_ALL.id, X11_ALL.len);
+        return r ? parseX11Settings(r) : {};
+      })
+      .catch(() => ({}));
+    this.lastRead = { at: now, blocks };
+    return blocks;
+  }
+
+  protected override async readBlock(key: BlockKey): Promise<number[] | null> {
+    return (await this.readAll(false))[key] ?? null;
+  }
+
+  protected override async readBack(key: BlockKey): Promise<number[] | null> {
+    return (await this.readAll(true))[key] ?? null;
+  }
+
+  override async setPower(pw: PowerSettings): Promise<WriteResult> {
+    if (!(await this.readBlock('power'))) return this.refuse(X11_POWER_UNREAD);
+    return super.setPower(pw);
+  }
+
+  override async setDebounce(ms: number): Promise<WriteResult> {
+    if (!(await this.readBlock('power'))) return this.refuse(X11_POWER_UNREAD);
+    return super.setDebounce(ms);
+  }
+
+  protected override stageDpi(d: readonly number[], i: number): number {
+    const bit = 1 << i;
+    return decodeX11Dpi(
+      d[D.LOW + i] ?? 0,
+      (d[D.HIGH + i] ?? 0) !== 0,
+      ((d[D.DOUBLED] ?? 0) & bit) !== 0 && ((d[D.DOUBLED + 1] ?? 0) & bit) !== 0,
+    );
+  }
+
+  protected override putStageDpi(d: number[], i: number, dpi: number): void {
+    const { raw, double, quad } = encodeX11Dpi(dpi);
+    const bit = 1 << i;
+    d[D.LOW + i] = raw;
+    d[D.HIGH + i] = double ? 1 : 0;
+    for (const at of [D.DOUBLED, D.DOUBLED + 1]) {
+      d[at] = quad ? (d[at] ?? 0) | bit : (d[at] ?? 0) & ~bit;
+    }
+  }
+
+  protected override sensorOf(d: readonly number[]): SensorSettings {
+    return {
+      angleSnapping: ((d[X11_ANGLE] ?? 0) & 1) === 1,
+      rippleControl: ((d[X11_RIPPLE] ?? 0) & 1) === 1,
+    };
+  }
+
+  protected override putSensor(d: number[], s: SensorSettings): void {
+    if (s.angleSnapping !== undefined) d[X11_ANGLE] = s.angleSnapping ? 1 : 0;
+    if (s.rippleControl !== undefined) d[X11_RIPPLE] = s.rippleControl ? 1 : 0;
+  }
+
+  override async readPollRate(): Promise<number | null> {
+    const [code] = await this.block('poll');
+    const hz = code ? 1000 / code : NaN;
+    return BEKEN_X11_POLL[hz] === code ? hz : null;
+  }
+
+  override async setPollRate(hz: number): Promise<WriteResult> {
+    const code = BEKEN_X11_POLL[hz];
+    if (code === undefined) return this.refuse(`poll rate not offered: ${hz} Hz`);
+    return this.send('poll', [code]);
   }
 }

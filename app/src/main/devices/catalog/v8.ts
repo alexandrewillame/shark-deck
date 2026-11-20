@@ -1,4 +1,5 @@
 import type { DeviceDescriptor } from '@shared/types/device';
+import { mouseButtonMap } from './mouse-buttons';
 import { LOD_OPTIONS } from '@shared/mouse-options';
 import { V8_BUTTON_SLOT_ORDER, DEBOUNCE_RANGE } from '@shared/mouse-wire';
 
@@ -89,21 +90,7 @@ export const ATTACK_SHARK_V8: DeviceDescriptor = {
     // then maps UI index 4/5 to slots 4/3. Not a live per-button press test —
     // verify by rebinding each button to a distinct action and pressing it
     // once hardware is back.
-    buttonMap: [
-      { index: 0, label: 'Left click', labelKey: 'buttons.name.left', x: 27, y: 22, locked: true },
-      { index: 1, label: 'Right click', labelKey: 'buttons.name.right', x: 71, y: 22 },
-      { index: 2, label: 'Wheel click', labelKey: 'buttons.name.wheel', x: 49, y: 18 },
-      { index: 3, label: 'Forward', labelKey: 'buttons.name.fwd', x: -2, y: 37 },
-      { index: 4, label: 'Backward', labelKey: 'buttons.name.back', x: -2, y: 56 },
-      {
-        index: 5,
-        label: 'DPI switch',
-        labelKey: 'buttons.name.dpi',
-        x: 74,
-        y: 55,
-        notVisibleInPhoto: true,
-      },
-    ],
+    buttonMap: mouseButtonMap(6),
     sleepTimerRange: { min: 10, max: 900 },
     debounceRange: { ...DEBOUNCE_RANGE },
     sensorModes: true,

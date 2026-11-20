@@ -8,8 +8,8 @@ import { ATTACK_SHARK_V8, ATTACK_SHARK_V8_WIRED } from './v8';
  * The Compx "MOUSE HUB" family — every Attack Shark mouse that speaks the V8's
  * protocol (VID 0x3554, 17-byte reports on usage page 0xFF02).
  *
- * The dongle and cable PIDs are shared across models and with other brands
- * (3554:F517 is also a Quasar 2 Ultra), so a mouse is told apart by the
+ * The dongle and cable PIDs are shared across models, and VID 3554 is the
+ * chip maker's, open to other brands' mice, so a mouse is told apart by the
  * identify reply (command 0x01): `cid` (124 = Attack Shark), `mid` (the model)
  * and the link type. Our own V8 capture shows the reply `… 7c 05 05`, i.e.
  * cid 124, mid 5, link 5 — so mid 5 is the V8 (`verified-capture` for the

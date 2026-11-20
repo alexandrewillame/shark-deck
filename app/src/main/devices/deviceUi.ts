@@ -9,6 +9,7 @@
  * timers.
  */
 import type { DeviceDescriptor } from '@shared/types/device';
+import { mouseButtonMap } from './catalog/mouse-buttons';
 import type { DeviceUi, MacroLimits } from '@shared/types/live';
 import { PERFORMANCE_TIMEOUTS } from '@shared/mouse-options';
 import { artKeyOf, colorVariantsOf } from '@shared/device-art';
@@ -90,7 +91,9 @@ export function deviceUi(d: DeviceDescriptor): DeviceUi {
         }
       : undefined,
     buttons: s.buttons,
-    buttonMap: s.buttonMap,
+    // A mouse without positions of its own gets the standard ones (catalog/mouse-buttons.ts).
+    buttonMap:
+      s.buttonMap ?? (d.kind === 'mouse' && s.buttons ? mouseButtonMap(s.buttons) : undefined),
     keyMatrix: s.keyMatrix,
     supportedSwitches: d.capabilities.includes('replaceableSwitches')
       ? (s.supportedSwitches ?? SWITCH_CHOICES_DEFAULT)

@@ -500,6 +500,19 @@ export class HidChannel {
     this.log?.('tx', this.key, toHex(frame));
   }
 
+  /** One feature report by its own id, `[id, ...data]` — for a device whose
+   *  feature reports are numbered (the X8 PRO's cable), not report 0. */
+  private async readFeatureUnlocked(reportId: number, len: number): Promise<Uint8Array | null> {
+    const dev = await this.ensureOpen();
+    const data = await this.bounded('getFeatureReport', this.opMs, () =>
+      dev.getFeatureReport(reportId, len),
+    );
+    if (!data || data.length === 0) return null;
+    const buf = Uint8Array.from(data);
+    this.log?.('rx', this.key, toHex(buf));
+    return buf;
+  }
+
   private async readUnlocked(timeoutMs = 250, featureLen = 65): Promise<Uint8Array | null> {
     if (this.opts.relay) return this.relayReceiveUnlocked(timeoutMs, featureLen);
     return this.rawReadUnlocked(timeoutMs, featureLen);
@@ -820,6 +833,7 @@ export class HidChannel {
     fn: (io: {
       write: (frame: Uint8Array) => Promise<void>;
       read: (timeoutMs?: number, featureLen?: number) => Promise<Uint8Array | null>;
+      readFeature: (reportId: number, len: number) => Promise<Uint8Array | null>;
       readInput: (timeoutMs?: number) => Promise<Uint8Array | null>;
       request: (
         query: Uint8Array,
@@ -835,6 +849,7 @@ export class HidChannel {
       fn({
         write: (frame) => this.writeUnlocked(frame),
         read: (timeoutMs, featureLen) => this.readUnlocked(timeoutMs, featureLen),
+        readFeature: (reportId, len) => this.readFeatureUnlocked(reportId, len),
         readInput: (timeoutMs) => this.readInputUnlocked(timeoutMs),
         request: (
           query,

@@ -155,7 +155,9 @@ function mouseRows(): Row[] {
         'partial',
         name,
         d,
-        'Through its 8K receiver, not its cable yet. It cannot report its settings: Shark Deck shows what it last sent — [more](../protocol/mouse-beken.md).',
+        d.model === 'attack-shark-x11'
+          ? 'On its cable, not through its receiver yet. Lighting and macros are not driven yet — [more](../protocol/mouse-beken.md).'
+          : 'Through its 8K receiver and on its cable. Through the receiver it cannot report its settings: Shark Deck shows what it last sent. On the cable it reads them — [more](../protocol/mouse-beken.md).',
       );
     } else {
       add(

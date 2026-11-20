@@ -166,12 +166,22 @@ describe('the keyboard catalogue', () => {
 });
 
 describe('the Beken mice', () => {
-  it('get a named card where the PID is their own, and nothing is ever driven', () => {
-    const x11 = resolveDescriptor(0x1d57, 0xfa55)!;
-    expect(x11.displayName).toBe('Attack Shark X11');
-    expect(x11.identity).toBe('unsupported');
-    expect(x11.driver).toBe('no-io');
-    expect(x11.capabilities).toEqual([]);
+  it('get a named card where the PID is their own, and are never driven', () => {
+    const x1 = resolveDescriptor(0x1d57, 0x2111)!;
+    expect(x1.displayName).toBe('Attack Shark X1');
+    expect(x1.identity).toBe('unsupported');
+    expect(x1.driver).toBe('no-io');
+    expect(x1.capabilities).toEqual([]);
+  });
+
+  it('but for the two an owner recorded: the X8 PRO and the X11 on its cable', () => {
+    expect(resolveDescriptor(0x1d57, 0xfa55)).toMatchObject({
+      displayName: 'Attack Shark X11',
+      identity: 'exact',
+      driver: 'beken-x11-mouse',
+    });
+    expect(resolveDescriptor(0x1d57, 0xfa65)?.driver).toBe('beken-8k-mouse');
+    expect(resolveDescriptor(0x1d57, 0x2126)?.driver).toBe('beken-8k-mouse-cable');
   });
 
   it('leave the receiver several brands share alone', () => {

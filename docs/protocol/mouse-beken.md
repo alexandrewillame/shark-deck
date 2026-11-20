@@ -3,9 +3,10 @@
 X11, X11 SE, X11 PRO V2, R1, X6, X3, X3 MAX, X3 PRO (first revision), X1,
 X8 SE, X8 PLUS, X8 PRO, G3, G3 PRO, V3, V3 PRO, V6.
 
-**Shark Deck drives one of them: the X8 PRO through its 8K receiver
-(`1D57:FA65`)**, `app/src/main/devices/drivers/beken-8k-mouse.ts`. The others
-it shows and never talks to (`app/src/main/devices/catalog/beken-mice.ts`): a
+**Shark Deck drives two of them: the X8 PRO through its 8K receiver
+(`1D57:FA65`) and on its cable (`2126`), and the X11 on its cable (`FA55`)**,
+`app/src/main/devices/drivers/beken-8k-mouse.ts`. The others it shows and never
+talks to (`app/src/main/devices/catalog/beken-mice.ts`): a
 card with the model's name where its PID is its own, "Not supported yet",
 nothing read or written. This page records what is known, so a driver can be
 written once someone can check it on a mouse.
@@ -65,13 +66,112 @@ Profiles live in the vendor software: switching one rewrites every block
 "Reset Profile", the cable (`2126`), deep sleep, the key-response and sleep
 sliders' maxima and macros are not in the recording yet.
 
+## The X8 PRO on its cable (2126)
+
+From the owner's second recording (79 steps, 2026-11-19), over the cable. The
+mouse takes the very blocks the receiver carries, as **feature reports** on its
+`000B:0000` collection (interface 2): `<id> <len> 01 <data> <sum16 of data,
+big-endian>`, the length counting the zeros the receiver's frames pad with —
+DPI `04 38` (47 data bytes), power `05 0f` (8), buttons `08 3b` (54); polling is
+`06 09 01 <code> <0xFF − code> 00 00 00 00`. Byte for byte in
+`beken-8k-mouse.test.ts`; `Beken8kCableMouse` in `drivers/beken-8k-mouse.ts`.
+
+**It answers reads.** `a0 <id> <len> 00 01` (feature report 0xA0) asks for a
+block; a GET of report 0xA0 answers `a0 01` once it is ready; a GET of the
+block's report returns it. The vendor software reads polling, DPI and power so
+when it starts (never the buttons). So on the cable every change starts from
+the mouse's own block, its active stage included.
+
+**Polling holds two rates.** The byte's high half is the receiver's rate
+(`1`–`7` = 125–8000 Hz), the low half the cable's (`1`–`4` = 125–1000 Hz):
+through the receiver the software changes the high half only, on the cable the
+low half only.
+
+**What both recordings show.**
+- The DPI block's byte 21 (frame byte 24 on the cable) is the active stage,
+  1-based. The DPI button changes it on the mouse and the cable reports it
+  (`03 08 10 <stage>` on input report 3); through the receiver Shark Deck does
+  not read that report, so a change sent there resets the stage to the one it
+  last sent.
+- The eight colours are fixed: stage *n* lights with entry *n* (green, blue,
+  yellow, cyan, magenta, orange-red); the vendor software sends no colour change.
+- Button slots: 0 Left, 1 Right, 2 Middle, 3 the DPI button (underneath),
+  4 Backward (button 5, the side button nearer the rear, factory `05`),
+  5 Forward (button 4, nearer the front, factory `06`). The report tool used to
+  name the rear button "button 4 (Back)" and the front one "button 5
+  (Forward)", the reverse of the vendor software's numbers; it now names them by
+  where they are, and the first driver, which followed the tool's names, had
+  4 and 5 swapped.
+- Power: sleep in half-minutes (1–60: 30 s – 30 min), key response in ms ÷ 2
+  (2–25: 4–50 ms). Deep sleep (10–60 min on the owner's slider) was not
+  recorded.
+
+## The X11 on its cable (FA55)
+
+From an owner's recording of the same vendor software, 1.0.0.2 (95 steps,
+2026-11-19, [issue #2](https://github.com/alexandrewillame/shark-deck/issues/2)),
+on the cable. `BekenX11Mouse` in `drivers/beken-8k-mouse.ts`: every frame it
+sends reproduces a recorded one byte for byte (`beken-8k-mouse.test.ts`); none
+has reached an X11 from Shark Deck yet.
+
+**The X8 PRO's cable protocol.** The same feature reports on `000B:0000`
+(interface 2), the same blocks, checksums and button codes. The cable's reports
+are shorter — DPI 52 bytes, power 13, polling 9, buttons 59 — while the length
+bytes still count the padding (`04 38`, `05 0f`).
+
+**One read holds every block.** The vendor software asks with
+`a0 0a 80 00 01` (feature report 0xA0; the mouse turned its first request down
+each time, and took the same one 200 ms later), gets `a0 01` from report 0xA0
+300 ms on, then reads report 10, 128 bytes: `0a 80 01`, the polling code and its
+complement, the DPI block (47 bytes and a zero), the power block, the button
+block — each followed by its sum, **low byte first** — then zeros. Each block
+is the one the software's next change sent, that change aside. Button slots the
+mouse holds as `00 00 00` the software sends as `01 00 00` (off). It also reads
+report 11 (`0b 08 01 10`, meaning unknown). Shark Deck reads report 10 the same
+way, when a tab opens and after each change.
+
+**What differs from the X8 PRO.**
+- DPI: a stage is its low byte × 42.5, floored when sent — 50 → `01`, 400 →
+  `09`, 800 → `12`, 1600 → `25`, 3200 → `4b`, 6400 → `96`. A high byte `01`
+  doubles the step (12000 → `8d`, high `01`); the stage's bit in both bytes 3
+  and 4 doubles it again (22000 → `81`, high `01`, both bits). 50 to 22000.
+- The switches: byte 0 bit 0 is angle snapping, byte 1 bit 0 ripple control.
+  No lift-off or motion sync.
+- Polling: one code, 1000 ÷ the rate (`08` 125 Hz, `04`, `02`, `01` 1000 Hz).
+- Button slots: 0 Left, 1 Right, 2 Middle, 5 the DPI button, **6 Forward
+  (button 4, the front side button, factory `06`), 7 Backward (button 5, the
+  rear one, factory `05`)**, 16–17 the wheel. The owner's steps mixed the two
+  side buttons up (the report tool still named them the wrong way round then),
+  so this rests on the factory actions, which the vendor's reset and the
+  mouse's own read agree on. The owner's test will confirm it.
+- The power block holds the lighting too: the high half of byte 0 is the
+  effect (0 off, 1 static, 2 breathing, 3 neon, 4 colour breathing, 5 static
+  colour, 6 mixed breathing — the owner's names), the low halves of bytes 1
+  and 2 the speed and brightness, bytes 3–5 the colour. Deep sleep, 1–60 min, is
+  the high half of byte 1 then that of byte 2 (`01 38`: 3 min). Then sleep in
+  half-minutes and key response in ms ÷ 2, as on the X8 PRO. Shark Deck does not
+  set the lighting yet, so it sends this block only as the mouse has just
+  reported it.
+- The active stage is the DPI block's byte 21, 1-based; the factory has
+  stage 2.
+
+**Input report 3** carries `03 55 …` (`55` is the X11's model byte):
+`40 <state> <percent>` every 2 s (the battery, as the community tools read it),
+`10 <stage>` when the DPI button moves, `50 00 <report>` after each block
+written.
+
+Not driven yet: the lighting, macros (`0x09`, in the recording), the vendor's
+reset (`0c 0a 01 fe 01 fe` on report 12, then every block), and the receiver
+`FA60`, which other brands' mice share (its frames are the cable's, padded).
+
 ## The others: why there is no driver yet
 
 - **Reads need a permission mailbox.** Every read goes through feature report
   `0xA0` (`A0 <id> <len> 00 <param> 00 00 00`, wait 250 ms, GET `A0` byte 1
   = 1 means granted, then GET `<id>` at its declared length). One grant allows
-  one read; refusals come in bursts with a cooldown. **Every hardware-verified
-  read was on Linux; nothing shows it working on Windows**, and Chromium cannot
+  one read; refusals come in bursts with a cooldown. The community's
+  hardware-verified reads were all on Linux; the X8 PRO's and the X11's
+  recordings show the vendor software reading this way on Windows. Chromium cannot
   reach the configuration collection at all (it carries only constant items),
   so the browser edition never could.
 - **Dangerous neighbours.** Report `0x10` enters the bootloader — the mouse
@@ -81,8 +181,9 @@ sliders' maxima and macros are not in the recording yet.
 - **Pacing.** Over the cable every other write stalls (EPIPE) and has to be
   resent; through a receiver, writes closer than about a second apart froze
   the link until a replug.
-- **Per-model differences.** The X11 family encodes DPI through a 220-entry
-  table; the X6 and X8 PRO linearly, each differently. The X8 PRO's 8K
+- **Per-model differences.** The X11 encodes DPI in steps of 42.5 with two
+  doubling bits (above; a community tool uses a 220-entry table for it); the
+  X6 and X8 PRO linearly, each differently. The X8 PRO's 8K
   receiver speaks its own protocol (above). Bytes 3 and 4 of the DPI report
   carry angle snap / ripple on one model and lift-off / motion sync on
   another. Button slots rotate between write and read on the X8 PRO.
@@ -99,7 +200,7 @@ sliders' maxima and macros are not in the recording yet.
 | `0x06` | poll rate: `06 09 01 code FF−code`, 08=125 … 01=1000 (X8 PRO differs) | yes |
 | `0x08` | 18 button slots `[action, mods, usage]` | yes, slot order caveats |
 | `0x09` | macros, three pages | **no** on the X11 |
-| `0x0B` | firmware version | X8 PRO only; writing it unpairs |
+| `0x0B` | firmware version (X8 PRO) | read by the vendor software on the X8 PRO and the X11 (`0b 08 01 10`); writing it unpairs |
 | `0x10` | **bootloader — never** | — |
 | `0xA0` | read-permission mailbox | — |
 | input 3 | `03 model event p1 p2`: battery (`40`), DPI stage (`10`), write ACK (`50`), profile (`80`) | pushed |
@@ -112,8 +213,8 @@ X8 PRO 08, G3 04, G3 PRO 0E, V3 EA, V3 PRO E5, V6 24.
 
 ## Sources
 
-The X8 PRO's 8K receiver: an owner's recording of the vendor software
-(issue #1). The rest, provenance as the community tools report it; nothing
+The X8 PRO (receiver and cable): an owner's recordings of the vendor software
+(issue #1). The X11 on its cable: another owner's recording (issue #2). The rest, provenance as the community tools report it; nothing
 there is ours.
 
 - HarukaYamamoto0/attack-shark-x11-driver (MIT) — captures and protocol docs.

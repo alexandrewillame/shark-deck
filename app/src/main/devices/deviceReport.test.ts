@@ -124,7 +124,20 @@ describe('triageDevice', () => {
     expect(lines.join(' ')).toMatch(/no model answer in the report \(Not asked \(--no-query\)\)\./);
   });
 
-  it('keeps the original X11 shown and undriven, whatever the report', () => {
+  it('keeps a Beken mouse with no recording shown and undriven, whatever the report', () => {
+    const lines = triageDevice(
+      device({
+        vid: '1D57',
+        pid: '2111',
+        product: 'X1',
+        family: 'beken',
+        identify: { asked: false },
+      }),
+    );
+    expect(lines.join(' ')).toMatch(/X1.*shown, not driven.*mouse-beken\.md/);
+  });
+
+  it('knows the original X11 on its cable is driven since its recording', () => {
     const lines = triageDevice(
       device({
         vid: '1D57',
@@ -134,7 +147,7 @@ describe('triageDevice', () => {
         identify: { asked: false },
       }),
     );
-    expect(lines.join(' ')).toMatch(/X11.*shown, not driven.*mouse-beken\.md/);
+    expect(lines.join(' ')).toMatch(/1D57:FA55 "X11": already supported/);
   });
 
   it('says plainly when a family has no protocol at all', () => {

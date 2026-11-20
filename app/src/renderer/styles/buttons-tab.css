@@ -99,15 +99,11 @@
 /* A button the top-down photo can't actually show (e.g. an underside DPI
  * switch) — dashed and dimmed instead of a solid fill, so it visibly reads
  * as "approximate location", not a real callout. */
+/* A button the photo cannot show (the DPI button underneath): a badge like the
+   others, its dashed ring saying "not here exactly". It was an outline alone,
+   which nobody saw on a dark mouse. */
 .mbp-badge-inferred {
-  background: transparent;
-  color: var(--text-mut);
-  border: 1.5px dashed var(--text-mut);
-  box-shadow: 0 0 0 2px var(--bg-1);
-}
-.mbp-badge-inferred.is-active {
-  color: var(--accent);
-  border-color: var(--accent);
+  border: 1.5px dashed var(--on-accent);
 }
 
 /* Per-key lighting eyedropper — cursor feedback while sampling a colour off
