@@ -1543,7 +1543,7 @@ function FamilyText([string]$family) {
         'royuan' { 'ROYUAN chip (Attack Shark keyboards, GearHub mice) - Shark Deck knows this family' }
         'compx-hub' { 'Compx MOUSE HUB (the V8 and its successors) - Shark Deck knows this family' }
         'jxc' { 'JXC chip (R5 ULTRA, R6, R8) - Shark Deck knows this family' }
-        'beken' { 'Beken chip (the X8 PRO, the original X11 and others) - Shark Deck configures the X8 PRO through its 8K receiver, and shows the others' }
+        'beken' { 'Beken chip (the X8 PRO, the original X11 and others) - Shark Deck configures the X8 PRO (receiver and cable) and the X11 (cable), and shows the others' }
         default { 'a family Shark Deck does not know yet' }
     }
 }

@@ -108,9 +108,9 @@ node-hid's Linux backend (hidraw) opens `/dev/hidraw*` directly, which by
 default only root can read/write. `assets/linux/60-sharkdeck.rules` grants
 access to the vendor IDs `main/devices/registry.ts`'s `knownVendorIds()`
 enumerates — Compx Hub mice (`3554`), the ROYUAN keyboards and GearHub mice
-(`3151`, `39ab`), JXC mice (`373e`) and Beken mice (`1d57`: the X8 PRO's 8K
-receiver is driven, the others shown but never opened) — to whoever's logged
-in at the console:
+(`3151`, `39ab`), JXC mice (`373e`) and Beken mice (`1d57`: the X8 PRO and
+the original X11 are driven, the others shown but never opened) — to whoever's
+logged in at the console:
 
 ```
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3554", TAG+="uaccess"
@@ -123,10 +123,11 @@ SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1d57", TAG+="uaccess"
 Every family except the R85HE's and the V8's is driven from protocol
 documentation only — unverified on every OS (see
 [`devices/attack-shark-lineup.md`](devices/attack-shark-lineup.md)). Of the
-Beken mice only the X8 PRO's 8K receiver is opened, from a Windows recording of
-its vendor software: its settings are plain output reports on a vendor
-collection, which WebHID can reach in principle (untested). The others are
-never opened, and WebHID could not reach their configuration collection anyway.
+Beken mice, the X8 PRO (8K receiver and cable) and the original X11 (cable)
+are opened, from Windows recordings of their vendor software. Through the
+receiver the settings are plain output reports on a vendor collection, which
+WebHID can reach in principle; over a cable they are feature reports, which
+WebHID may not reach (both untested). The others are never opened.
 
 `TAG+="uaccess"` (systemd-logind's per-seat ACL mechanism) is used instead of
 a blanket `MODE="0666"` deliberately — it grants access to the active local
