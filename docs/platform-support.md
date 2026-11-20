@@ -27,7 +27,7 @@ was built on a Windows machine with no Mac or Linux box to test against.
 
 ## Browser edition (WebHID)
 
-The same app, run from `https://alexandrewillame.github.io/shark-deck/` with
+The same app, run from [`https://alexandrewillame.github.io/shark-deck/`](https://alexandrewillame.github.io/shark-deck/) with
 nothing installed: the renderer and the whole device layer run in the page, and
 the browser's WebHID API replaces node-hid.
 Configuration only — everything that needs software on the computer stays in
