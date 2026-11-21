@@ -232,10 +232,16 @@ function createWindow(): void {
   // switched. Bound to the window's own events rather than to the places that
   // call show()/hide(), so every route in and out of the tray is covered.
   // See Switcher.setWindowVisible.
-  mainWindow.on('show', () => switcher.setWindowVisible(true));
-  mainWindow.on('hide', () => switcher.setWindowVisible(false));
-  mainWindow.on('minimize', () => switcher.setWindowVisible(false));
-  mainWindow.on('restore', () => switcher.setWindowVisible(true));
+  // The device scan follows the same events: slower while nobody can see a
+  // card (DeviceManager.setWindowVisible).
+  const visible = (v: boolean) => {
+    switcher.setWindowVisible(v);
+    deviceManager.setWindowVisible(v);
+  };
+  mainWindow.on('show', () => visible(true));
+  mainWindow.on('hide', () => visible(false));
+  mainWindow.on('minimize', () => visible(false));
+  mainWindow.on('restore', () => visible(true));
 
   // Must be synchronous: event.preventDefault() only takes effect if it runs
   // before the handler yields, so the minimize-to-tray decision uses the

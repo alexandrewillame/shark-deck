@@ -1450,16 +1450,16 @@ export const en = {
   'support.title.complete': 'Help complete its support',
   'support.title.name': 'Help name this mouse',
   'support.body.all':
-    'The device report tool records what the official software sends while you change each setting once: about 30 minutes, on Windows. Attach the recording to a "New device" request on GitHub, and this model can be added.',
+    'The device report tool records what the official software sends while you change each setting once: about 30 minutes. Attach the recording to a "New device" request on GitHub, and this model can be added.',
   'support.body.unknown':
     'A device report is usually enough to add it: it takes a minute, records nothing, and you attach it to a "New device" request on GitHub.',
   'support.body.class':
     'Shark Deck knows this mouse by its sensor only, so it offers the settings every mouse with that sensor has. A device report names the model: it takes a minute, records nothing, and you attach it to a request on GitHub.',
   'support.gaps': 'Not in Shark Deck yet: {list}.',
   'support.body.steps':
-    'The device report tool can record just these: you set them in the official software while it records what the software sends. A few minutes, on Windows; then attach the recording to a request on GitHub.',
+    'The device report tool can record just these: you set them in the official software while it records what the software sends. A few minutes; then attach the recording to a request on GitHub.',
   'support.body.specific':
-    'Something not working as it should? The device report tool records it from the official software in a few minutes, on Windows; then attach the recording to a request on GitHub.',
+    'Something not working as it should? The device report tool records it from the official software in a few minutes; then attach the recording to a request on GitHub.',
   'support.action.all': 'Record this device',
   'support.action.report': 'Make a device report',
   'support.action.steps': 'Record what is missing',
@@ -1479,13 +1479,21 @@ export const en = {
   'support.gap.buttonActions': 'some button actions',
   'support.gap.receiver': 'its wireless receiver',
   'support.confirm':
-    'Shark Deck closes first, so that only the official software talks to the device while it records. Open Shark Deck again afterwards from the Start menu.',
+    'Shark Deck closes first, so that only the official software talks to the device while it records. Open Shark Deck again afterwards.',
   'support.confirm.ok': 'Close Shark Deck and start',
-  'support.unix':
-    'On this computer the tool makes the device report; recording the official software needs Windows.',
   'support.opened': 'The device report tool opened in a terminal window.',
   'support.failed': 'The device report tool could not be started: {error}',
   'power.deepAfter': 'Deep sleep after',
+  'support.linux':
+    'On Linux, run the official software in a Windows virtual machine the device is passed through to, or with Wine: the tool records what goes over the USB cable, and asks for your password to read it.',
+  'support.preview':
+    'The device report tool opened on the steps an owner would follow. A demo device has nothing to record.',
+  'support.gap.mediaKeys':
+    'some media keys for its buttons (Mute, Stop, Previous track, Calculator…)',
+  'support.body.mac':
+    'This takes a recording of the official software, and a Mac cannot make one: that software runs on Windows, and Shark Deck records it on a Windows or Linux computer, with the device plugged in there. On this Mac, the tool can still make the device report: a minute, and it only reads what the system knows.',
+  'support.web':
+    'The device report tool records on Windows and Linux; on a Mac it makes the report alone.',
 } as const;
 
 export type MessageKey = keyof typeof en;

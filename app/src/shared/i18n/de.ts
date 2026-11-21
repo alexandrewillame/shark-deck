@@ -1479,16 +1479,16 @@ export const de: Partial<Messages> = {
   'support.title.complete': 'Hilf, die Unterstützung zu vervollständigen',
   'support.title.name': 'Hilf, diese Maus zu benennen',
   'support.body.all':
-    'Das Gerätebericht-Tool zeichnet auf, was die offizielle Software sendet, während du jede Einstellung einmal änderst: etwa 30 Minuten, unter Windows. Hänge die Aufzeichnung an eine „New device“-Anfrage auf GitHub an, dann kann dieses Modell hinzugefügt werden.',
+    'Das Gerätebericht-Tool zeichnet auf, was die offizielle Software sendet, während du jede Einstellung einmal änderst: etwa 30 Minuten. Hänge die Aufzeichnung an eine „New device“-Anfrage auf GitHub an, dann kann dieses Modell hinzugefügt werden.',
   'support.body.unknown':
     'Ein Gerätebericht reicht meist, um es hinzuzufügen: Er dauert eine Minute, zeichnet nichts auf, und du hängst ihn an eine „New device“-Anfrage auf GitHub an.',
   'support.body.class':
     'Shark Deck kennt diese Maus nur an ihrem Sensor und bietet daher die Einstellungen, die jede Maus mit diesem Sensor hat. Ein Gerätebericht nennt das Modell: Er dauert eine Minute, zeichnet nichts auf, und du hängst ihn an eine Anfrage auf GitHub an.',
   'support.gaps': 'Noch nicht in Shark Deck: {list}.',
   'support.body.steps':
-    'Das Gerätebericht-Tool kann genau diese aufzeichnen: Du stellst sie in der offiziellen Software ein, während es aufzeichnet, was die Software sendet. Ein paar Minuten, unter Windows; danach hängst du die Aufzeichnung an eine Anfrage auf GitHub an.',
+    'Das Gerätebericht-Tool kann genau diese aufzeichnen: Du stellst sie in der offiziellen Software ein, während es aufzeichnet, was die Software sendet. Ein paar Minuten; danach hängst du die Aufzeichnung an eine Anfrage auf GitHub an.',
   'support.body.specific':
-    'Funktioniert etwas nicht wie erwartet? Das Gerätebericht-Tool zeichnet es in ein paar Minuten aus der offiziellen Software auf, unter Windows; danach hängst du die Aufzeichnung an eine Anfrage auf GitHub an.',
+    'Funktioniert etwas nicht wie erwartet? Das Gerätebericht-Tool zeichnet es in ein paar Minuten aus der offiziellen Software auf; danach hängst du die Aufzeichnung an eine Anfrage auf GitHub an.',
   'support.action.all': 'Dieses Gerät aufzeichnen',
   'support.action.report': 'Gerätebericht erstellen',
   'support.action.steps': 'Fehlendes aufzeichnen',
@@ -1508,11 +1508,19 @@ export const de: Partial<Messages> = {
   'support.gap.buttonActions': 'einige Tastenaktionen',
   'support.gap.receiver': 'ihr Funkempfänger',
   'support.confirm':
-    'Shark Deck schließt sich zuerst, damit während der Aufzeichnung nur die offizielle Software mit dem Gerät spricht. Öffne Shark Deck danach wieder über das Startmenü.',
+    'Shark Deck schließt sich zuerst, damit während der Aufzeichnung nur die offizielle Software mit dem Gerät spricht. Öffne Shark Deck danach wieder.',
   'support.confirm.ok': 'Shark Deck schließen und starten',
-  'support.unix':
-    'Auf diesem Computer erstellt das Tool den Gerätebericht; die offizielle Software aufzuzeichnen erfordert Windows.',
   'support.opened': 'Das Gerätebericht-Tool wurde in einem Terminalfenster geöffnet.',
   'support.failed': 'Das Gerätebericht-Tool konnte nicht gestartet werden: {error}',
   'power.deepAfter': 'Tiefschlaf nach',
+  'support.linux':
+    'Unter Linux startest du die offizielle Software in einer virtuellen Windows-Maschine, an die das Gerät durchgereicht wird, oder mit Wine: Das Tool zeichnet auf, was über das USB-Kabel geht, und fragt nach deinem Passwort, um es zu lesen.',
+  'support.preview':
+    'Das Gerätebericht-Tool wurde mit den Schritten geöffnet, denen ein Besitzer folgen würde. Ein Demo-Gerät hat nichts aufzuzeichnen.',
+  'support.gap.mediaKeys':
+    'einige Medientasten für seine Tasten (Stumm, Stopp, Vorheriger Titel, Rechner…)',
+  'support.body.mac':
+    'Dafür braucht es eine Aufzeichnung der offiziellen Software, und ein Mac kann keine machen: Diese Software läuft unter Windows, und Shark Deck zeichnet sie auf einem Windows- oder Linux-Computer auf, an dem das Gerät angeschlossen ist. Auf diesem Mac kann das Tool trotzdem den Gerätebericht erstellen: eine Minute, und es liest nur, was das System schon weiß.',
+  'support.web':
+    'Das Gerätebericht-Tool zeichnet unter Windows und Linux auf; auf dem Mac erstellt es nur den Bericht.',
 };

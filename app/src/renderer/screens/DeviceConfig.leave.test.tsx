@@ -16,7 +16,7 @@ import { DeviceConfig } from './DeviceConfig';
  * pointerdown off the board, before any click handler runs.
  */
 
-const R85HE = virtualDescriptors().find((d) => d.displayName === 'Attack Shark R85HE')!;
+const R85HE = virtualDescriptors().find((d) => d.displayName === 'Attack Shark R85 HE')!;
 
 function press(el: Element) {
   fireEvent.pointerDown(el, { button: 0 });

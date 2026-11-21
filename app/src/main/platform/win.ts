@@ -94,12 +94,37 @@ async function extraGameSources(): Promise<ScannedGame[]> {
   return out;
 }
 
+/** The native snapshot (platform/winProcesses.ts), loaded on first use; null
+ *  once it could not load, so `tasklist` answers from then on. */
+let native: Promise<typeof import('./winProcesses') | null> | null = null;
+let nativeFailureLogged = false;
+
 /**
- * Windows process image-name snapshot via `tasklist`. Dependency-free stand-in
- * for the Python tool's psutil.process_iter(["name"]). Names are lower-cased,
- * de-duplicated, and matched without paths — same contract as the original.
+ * Windows process image-name snapshot, as the Python tool's
+ * psutil.process_iter(["name"]) gave it: names lower-cased, de-duplicated,
+ * matched without paths. From Windows itself in a few milliseconds
+ * (winProcesses.ts); `tasklist` only if that cannot load or fails — it costs
+ * about half a second of CPU a time, every auto-switch poll.
  */
-function runningProcessNames(): Promise<Set<string>> {
+async function runningProcessNames(): Promise<Set<string>> {
+  native ??= import('./winProcesses').catch((err) => {
+    console.warn('[processes] native process list unavailable, using tasklist:', err);
+    return null;
+  });
+  const mod = await native;
+  if (mod) {
+    try {
+      return mod.processNames();
+    } catch (err) {
+      if (!nativeFailureLogged) console.warn('[processes] native process list failed:', err);
+      nativeFailureLogged = true;
+    }
+  }
+  return tasklistNames();
+}
+
+/** `tasklist`'s answer: the fallback, and what every poll used to cost. */
+function tasklistNames(): Promise<Set<string>> {
   return new Promise((resolve, reject) => {
     exec(
       'tasklist /fo csv /nh',

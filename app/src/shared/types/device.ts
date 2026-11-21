@@ -273,7 +273,14 @@ export interface BodyLightEffect {
 
 /** A part of a device Shark Deck does not cover yet, as its owner is told. */
 export type SupportGap =
-  'keymap' | 'actuation' | 'lighting' | 'macros' | 'deepSleep' | 'buttonActions' | 'receiver';
+  | 'keymap'
+  | 'actuation'
+  | 'lighting'
+  | 'macros'
+  | 'deepSleep'
+  | 'buttonActions'
+  | 'mediaKeys'
+  | 'receiver';
 
 /**
  * What the device report tool is asked to do (tools/SharkDeck-device-report.bat):

@@ -23,7 +23,7 @@ telemetry, and it works offline.
 
 **[Full list, model by model](docs/devices/attack-shark-lineup.md)**
 
-- 🟢 **Tested:** the R85HE keyboard and the V8 mouse.
+- 🟢 **Tested:** the R85 HE keyboard and the V8 mouse.
 - 🟡 **Should work:** about 20 more keyboards, and the X11 ULTRA, original X11,
   F1 AIR, R2, R3, X3 PRO, R5 ULTRA, R6 and R8 mice.
 - 🟠 **Partly supported:** about 60 keyboards (whole-keyboard settings only), and

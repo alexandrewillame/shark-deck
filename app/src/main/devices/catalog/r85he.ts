@@ -3,10 +3,11 @@ import { SWITCH_CHOICES_DEFAULT } from '@shared/keyboard-switches';
 import { ANSI_79_SG9047 } from '../layouts';
 
 /**
- * Attack Shark R85HE — magnetic (Hall-effect) 8 kHz keyboard, **wired only**
+ * Attack Shark R85 HE — magnetic (Hall-effect) 8 kHz keyboard, **wired only**
  * (no dongle; `GET_RF_VERSION` returns nothing, so no battery).
- * (The device reports its product string as "R85HE"; earlier notes called it
- * "R5HE" — same USB id 0x3151:0x5029.)
+ * (Named as Attack Shark's site writes it, with a space like every other HE
+ * model; the device's own product string is "R85HE", and earlier notes called
+ * it "R5HE" — same USB id 0x3151:0x5029.)
  *
  * Vendor Driver v4 device-table row: `{ id: 3123, vid: 0x3151, pid: 0x5029,
  * keyLayout: Common79_SG9047, name: "ry5088_sg9047_1m_8k", layer: 4 }`. Note
@@ -24,7 +25,7 @@ import { ANSI_79_SG9047 } from '../layouts';
  */
 export const ATTACK_SHARK_R85HE: DeviceDescriptor = {
   model: 'attack-shark-r85he',
-  displayName: 'Attack Shark R85HE',
+  displayName: 'Attack Shark R85 HE',
   vendor: 'Attack Shark',
   kind: 'keyboard',
   vid: 0x3151,

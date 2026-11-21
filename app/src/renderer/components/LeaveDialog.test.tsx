@@ -25,7 +25,7 @@ import { useStore } from '../state/store';
 
 const descriptors = virtualDescriptors();
 const KB = liveDevice(
-  descriptors.find((d) => d.displayName === 'Attack Shark R85HE')!,
+  descriptors.find((d) => d.displayName === 'Attack Shark R85 HE')!,
   'kb',
 );
 const MOUSE = liveDevice(
@@ -231,7 +231,7 @@ describe('the leave prompt', () => {
     ask(null, 'quit');
     const dialog = screen.getByRole('dialog', { name: 'Quit without applying your changes?' });
     expect([...dialog.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
-      'Attack Shark R85HE: Caps Lock → Esc',
+      'Attack Shark R85 HE: Caps Lock → Esc',
       `${MOUSE.displayName}: Macro “Combo”`,
     ]);
     expect(dialogButtons()).toEqual(['Keep editing', 'Discard and quit']);

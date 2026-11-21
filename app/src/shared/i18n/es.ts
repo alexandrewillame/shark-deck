@@ -1465,16 +1465,16 @@ export const es: Partial<Messages> = {
   'support.title.complete': 'Ayuda a completar su compatibilidad',
   'support.title.name': 'Ayuda a identificar este ratón',
   'support.body.all':
-    'La herramienta de informe de dispositivos graba lo que envía el software oficial mientras cambias cada ajuste una vez: unos 30 minutos, en Windows. Adjunta la grabación a una solicitud «New device» en GitHub y se podrá añadir este modelo.',
+    'La herramienta de informe de dispositivos graba lo que envía el software oficial mientras cambias cada ajuste una vez: unos 30 minutos. Adjunta la grabación a una solicitud «New device» en GitHub y se podrá añadir este modelo.',
   'support.body.unknown':
     'Un informe del dispositivo suele bastar para añadirlo: tarda un minuto, no graba nada y lo adjuntas a una solicitud «New device» en GitHub.',
   'support.body.class':
     'Shark Deck solo conoce este ratón por su sensor, así que ofrece los ajustes de cualquier ratón con ese sensor. Un informe del dispositivo indica el modelo: tarda un minuto, no graba nada y lo adjuntas a una solicitud en GitHub.',
   'support.gaps': 'Aún no está en Shark Deck: {list}.',
   'support.body.steps':
-    'La herramienta de informe de dispositivos puede grabar solo esto: lo ajustas en el software oficial mientras graba lo que envía el software. Unos minutos, en Windows; después adjunta la grabación a una solicitud en GitHub.',
+    'La herramienta de informe de dispositivos puede grabar solo esto: lo ajustas en el software oficial mientras graba lo que envía el software. Unos minutos; después adjunta la grabación a una solicitud en GitHub.',
   'support.body.specific':
-    '¿Algo no funciona como debería? La herramienta de informe de dispositivos lo graba desde el software oficial en unos minutos, en Windows; después adjunta la grabación a una solicitud en GitHub.',
+    '¿Algo no funciona como debería? La herramienta de informe de dispositivos lo graba desde el software oficial en unos minutos; después adjunta la grabación a una solicitud en GitHub.',
   'support.action.all': 'Grabar este dispositivo',
   'support.action.report': 'Crear un informe del dispositivo',
   'support.action.steps': 'Grabar lo que falta',
@@ -1494,12 +1494,20 @@ export const es: Partial<Messages> = {
   'support.gap.buttonActions': 'algunas acciones de botón',
   'support.gap.receiver': 'su receptor inalámbrico',
   'support.confirm':
-    'Shark Deck se cierra primero, para que solo el software oficial hable con el dispositivo mientras se graba. Después, vuelve a abrir Shark Deck desde el menú Inicio.',
+    'Shark Deck se cierra primero, para que solo el software oficial hable con el dispositivo mientras se graba. Después, vuelve a abrir Shark Deck.',
   'support.confirm.ok': 'Cerrar Shark Deck y empezar',
-  'support.unix':
-    'En este ordenador, la herramienta crea el informe del dispositivo; grabar el software oficial requiere Windows.',
   'support.opened':
     'La herramienta de informe de dispositivos se abrió en una ventana de terminal.',
   'support.failed': 'No se pudo iniciar la herramienta de informe de dispositivos: {error}',
   'power.deepAfter': 'Reposo profundo tras',
+  'support.linux':
+    'En Linux, ejecuta el software oficial en una máquina virtual de Windows a la que se pasa el dispositivo, o con Wine: la herramienta graba lo que pasa por el cable USB y te pide la contraseña para leerlo.',
+  'support.preview':
+    'La herramienta de informe de dispositivos se abrió con los pasos que seguiría un propietario. Un dispositivo de demostración no tiene nada que grabar.',
+  'support.gap.mediaKeys':
+    'algunas teclas multimedia para sus botones (Silencio, Detener, Pista anterior, Calculadora…)',
+  'support.body.mac':
+    'Para eso hace falta una grabación del software oficial, y un Mac no puede hacerla: ese software funciona en Windows, y Shark Deck lo graba en un ordenador con Windows o Linux, con el dispositivo conectado allí. En este Mac, la herramienta sí puede crear el informe del dispositivo: un minuto, y solo lee lo que el sistema ya sabe.',
+  'support.web':
+    'La herramienta de informe de dispositivos graba en Windows y Linux; en Mac solo crea el informe.',
 };

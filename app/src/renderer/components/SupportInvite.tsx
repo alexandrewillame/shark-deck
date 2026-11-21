@@ -19,6 +19,7 @@ const GAP: Record<SupportGap, MessageKey> = {
   macros: 'support.gap.macros',
   deepSleep: 'support.gap.deepSleep',
   buttonActions: 'support.gap.buttonActions',
+  mediaKeys: 'support.gap.mediaKeys',
   receiver: 'support.gap.receiver',
 };
 
@@ -65,39 +66,44 @@ function copyFor(plan: SupportPlan, kind: LiveDevice['kind'], t: T): Copy {
 
 /**
  * The invitation's buttons. On the desktop the main one starts the device
- * report tool for this device (main/reportTool.ts); on Windows it first says
- * that Shark Deck closes, since the tool records the official software,
- * which must be the only one talking to the device. Elsewhere — the browser
- * edition, a demo device, or a tool that would not start — it opens the
- * "Missing a device?" page.
+ * report tool for this device (main/reportTool.ts), set to what it lacks:
+ * Windows records the official software, and so does Linux (the software in
+ * a Windows virtual machine or Wine); macOS makes the report alone. Before a
+ * tool that talks to the device, it says that Shark Deck closes, so the
+ * official software is the only one talking to it. A demo device opens the
+ * tool on the steps its owner would follow, recording nothing. The browser
+ * edition cannot start a program: "How it works" is its one button. A tool
+ * that would not start says why and opens the "Missing a device?" page.
  */
 function Actions({ device, plan, copy }: { device: LiveDevice; plan: SupportPlan; copy: Copy }) {
   const t = useT();
   const toast = useStore((s) => s.toast);
-  const windows = useStore((s) => s.platformInfo?.os === 'win32');
+  const os = useStore((s) => s.platformInfo?.os);
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
-  const launch = hostFeatures.reportTool && !device.simulated;
-  // Off Windows the tool makes the report alone: say so, and name the button for it.
-  const reportOnly = launch && !windows && plan.record !== 'report';
+  const demo = !!device.simulated;
+  const records = plan.record !== 'report';
+  // A demo device has steps to show only where a recording is asked for.
+  const launch = hostFeatures.reportTool && (!demo || records);
+  const recordsHere = os === 'win32' || os === 'linux';
+  // Where nothing is recorded (a Mac: its body says so), the button makes the report alone.
+  const reportOnly = launch && !demo && records && !recordsHere;
+  const closesFirst = launch && !demo && (os === 'win32' || (os === 'linux' && records));
   const howto = () => void sd.openExternal(MISSING_DEVICE_URL);
   const run = async () => {
     setBusy(true);
     const r = await sd
       .openReportTool(device.id)
-      .catch((e: unknown) => ({ ok: false, error: String(e), quitting: false }));
+      .catch((e: unknown) => ({ ok: false, error: String(e), quitting: false, preview: false }));
     setBusy(false);
     setAsking(false);
     if (!r.ok) {
       toast('err', t('support.failed', { error: r.error ?? '' }));
       howto();
-    } else if (!r.quitting) toast('info', t('support.opened'));
+    } else if (r.preview) toast('info', t('support.preview'));
+    else if (!r.quitting) toast('info', t('support.opened'));
   };
-  const start = () => {
-    if (!launch) howto();
-    else if (windows) setAsking(true);
-    else void run();
-  };
+  const start = () => (closesFirst ? setAsking(true) : void run());
   if (asking) {
     return (
       <div className="support-confirm" role="alertdialog" aria-label={t(copy.action)}>
@@ -115,17 +121,38 @@ function Actions({ device, plan, copy }: { device: LiveDevice; plan: SupportPlan
   }
   return (
     <>
-      {reportOnly && <p className="hint support-note">{t('support.unix')}</p>}
+      {launch && !demo && records && os === 'linux' && (
+        <p className="hint support-note">{t('support.linux')}</p>
+      )}
+      {!hostFeatures.reportTool && records && (
+        <p className="hint support-note">{t('support.web')}</p>
+      )}
       <div className="support-actions">
-        <button className="btn" onClick={howto}>
+        <button className={launch ? 'btn' : 'btn primary'} onClick={howto}>
           {t('support.howto')}
         </button>
-        <button className="btn primary" disabled={busy} onClick={start}>
-          {t(reportOnly ? 'support.action.report' : copy.action)}
-        </button>
+        {launch && (
+          <button className="btn primary" disabled={busy} onClick={start}>
+            {t(reportOnly ? 'support.action.report' : copy.action)}
+          </button>
+        )}
       </div>
     </>
   );
+}
+
+/**
+ * The body for this computer. A Mac records nothing, so where a recording is
+ * asked for, its body says what a Mac can do (the report) and where the
+ * recording is made (a Windows or Linux computer). Windows, Linux and the
+ * browser keep the plan's own body; Linux and the browser add a line of their
+ * own under it (`Actions`).
+ */
+function bodyFor(plan: SupportPlan, copy: Copy, os: string | undefined): MessageKey {
+  if (hostFeatures.reportTool && os === 'darwin' && plan.record !== 'report') {
+    return 'support.body.mac';
+  }
+  return copy.body;
 }
 
 /**
@@ -146,9 +173,11 @@ export function SupportInvite({
   onOpen?: () => void;
 }) {
   const t = useT();
+  const os = useStore((s) => s.platformInfo?.os);
   const plan = device.ui.support;
   if (!plan) return null;
   const copy = copyFor(plan, device.kind, t);
+  const body = bodyFor(plan, copy, os);
   if (variant === 'strip') {
     if (!copy.strip || !copy.stripAction) return null;
     return (
@@ -166,7 +195,7 @@ export function SupportInvite({
     return (
       <div className="support-invite support-in-identity">
         <h5>{t(copy.title)}</h5>
-        <p className="hint">{t(copy.body)}</p>
+        <p className="hint">{t(body)}</p>
         <Actions device={device} plan={plan} copy={copy} />
       </div>
     );
@@ -175,7 +204,7 @@ export function SupportInvite({
   return (
     <Panel title={t(copy.title)} className="support-invite">
       {copy.lead && <p className="support-lead">{copy.lead}</p>}
-      <p className="hint">{t(copy.body)}</p>
+      <p className="hint">{t(body)}</p>
       <Actions device={device} plan={plan} copy={copy} />
     </Panel>
   );

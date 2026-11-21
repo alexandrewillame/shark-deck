@@ -313,6 +313,15 @@ export class DeviceManager extends Emitter {
    * (battery 60s) or the watch flag.
    */
   private readonly scanIntervalMs = 1250;
+  /**
+   * The cadence while the window is hidden — in the tray, or minimized. Then
+   * nothing is on screen to keep current: a pass only notices a device plugged
+   * in or out and keeps the profile auto-switch reads, and 1.25 s of that (a
+   * HID enumeration, a ping and a profile read per device, each pass) was CPU
+   * spent for nobody. Back on screen, a pass runs at once (`setWindowVisible`).
+   */
+  private readonly hiddenScanIntervalMs = 5_000;
+  private windowVisible = true;
   private readonly batteryIntervalMs = 60_000;
   private diagnostic: ScanDiagnostic = EMPTY_DIAGNOSTIC;
   /** Guards against a pass resurrecting entries after `stop()` clears them —
@@ -350,6 +359,19 @@ export class DeviceManager extends Emitter {
     this.timer = null;
   }
 
+  /**
+   * The desktop window was shown or hidden (main/index.ts): hidden, passes
+   * slow to `hiddenScanIntervalMs`; shown again, one runs at once, so the
+   * cards are current the moment they are seen.
+   */
+  setWindowVisible(visible: boolean): void {
+    if (this.windowVisible === visible) return;
+    this.windowVisible = visible;
+    if (!visible || this.stopped || this.paused) return;
+    if (this.scanning) this.rescanRequested = true;
+    else if (this.timer) this.scheduleNextScan(0);
+  }
+
   /** Undo `pause()` with an immediate pass, so the cards catch up at once. */
   resume(): void {
     if (!this.paused) return;
@@ -379,8 +401,10 @@ export class DeviceManager extends Emitter {
           this.scanning = false;
           if (this.stopped || this.paused) return;
           // A nudge that arrived mid-scan runs immediately; otherwise wait out
-          // the normal tick. Either way there is exactly one pending timer.
-          const next = this.rescanRequested ? 0 : this.scanIntervalMs;
+          // the normal tick (a slower one in the tray). Either way there is
+          // exactly one pending timer.
+          const interval = this.windowVisible ? this.scanIntervalMs : this.hiddenScanIntervalMs;
+          const next = this.rescanRequested ? 0 : interval;
           this.rescanRequested = false;
           this.scheduleNextScan(next);
         });

@@ -52,6 +52,7 @@ exit /b %ERRORLEVEL%
 #                                                     these words ('specific': one thing you choose)
 #    ... --out C:\some\folder                         where the report goes (default: the Desktop)
 #    SharkDeck-device-report.bat --preview-steps mouse   walk the recording steps; nothing is recorded
+#                                                     (with --steps: only those, as a demo device shows them)
 #    SharkDeck-device-report.bat --resume-recording      carry on with a recording set aside for a restart
 #
 #  Part of Shark Deck (GPL-3.0-or-later): https://github.com/alexandrewillame/shark-deck
@@ -1803,6 +1804,21 @@ btn.b5.default|mouse|Buttons|Back||undo|Set button 5 (rear side button) to its d
 btn.mid.key-c|mouse|Buttons|key C|||Set the middle button (wheel click) to the keyboard key C.
 btn.mid.default|mouse|Buttons|Middle click||undo|Set the middle button back to Middle click.
 btn.reset|mouse|Buttons||||Optional, only if you do not mind losing your own button settings: restore all buttons to their defaults at once.
+media.prev|mouse|Media keys|Previous Track|media.b4||Set button 4 (front side button) to the media key Previous track.
+media.stop|mouse|Media keys|Stop Playback|media.b4||Set button 4 (front side button) to Stop (stops the music or video), if offered.
+media.mute|mouse|Media keys|Mute|media.b4||Set button 4 (front side button) to Mute.
+media.player|mouse|Media keys|Media player|media.b4||Set button 4 (front side button) to open the media player, if offered.
+media.email|mouse|Media keys|Email|media.b4||Set button 4 (front side button) to open e-mail (Mail), if offered.
+media.calc|mouse|Media keys|Calculator|media.b4||Set button 4 (front side button) to open the calculator, if offered.
+media.computer|mouse|Media keys|My Computer|media.b4||Set button 4 (front side button) to open My Computer (This PC), if offered.
+media.home|mouse|Media keys|Homepage|media.b4||Set button 4 (front side button) to the browser's Home page, if offered.
+media.search|mouse|Media keys|Search|media.b4||Set button 4 (front side button) to Search, if offered.
+media.back|mouse|Media keys|Previous page|media.b4||Set button 4 (front side button) to the browser's Back (previous page), if offered.
+media.forward|mouse|Media keys|Next page|media.b4||Set button 4 (front side button) to the browser's Forward (next page), if offered.
+media.halt|mouse|Media keys|Stop page|media.b4||Set button 4 (front side button) to the browser's Stop (stops loading the page), if offered.
+media.refresh|mouse|Media keys|Refresh page|media.b4||Set button 4 (front side button) to the browser's Refresh, if offered.
+media.favorites|mouse|Media keys|Favorites|media.b4||Set button 4 (front side button) to Favorites (bookmarks), if offered.
+media.default|mouse|Media keys|Forward|media.b4|undo|Set button 4 (front side button) back to its default (Forward).
 key.a-b|keyboard|Keys|A types B|||Remap the key A so that it types B (main layer).
 key.a-b.undo|keyboard|Keys|A types A||undo|Put A back: make it type A again.
 key.caps-ctrl|keyboard|Keys|Caps Lock is Left Ctrl|||Remap Caps Lock to Left Ctrl.
@@ -1899,6 +1915,7 @@ Power|mouse|Usually Settings, as "sleep time" or "power saving".
 DPI|mouse|Usually the main page: the DPI stages and their values.
 Sensor|mouse|Usually Settings, Performance or Sensor: lift-off distance (LOD), angle snapping, ripple control, motion sync.
 Buttons|mouse|Usually the main page or a Buttons / Key settings tab: click the button on the picture of the mouse, then choose what it does.
+Media keys|mouse|Where buttons are set: click button 4 (the front side button) on the picture of the mouse, then look under Multimedia (or Media).
 Keys|keyboard|Attack Shark Driver v4: Keyboard Settings > Custom Keys: click the key on the picture, then choose (media keys: Functions); Reset Key puts one back. Fn + key: Fn Layer Settings. Elsewhere: Keys, Keymap or Remap.
 Macros|keyboard|Attack Shark Driver v4: Macro Editing makes it; Keyboard Settings > Custom Keys > Macro Settings gives it to a key. Elsewhere: a Macro tab.
 Macros|mouse|Usually a Macro tab; a macro is then given to a button where buttons are set.
@@ -2022,7 +2039,9 @@ function OfferRecording($report, [string[]]$readable, [string]$reportFile, [stri
     }
     if ($steps) {
         Say ''
-        Say ('  Shark Deck asked for a short recording, of these settings only: ' + ($steps -replace ',', ', ') + '.') White
+        # Named as the steps' own groups ("Media keys"), not by the words that picked them.
+        $asked = @((StepTableFor $steps) -split "`r?`n" | ForEach-Object { ($_ -split '\|')[2] } | Where-Object { $_ -and $_ -ne 'Start' -and $_ -ne 'Finish' } | Select-Object -Unique)
+        Say ('  Shark Deck asked for a short recording, of these settings only: ' + ($asked -join ', ') + '.') White
         $custom = $false
     } elseif (-not $asked) {
         Say ''
@@ -2690,7 +2709,9 @@ if ($flags.Preview) {
     [SdShot]::DpiAware()
     [System.Windows.Forms.Application]::EnableVisualStyles()
     $kind = if ($flags.Preview -eq 'keyboard') { 'keyboard' } else { 'mouse' }
-    $preview = [SdWizard]::new((StepList $kind), $env:TEMP, $env:TEMP, [string[]]@(), [int[]]@(), [string[]]@())
+    # Only the steps asked for (--steps), as an owner's recording would walk them.
+    $table = if ($flags.Steps) { StepTableFor $flags.Steps } else { $StepTable }
+    $preview = [SdWizard]::new((StepList $kind $table), $env:TEMP, $env:TEMP, [string[]]@(), [int[]]@(), [string[]]@())
     $preview.Preview = $true
     $where = WhereFor $kind
     foreach ($g in $where.Keys) { $preview.Where[$g] = $where[$g] }

@@ -57,7 +57,7 @@ const TARGETS = [
     mode: 'output',
   },
   {
-    name: 'Attack Shark R85HE (keyboard)',
+    name: 'Attack Shark R85 HE (keyboard)',
     vid: 0x3151,
     pid: 0x5029,
     usagePage: 0xffff,

@@ -8,12 +8,14 @@ vi.mock('node-hid', () => ({
 }));
 vi.mock('./devices/manager', () => ({ deviceManager: { getDescriptor: () => null } }));
 
-const { reportToolArgs, unixToolCommand, LINUX_TERMINALS } = await import('./reportTool');
+const { previewArgs, reportToolArgs, unixToolCommand, LINUX_TERMINALS } =
+  await import('./reportTool');
 const { supportPlan } = await import('./devices/support');
 const { bekenDescriptorFor, bekenMouseRoster } = await import('./devices/catalog/beken-mice');
 const { KEYBOARDS } = await import('./devices/catalog/keyboards');
 const { hubMouseRoster } = await import('./devices/catalog/hub-mice');
 const { CATALOG } = await import('./devices/catalog');
+const { BUTTON_ACTIONS_TREE } = await import('@shared/mouse-buttons');
 
 /**
  * The device report tool, started from a device's invitation: its command
@@ -34,13 +36,13 @@ describe('reportToolArgs', () => {
   });
 
   it('records only what a device lacks', () => {
-    // The X8 PRO lacks some button actions only: one thing at a time, described.
+    // The X8 PRO lacks some media keys: the tool's "Media keys" steps name each.
     expect(reportToolArgs(X8_PRO, supportPlan(X8_PRO)!.record, 'win32')).toEqual([
       '--device',
       '1D57:FA65',
       '--record',
       '--steps',
-      'specific',
+      'media',
     ]);
     expect(reportToolArgs(X8_PRO, ['deep', 'macro', 'specific'], 'win32').slice(2)).toEqual([
       '--record',
@@ -49,14 +51,40 @@ describe('reportToolArgs', () => {
     ]);
   });
 
-  it('makes the report alone where a report names the model, and on macOS and Linux', () => {
+  it('records on Linux as on Windows, and makes the report alone where a report names the model and on macOS', () => {
+    expect(reportToolArgs(X8_PRO, ['deep'], 'linux')).toEqual([
+      '--device',
+      '1D57:FA65',
+      '--record',
+      '--steps',
+      'deep',
+    ]);
+    expect(reportToolArgs(X1, 'all', 'linux')).toEqual(['--device', '1D57:2111', '--record']);
     expect(reportToolArgs(X1, 'report', 'win32')).toEqual(['--device', '1D57:2111', '--no-record']);
-    expect(reportToolArgs(X8_PRO, ['deep'], 'linux')).toEqual(['--device', '1D57:FA65']);
+    expect(reportToolArgs(X1, 'report', 'linux')).toEqual(['--device', '1D57:2111', '--no-record']);
     expect(reportToolArgs(X8_PRO, 'all', 'darwin')).toEqual(['--device', '1D57:FA65']);
   });
 
   it('passes only plain words as steps', () => {
     expect(reportToolArgs(X8_PRO, ['deep', 'x & del', 'macro'], 'win32').at(-1)).toBe('deep,macro');
+    expect(reportToolArgs(X8_PRO, ['x & del'], 'linux').at(-1)).toBe('specific');
+  });
+
+  it('shows a demo device the steps its owner would follow, recording nothing', () => {
+    expect(previewArgs('mouse', supportPlan(X8_PRO)!.record)).toEqual([
+      '--preview-steps',
+      'mouse',
+      '--steps',
+      'media',
+    ]);
+    expect(previewArgs('keyboard', ['act', 'dks'])).toEqual([
+      '--preview-steps',
+      'keyboard',
+      '--steps',
+      'act,dks',
+    ]);
+    expect(previewArgs('mouse', 'all')).toEqual(['--preview-steps', 'mouse']);
+    expect(previewArgs('mouse', 'report')).toBeNull();
   });
 
   it('keeps the shell window open at the end on macOS and Linux', () => {
@@ -99,5 +127,30 @@ describe('the steps the catalogue asks for', () => {
     for (const w of new Set(asked)) {
       expect(w === 'specific' || groups.has(w), `the tool has no "${w}" step`).toBe(true);
     }
+  });
+
+  it('names what it asks for: never only "do one thing the software should learn"', () => {
+    // That open step is for an owner who knows what is wrong and chooses it
+    // in the tool; what Shark Deck asks for, it names.
+    for (const d of [...CATALOG, ...KEYBOARDS, ...hubMouseRoster(), ...bekenMouseRoster()]) {
+      const r = d.spec.support?.record;
+      if (!r) continue;
+      expect(r === 'specific' || (Array.isArray(r) && r.includes('specific')), d.model).toBe(false);
+    }
+  });
+
+  it('asks the X8 PRO for every media key its driver has not seen recorded', () => {
+    const media = [...bat.matchAll(/^media\.[a-z]+\|mouse\|Media keys\|([^|]*)\|/gm)].map(
+      (m) => m[1],
+    );
+    const offered = BUTTON_ACTIONS_TREE.find((a) => a.key === 'multimedia')!.children!.map(
+      (c) => c.labelEn,
+    );
+    // Its owner's two recordings set button 4 to these (btn.b4.*): the rest is guessed or unknown.
+    const recorded = ['Play/Pause', 'Next Track', 'Volume-', 'Volume+'];
+    const missing = offered.filter((label) => !recorded.includes(label));
+    expect(missing.length).toBeGreaterThan(10);
+    for (const label of missing) expect(media, label).toContain(label);
+    expect(supportPlan(X8_PRO)!.record).toEqual(['media']);
   });
 });

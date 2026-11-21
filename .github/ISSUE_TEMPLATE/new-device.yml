@@ -22,11 +22,13 @@ body:
         anywhere, and saves a .zip on your Desktop: look through its pictures
         first, since anything attached here is public.
 
-        **On Linux or macOS:** run
+        **On Linux:** run
         [`sharkdeck-device-report.sh`](https://github.com/alexandrewillame/shark-deck/blob/main/tools/sharkdeck-device-report.sh)
-        in a terminal (`sh sharkdeck-device-report.sh`). It saves a report of the
-        device's USB ids and HID layout on your Desktop; a recording of the
-        official software needs Windows.
+        in a terminal (`sh sharkdeck-device-report.sh`). It makes the same
+        report, then the same recording, with the official software in a Windows
+        virtual machine the device is passed through to (or with Wine) while the
+        kernel's USB monitor records the cable (it asks for your password), and
+        saves a .tar.gz on your Desktop. **On macOS** it saves the report alone.
 
         Is your device already in the
         [list](https://github.com/alexandrewillame/shark-deck/blob/main/docs/devices/attack-shark-lineup.md)
@@ -61,7 +63,7 @@ body:
     id: report
     attributes:
       label: Device report
-      description: Drag the tool's .zip in here. Made no recording? Drag the report file instead, or paste what it contains. One per way of connecting it (cable, receiver) is even better.
+      description: Drag the tool's .zip (.tar.gz from Linux) in here. Made no recording? Drag the report file instead, or paste what it contains. One per way of connecting it (cable, receiver) is even better.
     validations:
       required: true
   - type: input

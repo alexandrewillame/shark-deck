@@ -1448,16 +1448,16 @@ export const fr: Partial<Messages> = {
   'support.title.complete': 'Aidez à compléter sa prise en charge',
   'support.title.name': 'Aidez à identifier cette souris',
   'support.body.all':
-    'L’outil de rapport de périphérique enregistre ce que le logiciel officiel envoie pendant que vous changez chaque réglage une fois : une trentaine de minutes, sous Windows. Joignez l’enregistrement à une demande « New device » sur GitHub, et ce modèle pourra être ajouté.',
+    'L’outil de rapport de périphérique enregistre ce que le logiciel officiel envoie pendant que vous changez chaque réglage une fois : une trentaine de minutes. Joignez l’enregistrement à une demande « New device » sur GitHub, et ce modèle pourra être ajouté.',
   'support.body.unknown':
     'Un rapport de périphérique suffit en général pour l’ajouter : il prend une minute, n’enregistre rien, et vous le joignez à une demande « New device » sur GitHub.',
   'support.body.class':
     'Shark Deck ne connaît cette souris que par son capteur : il propose les réglages de toute souris dotée de ce capteur. Un rapport de périphérique en donne le modèle : il prend une minute, n’enregistre rien, et vous le joignez à une demande sur GitHub.',
   'support.gaps': 'Pas encore dans Shark Deck : {list}.',
   'support.body.steps':
-    'L’outil de rapport de périphérique peut enregistrer seulement ceux-ci : vous les réglez dans le logiciel officiel pendant qu’il enregistre ce que le logiciel envoie. Quelques minutes, sous Windows ; joignez ensuite l’enregistrement à une demande sur GitHub.',
+    'L’outil de rapport de périphérique peut enregistrer seulement ceux-ci : vous les réglez dans le logiciel officiel pendant qu’il enregistre ce que le logiciel envoie. Quelques minutes ; joignez ensuite l’enregistrement à une demande sur GitHub.',
   'support.body.specific':
-    'Quelque chose ne fonctionne pas comme prévu ? L’outil de rapport de périphérique l’enregistre depuis le logiciel officiel en quelques minutes, sous Windows ; joignez ensuite l’enregistrement à une demande sur GitHub.',
+    'Quelque chose ne fonctionne pas comme prévu ? L’outil de rapport de périphérique l’enregistre depuis le logiciel officiel en quelques minutes ; joignez ensuite l’enregistrement à une demande sur GitHub.',
   'support.action.all': 'Enregistrer ce périphérique',
   'support.action.report': 'Créer un rapport de périphérique',
   'support.action.steps': 'Enregistrer ce qui manque',
@@ -1478,11 +1478,19 @@ export const fr: Partial<Messages> = {
   'support.gap.buttonActions': 'certaines actions de bouton',
   'support.gap.receiver': 'son récepteur sans fil',
   'support.confirm':
-    'Shark Deck se ferme d’abord, pour que seul le logiciel officiel parle au périphérique pendant l’enregistrement. Rouvrez ensuite Shark Deck depuis le menu Démarrer.',
+    'Shark Deck se ferme d’abord, pour que seul le logiciel officiel parle au périphérique pendant l’enregistrement. Rouvrez ensuite Shark Deck.',
   'support.confirm.ok': 'Fermer Shark Deck et démarrer',
-  'support.unix':
-    'Sur cet ordinateur, l’outil crée le rapport de périphérique ; enregistrer le logiciel officiel nécessite Windows.',
   'support.opened': 'L’outil de rapport de périphérique s’est ouvert dans une fenêtre de terminal.',
   'support.failed': 'Impossible de démarrer l’outil de rapport de périphérique : {error}',
   'power.deepAfter': 'Veille profonde après',
+  'support.linux':
+    'Sous Linux, lancez le logiciel officiel dans une machine virtuelle Windows à laquelle le périphérique est transmis, ou avec Wine : l’outil enregistre ce qui passe par le câble USB et demande votre mot de passe pour le lire.',
+  'support.preview':
+    'L’outil de rapport de périphérique s’est ouvert sur les étapes qu’un propriétaire suivrait. Un périphérique de démonstration n’a rien à enregistrer.',
+  'support.gap.mediaKeys':
+    'certaines touches multimédias pour ses boutons (Muet, Arrêt, Piste précédente, Calculatrice…)',
+  'support.body.mac':
+    'Il faut pour cela un enregistrement du logiciel officiel, et un Mac ne peut pas en faire : ce logiciel tourne sous Windows, et Shark Deck l’enregistre sur un ordinateur Windows ou Linux, le périphérique branché dessus. Sur ce Mac, l’outil peut tout de même créer le rapport de périphérique : une minute, et il ne fait que lire ce que le système sait.',
+  'support.web':
+    'L’outil de rapport de périphérique enregistre sous Windows et Linux ; sur Mac, il crée seulement le rapport.',
 };

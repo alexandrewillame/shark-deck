@@ -1366,16 +1366,16 @@ export const zhTW: Partial<Messages> = {
   'support.title.complete': '協助完善支援',
   'support.title.name': '協助辨識這隻滑鼠',
   'support.body.all':
-    '裝置報告工具會在你逐一更改每項設定時，記錄官方軟體送出的內容：在 Windows 上約 30 分鐘。將錄製附加到 GitHub 上的「New device」請求，即可新增此型號。',
+    '裝置報告工具會在你逐一更改每項設定時，記錄官方軟體送出的內容：約 30 分鐘。將錄製附加到 GitHub 上的「New device」請求，即可新增此型號。',
   'support.body.unknown':
     '通常一份裝置報告就足以新增它：只需一分鐘，不錄製任何內容，把它附加到 GitHub 上的「New device」請求即可。',
   'support.body.class':
     'Shark Deck 只能透過感測器辨識這隻滑鼠，因此提供的是所有使用該感測器的滑鼠共有的設定。一份裝置報告即可確定型號：只需一分鐘，不錄製任何內容，把它附加到 GitHub 上的請求即可。',
   'support.gaps': 'Shark Deck 尚未支援：{list}。',
   'support.body.steps':
-    '裝置報告工具可以只錄製這些：你在官方軟體中設定它們，工具同時錄製軟體送出的內容。在 Windows 上只需幾分鐘；然後將錄製附加到 GitHub 上的請求。',
+    '裝置報告工具可以只錄製這些：你在官方軟體中設定它們，工具同時錄製軟體送出的內容。只需幾分鐘；然後將錄製附加到 GitHub 上的請求。',
   'support.body.specific':
-    '有功能不正常嗎？裝置報告工具可在 Windows 上幾分鐘內從官方軟體錄製下來；然後將錄製附加到 GitHub 上的請求。',
+    '有功能不正常嗎？裝置報告工具可在幾分鐘內從官方軟體錄製下來；然後將錄製附加到 GitHub 上的請求。',
   'support.action.all': '錄製此裝置',
   'support.action.report': '產生裝置報告',
   'support.action.steps': '錄製缺少的部分',
@@ -1394,10 +1394,16 @@ export const zhTW: Partial<Messages> = {
   'support.gap.buttonActions': '部分按鍵功能',
   'support.gap.receiver': '無線接收器',
   'support.confirm':
-    'Shark Deck 會先關閉，讓錄製期間只有官方軟體與裝置通訊。之後請從開始功能表重新開啟 Shark Deck。',
+    'Shark Deck 會先關閉，讓錄製期間只有官方軟體與裝置通訊。之後請重新開啟 Shark Deck。',
   'support.confirm.ok': '關閉 Shark Deck 並開始',
-  'support.unix': '在這台電腦上，此工具會產生裝置報告；錄製官方軟體需要 Windows。',
   'support.opened': '裝置報告工具已在終端機視窗中開啟。',
   'support.failed': '無法啟動裝置報告工具：{error}',
   'power.deepAfter': '深度睡眠時間',
+  'support.linux':
+    '在 Linux 上，請在已接入該裝置的 Windows 虛擬機器中執行官方軟體，或使用 Wine：工具會錄製經過 USB 線的內容，並需要你的密碼來讀取。',
+  'support.preview': '裝置報告工具已開啟，顯示裝置擁有者要完成的步驟。示範裝置沒有可錄製的內容。',
+  'support.gap.mediaKeys': '按鍵的部分媒體鍵（靜音、停止、上一首、計算機…）',
+  'support.body.mac':
+    '這需要錄製官方軟體，而 Mac 無法錄製：官方軟體在 Windows 上執行，Shark Deck 需在接入該裝置的 Windows 或 Linux 電腦上錄製。在這台 Mac 上，工具仍可產生裝置報告：只需一分鐘，且只讀取系統已知的資訊。',
+  'support.web': '裝置報告工具可在 Windows 和 Linux 上錄製；在 Mac 上只能產生報告。',
 };

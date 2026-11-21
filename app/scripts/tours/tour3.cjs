@@ -105,7 +105,7 @@ function buildEvents(icons) {
   });
   const devs = (slot) => [
     { id: V8, displayName: 'Attack Shark V8', slot, ok: true },
-    { id: R85, displayName: 'Attack Shark R85HE', slot, ok: true },
+    { id: R85, displayName: 'Attack Shark R85 HE', slot, ok: true },
   ];
   // The order switcher.ts emits in (tickInner / applyProfileIfChanged).
   return [

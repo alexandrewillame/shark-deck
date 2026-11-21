@@ -20,6 +20,13 @@ const h = vi.hoisted(() => ({
 
 vi.mock('electron', () => ({ app: { getPath: () => '', isPackaged: false }, shell: {} }));
 vi.mock('../profiles/processIcons', () => ({ iconFor: async () => null }));
+// Windows' own process list (winProcesses.ts, through koffi) answers before
+// `tasklist` does; out of the way here, so these hold `tasklist` — still the
+// fallback — to the rule. Its own tests: winProcesses.test.ts.
+vi.mock('./winProcesses', () => {
+  throw new Error('no native process list in this test');
+});
+vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 vi.mock('node:child_process', async (importOriginal) => ({
   ...(await importOriginal<typeof import('node:child_process')>()),
   exec: (_cmd: string, _opts: unknown, cb: (err: Error | null, stdout: string) => void) =>

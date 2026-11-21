@@ -226,11 +226,12 @@ export function buildKeyboardDescriptor(row: KeyboardRow): DeviceDescriptor {
                 ...(row.magnetic && !magnetic ? (['actuation'] as const) : []),
               ],
               // The keys' own steps show where a key sits; the software's
-              // pages, its picture of the board.
+              // pages, its picture of the board. Then "Anything else", the one
+              // open step, for a setting none of these asked about.
               record: [
                 ...(addressable ? [] : ['start', 'key', 'perkey']),
                 ...(row.magnetic && !magnetic ? ['act', 'rt', 'dz', 'dks', 'mt', 'tgl'] : []),
-                'specific',
+                'other',
               ],
             },
           }

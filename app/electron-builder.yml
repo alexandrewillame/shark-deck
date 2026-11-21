@@ -118,13 +118,17 @@ mac:
   target:
     - { target: dmg, arch: [arm64, x64] }
     - { target: zip, arch: [arm64, x64] }
-  # The device report tool (report only: the official software is Windows'),
-  # started from a device's "Help add it" button (main/reportTool.ts).
+  # The device report tool (the report alone: macOS has no USB monitor to
+  # record with), started from a device's "Help add it" button
+  # (main/reportTool.ts).
   extraResources:
     - from: ../tools/sharkdeck-device-report.sh
       to: tools/sharkdeck-device-report.sh
   files:
     - '!node_modules/node-hid/prebuilds/{HID-win32-x64,HID-win32-ia32,HID-win32-arm64,HID-linux-x64,HID-linux-arm64,HID-linux-arm,HID-linux-x64-musl,HID_hidraw-linux-x64,HID_hidraw-linux-arm64,HID_hidraw-linux-arm,HID_hidraw-linux-x64-musl}/**'
+    # koffi lists running processes on Windows only (main/platform/winProcesses.ts).
+    - '!node_modules/koffi/**'
+    - '!node_modules/@koromix/**'
 
 dmg:
   artifactName: ${productName}-${version}-${arch}.${ext}
@@ -171,11 +175,15 @@ linux:
       to: udev/60-sharkdeck.rules
     - from: scripts/linux/install-udev-rules.sh
       to: udev/install-udev-rules.sh
-    # The device report tool, started from a device's "Help add it" button.
+    # The device report tool, started from a device's "Help add it" button:
+    # it records with the kernel's USB monitor (usbmon), as root through sudo.
     - from: ../tools/sharkdeck-device-report.sh
       to: tools/sharkdeck-device-report.sh
   files:
     - '!node_modules/node-hid/prebuilds/{HID-win32-x64,HID-win32-ia32,HID-win32-arm64,HID-darwin-x64,HID-darwin-arm64}/**'
+    # koffi lists running processes on Windows only (main/platform/winProcesses.ts).
+    - '!node_modules/koffi/**'
+    - '!node_modules/@koromix/**'
 
 # `depends` replaces electron-builder's default list rather than adding to it,
 # so both lists below restate that default (FpmTarget.getDefaultDepends,

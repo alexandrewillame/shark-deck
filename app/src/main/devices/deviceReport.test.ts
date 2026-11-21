@@ -89,7 +89,9 @@ describe('triageDevice', () => {
     const lines = triageDevice(
       device({ identify: { asked: true, reply: '008f330c', modelId: 3123, firmware: '5.11' } }),
     );
-    expect(lines.join(' ')).toMatch(/model id 3123, firmware 5\.11\): already supported — .*R85HE/);
+    expect(lines.join(' ')).toMatch(
+      /model id 3123, firmware 5\.11\): already supported — .*R85 HE/,
+    );
   });
 
   it('says where to add a model id no table knows', () => {

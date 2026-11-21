@@ -1430,16 +1430,16 @@ export const ko: Partial<Messages> = {
   'support.title.complete': '지원 완성 돕기',
   'support.title.name': '이 마우스 식별 돕기',
   'support.body.all':
-    '장치 보고 도구는 각 설정을 한 번씩 바꾸는 동안 공식 소프트웨어가 보내는 내용을 기록합니다(Windows에서 약 30분). 기록을 GitHub의 “New device” 요청에 첨부하면 이 모델을 추가할 수 있습니다.',
+    '장치 보고 도구는 각 설정을 한 번씩 바꾸는 동안 공식 소프트웨어가 보내는 내용을 기록합니다(약 30분). 기록을 GitHub의 “New device” 요청에 첨부하면 이 모델을 추가할 수 있습니다.',
   'support.body.unknown':
     '보통은 장치 보고서만으로 추가할 수 있습니다. 1분이면 되고, 아무것도 기록하지 않으며, GitHub의 “New device” 요청에 첨부하면 됩니다.',
   'support.body.class':
     'Shark Deck는 이 마우스를 센서로만 알고 있어서, 같은 센서를 가진 모든 마우스의 설정을 제공합니다. 장치 보고서로 모델을 알 수 있습니다. 1분이면 되고, 아무것도 기록하지 않으며, GitHub 요청에 첨부하면 됩니다.',
   'support.gaps': '아직 Shark Deck에 없음: {list}.',
   'support.body.steps':
-    '장치 보고 도구로 이 항목만 기록할 수 있습니다. 공식 소프트웨어에서 설정하는 동안 소프트웨어가 보내는 내용을 기록합니다. Windows에서 몇 분이면 되며, 그다음 기록을 GitHub 요청에 첨부하세요.',
+    '장치 보고 도구로 이 항목만 기록할 수 있습니다. 공식 소프트웨어에서 설정하는 동안 소프트웨어가 보내는 내용을 기록합니다. 몇 분이면 되며, 그다음 기록을 GitHub 요청에 첨부하세요.',
   'support.body.specific':
-    '제대로 작동하지 않는 것이 있나요? 장치 보고 도구로 Windows에서 몇 분 만에 공식 소프트웨어의 동작을 기록할 수 있습니다. 그다음 기록을 GitHub 요청에 첨부하세요.',
+    '제대로 작동하지 않는 것이 있나요? 장치 보고 도구로 몇 분 만에 공식 소프트웨어의 동작을 기록할 수 있습니다. 그다음 기록을 GitHub 요청에 첨부하세요.',
   'support.action.all': '이 장치 기록',
   'support.action.report': '장치 보고서 만들기',
   'support.action.steps': '빠진 부분 기록',
@@ -1459,11 +1459,17 @@ export const ko: Partial<Messages> = {
   'support.gap.buttonActions': '일부 버튼 동작',
   'support.gap.receiver': '무선 수신기',
   'support.confirm':
-    '기록하는 동안 공식 소프트웨어만 장치와 통신하도록 Shark Deck가 먼저 종료됩니다. 이후 시작 메뉴에서 Shark Deck를 다시 여세요.',
+    '기록하는 동안 공식 소프트웨어만 장치와 통신하도록 Shark Deck가 먼저 종료됩니다. 이후 Shark Deck를 다시 여세요.',
   'support.confirm.ok': 'Shark Deck 닫고 시작',
-  'support.unix':
-    '이 컴퓨터에서는 도구가 장치 보고서를 만듭니다. 공식 소프트웨어를 기록하려면 Windows가 필요합니다.',
   'support.opened': '장치 보고 도구가 터미널 창에서 열렸습니다.',
   'support.failed': '장치 보고 도구를 시작할 수 없습니다: {error}',
   'power.deepAfter': '딥 슬립까지',
+  'support.linux':
+    'Linux에서는 장치를 넘겨준 Windows 가상 머신이나 Wine에서 공식 소프트웨어를 실행하세요. 도구는 USB 케이블로 오가는 내용을 기록하며, 이를 읽기 위해 비밀번호를 묻습니다.',
+  'support.preview':
+    '장치 보고 도구가 소유자가 따를 단계로 열렸습니다. 데모 장치에는 기록할 것이 없습니다.',
+  'support.gap.mediaKeys': '버튼에 지정할 일부 미디어 키(음소거, 정지, 이전 트랙, 계산기…)',
+  'support.body.mac':
+    '이를 위해서는 공식 소프트웨어의 기록이 필요하지만, Mac에서는 기록할 수 없습니다. 공식 소프트웨어는 Windows에서 실행되며, Shark Deck는 장치를 연결한 Windows 또는 Linux 컴퓨터에서 이를 기록합니다. 이 Mac에서도 도구로 장치 보고서는 만들 수 있습니다. 1분이면 되고, 시스템이 이미 아는 정보만 읽습니다.',
+  'support.web': '장치 보고 도구는 Windows와 Linux에서 기록하며, Mac에서는 보고서만 만듭니다.',
 };

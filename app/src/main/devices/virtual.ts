@@ -313,7 +313,9 @@ export class VirtualDriver extends Driver {
       activeDpiStage: 0,
       pollRate: rates[rates.length - 1] ?? 1000,
       sensor: {
-        lod: spec.lodOptions?.[0]?.wire ?? 1,
+        // A lift-off distance only where the model has one, as its real
+        // driver reads it: the X11's sensor read has none.
+        ...(this.has('lod') ? { lod: spec.lodOptions?.[0]?.wire ?? 1 } : {}),
         motionSync: true,
         angleSnapping: false,
         angleDegrees: 0,

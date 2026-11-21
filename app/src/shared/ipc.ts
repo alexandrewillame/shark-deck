@@ -366,11 +366,15 @@ export interface Api {
   quitApp(): Promise<void>;
   /**
    * Starts the device report tool for this device, set to what Shark Deck
-   * still lacks for it (main/reportTool.ts). On Windows the app then closes,
-   * so only the official software talks to the device (`quitting`). The
-   * desktop only: the browser edition answers `ok: false`.
+   * still lacks for it (main/reportTool.ts). On Windows, and on Linux for a
+   * recording, the app then closes, so only the official software talks to
+   * the device (`quitting`). A demo device opens the tool's steps instead,
+   * recording nothing (`preview`). The desktop only: the browser edition
+   * answers `ok: false`.
    */
-  openReportTool(deviceId: string): Promise<{ ok: boolean; error?: string; quitting?: boolean }>;
+  openReportTool(
+    deviceId: string,
+  ): Promise<{ ok: boolean; error?: string; quitting?: boolean; preview?: boolean }>;
 
   // ---- diagnostics -------------------------------------------------
   getFrameLog(): Promise<FrameLogEntry[]>;

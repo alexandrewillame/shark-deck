@@ -1455,16 +1455,16 @@ export const tr: Partial<Messages> = {
   'support.title.complete': 'Desteğinin tamamlanmasına yardım et',
   'support.title.name': 'Bu farenin tanınmasına yardım et',
   'support.body.all':
-    "Cihaz raporu aracı, her ayarı bir kez değiştirirken resmî yazılımın gönderdiklerini kaydeder: Windows'ta yaklaşık 30 dakika. Kaydı GitHub'daki bir “New device” isteğine ekle; böylece bu model eklenebilir.",
+    "Cihaz raporu aracı, her ayarı bir kez değiştirirken resmî yazılımın gönderdiklerini kaydeder: yaklaşık 30 dakika. Kaydı GitHub'daki bir “New device” isteğine ekle; böylece bu model eklenebilir.",
   'support.body.unknown':
     "Eklemek için genellikle bir cihaz raporu yeterlidir: bir dakika sürer, hiçbir şey kaydetmez ve onu GitHub'daki bir “New device” isteğine eklersin.",
   'support.body.class':
     "Shark Deck bu fareyi yalnızca sensöründen tanıyor; bu yüzden o sensöre sahip her farenin ayarlarını sunar. Bir cihaz raporu modeli belirtir: bir dakika sürer, hiçbir şey kaydetmez ve onu GitHub'daki bir isteğe eklersin.",
   'support.gaps': "Henüz Shark Deck'te yok: {list}.",
   'support.body.steps':
-    "Cihaz raporu aracı yalnızca bunları kaydedebilir: sen bunları resmî yazılımda ayarlarken o, yazılımın gönderdiklerini kaydeder. Windows'ta birkaç dakika; ardından kaydı GitHub'daki bir isteğe ekle.",
+    "Cihaz raporu aracı yalnızca bunları kaydedebilir: sen bunları resmî yazılımda ayarlarken o, yazılımın gönderdiklerini kaydeder. Birkaç dakika; ardından kaydı GitHub'daki bir isteğe ekle.",
   'support.body.specific':
-    "Bir şey olması gerektiği gibi çalışmıyor mu? Cihaz raporu aracı bunu Windows'ta birkaç dakikada resmî yazılımdan kaydeder; ardından kaydı GitHub'daki bir isteğe ekle.",
+    "Bir şey olması gerektiği gibi çalışmıyor mu? Cihaz raporu aracı bunu birkaç dakikada resmî yazılımdan kaydeder; ardından kaydı GitHub'daki bir isteğe ekle.",
   'support.action.all': 'Bu cihazı kaydet',
   'support.action.report': 'Cihaz raporu oluştur',
   'support.action.steps': 'Eksik olanı kaydet',
@@ -1484,11 +1484,19 @@ export const tr: Partial<Messages> = {
   'support.gap.buttonActions': 'bazı tuş eylemleri',
   'support.gap.receiver': 'kablosuz alıcısı',
   'support.confirm':
-    "Kayıt sırasında cihazla yalnızca resmî yazılımın konuşması için Shark Deck önce kapanır. Ardından Shark Deck'i Başlat menüsünden yeniden aç.",
+    "Kayıt sırasında cihazla yalnızca resmî yazılımın konuşması için Shark Deck önce kapanır. Ardından Shark Deck'i yeniden aç.",
   'support.confirm.ok': "Shark Deck'i kapat ve başlat",
-  'support.unix':
-    'Bu bilgisayarda araç cihaz raporunu oluşturur; resmî yazılımı kaydetmek Windows gerektirir.',
   'support.opened': 'Cihaz raporu aracı bir terminal penceresinde açıldı.',
   'support.failed': 'Cihaz raporu aracı başlatılamadı: {error}',
   'power.deepAfter': 'Derin uyku süresi',
+  'support.linux':
+    "Linux'ta resmî yazılımı, cihazın aktarıldığı bir Windows sanal makinesinde ya da Wine ile çalıştır: araç USB kablosundan geçenleri kaydeder ve bunları okumak için parolanı ister.",
+  'support.preview':
+    'Cihaz raporu aracı, bir sahibin izleyeceği adımlarla açıldı. Bir demo cihazın kaydedecek bir şeyi yok.',
+  'support.gap.mediaKeys':
+    'düğmeleri için bazı medya tuşları (Sessiz, Durdur, Önceki parça, Hesap makinesi…)',
+  'support.body.mac':
+    "Bunun için resmî yazılımın bir kaydı gerekir ve bir Mac bunu yapamaz: o yazılım Windows'ta çalışır, Shark Deck de onu cihazın takılı olduğu bir Windows veya Linux bilgisayarda kaydeder. Bu Mac'te araç yine de cihaz raporunu oluşturabilir: bir dakika sürer ve yalnızca sistemin bildiklerini okur.",
+  'support.web':
+    "Cihaz raporu aracı Windows ve Linux'ta kayıt yapar; Mac'te yalnızca raporu oluşturur.",
 };

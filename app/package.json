@@ -61,6 +61,7 @@
     "probe:effects": "vite-node --config vitest.config.ts scripts/probe-light-effects.ts"
   },
   "dependencies": {
+    "koffi": "3.3.7",
     "node-hid": "^3.4.0"
   },
   "devDependencies": {
@@ -87,6 +88,7 @@
     "esbuild@0.21.5": true,
     "esbuild@0.25.12": true,
     "electron-winstaller@5.4.0": true,
-    "node-hid@3.4.0": true
+    "node-hid@3.4.0": true,
+    "koffi": false
   }
 }

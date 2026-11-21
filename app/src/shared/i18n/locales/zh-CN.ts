@@ -1368,16 +1368,16 @@ export const zhCN: Partial<Messages> = {
   'support.title.complete': '帮助完善支持',
   'support.title.name': '帮助识别这只鼠标',
   'support.body.all':
-    '设备报告工具会在你逐一更改每项设置时，记录官方软件发送的内容：在 Windows 上约 30 分钟。将录制附加到 GitHub 上的“New device”请求中，即可添加此型号。',
+    '设备报告工具会在你逐一更改每项设置时，记录官方软件发送的内容：约 30 分钟。将录制附加到 GitHub 上的“New device”请求中，即可添加此型号。',
   'support.body.unknown':
     '通常一份设备报告就足以添加它：只需一分钟，不录制任何内容，把它附加到 GitHub 上的“New device”请求即可。',
   'support.body.class':
     'Shark Deck 只能通过传感器识别这只鼠标，因此提供的是所有使用该传感器的鼠标共有的设置。一份设备报告即可确定型号：只需一分钟，不录制任何内容，把它附加到 GitHub 上的请求即可。',
   'support.gaps': 'Shark Deck 暂不支持：{list}。',
   'support.body.steps':
-    '设备报告工具可以只录制这些：你在官方软件中设置它们，工具同时录制软件发送的内容。在 Windows 上只需几分钟；然后将录制附加到 GitHub 上的请求中。',
+    '设备报告工具可以只录制这些：你在官方软件中设置它们，工具同时录制软件发送的内容。只需几分钟；然后将录制附加到 GitHub 上的请求中。',
   'support.body.specific':
-    '有功能不正常吗？设备报告工具可在 Windows 上几分钟内从官方软件录制下来；然后将录制附加到 GitHub 上的请求中。',
+    '有功能不正常吗？设备报告工具可在几分钟内从官方软件录制下来；然后将录制附加到 GitHub 上的请求中。',
   'support.action.all': '录制此设备',
   'support.action.report': '生成设备报告',
   'support.action.steps': '录制缺少的部分',
@@ -1396,10 +1396,16 @@ export const zhCN: Partial<Messages> = {
   'support.gap.buttonActions': '部分按键功能',
   'support.gap.receiver': '无线接收器',
   'support.confirm':
-    'Shark Deck 会先关闭，以便录制期间只有官方软件与设备通信。之后请从开始菜单重新打开 Shark Deck。',
+    'Shark Deck 会先关闭，以便录制期间只有官方软件与设备通信。之后请重新打开 Shark Deck。',
   'support.confirm.ok': '关闭 Shark Deck 并开始',
-  'support.unix': '在这台电脑上，该工具会生成设备报告；录制官方软件需要 Windows。',
   'support.opened': '设备报告工具已在终端窗口中打开。',
   'support.failed': '无法启动设备报告工具：{error}',
   'power.deepAfter': '深度睡眠时间',
+  'support.linux':
+    '在 Linux 上，请在已接入该设备的 Windows 虚拟机中运行官方软件，或使用 Wine：工具会录制经过 USB 线的内容，并需要你的密码来读取。',
+  'support.preview': '设备报告工具已打开，显示设备主人要完成的步骤。演示设备没有可录制的内容。',
+  'support.gap.mediaKeys': '按键的部分媒体键（静音、停止、上一曲、计算器…）',
+  'support.body.mac':
+    '这需要录制官方软件，而 Mac 无法录制：官方软件在 Windows 上运行，Shark Deck 需在接入该设备的 Windows 或 Linux 电脑上录制。在这台 Mac 上，工具仍可生成设备报告：只需一分钟，且只读取系统已知的信息。',
+  'support.web': '设备报告工具可在 Windows 和 Linux 上录制；在 Mac 上只能生成报告。',
 };

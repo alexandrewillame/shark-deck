@@ -147,9 +147,12 @@ function x8Pro8k(): DeviceDescriptor {
       buttonMap: mouseButtonMap(6),
       buttonActions: BEKEN_BUTTON_ACTIONS,
       deepSleepPresets: DEEP_SLEEP_PRESETS,
-      // Not in either recording: the multimedia actions after Volume+ (its
-      // owner, 2026-11-19) — "something specific" records them.
-      support: { gaps: ['buttonActions'], record: 'specific' },
+      // Its media keys (the MEDIA table, drivers/beken-8k-mouse.ts): Previous
+      // track, Stop and Mute are guesses, and the eleven Shark Deck lists after
+      // Volume+ (Media player… Favorites) have no code, so the driver refuses
+      // them — what its owner saw, 2026-11-19. The tool's "Media keys" steps
+      // ask for each by name.
+      support: { gaps: ['mediaKeys'], record: ['media'] },
     },
   };
 }

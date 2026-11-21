@@ -1,22 +1,26 @@
 /**
  * What the app makes of a device report from tools/SharkDeck-device-report.bat,
  * and where adding the device would go (src/main/devices/deviceReport.ts).
- * Given a recording (the .zip, or the folder it unpacks to), it also writes
- * the dossier a driver is built from (src/main/devices/capture/dossier.ts),
- * next to the recording, as dossier.md.
+ * Given a recording (the .zip from Windows, the .tar.gz from Linux, or the
+ * folder either unpacks to), it also writes the dossier a driver is built from
+ * (src/main/devices/capture/dossier.ts), next to the recording, as dossier.md.
  *
  *   npm run device-report -- path/to/SharkDeck-device-report-1D57-FA55-….txt
  *   npm run device-report -- path/to/SharkDeck-recording-1D57-FA55-….zip
+ *   npm run device-report -- path/to/SharkDeck-recording-1D57-FA55-….tar.gz
  */
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { parseDeviceReport, triageReport } from '../src/main/devices/deviceReport';
 import { dossier } from '../src/main/devices/capture/dossier';
 import { readZip } from '../src/main/devices/capture/zip';
 
 const arg = process.argv[2];
 if (!arg) {
-  console.error('usage: npm run device-report -- <report .txt | recording .zip or folder>');
+  console.error(
+    'usage: npm run device-report -- <report .txt | recording .zip, .tar.gz or folder>',
+  );
   process.exit(1);
 }
 const path = resolve(arg);
@@ -41,6 +45,23 @@ if (path.toLowerCase().endsWith('.zip')) {
       mkdirSync(dirname(to), { recursive: true });
       writeFileSync(to, e.data);
     }
+  }
+} else if (/\.(tar\.gz|tgz)$/i.test(path)) {
+  // A Linux recording holds its folder: unpacked beside it, once, by the
+  // system's tar (Windows has one too), run from that folder so no drive
+  // letter reaches it (GNU tar reads "C:" as a remote host).
+  folder = path.replace(/\.(tar\.gz|tgz)$/i, '');
+  if (!existsSync(folder)) {
+    const at = { cwd: dirname(path), encoding: 'utf8' as const };
+    const name = basename(folder);
+    for (const entry of execFileSync('tar', ['-tzf', basename(path)], at).split(/\r?\n/)) {
+      if (
+        (entry && !(entry === `${name}/` || entry.startsWith(`${name}/`))) ||
+        /(^|\/)\.\.(\/|$)/.test(entry)
+      )
+        throw new Error(`refusing a .tar.gz entry outside the folder: ${entry}`);
+    }
+    execFileSync('tar', ['-xzf', basename(path)], at);
   }
 } else if (statSync(path).isDirectory()) folder = path;
 

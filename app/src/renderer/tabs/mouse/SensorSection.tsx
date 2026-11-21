@@ -74,7 +74,9 @@ export function SensorSection({ device }: TabProps) {
             hint={t('sensor.lod.short')}
           >
             <Segmented
-              value={d.lod ?? lodOptions[0]!.wire}
+              // Built even when the gate keeps the row out, so never assume a
+              // list: a mouse with no lift-off setting (the X11) has none.
+              value={d.lod ?? lodOptions[0]?.wire ?? 0}
               options={lodOptions.map((o) => ({ value: o.wire, label: `${o.mm} mm` }))}
               onChange={(v) => set({ lod: v })}
             />

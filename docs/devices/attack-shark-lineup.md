@@ -58,7 +58,7 @@ One row per firmware model id: a name can cover several versions (wired or wirel
 
 | Status | Model | Model id | Switches | Wireless | Notes |
 |---|---|---|---|---|---|
-| 🟢 Tested | R85HE | 3123 | Hall effect | — |  |
+| 🟢 Tested | R85 HE | 3123 | Hall effect | — |  |
 | 🟡 Should work | K75 RGB | 1343 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | K75 RGB | 1679 | mechanical | — |  |
 | 🟡 Should work | K86 | 1168 | mechanical | 2.4 GHz, Bluetooth |  |
@@ -166,8 +166,7 @@ not claimed at all.
 Shark Deck asks by itself: a device it does not support, or not fully, has a
 **Help add it** (or **Help complete its support**) panel in its Device tab,
 whose button starts the tool below for that device, set to what is missing.
-On macOS and Linux it makes the report; a recording needs Windows, where the
-official software runs. Or by hand:
+Windows and Linux record; macOS makes the report alone. Or by hand:
 
 1. Download [`tools/SharkDeck-device-report.bat`](../../tools/SharkDeck-device-report.bat)
    (Windows; also attached to each release) and run it. Windows may warn about
@@ -195,15 +194,24 @@ official software runs. Or by hand:
    the pictures before sending it: anyone can download what is attached to an
    issue.
 
-   On **Linux or macOS**, run
+   On **Linux**, run
    [`tools/sharkdeck-device-report.sh`](../../tools/sharkdeck-device-report.sh)
-   in a terminal (`sh sharkdeck-device-report.sh`) instead: it saves the
-   report — the device's USB ids and its HID layout — on your Desktop, reading
-   only what the system already knows. A recording of the official software
-   needs Windows.
+   in a terminal (`sh sharkdeck-device-report.sh`) instead. It makes the
+   report — the device's USB ids and its HID layout, reading only what the
+   system already knows — then offers the same recording, the same steps
+   answered in the terminal. The official software runs on Windows only: run
+   it in a Windows virtual machine the device is passed through to
+   (VirtualBox, GNOME Boxes, virt-manager, VMware), or with Wine, while the
+   kernel's own USB monitor (usbmon, nothing to install) records the cable; it
+   asks for your password for that. It keeps the same as on Windows (that
+   device only, what you type on it blanked as it is recorded), takes no
+   pictures, and saves a .tar.gz on your Desktop.
+
+   On **macOS** the same command saves the report alone: a recording needs
+   Windows or Linux.
 3. [Open a "New device" issue](https://github.com/alexandrewillame/shark-deck/issues/new?template=new-device.yml)
-   and attach the .zip (or, without a recording, the report the tool saved on
-   your Desktop).
+   and attach the .zip or .tar.gz (or, without a recording, the report the
+   tool saved on your Desktop).
 
 A device that speaks a protocol Shark Deck already knows can usually be added
 from the report alone, as 🟡 until its owner confirms it. One on a protocol
@@ -239,7 +247,7 @@ and linux-hardware.org.
 
 ## Known gaps
 
-- The R85HE's key map is the only hand-verified one. Imported maps are checked
+- The R85 HE's key map is the only hand-verified one. Imported maps are checked
   against the board's own keymap when it connects; below 90 % agreement the
   board falls back to whole-keyboard settings.
 - Over a 2.4 GHz receiver, a factory reset and the live key-travel test need

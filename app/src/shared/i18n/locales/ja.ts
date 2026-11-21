@@ -1448,16 +1448,16 @@ export const ja: Partial<Messages> = {
   'support.title.complete': '対応の完成に協力する',
   'support.title.name': 'このマウスの特定に協力する',
   'support.body.all':
-    'デバイスレポートツールは、各設定を一度ずつ変更する間に公式ソフトウェアが送る内容を記録します（Windowsで約30分）。記録を GitHub の「New device」リクエストに添付すれば、このモデルを追加できます。',
+    'デバイスレポートツールは、各設定を一度ずつ変更する間に公式ソフトウェアが送る内容を記録します（約30分）。記録を GitHub の「New device」リクエストに添付すれば、このモデルを追加できます。',
   'support.body.unknown':
     '追加にはたいていデバイスレポートで十分です。1分で終わり、何も記録せず、GitHub の「New device」リクエストに添付するだけです。',
   'support.body.class':
     'Shark Deck はこのマウスをセンサーでしか識別できないため、そのセンサーを持つマウスに共通の設定を表示しています。デバイスレポートでモデルが分かります。1分で終わり、何も記録せず、GitHub のリクエストに添付するだけです。',
   'support.gaps': 'Shark Deck で未対応: {list}。',
   'support.body.steps':
-    'デバイスレポートツールで、これらだけを記録できます。公式ソフトウェアで設定している間に、ソフトウェアが送る内容を記録します。Windowsで数分。その後、記録を GitHub のリクエストに添付してください。',
+    'デバイスレポートツールで、これらだけを記録できます。公式ソフトウェアで設定している間に、ソフトウェアが送る内容を記録します。数分。その後、記録を GitHub のリクエストに添付してください。',
   'support.body.specific':
-    'うまく動かないものがありますか？デバイスレポートツールなら、公式ソフトウェアから数分で記録できます（Windows）。その後、記録を GitHub のリクエストに添付してください。',
+    'うまく動かないものがありますか？デバイスレポートツールなら、公式ソフトウェアから数分で記録できます。その後、記録を GitHub のリクエストに添付してください。',
   'support.action.all': 'このデバイスを記録',
   'support.action.report': 'デバイスレポートを作成',
   'support.action.steps': '不足分を記録',
@@ -1477,11 +1477,19 @@ export const ja: Partial<Messages> = {
   'support.gap.buttonActions': '一部のボタン動作',
   'support.gap.receiver': 'ワイヤレスレシーバー',
   'support.confirm':
-    '記録中に公式ソフトウェアだけがデバイスと通信するよう、まず Shark Deck が終了します。その後、スタートメニューから Shark Deck を再度開いてください。',
+    '記録中に公式ソフトウェアだけがデバイスと通信するよう、まず Shark Deck が終了します。その後、Shark Deck を再度開いてください。',
   'support.confirm.ok': 'Shark Deck を終了して開始',
-  'support.unix':
-    'このコンピューターでは、ツールはデバイスレポートを作成します。公式ソフトウェアの記録には Windows が必要です。',
   'support.opened': 'デバイスレポートツールがターミナルウィンドウで開きました。',
   'support.failed': 'デバイスレポートツールを起動できませんでした: {error}',
   'power.deepAfter': 'ディープスリープまで',
+  'support.linux':
+    'Linux では、デバイスを渡した Windows 仮想マシン、または Wine で公式ソフトウェアを実行してください。ツールは USB ケーブルを流れる内容を記録し、その読み取りのためにパスワードを求めます。',
+  'support.preview':
+    'デバイスレポートツールが、所有者がたどる手順で開きました。デモデバイスには記録するものがありません。',
+  'support.gap.mediaKeys':
+    'ボタンに割り当てる一部のメディアキー（ミュート、停止、前のトラック、電卓…）',
+  'support.body.mac':
+    'これには公式ソフトウェアの記録が必要ですが、Mac では記録できません。公式ソフトウェアは Windows で動作し、Shark Deck はデバイスを接続した Windows または Linux のコンピューターで記録します。この Mac でも、ツールでデバイスレポートは作成できます（約1分、システムが把握している情報を読み取るだけです）。',
+  'support.web':
+    'デバイスレポートツールは Windows と Linux で記録できます。Mac ではレポートの作成のみです。',
 };
