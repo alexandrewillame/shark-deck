@@ -1493,4 +1493,6 @@ export const fr: Partial<Messages> = {
     'Il faut pour cela un enregistrement du logiciel officiel, et un Mac ne peut pas en faire : ce logiciel tourne sous Windows, et Shark Deck l’enregistre sur un ordinateur Windows ou Linux, le périphérique branché dessus. Sur ce Mac, l’outil peut tout de même créer le rapport de périphérique : une minute, et il ne fait que lire ce que le système sait.',
   'support.web':
     'L’outil de rapport de périphérique enregistre sous Windows et Linux ; sur Mac, il crée seulement le rapport.',
+  'support.confirm.title': 'Fermer Shark Deck pour enregistrer ?',
+  'support.starting': 'Démarrage…',
 };

@@ -1494,6 +1494,8 @@ export const en = {
     'This takes a recording of the official software, and a Mac cannot make one: that software runs on Windows, and Shark Deck records it on a Windows or Linux computer, with the device plugged in there. On this Mac, the tool can still make the device report: a minute, and it only reads what the system knows.',
   'support.web':
     'The device report tool records on Windows and Linux; on a Mac it makes the report alone.',
+  'support.confirm.title': 'Close Shark Deck to record?',
+  'support.starting': 'Starting…',
 } as const;
 
 export type MessageKey = keyof typeof en;

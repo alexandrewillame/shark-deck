@@ -1492,4 +1492,6 @@ export const ja: Partial<Messages> = {
     'これには公式ソフトウェアの記録が必要ですが、Mac では記録できません。公式ソフトウェアは Windows で動作し、Shark Deck はデバイスを接続した Windows または Linux のコンピューターで記録します。この Mac でも、ツールでデバイスレポートは作成できます（約1分、システムが把握している情報を読み取るだけです）。',
   'support.web':
     'デバイスレポートツールは Windows と Linux で記録できます。Mac ではレポートの作成のみです。',
+  'support.confirm.title': '記録のために Shark Deck を閉じますか?',
+  'support.starting': '起動中…',
 };

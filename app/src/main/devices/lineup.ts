@@ -1,6 +1,6 @@
 import type { DeviceDescriptor } from '@shared/types/device';
 import { KEYBOARD_ROWS } from './catalog/generated/keyboard-rows';
-import { KEYBOARDS_BY_ID } from './catalog/keyboards';
+import { boardLayoutGeometry, KEYBOARDS_BY_ID } from './catalog/keyboards';
 import { slotLayoutFor } from './catalog/keyboard-builder';
 import { HUB_CANDIDATES, HUB_MID_CLASS, hubMouseFor } from './catalog/hub-mice';
 import { GEARHUB_MICE, GEARHUB_UNSUPPORTED } from './catalog/gearhub-mice';
@@ -71,6 +71,10 @@ function keyboardRows(): Row[] {
       note = 'Its command set has no driver yet.';
     } else if (HARDWARE_CHECKED.has(d.model)) {
       status = 'tested';
+    } else if (layout === 'none' && boardLayoutGeometry(d)) {
+      // manager.ts `placeLayout`: its keys are found on the board's own map
+      status = 'works';
+      note = 'Its key positions are read from the keyboard when it connects.';
     } else if (layout === 'none') {
       status = 'partial';
       note = 'Whole-keyboard settings only: its key map is not known yet.';

@@ -154,9 +154,11 @@ export interface DeviceColorVariant {
  * - `verified`: slots confirmed against this model on real hardware (R85HE);
  * - `certain`: every key carries a firmware slot from the vendor's own data,
  *   re-checked against the board's keymap before the first per-key write;
+ * - `board`: the vendor's drawing, each key placed on the slot the board's own
+ *   factory key map says types it (devices/layout-check.ts `deriveLayout`);
  * - `none`: drawing only — no per-key settings are offered.
  */
-export type LayoutStatus = 'verified' | 'certain' | 'none';
+export type LayoutStatus = 'verified' | 'certain' | 'board' | 'none';
 
 /** One settable travel range in millimetres (see shared/keyboard-travel.ts). */
 export interface TravelRangeSpec {

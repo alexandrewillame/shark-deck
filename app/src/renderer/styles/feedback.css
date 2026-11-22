@@ -208,16 +208,6 @@
 .support-note {
   margin: 10px 0 0;
 }
-.support-confirm {
-  margin-top: 12px;
-  padding: 10px 12px;
-  border: 1px solid rgba(var(--accent-rgb), 0.35);
-  border-radius: var(--radius);
-}
-.support-confirm .hint {
-  margin: 0;
-  color: var(--text);
-}
 .support-in-identity {
   margin-top: 14px;
   padding-top: 14px;

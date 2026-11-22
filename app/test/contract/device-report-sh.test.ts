@@ -259,11 +259,26 @@ describe.skipIf(process.platform === 'win32')('running the script', () => {
     const answers = join(root, 'media-answers.txt');
     writeFileSync(answers, Array(17).fill('n').join('\n') + '\n');
     const said = sh(['--preview-steps', 'mouse', '--steps', 'media'], { SHARKDECK_TTY: answers });
-    expect(said).toContain('MEDIA KEYS  -  step 2 of 17');
+    expect(said).toContain('MEDIA KEYS  1 of 15  -  step 2 of 17');
     expect(said).toContain('Set button 4 (front side button) to the media key Previous track.');
     expect(said).toContain('Where to find it: Where buttons are set');
     expect(said).toMatch(/media\.favorites\s+not-offered/);
     expect(said).toMatch(/end\.close\s+not-offered/);
+  });
+
+  it('records a setting not listed at any step, and saves on Enter after the last one', () => {
+    const answers = join(root, 'own-answers.txt');
+    const lines = ['', 'o', 'debounce set to 4 ms', ...Array(15).fill('n'), '', 'o', 'n', ''];
+    writeFileSync(answers, lines.join('\n') + '\n');
+    const said = sh(['--preview-steps', 'mouse', '--steps', 'media'], { SHARKDECK_TTY: answers });
+    expect(said).toContain('YOUR OWN SETTING  -  step 2 of 18');
+    expect(said).toMatch(/own\.1\s+done\s+debounce set to 4 ms/);
+    // back on the step it was asked from
+    expect(said).toMatch(/media\.prev\s+not-offered/);
+    expect(said).toContain('That was the last step. Save the recording.');
+    // the second one, thought better of: not in the recording
+    expect(said).not.toMatch(/own\.2/);
+    expect(said).toMatch(/end\.close\s+done/);
   });
 
   /**
@@ -404,7 +419,7 @@ describe.skipIf(process.platform === 'win32')('running the script', () => {
     writeFileSync(
       answers,
       [
-        'm', // a mouse
+        // no "mouse or keyboard?": a Beken chip makes mice only
         'Attack Shark Software 1.0.0.2, in a VirtualBox Windows 11',
         '', // start.open
         'button 4 set to Mute: it stays Volume up',

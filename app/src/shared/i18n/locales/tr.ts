@@ -1499,4 +1499,6 @@ export const tr: Partial<Messages> = {
     "Bunun için resmî yazılımın bir kaydı gerekir ve bir Mac bunu yapamaz: o yazılım Windows'ta çalışır, Shark Deck de onu cihazın takılı olduğu bir Windows veya Linux bilgisayarda kaydeder. Bu Mac'te araç yine de cihaz raporunu oluşturabilir: bir dakika sürer ve yalnızca sistemin bildiklerini okur.",
   'support.web':
     "Cihaz raporu aracı Windows ve Linux'ta kayıt yapar; Mac'te yalnızca raporu oluşturur.",
+  'support.confirm.title': 'Kayıt için Shark Deck kapatılsın mı?',
+  'support.starting': 'Başlatılıyor…',
 };

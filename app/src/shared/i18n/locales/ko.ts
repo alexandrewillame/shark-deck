@@ -1472,4 +1472,6 @@ export const ko: Partial<Messages> = {
   'support.body.mac':
     '이를 위해서는 공식 소프트웨어의 기록이 필요하지만, Mac에서는 기록할 수 없습니다. 공식 소프트웨어는 Windows에서 실행되며, Shark Deck는 장치를 연결한 Windows 또는 Linux 컴퓨터에서 이를 기록합니다. 이 Mac에서도 도구로 장치 보고서는 만들 수 있습니다. 1분이면 되고, 시스템이 이미 아는 정보만 읽습니다.',
   'support.web': '장치 보고 도구는 Windows와 Linux에서 기록하며, Mac에서는 보고서만 만듭니다.',
+  'support.confirm.title': '녹화를 위해 Shark Deck을 닫을까요?',
+  'support.starting': '시작하는 중…',
 };

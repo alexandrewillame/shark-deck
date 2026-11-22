@@ -3,7 +3,7 @@ import type { LiveDevice } from '@shared/types/live';
 import type { SupportGap, SupportPlan } from '@shared/types/device';
 import type { MessageKey } from '@shared/i18n';
 import { MISSING_DEVICE_URL } from '@shared/links';
-import { Panel } from './common';
+import { ConfirmDialog, Panel } from './common';
 import { Icon } from './icons';
 import { sd } from '../state/bridge';
 import { useT } from '../state/i18n';
@@ -104,23 +104,22 @@ function Actions({ device, plan, copy }: { device: LiveDevice; plan: SupportPlan
     else if (!r.quitting) toast('info', t('support.opened'));
   };
   const start = () => (closesFirst ? setAsking(true) : void run());
-  if (asking) {
-    return (
-      <div className="support-confirm" role="alertdialog" aria-label={t(copy.action)}>
-        <p className="hint">{t('support.confirm')}</p>
-        <div className="support-actions">
-          <button className="btn" disabled={busy} onClick={() => setAsking(false)}>
-            {t('common.cancel')}
-          </button>
-          <button className="btn primary" disabled={busy} onClick={() => void run()}>
-            {t('support.confirm.ok')}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Asked in a dialog, not under the buttons: nothing moves under the pointer,
+  // and the answer is a button of its own.
+  const answer = (go: boolean) => {
+    setAsking(false);
+    if (go) void run();
+  };
   return (
     <>
+      {asking && (
+        <ConfirmDialog
+          title={t('support.confirm.title')}
+          body={t('support.confirm')}
+          confirmLabel={t('support.confirm.ok')}
+          onResolve={answer}
+        />
+      )}
       {launch && !demo && records && os === 'linux' && (
         <p className="hint support-note">{t('support.linux')}</p>
       )}
@@ -132,8 +131,8 @@ function Actions({ device, plan, copy }: { device: LiveDevice; plan: SupportPlan
           {t('support.howto')}
         </button>
         {launch && (
-          <button className="btn primary" disabled={busy} onClick={start}>
-            {t(reportOnly ? 'support.action.report' : copy.action)}
+          <button className="btn primary" disabled={busy || asking} onClick={start}>
+            {busy ? t('support.starting') : t(reportOnly ? 'support.action.report' : copy.action)}
           </button>
         )}
       </div>

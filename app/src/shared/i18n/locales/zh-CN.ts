@@ -1408,4 +1408,6 @@ export const zhCN: Partial<Messages> = {
   'support.body.mac':
     '这需要录制官方软件，而 Mac 无法录制：官方软件在 Windows 上运行，Shark Deck 需在接入该设备的 Windows 或 Linux 电脑上录制。在这台 Mac 上，工具仍可生成设备报告：只需一分钟，且只读取系统已知的信息。',
   'support.web': '设备报告工具可在 Windows 和 Linux 上录制；在 Mac 上只能生成报告。',
+  'support.confirm.title': '要关闭 Shark Deck 进行录制吗？',
+  'support.starting': '正在启动…',
 };

@@ -1523,4 +1523,6 @@ export const de: Partial<Messages> = {
     'Dafür braucht es eine Aufzeichnung der offiziellen Software, und ein Mac kann keine machen: Diese Software läuft unter Windows, und Shark Deck zeichnet sie auf einem Windows- oder Linux-Computer auf, an dem das Gerät angeschlossen ist. Auf diesem Mac kann das Tool trotzdem den Gerätebericht erstellen: eine Minute, und es liest nur, was das System schon weiß.',
   'support.web':
     'Das Gerätebericht-Tool zeichnet unter Windows und Linux auf; auf dem Mac erstellt es nur den Bericht.',
+  'support.confirm.title': 'Shark Deck zum Aufnehmen schließen?',
+  'support.starting': 'Wird gestartet…',
 };

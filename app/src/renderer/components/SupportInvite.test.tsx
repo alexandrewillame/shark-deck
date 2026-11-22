@@ -44,9 +44,22 @@ describe('SupportInvite', () => {
     expect(container.textContent).not.toMatch(/Linux|Mac/);
     fireEvent.click(screen.getByText('Record this device'));
     expect(sd.openReportTool).not.toHaveBeenCalled();
-    expect(screen.getByRole('alertdialog').textContent).toMatch(/Shark Deck closes first/);
+    // a dialog of its own, so nothing moves under the pointer
+    const dialog = screen.getByRole('dialog', { name: 'Close Shark Deck to record?' });
+    expect(dialog.textContent).toMatch(/Shark Deck closes first/);
     fireEvent.click(screen.getByText('Close Shark Deck and start'));
+    expect(screen.queryByRole('dialog')).toBeNull();
     await vi.waitFor(() => expect(sd.openReportTool).toHaveBeenCalledWith('dev'));
+  });
+
+  it('starts nothing when the dialog is cancelled', () => {
+    on('win32');
+    render(<SupportInvite device={device(WHOLE)} variant="identity" />);
+    fireEvent.click(screen.getByText('Record this device'));
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(sd.openReportTool).not.toHaveBeenCalled();
+    expect(screen.getByText('Record this device')).toBeTruthy();
   });
 
   it('records what is missing on Linux too, closing Shark Deck first', async () => {
@@ -67,7 +80,7 @@ describe('SupportInvite', () => {
     render(<SupportInvite device={device(UNKNOWN)} variant="identity" />);
     fireEvent.click(screen.getByText('Make a device report'));
     await vi.waitFor(() => expect(sd.openReportTool).toHaveBeenCalledWith('dev'));
-    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('tells a Mac what it can do: the report here, the recording on Windows or Linux', async () => {
@@ -96,7 +109,7 @@ describe('SupportInvite', () => {
     sd.openReportTool.mockImplementation(async () => ({ ok: true, preview: true }));
     render(<SupportInvite device={device(X8_PRO, { simulated: true })} variant="panel" />);
     fireEvent.click(screen.getByText('Record what is missing'));
-    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
     await vi.waitFor(() => expect(sd.openReportTool).toHaveBeenCalledWith('dev'));
     expect(sd.openExternal).not.toHaveBeenCalled();
     await vi.waitFor(() => expect(toasts()).toEqual([expect.stringMatching(/steps an owner/)]));

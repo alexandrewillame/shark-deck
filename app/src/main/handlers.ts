@@ -221,7 +221,14 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
     saveMacro: (id: string, m: any) => guardedWrite(id, () => driverOrThrow(id).saveMacro(m)),
     deleteMacro: (id: string, mid: string) =>
       guardedWrite(id, () => driverOrThrow(id).deleteMacro(mid)),
-    restoreDefaults: (id: string) => guardedWrite(id, () => driverOrThrow(id).restoreDefaults()),
+    restoreDefaults: (id: string) =>
+      guardedWrite(id, async () => {
+        const r = await driverOrThrow(id).restoreDefaults();
+        // The one time a board's key map is sure to be the factory one: a
+        // board whose keys were placed from that map is placed again.
+        if (r.ok) deviceManager.relayout(id);
+        return r;
+      }),
     startPairing: (id: string) => driverOrThrow(id).startPairing(),
     getPairingStatus: (id: string) => driverOrThrow(id).getPairingStatus(),
 

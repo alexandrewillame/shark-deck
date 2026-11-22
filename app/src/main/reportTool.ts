@@ -41,15 +41,16 @@ function stepWords(plan: 'specific' | string[]): string {
  * has nothing to record with: the report alone.
  */
 export function reportToolArgs(
-  d: Pick<DeviceDescriptor, 'vid' | 'pid'>,
+  d: Pick<DeviceDescriptor, 'vid' | 'pid' | 'kind'>,
   plan: RecordingPlan,
   os: ReportToolOs,
 ): string[] {
   const args = ['--device', `${hex4(d.vid)}:${hex4(d.pid)}`];
   if (os === 'darwin') return args;
   if (plan === 'report') return [...args, '--no-record'];
-  if (plan === 'all') return [...args, '--record'];
-  return [...args, '--record', '--steps', stepWords(plan)];
+  // What it is, so the recording does not ask: Shark Deck knows.
+  const rec = [...args, '--record', '--kind', d.kind === 'keyboard' ? 'keyboard' : 'mouse'];
+  return plan === 'all' ? rec : [...rec, '--steps', stepWords(plan)];
 }
 
 /**

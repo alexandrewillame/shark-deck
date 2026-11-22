@@ -363,14 +363,28 @@ describe('the device report tool', () => {
     );
     expect(repick).not.toContain('softwarePid = 0');
     expect(repick).toContain(
-      'picking = softwarePid == 0 && index < steps.Length && Has(steps[index], "window");',
+      'picking = softwarePid == 0 && index < steps.Count && Has(steps[index], "window");',
     );
   });
 
   it('says in the step window what is recorded and what is not, and where each setting is', () => {
     expect(recordingCs).toContain('public class SdRecorder');
-    expect(recordingCs).toContain('"Only the " + DeviceName + "\'s USB messages');
-    expect(recordingCs).toContain('is blanked as soon as it is recorded, so it is never saved.');
+    expect(recordingCs).toContain('"Only the " + DeviceName + "\'s own USB messages are recorded');
+    // What was typed on a keyboard is said once, where the file is shared: the
+    // footer carries only figures that move as the recording goes.
+    expect(recordingCs).toContain('(keyboard ? ", without what you typed on the " + deviceName');
+    expect(recordingCs).not.toMatch(/"TYPING"|keysVal/);
+    expect(text).toContain("Only this device''s traffic is kept, never what you type on it,");
+    // The step is the one large thing in the window; the footer leads with its figures.
+    expect(recordingCs).toContain('body.Font = new Font("Segoe UI Semibold", 14F)');
+    expect(recordingCs).toContain('recVal.Text = Preview ? "Preview" : SentAll.ToString("N0"');
+    // A setting no step asks about is the owner's to add, at any step: not a step for everyone.
+    expect(recordingCs).toContain('own.Text = "+  Record a setting not listed"');
+    expect(steps.some((st) => st.group === 'Anything else')).toBe(false);
+    // Past the last step, saving is the main button; skipping names what it skips.
+    expect(recordingCs).toContain('done.Text = "Save the recording"');
+    expect(recordingCs).toContain('"Skip the rest of " + s.Group');
+    expect(recordingCs).not.toMatch(/Next one|Finished this list|Skip this group/);
     // "Redo previous" keeps what the step being left saw, for the reader.
     expect(recordingCs).toContain('Record(steps[index], "left", stepStart)');
     // Every place named belongs to a group of the steps.
@@ -388,6 +402,12 @@ describe('the device report tool', () => {
     const rec = fn('RecordingPhase');
     expect(rec).toContain('Start-Process explorer.exe "`"$recDir`""');
     expect(rec).not.toMatch(/explorer\.exe "`"\$\(Join-Path \$recDir 'screens'\)/);
+    // Then where it goes, in a window of its own: a new issue, or one already open.
+    expect(rec).toContain('$send = [SdWizard]::AskToSend(');
+    expect(rec).toContain('Start-Process $IssueUrl');
+    expect(rec).toContain('Start-Process $IssuesUrl');
+    expect(recordingCs).toContain('create.Text = "Open a new issue"');
+    expect(recordingCs).toContain('add.Text = "Add it to an issue already open"');
   });
 
   it('offers the recording by default, with USBPcap installed when missing or half there', () => {
@@ -469,9 +489,7 @@ describe('the device report tool', () => {
     expect(rec).toContain('$still = @($wizard.StillChanged())');
     // Packed before the owner is asked anything: closing the window keeps the .zip.
     expect(rec.indexOf('Pack $recDir $zip')).toBeGreaterThan(-1);
-    expect(rec.indexOf('Pack $recDir $zip')).toBeLessThan(
-      rec.indexOf("Read-Host '  (Nothing to delete"),
-    );
+    expect(rec.indexOf('Pack $recDir $zip')).toBeLessThan(rec.indexOf('[SdWizard]::AskToSend('));
   });
 
   it('redoes a change only once it is put back, and shows when a step reached the device', () => {

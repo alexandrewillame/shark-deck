@@ -144,12 +144,25 @@ export function findVendorCollection(
   usagePage: number,
   usage: number,
 ): HidCandidate | null {
-  const candidates = all.filter((c) => c.vendorId === vid && c.productId === pid);
-  return (
-    candidates.find((c) => c.usagePage === usagePage && c.usage === usage && !!c.path) ??
-    candidates.find((c) => c.usagePage === usagePage && !!c.path) ??
-    null
-  );
+  return configCollections(all, vid, pid, usagePage, usage)[0] ?? null;
+}
+
+/**
+ * Every unit's vendor config collection for a VID/PID: one per physical
+ * device, since each has exactly one — two R85 HE-class boards on one PC are
+ * two of them, at two paths. The exact usagePage + usage matches, else the
+ * usagePage matches (as `findVendorCollection` falls back).
+ */
+export function configCollections(
+  all: HidCandidate[],
+  vid: number,
+  pid: number,
+  usagePage: number,
+  usage: number,
+): HidCandidate[] {
+  const candidates = all.filter((c) => c.vendorId === vid && c.productId === pid && !!c.path);
+  const exact = candidates.filter((c) => c.usagePage === usagePage && c.usage === usage);
+  return exact.length ? exact : candidates.filter((c) => c.usagePage === usagePage);
 }
 
 /**

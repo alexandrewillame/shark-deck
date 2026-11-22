@@ -20,7 +20,7 @@ reads every change back. Own a 🟡 or 🟠 device? Tell us whether it works:
 
 <!-- generated:lineup — `npm run lineup` rewrites this block -->
 
-**At a glance:** 🟢 Tested 2 · 🟡 Should work 31 · 🟠 Partial 68 · ⚪ Recognised 6
+**At a glance:** 🟢 Tested 2 · 🟡 Should work 87 · 🟠 Partial 12 · ⚪ Recognised 6
 
 ## Mice
 
@@ -59,86 +59,86 @@ One row per firmware model id: a name can cover several versions (wired or wirel
 | Status | Model | Model id | Switches | Wireless | Notes |
 |---|---|---|---|---|---|
 | 🟢 Tested | R85 HE | 3123 | Hall effect | — |  |
+| 🟡 Should work | Beat75 | 2633 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | K75 RGB | 1343 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | K75 RGB | 1679 | mechanical | — |  |
+| 🟡 Should work | K85 | 2552 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | K85 | 3334 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | K85 PRO HE | 2978 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | K86 | 1168 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | K86 | 2730 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | K86 | 4094 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | M86 | 4012 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | R68 HE | 3650 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R82 HE | 2844 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R82 PRO HE | 2798 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | R85 Ultra | 2968 | Hall effect | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | R86 HE | 3909 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R86 HE | 3973 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R86 PRO | 3910 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R86 PRO HE | 2793 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R86 PRO HE | 2982 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R86 Ultra | 3477 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R96 PRO | 3788 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R96 Ultra | 3774 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R98 GT | 3748 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R98 HE | 3743 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R98 HE | 3903 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R98 PRO | 3754 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R98 PRO HE | 4068 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R98 Ultra | 3737 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X60 HE | 2929 | Hall effect | — |  |
 | 🟡 Should work | X65 | 2942 | Hall effect | — |  |
+| 🟡 Should work | X65 (UK) | 3379 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X65 HE | 2268 | Hall effect | — |  |
+| 🟡 Should work | X65 PRO HE | 2308 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X65 PRO HE | 2938 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X65 Ultra | 4328 | Hall effect | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X68 HE | 2270 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X68 HE | 2472 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X68 HE | 2902 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X68 HE BR | 3957 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X68 HE V2 | 4298 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X68 MAX | 2755 | Hall effect | — |  |
+| 🟡 Should work | X68 MAX | 3796 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X68 PRO HE | 2370 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X68 PRO HE | 2901 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X68 Ultra | 2650 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X68 Ultra | 2833 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X82 HE | 3086 | Hall effect | — |  |
 | 🟡 Should work | X82 HE | 4327 | Hall effect | — |  |
 | 🟡 Should work | X82 PRO HE | 2356 | Hall effect | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X82 PRO HE | 2935 | Hall effect | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X820 PRO | 3221 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X820 SE | 3865 | mechanical | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X820 Ultra | 2804 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X820 Ultra | 3461 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X820 Ultra | 3922 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X83 PRO | 3870 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X83 PRO | 3886 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X83 PRO | 3991 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X83 Ultra | 3920 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X85 | 4039 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X85 MAX | 2864 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X85 PRO | 1724 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X85 PRO | 2952 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X85 PRO | 3451 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X85 PRO | 3504 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X85 PRO | 4084 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X85 Ultra | 2769 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X86 | 1967 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X86 | 2408 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X87 Ultra | 2660 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X87 Ultra | 2852 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X87 Ultra | 3438 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X96 HE | 2792 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X98 HE | 2964 | Hall effect | — |  |
 | 🟡 Should work | X98 PRO | 1996 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X98 PRO | 2934 | mechanical | 2.4 GHz, Bluetooth |  |
-| 🟠 Partial | Beat75 | 2633 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
+| 🟡 Should work | X98 PRO | 4109 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟠 Partial | K85 | 1466 | Hall effect | — | No actuation menu yet: its magnetic settings use other units. |
-| 🟠 Partial | K85 | 2552 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | K85 | 3334 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | K85 PRO HE | 2978 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | K86 | 4094 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R68 HE | 3650 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R82 HE | 2844 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R82 PRO HE | 2798 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R86 HE | 3909 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R86 HE | 3973 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R86 PRO | 3910 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R86 PRO HE | 2793 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R86 PRO HE | 2982 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R86 Ultra | 3477 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R96 PRO | 3788 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R96 Ultra | 3774 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R98 GT | 3748 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R98 HE | 3743 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R98 HE | 3903 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R98 PRO | 3754 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R98 PRO HE | 4068 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | R98 Ultra | 3737 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X65 (UK) | 3379 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
 | 🟠 Partial | X65 HE | 1025 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X65 PRO HE | 2308 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X65 PRO HE | 2938 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X68 HE | 2270 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X68 HE | 2472 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X68 HE | 2902 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X68 HE BR | 3957 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X68 HE V2 | 4298 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X68 MAX | 3796 | Hall effect | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X68 PRO HE | 2370 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X68 PRO HE | 2901 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X68 Ultra | 2650 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X68 Ultra | 2833 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X820 PRO | 3221 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X820 SE | 3865 | mechanical | — | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X820 Ultra | 2804 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X820 Ultra | 3461 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X820 Ultra | 3922 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X83 PRO | 3870 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X83 PRO | 3886 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
 | 🟠 Partial | X83 PRO | 3908 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X83 PRO | 3991 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X83 Ultra | 3920 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X85 | 4039 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X85 MAX | 2864 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X85 PRO | 2952 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X85 PRO | 3451 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X85 PRO | 3504 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X85 PRO | 4084 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X85 Ultra | 2769 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X87 Ultra | 2660 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X87 Ultra | 2852 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X87 Ultra | 3438 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X96 HE | 2792 | Hall effect | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
-| 🟠 Partial | X98 PRO | 4109 | mechanical | 2.4 GHz, Bluetooth | Whole-keyboard settings only: its key map is not known yet. |
 | ⚪ Recognised | AJAZZ × Attack Shark AK029 V2 | 4244 | Hall effect | 2.4 GHz, Bluetooth | Its command set has no driver yet. |
 
 <!-- /generated:lineup -->
@@ -174,7 +174,7 @@ Windows and Linux record; macOS makes the report alone. Or by hand:
    (one of a brand it does not know, you unplug and plug back in) and reads how
    it identifies itself. It changes nothing on the device and sends nothing
    anywhere.
-2. It then makes a **recording**, about 30 minutes. It needs
+2. It then makes a **recording**, about 25 minutes. It needs
    [USBPcap](https://github.com/desowin/usbpcap/releases), a free USB capture
    driver (the one Wireshark uses). If it is missing, the tool offers to
    install it: it downloads the official installer, runs it only if it is the
@@ -250,5 +250,11 @@ and linux-hardware.org.
 - The R85 HE's key map is the only hand-verified one. Imported maps are checked
   against the board's own keymap when it connects; below 90 % agreement the
   board falls back to whole-keyboard settings.
+- A keyboard with no imported map has its keys found on its own key map the
+  first time it connects: each key is placed where the board says it types.
+  The line's boards share one command set and one key numbering (an R98 HE's
+  recording matches the R85 HE's). A key remapped in the official software
+  before that first connection can be missing or misplaced: a factory reset in
+  Shark Deck places the keys again.
 - Over a 2.4 GHz receiver, a factory reset and the live key-travel test need
   the cable.

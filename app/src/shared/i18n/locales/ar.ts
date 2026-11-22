@@ -1470,4 +1470,6 @@ export const ar: Partial<Messages> = {
   'support.body.mac':
     'يتطلب ذلك تسجيلًا للبرنامج الرسمي، ولا يستطيع جهاز Mac إجراءه: فهذا البرنامج يعمل على Windows، ويسجّله Shark Deck على حاسوب يعمل بنظام Windows أو Linux والجهاز موصول به. أما على جهاز Mac هذا، فيمكن للأداة إنشاء تقرير الجهاز: دقيقة واحدة، وهي تقرأ فقط ما يعرفه النظام.',
   'support.web': 'تسجّل أداة تقرير الجهاز على Windows وLinux، أما على Mac فتنشئ التقرير فقط.',
+  'support.confirm.title': 'هل تريد إغلاق Shark Deck للتسجيل؟',
+  'support.starting': 'جارٍ البدء…',
 };

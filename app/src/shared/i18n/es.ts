@@ -1510,4 +1510,6 @@ export const es: Partial<Messages> = {
     'Para eso hace falta una grabación del software oficial, y un Mac no puede hacerla: ese software funciona en Windows, y Shark Deck lo graba en un ordenador con Windows o Linux, con el dispositivo conectado allí. En este Mac, la herramienta sí puede crear el informe del dispositivo: un minuto, y solo lee lo que el sistema ya sabe.',
   'support.web':
     'La herramienta de informe de dispositivos graba en Windows y Linux; en Mac solo crea el informe.',
+  'support.confirm.title': '¿Cerrar Shark Deck para grabar?',
+  'support.starting': 'Iniciando…',
 };

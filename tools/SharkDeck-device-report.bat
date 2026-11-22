@@ -50,6 +50,7 @@ exit /b %ERRORLEVEL%
 #    ... --record / --no-record                       record without asking / never offer it
 #    ... --steps deep,macro,specific                  record only the steps whose ids start with
 #                                                     these words ('specific': one thing you choose)
+#    ... --kind mouse | keyboard                      what the device is (else read from how it is connected)
 #    ... --out C:\some\folder                         where the report goes (default: the Desktop)
 #    SharkDeck-device-report.bat --preview-steps mouse   walk the recording steps; nothing is recorded
 #                                                     (with --steps: only those, as a demo device shows them)
@@ -63,6 +64,7 @@ Set-StrictMode -Version 2
 
 $ToolVersion = 2
 $IssueUrl = 'https://github.com/alexandrewillame/shark-deck/issues/new?template=new-device.yml'
+$IssuesUrl = 'https://github.com/alexandrewillame/shark-deck/issues'
 # Where USBPcap is published: the one page outside the project this tool opens.
 $UsbPcapUrl = 'https://github.com/desowin/usbpcap/releases'
 # The tool's one download: USBPcap 1.5.4.0, the release Wireshark ships. It is
@@ -942,7 +944,7 @@ public class SdWizard : Form {
         "explorer", "shellexperiencehost", "startmenuexperiencehost", "searchhost", "searchapp", "textinputhost",
         "lockapp", "taskmgr", "systemsettings", "dwm", "rundll32", "consent" };
 
-    readonly SdStep[] steps;
+    readonly List<SdStep> steps;
     readonly string shotsDir, attachDir;
     readonly string[] pcaps;
     readonly HashSet<int> vids;
@@ -954,7 +956,7 @@ public class SdWizard : Form {
     public bool FinishedAll, Preview;
     /** The device, as the steps name it ("the R85HE"). */
     public string DeviceName = "device";
-    /** A keyboard: the footer says what becomes of what is typed on it. */
+    /** A keyboard: the saved window says that what was typed on it is not in the recording. */
     public bool Keyboard;
     /** Where each group's settings usually are, by group name; shown under the step. */
     public readonly Dictionary<string, string> Where = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -981,12 +983,19 @@ public class SdWizard : Form {
     readonly Panel header = new Panel(), progress = new Panel(), content = new Panel(), footer = new Panel();
     readonly Label title = new Label(), groupLabel = new Label(), stepLabel = new Label(), body = new Label(), hint = new Label(),
         noteLabel = new Label(), whereLabel = new Label(), signal = new Label();
-    // The footer, one row each: what is recorded, what is pictured, what becomes of typing.
-    readonly Label recKey = new Label(), recVal = new Label(), picKey = new Label(), picVal = new Label(), keysKey = new Label(), keysVal = new Label();
+    // The footer, one column each: what is recorded, what is pictured. Figures
+    // that move as the recording goes; the line under each says what it counts.
+    readonly Label recKey = new Label(), recVal = new Label(), recSub = new Label(), picKey = new Label(), picVal = new Label(),
+        picSub = new Label();
     // Done is the main button, except while a change is being put back.
     bool doneIsPrimary = true;
     readonly TextBox note = new TextBox();
-    readonly Button done = new Button(), skip = new Button(), skipGroup = new Button(), back = new Button(), finish = new Button();
+    readonly Button done = new Button(), skip = new Button(), skipGroup = new Button(), back = new Button(), finish = new Button(), own = new Button();
+    readonly ToolTip tips = new ToolTip();
+    // Past the last step: the window offers to save (and still to record one more setting).
+    bool atEnd;
+    // How many settings the owner added with "Record a setting not listed".
+    int ownCount;
     readonly LinkLabel change = new LinkLabel(), addNote = new LinkLabel();
     readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
     double progressFraction;
@@ -995,7 +1004,7 @@ public class SdWizard : Form {
     bool asking, noteShown;
 
     public SdWizard(SdStep[] steps, string shotsDir, string attachDir, string[] pcaps, int[] vids, string[] presentPaths) {
-        this.steps = steps; this.shotsDir = shotsDir; this.attachDir = attachDir;
+        this.steps = new List<SdStep>(steps); this.shotsDir = shotsDir; this.attachDir = attachDir;
         this.pcaps = pcaps == null ? new string[0] : pcaps;
         this.vids = new HashSet<int>(vids == null ? new int[0] : vids);
         this.seenPaths = new HashSet<string>(presentPaths == null ? new string[0] : presentPaths, StringComparer.OrdinalIgnoreCase);
@@ -1012,11 +1021,11 @@ public class SdWizard : Form {
         ClientSize = new Size(600, 620);
         BackColor = Color.White;
 
-        header.Dock = DockStyle.Top; header.Height = 62; header.BackColor = Night;
+        header.Dock = DockStyle.Top; header.Height = 64; header.BackColor = Night;
         title.Font = new Font("Segoe UI Semibold", 11F); title.ForeColor = Color.White; title.AutoSize = true; title.Location = new Point(20, 10);
-        groupLabel.Font = new Font("Segoe UI Semibold", 8.5F); groupLabel.ForeColor = Color.FromArgb(111, 211, 224); groupLabel.AutoSize = true; groupLabel.Location = new Point(21, 37);
-        stepLabel.Font = new Font("Segoe UI", 9F); stepLabel.ForeColor = Color.FromArgb(169, 184, 196); stepLabel.TextAlign = ContentAlignment.MiddleRight;
-        stepLabel.Size = new Size(260, 20); stepLabel.Location = new Point(320, 13);
+        groupLabel.Font = new Font("Segoe UI Semibold", 9F); groupLabel.ForeColor = Color.FromArgb(111, 211, 224); groupLabel.AutoSize = true; groupLabel.Location = new Point(21, 37);
+        stepLabel.Font = new Font("Segoe UI", 9.5F); stepLabel.ForeColor = Color.FromArgb(200, 212, 221); stepLabel.TextAlign = ContentAlignment.MiddleRight;
+        stepLabel.Size = new Size(260, 20); stepLabel.Location = new Point(320, 12);
         header.Controls.Add(title); header.Controls.Add(groupLabel); header.Controls.Add(stepLabel);
 
         progress.Dock = DockStyle.Top; progress.Height = 4; progress.BackColor = Line;
@@ -1024,29 +1033,33 @@ public class SdWizard : Form {
             using (SolidBrush b = new SolidBrush(Accent)) e.Graphics.FillRectangle(b, 0, 0, (int)(progress.Width * progressFraction), progress.Height);
         };
 
-        footer.Dock = DockStyle.Bottom; footer.Height = 112; footer.BackColor = Paper;
+        footer.Dock = DockStyle.Bottom; footer.Height = 96; footer.BackColor = Paper;
         footer.Paint += delegate (object o, PaintEventArgs e) { using (Pen pen = new Pen(Line)) e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0); };
-        recKey.Text = "RECORDING"; picKey.Text = "PICTURES"; keysKey.Text = "TYPING";
-        foreach (Label k in new Label[] { recKey, picKey, keysKey }) { k.Font = new Font("Segoe UI Semibold", 7.5F); k.ForeColor = Muted; k.AutoSize = true; footer.Controls.Add(k); }
-        foreach (Label v in new Label[] { recVal, picVal, keysVal }) { v.Font = new Font("Segoe UI", 9F); v.ForeColor = Ink; v.AutoSize = true; footer.Controls.Add(v); }
-        change.Font = new Font("Segoe UI", 9F); change.LinkColor = AccentDark; change.AutoSize = true;
-        finish.Text = "Finish and save"; finish.Size = new Size(140, 32); Secondary(finish);
+        recKey.Text = "RECORDED"; picKey.Text = "PICTURES";
+        foreach (Label k in new Label[] { recKey, picKey }) { k.Font = new Font("Segoe UI Semibold", 7.5F); k.ForeColor = Muted; k.AutoSize = true; footer.Controls.Add(k); }
+        foreach (Label v in new Label[] { recVal, picVal }) { v.Font = new Font("Segoe UI Semibold", 13F); v.ForeColor = Ink; v.AutoSize = true; footer.Controls.Add(v); }
+        foreach (Label v in new Label[] { recSub, picSub }) { v.Font = new Font("Segoe UI", 8.5F); v.ForeColor = Muted; v.AutoSize = true; footer.Controls.Add(v); }
+        change.Font = new Font("Segoe UI", 8.5F); change.LinkColor = AccentDark; change.AutoSize = true;
+        finish.Text = "Stop and save"; finish.Size = new Size(124, 32); Secondary(finish);
         footer.Controls.Add(change); footer.Controls.Add(finish);
         footer.Resize += delegate { LayoutFooter(); };
 
         content.Dock = DockStyle.Fill; content.BackColor = Color.White;
-        body.Font = new Font("Segoe UI", 13F); body.ForeColor = Ink; body.AutoSize = true;
-        whereLabel.Font = new Font("Segoe UI", 9F); whereLabel.ForeColor = Color.FromArgb(43, 93, 124); whereLabel.AutoSize = true;
+        // The step is what the eye goes to: the one large thing in the window.
+        body.Font = new Font("Segoe UI Semibold", 14F); body.ForeColor = Ink; body.AutoSize = true;
+        whereLabel.Font = new Font("Segoe UI", 9.5F); whereLabel.ForeColor = Color.FromArgb(43, 93, 124); whereLabel.AutoSize = true;
         noteLabel.Font = new Font("Segoe UI Semibold", 9.5F); noteLabel.ForeColor = Ink; noteLabel.AutoSize = true;
         note.Font = new Font("Segoe UI", 11F); note.BorderStyle = BorderStyle.FixedSingle; note.Width = 320;
         addNote.Font = new Font("Segoe UI", 9F); addNote.LinkColor = AccentDark; addNote.AutoSize = true; addNote.Text = "+ Add a note";
         signal.Font = new Font("Segoe UI Semibold", 9.5F); signal.TextAlign = ContentAlignment.MiddleLeft; signal.Padding = new Padding(10, 0, 10, 0);
-        done.Size = new Size(120, 36); Primary(done);
-        skip.Size = new Size(176, 36); Secondary(skip);
-        skipGroup.Size = new Size(140, 36); Secondary(skipGroup);
-        back.Text = "\u2190  Redo previous"; back.Size = new Size(150, 28); Quiet(back);
+        done.Size = new Size(120, 38); Primary(done);
+        skip.Size = new Size(176, 38); Secondary(skip);
+        Quiet(skipGroup); skipGroup.AutoSize = true; skipGroup.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        back.Text = "\u2190  Redo previous"; Quiet(back); back.AutoSize = true; back.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        own.Text = "+  Record a setting not listed"; Quiet(own); own.AutoSize = true; own.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        tips.SetToolTip(own, "Changed something no step asks about? Record it now, then carry on where you were.");
         hint.Font = new Font("Segoe UI", 9F); hint.ForeColor = Muted; hint.AutoSize = true;
-        foreach (Control c in new Control[] { body, whereLabel, noteLabel, note, addNote, signal, done, skip, skipGroup, back, hint }) content.Controls.Add(c);
+        foreach (Control c in new Control[] { body, whereLabel, noteLabel, note, addNote, signal, done, skip, skipGroup, back, own, hint }) content.Controls.Add(c);
         // Laid out again whenever the step area changes size: the first step was
         // laid out before its width was known, in a narrow column.
         content.Resize += delegate { Relayout(); };
@@ -1060,6 +1073,7 @@ public class SdWizard : Form {
         skip.Click += delegate { OnSkip(); };
         skipGroup.Click += delegate { OnSkipGroup(); };
         back.Click += delegate { OnBack(); };
+        own.Click += delegate { OnOwn(); };
         finish.Click += delegate { if (Confirm()) { closing = true; Close(); } };
         change.LinkClicked += delegate { Repick(); };
         addNote.LinkClicked += delegate { noteShown = true; Relayout(); note.Focus(); };
@@ -1077,6 +1091,7 @@ public class SdWizard : Form {
         };
         FormClosing += delegate (object sender, FormClosingEventArgs e) {
             if (!closing && !Confirm()) { e.Cancel = true; return; }
+            if (atEnd) FinishedAll = true;
             timer.Stop();
         };
     }
@@ -1085,19 +1100,33 @@ public class SdWizard : Form {
 
     /** Lays the step out top to bottom, so a long instruction pushes the rest down instead of hiding it. */
     void Relayout() {
-        int x = S(22), w = content.ClientSize.Width - 2 * x, y = S(20);
+        int x = S(22), w = content.ClientSize.Width - 2 * x, y = S(22);
         body.MaximumSize = new Size(w, 0); body.Location = new Point(x, y); y = body.Bottom + S(8);
         whereLabel.Visible = whereLabel.Text.Length > 0;
-        if (whereLabel.Visible) { whereLabel.MaximumSize = new Size(w, 0); whereLabel.Location = new Point(x, y); y = whereLabel.Bottom + S(14); }
-        else y += S(6);
-        bool showNote = asking || noteShown;
-        noteLabel.Visible = showNote; note.Visible = showNote; addNote.Visible = !showNote;
+        if (whereLabel.Visible) { whereLabel.MaximumSize = new Size(w, 0); whereLabel.Location = new Point(x, y); y = whereLabel.Bottom + S(16); }
+        else y += S(10);
+        bool showNote = !atEnd && (asking || noteShown);
+        noteLabel.Visible = showNote; note.Visible = showNote; addNote.Visible = !showNote && !atEnd;
         if (showNote) { noteLabel.Location = new Point(x, y); y = noteLabel.Bottom + S(4); note.Location = new Point(x, y); y = note.Bottom + S(14); }
-        else { addNote.Location = new Point(x - S(2), y); y = addNote.Bottom + S(12); }
-        signal.Location = new Point(x, y); signal.Size = new Size(w, S(32)); y = signal.Bottom + S(12);
-        done.Location = new Point(x, y); skip.Location = new Point(done.Right + S(10), y); skipGroup.Location = new Point(skip.Right + S(10), y);
-        y = done.Bottom + S(8);
-        back.Location = new Point(x - S(4), y); y = back.Bottom + S(6);
+        else if (!atEnd) { addNote.Location = new Point(x - S(2), y); y = addNote.Bottom + S(12); }
+        signal.Visible = !atEnd;
+        if (signal.Visible) { signal.Location = new Point(x, y); signal.Size = new Size(w, S(32)); y = signal.Bottom + S(14); }
+        // One main button, then the other answer to the step; skipping the rest
+        // of a section is a quieter choice, on the right.
+        Fit(done, S(120)); Fit(skip, S(150));
+        done.Location = new Point(x, y);
+        skip.Location = new Point(done.Right + S(10), y);
+        int row = done.Bottom;
+        if (skipGroup.Visible) {
+            int right = skip.Visible ? skip.Right : done.Right;
+            int gx = x + w - skipGroup.Width + S(4);
+            if (gx >= right + S(12)) skipGroup.Location = new Point(gx, y + (done.Height - skipGroup.Height) / 2);
+            else { skipGroup.Location = new Point(x - S(4), done.Bottom + S(6)); row = skipGroup.Bottom; }
+        }
+        y = row + S(12);
+        back.Location = new Point(x - S(4), y);
+        own.Location = new Point(x + w - own.Width + S(4), y);
+        y = Math.Max(back.Bottom, own.Bottom) + S(8);
         hint.MaximumSize = new Size(w, 0); hint.Location = new Point(x, y);
         // A long step makes the window taller (its bottom edge stays put), so
         // nothing ends up under the footer.
@@ -1111,30 +1140,30 @@ public class SdWizard : Form {
         }
     }
 
-    /** The footer: a label on the left and what it says beside it, one row
-     *  each, Finish on the right. Taller when a row takes two lines. */
+    /** The footer: a column each, its figure large and what it counts under
+     *  it; Stop and save on the right. Taller when a line takes two. */
     void LayoutFooter() {
-        int x = S(20), vx = S(104), right = footer.ClientSize.Width - S(20);
-        int w = right - finish.Width - S(16) - vx, y = S(14);
-        foreach (Label[] row in new Label[][] { new Label[] { recKey, recVal }, new Label[] { picKey, picVal }, new Label[] { keysKey, keysVal } }) {
-            bool on = row[1].Text.Length > 0;
-            row[0].Visible = on; row[1].Visible = on;
-            if (!on) continue;
-            row[1].MaximumSize = new Size(w, 0);
-            row[1].Location = new Point(vx, y);
-            row[0].Location = new Point(x, y + S(2));
-            y = row[1].Bottom;
-            if (row[1] == picVal && change.Visible) {
-                // The link after the text when it fits, under it when not.
-                if (picVal.Right + S(8) + change.Width <= vx + w) change.Location = new Point(picVal.Right + S(6), picVal.Top);
-                else { change.Location = new Point(vx, y + S(2)); y = change.Bottom; }
-            }
-            y += S(7);
+        int x = S(20), right = footer.ClientSize.Width - S(20), top = S(12);
+        Label[][] cols = { new Label[] { recKey, recVal, recSub }, new Label[] { picKey, picVal, picSub } };
+        int cw = Math.Min(S(190), (right - finish.Width - S(16) - x) / cols.Length), bottom = 0;
+        for (int i = 0; i < cols.Length; i++) {
+            Label[] c = cols[i];
+            int cx = x + i * cw;
+            c[0].Location = new Point(cx, top);
+            c[1].Location = new Point(cx - S(2), c[0].Bottom);
+            c[2].MaximumSize = new Size(cw - S(12), 0);
+            c[2].Location = new Point(cx, c[1].Bottom - S(2));
+            int b = c[2].Bottom;
+            if (c[1] == picVal && change.Visible) { change.Location = new Point(cx - S(1), b + S(1)); b = change.Bottom; }
+            bottom = Math.Max(bottom, b);
         }
-        int h = Math.Max(y + S(7), finish.Height + S(28));
+        int h = Math.Max(bottom + S(12), finish.Height + S(28));
         if (Math.Abs(footer.Height - h) > S(2)) footer.Height = h;
         finish.Location = new Point(right - finish.Width, (footer.ClientSize.Height - finish.Height) / 2);
     }
+
+    /** A button as wide as its words need. */
+    void Fit(Button b, int min) { b.Width = Math.Max(min, TextRenderer.MeasureText(b.Text, b.Font).Width + S(34)); }
 
     void SetDone(bool on) {
         done.Enabled = on;
@@ -1171,11 +1200,13 @@ public class SdWizard : Form {
     static string Iso(DateTime t) { return t.ToString("yyyy-MM-ddTHH:mm:ss.fff", CultureInfo.InvariantCulture) + "Z"; }
 
     /** For the preview and the tests: the step on screen now. */
-    public string CurrentStepId { get { return index < steps.Length ? steps[index].Id : ""; } }
+    public string CurrentStepId { get { return index < steps.Count ? steps[index].Id : ""; } }
 
     void ShowStep() {
-        if (index >= steps.Length) { FinishedAll = true; closing = true; Close(); return; }
+        atEnd = false; skip.Visible = true; finish.Visible = true;
+        if (index >= steps.Count) { ShowEnd(); return; }
         SdStep s = steps[index];
+        bool mine = IsOwn(s);
         // Tries already recorded: a step done again after Redo previous is try 2.
         int tries = 0;
         foreach (SdStepResult r in Results) if (r.Id == s.Id && r.Status == "done") tries++;
@@ -1184,9 +1215,17 @@ public class SdWizard : Form {
         SetSignal(Color.White, Muted, "");
         bool rep = Has(s, "repeat");
         title.Text = "Recording the " + DeviceName;
-        groupLabel.Text = s.Group.ToUpperInvariant();
-        stepLabel.Text = "Step " + (index + 1) + " of " + steps.Length;
-        progressFraction = Math.Min(1.0, (double)index / Math.Max(1, steps.Length));
+        // Where the step stands in its section, which is what "skip" skips.
+        int first = index, last = index;
+        while (first > 0 && steps[first - 1].Group == s.Group) first--;
+        while (last + 1 < steps.Count && steps[last + 1].Group == s.Group) last++;
+        int inGroup = last - first + 1, left = last - index + 1;
+        groupLabel.Text = (s.Group + (inGroup > 1 ? "   \u00b7   " + (index - first + 1) + " of " + inGroup : "")).ToUpperInvariant();
+        stepLabel.Text = "Step " + (index + 1) + " of " + steps.Count;
+        skipGroup.Text = (left == inGroup ? "Skip all " + inGroup + " " + s.Group + " steps" : "Skip the rest of " + s.Group + " (" + left + " steps)") + "  \u2192";
+        skipGroup.Visible = left > 1 && !mine && s.Group != "Start" && s.Group != "Finish";
+        own.Visible = !mine;
+        progressFraction = Math.Min(1.0, (double)index / Math.Max(1, steps.Count));
         progress.Invalidate();
         // An ask step's own label says it: the instruction need not.
         body.Text = Has(s, "ask") ? s.Text.Replace(" Type the value it shows now.", "") : s.Text;
@@ -1196,8 +1235,10 @@ public class SdWizard : Form {
         // still on the device, so it is put back before the step is done again.
         puttingBack = redoing && tries > 0 && !rep && Changes(s);
         redoing = false;
-        hint.Text = rep
-            ? "Click Next one after each choice. After the last one (or if there is none), click Finished this list."
+        hint.Text = mine
+            ? "Do it in the official software, write in the note what you changed, then click Done. Never mind takes you back to the step you were on."
+            : rep
+            ? "Type the name of each one in the note and click Save this one. After the last one (or if there is none), click That was the last one."
             : puttingBack
                 ? "Doing this step again. If the first try worked, just click Done. If not, first put it back the way it was before this step and click I put it back; then do the step again and click Done."
                 : tries > 0
@@ -1205,14 +1246,14 @@ public class SdWizard : Form {
                     : Has(s, "ask")
                         ? "Do only this in the official software, then type the value it shows and click Done. Not there? Click Not in my software."
                         : "Do only this in the official software, wait a second, then click Done. Not there? Click Not in my software.";
-        done.Text = rep ? "Next one" : "Done";
-        skip.Text = rep ? "Finished this list" : puttingBack ? "I put it back" : "Not in my software";
-        skipGroup.Text = "Skip this group";
-        back.Enabled = index > 0;
+        done.Text = rep ? "Save this one" : "Done";
+        skip.Text = mine ? "Never mind" : rep ? "That was the last one" : puttingBack ? "I put it back" : "Not in my software";
+        back.Enabled = index > 0 && !mine;
         autoLeft = Has(s, "auto15") ? 15 : 0;
         asking = Has(s, "ask") || rep;
         noteShown = false;
-        noteLabel.Text = Has(s, "describe") ? "What you did, and what you expected:"
+        noteLabel.Text = mine ? "Which setting, and what you set it to:"
+            : Has(s, "describe") ? "What you did, and what you expected:"
             : rep ? "Its name, and the value you set if any:" : "Type the value it shows now:";
         // Putting the first try back comes first: its button is the one that stands out.
         SetMain(!puttingBack);
@@ -1241,7 +1282,8 @@ public class SdWizard : Form {
     }
 
     public void OnDone() {
-        if (index >= steps.Length) return;
+        if (atEnd) { FinishedAll = true; closing = true; Close(); return; }
+        if (index >= steps.Count) return;
         SdStep s = steps[index];
         // The value the owner really set: Done waits for it (a script driving the preview does not).
         if (asking && note.Text.Trim().Length == 0 && !Preview) { note.Focus(); return; }
@@ -1273,7 +1315,7 @@ public class SdWizard : Form {
         if (Has(s, "repeat")) {
             attempt++; stepStart = DateTime.UtcNow; note.Text = "";
             stepSent = SentAll; stepReceived = ReceivedAll;
-            stepLabel.Text = "Step " + (index + 1) + " of " + steps.Length + "  \u00b7  " + attempt + " recorded";
+            stepLabel.Text = "Step " + (index + 1) + " of " + steps.Count + "  \u00b7  " + attempt + " saved";
             SetDone(false); note.Focus();
             return;
         }
@@ -1281,8 +1323,10 @@ public class SdWizard : Form {
     }
 
     public void OnSkip() {
-        if (index >= steps.Length) return;
+        if (index >= steps.Count) return;
         SdStep s = steps[index];
+        // An own setting the owner thought better of: gone, as if never asked.
+        if (IsOwn(s)) { steps.RemoveAt(index); ShowStep(); return; }
         if (puttingBack) {
             // What putting it back sent is kept apart from the step done again.
             Record(s, "reverted", stepStart);
@@ -1301,9 +1345,9 @@ public class SdWizard : Form {
     }
 
     public void OnSkipGroup() {
-        if (index >= steps.Length) return;
+        if (index >= steps.Count) return;
         string g = steps[index].Group;
-        while (index < steps.Length && steps[index].Group == g) { Record(steps[index], "skipped", stepStart); index++; }
+        while (index < steps.Count && steps[index].Group == g) { Record(steps[index], "skipped", stepStart); index++; }
         ShowStep();
     }
 
@@ -1311,14 +1355,102 @@ public class SdWizard : Form {
      *  what the step being left saw so far (as "left"). */
     void OnBack() {
         if (index == 0) return;
-        if ((DateTime.UtcNow - stepStart).TotalSeconds >= 2) Record(steps[index], "left", stepStart);
+        if (index < steps.Count && (DateTime.UtcNow - stepStart).TotalSeconds >= 2) Record(steps[index], "left", stepStart);
         index--;
         redoing = true;
         ShowStep();
     }
 
+    static bool IsOwn(SdStep s) { return s.Id.StartsWith("own.", StringComparison.Ordinal); }
+
+    /** The end of a recording, in a window of its own (the console is easy to
+     *  miss behind the folder that opens): what is in it, and where it goes.
+     *  "new", "existing", or "" for not now. */
+    public static string AskToSend(string zipName, string deviceName, bool keyboard) {
+        string answer = "";
+        using (Form f = new Form()) {
+            f.AutoScaleDimensions = new SizeF(96F, 96F); f.AutoScaleMode = AutoScaleMode.Dpi;
+            f.Text = "Shark Deck - recording saved"; f.Font = new Font("Segoe UI", 10F); f.BackColor = Color.White;
+            f.FormBorderStyle = FormBorderStyle.FixedDialog; f.MinimizeBox = false; f.MaximizeBox = false;
+            f.ShowInTaskbar = true; f.TopMost = true; f.StartPosition = FormStartPosition.CenterScreen;
+            f.ClientSize = new Size(560, 316);
+            Panel head = new Panel(); head.Dock = DockStyle.Top; head.Height = 64; head.BackColor = Night;
+            Label t = new Label(); t.Text = "Recording saved"; t.Font = new Font("Segoe UI Semibold", 13F);
+            t.ForeColor = Color.White; t.AutoSize = true; t.Location = new Point(20, 9);
+            Label name = new Label(); name.Text = zipName; name.Font = new Font("Segoe UI", 9F);
+            name.ForeColor = Color.FromArgb(111, 211, 224); name.AutoSize = true; name.Location = new Point(21, 38);
+            head.Controls.Add(t); head.Controls.Add(name);
+            Label q = new Label();
+            q.Text = "Send it to Shark Deck: attach the .zip to an issue on GitHub, so the " + deviceName + " can be supported.";
+            q.Font = new Font("Segoe UI Semibold", 12.5F); q.ForeColor = Ink; q.AutoSize = true;
+            Label pics = new Label();
+            // What was typed on a keyboard while it recorded was wiped as it came
+            // in (SdPcap): said here, where the owner decides to share the file.
+            pics.Text = "Its folder just opened: capture.pcap is the USB traffic"
+                + (keyboard ? ", without what you typed on the " + deviceName : "")
+                + ", report.txt describes the device and \"screens\" holds the pictures. "
+                + "Delete any picture you would rather not share first: the .zip is packed again when you choose.";
+            pics.Font = new Font("Segoe UI", 9F); pics.ForeColor = Muted; pics.AutoSize = true;
+            Button create = new Button(); create.Text = "Open a new issue"; Primary(create); create.Size = new Size(176, 38);
+            Button add = new Button(); add.Text = "Add it to an issue already open"; Secondary(add); add.Size = new Size(250, 38);
+            Button later = new Button(); later.Text = "Not now"; Quiet(later); later.AutoSize = true;
+            // Laid out once the window has its scale, top to bottom, as the step window is.
+            f.Load += delegate {
+                float k; using (Graphics g = f.CreateGraphics()) k = g.DpiX / 96f;
+                int x = (int)Math.Round(20 * k), w = f.ClientSize.Width - 2 * x;
+                q.MaximumSize = new Size(w, 0); pics.MaximumSize = new Size(w, 0);
+                q.Location = new Point(x, head.Bottom + (int)Math.Round(20 * k));
+                pics.Location = new Point(x, q.Bottom + (int)Math.Round(10 * k));
+                create.Location = new Point(x, pics.Bottom + (int)Math.Round(20 * k));
+                add.Location = new Point(create.Right + (int)Math.Round(10 * k), create.Top);
+                later.Location = new Point(x - (int)Math.Round(4 * k), create.Bottom + (int)Math.Round(8 * k));
+                f.ClientSize = new Size(f.ClientSize.Width, later.Bottom + (int)Math.Round(14 * k));
+            };
+            create.Click += delegate { answer = "new"; f.Close(); };
+            add.Click += delegate { answer = "existing"; f.Close(); };
+            later.Click += delegate { f.Close(); };
+            f.Controls.Add(q); f.Controls.Add(pics); f.Controls.Add(create); f.Controls.Add(add); f.Controls.Add(later); f.Controls.Add(head);
+            f.AcceptButton = create;
+            f.Shown += delegate { f.Activate(); create.Focus(); };
+            f.ShowDialog();
+        }
+        return answer;
+    }
+
+    /** "Record a setting not listed": a step of the owner's own, now, then back
+     *  to the step they were on. Its note says what they changed. */
+    public void OnOwn() {
+        if (index < steps.Count && IsOwn(steps[index])) return;
+        if (index < steps.Count && (DateTime.UtcNow - stepStart).TotalSeconds >= 2) Record(steps[index], "left", stepStart);
+        SdStep o = new SdStep();
+        o.Id = "own." + (++ownCount); o.Kind = "both"; o.Group = "Your own setting"; o.Value = ""; o.Series = ""; o.Flags = "ask,describe";
+        o.Text = "Change one setting in the official software that no step asked about, the way you would use it.";
+        steps.Insert(index, o);
+        ShowStep();
+    }
+
+    /** After the last step: saving is the one thing left, and the main button. */
+    void ShowEnd() {
+        atEnd = true;
+        title.Text = "Recording the " + DeviceName;
+        groupLabel.Text = "ALL " + steps.Count + " STEPS DONE";
+        stepLabel.Text = "";
+        progressFraction = 1.0; progress.Invalidate();
+        body.Text = "That was the last step. Save the recording.";
+        whereLabel.Text = "";
+        hint.Text = "Changed a setting no step asked about? Record it first (Record a setting not listed), then save.";
+        asking = false; noteShown = false; puttingBack = false; autoLeft = 0;
+        done.Text = "Save the recording"; SetMain(true); SetDone(true);
+        skip.Visible = false; skipGroup.Visible = false; own.Visible = true; finish.Visible = false;
+        back.Enabled = steps.Count > 0;
+        SetSignal(Color.White, Muted, "");
+        Relayout();
+        done.Focus();
+        UpdateStatus();
+    }
+
     bool Confirm() {
-        if (index >= steps.Length) return true;
+        if (index >= steps.Count) return true;
         string text = "Stop here and save what was recorded so far?";
         List<string> still = StillChanged();
         if (still.Count > 0)
@@ -1354,7 +1486,7 @@ public class SdWizard : Form {
     void OnTick() {
         ticks++;
         if (!Preview && picking) Pick();
-        if (autoLeft > 0 && ticks % 2 == 0 && index < steps.Length) {
+        if (autoLeft > 0 && ticks % 2 == 0 && index < steps.Count) {
             autoLeft--;
             SdStep s = steps[index];
             if (autoLeft > 0) body.Text = s.Text + "\n" + autoLeft + " s";
@@ -1430,7 +1562,7 @@ public class SdWizard : Form {
         MessageBox.Show(this, "Click once on the official software's window, then click OK here.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
         if (candidatePid != 0 && candidatePid != softwarePid) ConfirmCandidate();
         candidatePid = 0;
-        picking = softwarePid == 0 && index < steps.Length && Has(steps[index], "window");
+        picking = softwarePid == 0 && index < steps.Count && Has(steps[index], "window");
         UpdateStatus();
     }
 
@@ -1453,7 +1585,7 @@ public class SdWizard : Form {
             SdHidInterface i;
             try { i = SdHid.Describe(p); } catch (Exception) { continue; }
             if (i.Vid == 0) continue;
-            bool detecting = index < steps.Length && Has(steps[index], "detect");
+            bool detecting = index < steps.Count && Has(steps[index], "detect");
             if (vids.Contains(i.Vid) || detecting) {
                 NewInterfaces.Add(i);
                 vids.Add(i.Vid);
@@ -1466,32 +1598,37 @@ public class SdWizard : Form {
      *  device, and what is not recorded at all. */
     void UpdateStatus() {
         long sent = SentAll - stepSent;
-        recVal.Text = Preview ? "Nothing: this is a preview."
-            : "Only the " + DeviceName + "'s USB messages   \u00b7   " + (SentAll == 0 ? "none sent to it yet" : SentAll + " sent to it")
-              + (lastNew != null ? "   \u00b7   also " + lastNew + ", plugged in just now" : "");
-        bool windowStep = index < steps.Length && Has(steps[index], "window");
+        recVal.Text = Preview ? "Preview" : SentAll.ToString("N0", CultureInfo.InvariantCulture);
+        recSub.Text = Preview ? "nothing is recorded"
+            : (SentAll == 1 ? "message" : "messages") + " to the " + DeviceName
+              + (lastNew != null ? "\nand " + lastNew + ", just plugged in" : "");
+        bool windowStep = index < steps.Count && Has(steps[index], "window");
         if (softwarePid != 0) {
-            picVal.Text = SoftwareName + " only   \u00b7   " + shotCount + " so far";
+            picVal.Text = shotCount.ToString(CultureInfo.InvariantCulture);
+            picSub.Text = "of " + SoftwareName;
             change.Text = "Wrong window?"; change.Visible = true;
         } else if (picking) {
-            picVal.Text = candidatePid != 0 && windowStep
-                ? candidateName + "? Done shows you its picture first."
-                : "None yet: click once on the official software's window.";
+            picVal.Text = "\u2014";
+            picSub.Text = candidatePid != 0 && windowStep
+                ? candidateName + "? Done shows its picture first."
+                : "click once on the official software";
             change.Visible = false;
         } else {
             picVal.Text = "None";
+            picSub.Text = "no window is pictured";
             change.Text = "Pick a window"; change.Visible = !Preview;
         }
-        keysVal.Text = Keyboard ? "What you type on the " + DeviceName + " is blanked as soon as it is recorded, so it is never saved." : "";
+        tips.SetToolTip(recSub, Preview ? "" : "Only the " + DeviceName + "'s own USB messages are recorded: nothing from any other device.");
+        tips.SetToolTip(picSub, softwarePid != 0 ? "Only the official software's window is pictured, once a step is done: nothing else on the screen." : "");
         LayoutFooter();
         if (Preview) return;
         // Whether the step reached the device: more than the software sends on its own.
-        if (index < steps.Length && Changes(steps[index])) {
+        if (index < steps.Count && Changes(steps[index])) {
             double secs = (DateTime.UtcNow - stepStart).TotalSeconds;
             double expected = idleRate * secs;
             if (sent >= 1 && sent >= expected + (idleRate > 0 ? 2 : 1))
                 SetSignal(Color.FromArgb(231, 245, 236), Color.FromArgb(30, 123, 52),
-                    "\u2714  The " + DeviceName + " received it (" + sent + " message" + (sent == 1 ? "" : "s") + "). Once the software shows it, click Done.");
+                    "\u2714  The " + DeviceName + " received it (" + sent + " message" + (sent == 1 ? "" : "s") + "). Once the software shows it, click " + done.Text + ".");
             else if (secs > 8)
                 SetSignal(Color.FromArgb(255, 244, 229), Color.FromArgb(154, 91, 0),
                     "Nothing reached the " + DeviceName + " yet: some software sends a change only on Apply or Save.");
@@ -1553,7 +1690,7 @@ function FamilyText([string]$family) {
 
 # Parses "--device 1D57:FA55 --no-query --out C:\x" from the .bat's arguments.
 function ReadFlags([string]$line) {
-    $flags = @{ Device = $null; AllKnown = $false; NoQuery = $false; Out = $null; Record = $false; NoRecord = $false; Steps = $null; RecordingOf = $null; SetupOf = $null; Preview = $null; Resume = $false }
+    $flags = @{ Device = $null; AllKnown = $false; NoQuery = $false; Out = $null; Record = $false; NoRecord = $false; Steps = $null; Kind = $null; RecordingOf = $null; SetupOf = $null; Preview = $null; Resume = $false }
     $words = @(if ($line) { $line.Trim() -split '\s+' })
     for ($i = 0; $i -lt $words.Count; $i++) {
         switch ($words[$i].ToLowerInvariant()) {
@@ -1568,6 +1705,11 @@ function ReadFlags([string]$line) {
                 $flags.Steps = if ($i -lt $words.Count) { $words[$i].ToLowerInvariant() } else { '' }
                 if ($flags.Steps -notmatch '^[a-z]+(,[a-z]+)*$') { throw '--steps takes words, like deep,macro,specific' }
             }
+            '--kind' {
+                $i++
+                $flags.Kind = if ($i -lt $words.Count) { $words[$i].ToLowerInvariant() } else { '' }
+                if ($flags.Kind -notin @('mouse', 'keyboard')) { throw '--kind takes mouse or keyboard' }
+            }
             '--recording-of' { $i++; $flags.RecordingOf = $words[$i] }
             '--usbpcap-setup' { $i++; $flags.SetupOf = $words[$i] }
             '--resume-recording' { $flags.Resume = $true }
@@ -1577,6 +1719,26 @@ function ReadFlags([string]$line) {
         }
     }
     $flags
+}
+
+# What the device is, from how it is connected. A family that makes mice only
+# (the Hub, JXC and Beken chips) says so; a ROYUAN board's first USB interface
+# is its keyboard. Not any device's: the X11, a mouse, has its keyboard
+# collection (for macros) on interface 0. Empty when this does not tell.
+function KindOf($devices) {
+    $families = @(@($devices) | ForEach-Object { $_.family } | Select-Object -Unique)
+    if ($families.Count -ne 1) { return '' }
+    if ($families[0] -in @('compx-hub', 'jxc', 'beken')) { return 'mouse' }
+    if ($families[0] -eq 'royuan') { return FirstInterfaceKind $devices }
+    return ''
+}
+
+# The kind of the collection on a device's first USB interface: a guess for a
+# device of no known family, offered as the default answer.
+function FirstInterfaceKind($devices) {
+    $first = @(@($devices) | ForEach-Object { @($_.interfaces) } | Where-Object { $_.interface -eq 0 -and ($_.kind -eq 'keyboard' -or $_.kind -eq 'mouse') } | ForEach-Object { $_.kind } | Select-Object -Unique)
+    if ($first.Count -eq 1) { return $first[0] }
+    return ''
 }
 
 # The model question, for the families that have one, and only those.
@@ -1730,12 +1892,9 @@ start.idle|both|Start|||auto15|Leave everything alone for 15 seconds: no clicks,
 start.info|both|Start||||If the software shows the device's firmware version or other information somewhere, open that page. Never start a firmware update.
 start.tour|both|Start||||Open every page or tab of the software once, without changing anything. Then go back to the main page.
 dpi.s1.400|mouse|DPI|400|dpi.s1||Set DPI stage 1 to 400.
-dpi.s1.800|mouse|DPI|800|dpi.s1||Set DPI stage 1 to 800.
-dpi.s1.1600|mouse|DPI|1600|dpi.s1||Set DPI stage 1 to 1600.
 dpi.s1.3200|mouse|DPI|3200|dpi.s1||Set DPI stage 1 to 3200.
 dpi.s1.100|mouse|DPI|100|dpi.s1|ask|Set DPI stage 1 to 100, or to the lowest value it allows. Type the value it shows now.
 dpi.s1.1000|mouse|DPI|1000|dpi.s1||Set DPI stage 1 to 1000.
-dpi.s1.6400|mouse|DPI|6400|dpi.s1||Set DPI stage 1 to 6400.
 dpi.s1.12000|mouse|DPI|12000|dpi.s1||Set DPI stage 1 to 12000.
 dpi.s1.max|mouse|DPI|max|dpi.s1|ask|Set DPI stage 1 to the highest value it allows. Type the value it shows now.
 dpi.s1.back|mouse|DPI||dpi.s1|undo ask|Set DPI stage 1 back to what you use (800 if unsure). Type the value it shows now.
@@ -1749,16 +1908,13 @@ dpi.active.2|mouse|DPI|2|dpi.active||In the software, make stage 2 the active (c
 dpi.active.1|mouse|DPI|1|dpi.active|undo|Make stage 1 the active stage again.
 dpi.button|mouse|DPI|||nochange|Press the DPI button on the mouse once, then press it again until stage 1 is back.
 dpi.red|mouse|DPI|#FF0000|dpi.color||If DPI stages have colours: set stage 1's colour to pure red (#FF0000: red 255, green 0, blue 0).
-dpi.green|mouse|DPI|#00FF00|dpi.color||Set stage 1's colour to pure green (#00FF00).
 dpi.blue|mouse|DPI|#0000FF|dpi.color||Set stage 1's colour to pure blue (#0000FF).
 dpi.color.back|mouse|DPI|||undo|Set stage 1's colour back to what you use.
 dpi.xy|mouse|DPI|800x1600|||If X and Y can be set apart: set stage 1 to X 800 and Y 1600.
 dpi.xy.off|mouse|DPI|||undo|Turn separate X and Y off again.
 poll.125|both|Polling rate|125|poll||Set the polling rate (report rate) to 125 Hz.
-poll.250|both|Polling rate|250|poll||Set the polling rate to 250 Hz.
 poll.500|both|Polling rate|500|poll||Set the polling rate to 500 Hz.
 poll.1000|both|Polling rate|1000|poll||Set the polling rate to 1000 Hz.
-poll.2000|both|Polling rate|2000|poll||Set the polling rate to 2000 Hz, if offered.
 poll.4000|both|Polling rate|4000|poll||Set the polling rate to 4000 Hz, if offered.
 poll.8000|both|Polling rate|8000|poll||Set the polling rate to 8000 Hz, if offered.
 poll.back|both|Polling rate||poll|undo ask|Set the polling rate back to what you use (1000 Hz if unsure). Type the value it shows now.
@@ -1771,11 +1927,10 @@ ripple.on|mouse|Sensor|on|ripple||Turn ripple control on.
 ripple.off|mouse|Sensor|off|ripple|undo|Turn ripple control off (back on afterwards, if you use it).
 motion.on|mouse|Sensor|on|motion||Turn motion sync on.
 motion.off|mouse|Sensor|off|motion|undo|Turn motion sync off (back on afterwards, if you use it).
-mode.each|mouse|Sensor||sensor.mode|repeat|If the mouse has sensor or performance modes (Office, Gaming, Competitive...): choose the first one, type its name in the note, click Next one. Then the next mode, and so on.
+mode.each|mouse|Sensor||sensor.mode|repeat|If the mouse has sensor or performance modes (Office, Gaming, Competitive...): choose the first one, type its name in the note, click Save this one. Then the next mode, and so on.
 mode.back|mouse|Sensor|||undo|Choose the mode you use again.
 debounce.min|both|Response|min|debounce|ask|Set the debounce time (button or key response, often in ms) to its lowest value. Type the value it shows now.
 debounce.max|both|Response|max|debounce|ask|Set the debounce time to its highest value. Type the value it shows now.
-debounce.8|both|Response|8|debounce|ask|Set the debounce time to 8 ms, or the closest value. Type the value it shows now.
 debounce.4|both|Response|4|debounce|ask|Set the debounce time to 4 ms, or the closest value. Type the value it shows now.
 debounce.back|both|Response|||undo|Set the debounce time back to what you use.
 sleep.min|both|Power|min|sleep|ask|Set the sleep (power saving) time to its shortest. Type the value it shows now.
@@ -1786,7 +1941,6 @@ deep.min|both|Power|min|deep|ask|If there is a second, deeper sleep time: set it
 deep.max|both|Power|max|deep|ask|Set the deep sleep time to its longest. Type the value it shows now.
 deep.back|both|Power|||undo|Set the deep sleep time back to what you use.
 btn.b4.middle|mouse|Buttons|Middle click|btn.b4||Set button 4, the side button nearer the FRONT of the mouse ("Forward"), to Middle click.
-btn.b4.right|mouse|Buttons|Right click|btn.b4||Set button 4 (front side button) to Right click.
 btn.b4.key-a|mouse|Buttons|key A|btn.b4||Set button 4 (front side button) to the keyboard key A.
 btn.b4.ctrl-c|mouse|Buttons|Ctrl+C|btn.b4||Set button 4 (front side button) to the shortcut Ctrl + C.
 btn.b4.vol-up|mouse|Buttons|Volume up|btn.b4||Set button 4 (front side button) to Volume up.
@@ -1840,11 +1994,9 @@ macro.assign.mouse|mouse|Macros||||Assign the macro T1 to button 4.
 macro.assign.keyboard|keyboard|Macros||||Assign the macro T1 to the key F12.
 macro.repeat|both|Macros|3|||If offered: make the macro repeat 3 times.
 macro.clear|both|Macros|||undo|Set that button or key back to its default, then delete the macro.
-light.each|both|Lighting||light.effect|repeat|Choose the first lighting effect in the list and wait 2 seconds. Type its name in the note, click Next one. Then the next effect, and so on.
+light.each|both|Lighting||light.effect|repeat|Choose the first lighting effect in the list and wait 2 seconds. Type its name in the note, click Save this one. Then the next effect, and so on.
 light.red|both|Lighting|#FF0000|light.color||Choose a single-colour (static) effect, and set its colour to pure red (#FF0000).
-light.green|both|Lighting|#00FF00|light.color||Set the colour to pure green (#00FF00).
 light.blue|both|Lighting|#0000FF|light.color||Set the colour to pure blue (#0000FF).
-light.white|both|Lighting|#FFFFFF|light.color||Set the colour to white (#FFFFFF).
 light.dim|both|Lighting|min|light.bright||Set the brightness to its lowest (not off).
 light.bright|both|Lighting|max|light.bright||Set the brightness to its highest.
 light.half|both|Lighting|50%|light.bright||Set the brightness to the middle.
@@ -1857,11 +2009,10 @@ light.back|both|Lighting|||undo|Put your own lighting back (effect, colour, brig
 perkey.esc|keyboard|Per-key lighting|#FF0000|||If single keys can have their own colour: make Esc red and leave the rest.
 perkey.space|keyboard|Per-key lighting|#0000FF|||Make the space bar blue as well.
 perkey.clear|keyboard|Per-key lighting|||undo|Clear these custom colours.
-side.each|both|Second light||side.effect|repeat|If there is a second light (side strip, logo, receiver): choose its first effect, type its name in the note, click Next one. Then its next effect, and so on.
+side.each|both|Second light||side.effect|repeat|If there is a second light (side strip, logo, receiver): choose its first effect, type its name in the note, click Save this one. Then its next effect, and so on.
 side.red|both|Second light|#FF0000|side.color||Set the second light to pure red (#FF0000).
 side.blue|both|Second light|#0000FF|side.color||Set the second light to pure blue (#0000FF).
 side.back|both|Second light|||undo|Put the second light back as you had it.
-act.2.0|keyboard|Actuation|2.0|act.all||If keys have an adjustable actuation point: set all keys to 2.0 mm.
 act.3.5|keyboard|Actuation|3.5|act.all||Set all keys to 3.5 mm.
 act.0.5|keyboard|Actuation|0.5|act.all||Set all keys to 0.5 mm. That is very light: until the next step, a key just touched may type.
 act.back|keyboard|Actuation||act.all|undo ask|Set all keys back to what you use (2.0 mm if unsure). Type the value it shows now.
@@ -1897,7 +2048,6 @@ conn.poll.back|both|Other connection||conn.poll|undo ask|Set the polling rate ba
 conn.green|both|Other connection|#00FF00|||Set the lighting to static pure green (#00FF00).
 conn.light.back|both|Other connection|||undo|Put your own lighting back.
 conn.pair|both|Other connection|||nochange|If the software has a pairing button for the receiver: click it and follow its instructions until the device works again.
-other.each|both|Anything else||other|repeat|Any setting not asked about yet: change it once, type its name and the new value in the note, click Next one. When none are left, click Finished this list.
 end.reset|both|Finish||||Restore the factory settings in the software (Reset, Reset Profile or Restore defaults): it tells Shark Deck the factory values. Your own settings come back from the file you exported, or set them again afterwards. Rather not? Click Not in my software.
 end.close|both|Finish||||Close the official software.
 '@
@@ -1946,7 +2096,7 @@ function WhereFor([string]$kind) {
 # a setting Shark Deck lacks, or one that does not work in it.
 $CustomStepTable = @'
 start.open|both|Start|||window|Open the official software for your device and wait until it shows the device. Click once on its window, then click Done here.
-custom.each|both|Your recording|||repeat,describe|Do one thing in the official software: the setting Shark Deck should learn, or the one that does not work in it. Write in the note what you did (and what you expected), click Next one, then do the next thing. When you are done, click Finished this list.
+custom.each|both|Your recording|||repeat,describe|Do one thing in the official software: the setting Shark Deck should learn, or the one that does not work in it. Write in the note what you did (and what you expected), click Save this one, then do the next thing. After the last one, click That was the last one.
 end.close|both|Finish||||Close the official software.
 '@
 
@@ -2024,14 +2174,14 @@ function ExplainUsbPcap([string]$why) {
 
 # After the report: offers a recording, and starts it with administrator rights.
 # Returns 'declined', 'started', 'restart' or 'needs-usbpcap'.
-function OfferRecording($report, [string[]]$readable, [string]$reportFile, [string]$outDir, [bool]$asked, [string]$steps) {
+function OfferRecording($report, [string[]]$readable, [string]$reportFile, [string]$outDir, [bool]$asked, [string]$steps, [string]$kind) {
     $families = @($report.devices | ForEach-Object { $_.family })
     $spoken = @($families | Where-Object { $SpokenFamilies -contains $_ }).Count -eq $families.Count
     Say ''
     if (-not $asked) {
         Say '  Next, the recording: a small window walks you through the official software, one setting' White
         Say '  at a time, while USBPcap (a free USB capture driver) records what goes over the cable.' White
-        Say '  About 30 minutes. Only this device''s traffic is kept, what you type on it is blanked as it is recorded,' White
+        Say '  About 25 minutes. Only this device''s traffic is kept, never what you type on it,' White
         Say '  and nothing is sent anywhere.' DarkGray
         if ($spoken) { Say '  Shark Deck already speaks this family''s language: a recording shows what is new.' DarkGray }
         $a = Read-Host '  Record now? [Y/n]'
@@ -2046,12 +2196,12 @@ function OfferRecording($report, [string[]]$readable, [string]$reportFile, [stri
     } elseif (-not $asked) {
         Say ''
         Say '  What to record:' White
-        Say '    1  Everything, one setting at a time (about 30 minutes): for a device Shark Deck does not know yet.' White
+        Say '    1  Everything, one setting at a time (about 25 minutes): for a device Shark Deck does not know yet.' White
         Say '    2  Something specific (a few minutes): a setting missing from Shark Deck, or one that does not work.' White
         Say '       You do it in the official software and write in a note what you did.' DarkGray
         $custom = (Read-Host '  1 or 2 [1]') -match '^\s*2'
     } else { $custom = $false }
-    $state = [ordered]@{ report = $report; readable = $readable; reportFile = $reportFile; outDir = $outDir; custom = $custom; steps = $steps }
+    $state = [ordered]@{ report = $report; readable = $readable; reportFile = $reportFile; outDir = $outDir; custom = $custom; steps = $steps; kind = $kind }
     # Missing, or only half there: its files without its driver (after an uninstall, say).
     if (-not (FindUsbPcap) -or (UsbPcapDriver) -eq 'missing') {
         $installed = InstallUsbPcap $state
@@ -2487,9 +2637,10 @@ function RecordingPhase([string]$token) {
     $devices = @($state.report.devices)
     $targets = New-Object System.Collections.Generic.List[string]
     foreach ($d in $devices) { $targets.Add("$($d.vid):$($d.pid)") }
-    $kinds = @($devices | ForEach-Object { @($_.interfaces) } | ForEach-Object { $_.kind })
-    $guess = if (($kinds -contains 'keyboard') -and -not ($kinds -contains 'mouse')) { 'K' } elseif (($kinds -contains 'mouse') -and -not ($kinds -contains 'keyboard')) { 'M' } else { '' }
-    $kind = ''
+    # Known already: from Shark Deck (--kind), else from how it is connected.
+    # Asked only when neither tells.
+    $kind = if ($state.kind) { [string]$state.kind } else { KindOf $devices }
+    $guess = switch (FirstInterfaceKind $devices) { 'keyboard' { 'K' } 'mouse' { 'M' } default { '' } }
     while (-not $kind) {
         $a = (Read-Host ('  Is it a mouse (M) or a keyboard (K)?' + $(if ($guess) { " [$guess]" } else { '' }))).Trim()
         if (-not $a) { $a = $guess }
@@ -2682,22 +2833,33 @@ function RecordingPhase([string]$token) {
     Pack $recDir $zip
     Say ''
     Say "  Ready to send: $zip" Green
-    Say '  Its folder opens now: capture.pcap is the USB traffic, report.txt describes the device,' White
-    Say '  and "screens" holds the pictures. Delete any picture you would rather not share, then' White
-    Say '  press Enter here: the .zip is packed again without it.' White
     Start-Process explorer.exe "`"$recDir`""
-    [void](Read-Host '  (Nothing to delete? Just press Enter)')
+    # Where it goes, asked in a window of its own: the console is easy to miss
+    # behind the folder that just opened.
+    $send = [SdWizard]::AskToSend((Split-Path $zip -Leaf), $wizard.DeviceName, $wizard.Keyboard)
+    # A picture deleted from the folder meanwhile leaves the .zip too.
     Pack $recDir $zip
     Say ''
     Say "  Recording saved: $zip" Green
     Start-Process explorer.exe "/select,`"$zip`""
     Say ''
-    Say '  Next: open a "New device" request on GitHub and attach that .zip file:' White
-    Say "  $IssueUrl" Cyan
+    switch ($send) {
+        'new' {
+            Start-Process $IssueUrl
+            Say '  On the page that opened: fill it in, then drag the .zip onto it.' White
+        }
+        'existing' {
+            Start-Process $IssuesUrl
+            Say '  On the page that opened: open the issue about your device, then drag the .zip onto a comment.' White
+        }
+        default {
+            Say '  To send it later: open a "New device" request on GitHub and attach that .zip file:' White
+            Say "  $IssueUrl" Cyan
+        }
+    }
     Say '  (USBPcap stays installed. To remove it: Settings > Apps > USBPcap, then restart.)' DarkGray
     Say ''
-    $go = Read-Host '  Press Enter to open that page in your browser, or close this window'
-    if ($null -ne $go) { Start-Process $IssueUrl }
+    [void](Read-Host '  Press Enter to close this window')
 }
 
 # ---- Main ------------------------------------------------------------------------
@@ -2873,7 +3035,7 @@ foreach ($l in $readable) { Say "  $l" }
 
 $recording = 'declined'
 if (-not $flags.NoRecord -and ($interactive -or $flags.Record)) {
-    $recording = OfferRecording $report $readable $file $outDir $flags.Record $flags.Steps
+    $recording = OfferRecording $report $readable $file $outDir $flags.Record $flags.Steps $flags.Kind
 }
 
 # The report goes into the recording's .zip; it is saved on its own only when

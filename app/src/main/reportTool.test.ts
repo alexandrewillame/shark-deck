@@ -1,3 +1,4 @@
+import { KEYBOARDS_BY_ID } from './devices/catalog/keyboards';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
@@ -32,6 +33,8 @@ describe('reportToolArgs', () => {
       '--device',
       '1D57:2111',
       '--record',
+      '--kind',
+      'mouse',
     ]);
   });
 
@@ -41,11 +44,15 @@ describe('reportToolArgs', () => {
       '--device',
       '1D57:FA65',
       '--record',
+      '--kind',
+      'mouse',
       '--steps',
       'media',
     ]);
     expect(reportToolArgs(X8_PRO, ['deep', 'macro', 'specific'], 'win32').slice(2)).toEqual([
       '--record',
+      '--kind',
+      'mouse',
       '--steps',
       'deep,macro,specific',
     ]);
@@ -56,13 +63,30 @@ describe('reportToolArgs', () => {
       '--device',
       '1D57:FA65',
       '--record',
+      '--kind',
+      'mouse',
       '--steps',
       'deep',
     ]);
-    expect(reportToolArgs(X1, 'all', 'linux')).toEqual(['--device', '1D57:2111', '--record']);
+    expect(reportToolArgs(X1, 'all', 'linux')).toEqual([
+      '--device',
+      '1D57:2111',
+      '--record',
+      '--kind',
+      'mouse',
+    ]);
     expect(reportToolArgs(X1, 'report', 'win32')).toEqual(['--device', '1D57:2111', '--no-record']);
     expect(reportToolArgs(X1, 'report', 'linux')).toEqual(['--device', '1D57:2111', '--no-record']);
     expect(reportToolArgs(X8_PRO, 'all', 'darwin')).toEqual(['--device', '1D57:FA65']);
+  });
+
+  it('says what the device is, so the recording does not ask', () => {
+    const r98 = KEYBOARDS_BY_ID.get(3743)!;
+    expect(reportToolArgs(r98, ['other'], 'win32').slice(2, 5)).toEqual([
+      '--record',
+      '--kind',
+      'keyboard',
+    ]);
   });
 
   it('passes only plain words as steps', () => {

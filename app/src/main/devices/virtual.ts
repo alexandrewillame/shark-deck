@@ -297,7 +297,10 @@ export class VirtualDriver extends Driver {
     const fn: Record<number, KeyBinding> = {};
     const fnLayer: Record<number, string> = {};
     for (const k of keys) {
-      base[k.slot] = binding(k.slot, k.code ?? null, k.label);
+      // The Fn key holds the firmware's own Fn function, as a real board's does
+      // (it is how manager.ts places a drawing's Fn key on its slot).
+      const isFn = typeof k.code !== 'number' && /^fn$/i.test(k.label.trim());
+      base[k.slot] = binding(k.slot, k.code ?? null, k.label, isFn ? [10, 1, 0, 0] : undefined);
       fn[k.slot] = binding(k.slot, null, `Fn+${k.label}`);
       fnLayer[k.slot] = `Fn+${k.label}`;
     }

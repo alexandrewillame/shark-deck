@@ -1406,4 +1406,6 @@ export const zhTW: Partial<Messages> = {
   'support.body.mac':
     '這需要錄製官方軟體，而 Mac 無法錄製：官方軟體在 Windows 上執行，Shark Deck 需在接入該裝置的 Windows 或 Linux 電腦上錄製。在這台 Mac 上，工具仍可產生裝置報告：只需一分鐘，且只讀取系統已知的資訊。',
   'support.web': '裝置報告工具可在 Windows 和 Linux 上錄製；在 Mac 上只能產生報告。',
+  'support.confirm.title': '要關閉 Shark Deck 進行錄製嗎？',
+  'support.starting': '正在啟動…',
 };

@@ -12,14 +12,32 @@ import {
 import { getT } from '@shared/i18n';
 import { getSettingsSync } from '../settings';
 import { toHex } from '../hid/frame';
-import { enumerate, findVendorCollection, HidChannel, lastHidError } from '../hid/transport';
+import {
+  enumerate,
+  findVendorCollection,
+  HidChannel,
+  lastHidError,
+  configCollections,
+} from '../hid/transport';
 import type { HidCandidate } from '../hid/transport';
 import type { DpiStage } from '@shared/types/mouse-settings';
 import type { MagneticKeySettings } from '@shared/types/keyboard-settings';
 import { COMPX_8K_DONGLE_VID, knownVendorIds, resolveDescriptor, spansEndpoints } from './registry';
 import { isReadOnly, resolveIdentity } from './identity';
 import { colorVariantsOf } from '@shared/device-art';
-import { layoutAgreement, layoutHolds } from './layout-check';
+import {
+  deriveLayout,
+  keepLayout,
+  type KeptLayout,
+  layoutAgreement,
+  layoutHolds,
+  placeKept,
+} from './layout-check';
+import { boardLayoutGeometry, withBoardLayout } from './catalog/keyboards';
+import type { KeyLayoutEntry } from '@shared/types/keys';
+
+/** Where a board's placed layout is kept, per model (deviceState.ts). */
+const BOARD_LAYOUT_STATE_KEY = 'boardLayout';
 import type { IdentityKey } from './identity-key';
 import { Emitter } from '../emitter';
 import { createDriver, Driver } from './drivers';
@@ -42,6 +60,9 @@ interface Entry {
   lastBatteryPoll: number;
   /** An imported layout has been held to the board's own keymap (see checkLayout). */
   layoutChecked?: boolean;
+  /** The board's key map was just reset to the factory one: place its keys
+   *  afresh rather than from what was kept (see `relayout`). */
+  relayout?: boolean;
   /** firmware read-back attempts so far, before falling back to slow retry */
   fwAttempts: number;
   /** last firmware attempt timestamp, once past FW_MAX_ATTEMPTS */
@@ -583,6 +604,9 @@ export class DeviceManager extends Emitter {
   /** model -> the stored backup already found to hold what its policy requires. */
   private readonly coveredBackups = new Map<string, string>();
 
+  /** model -> a demo board's placed layout, for the session (see placeLayout). */
+  private readonly demoLayouts = new Map<string, KeptLayout>();
+
   private async storedBackupCovers(model: string, policy: BackupPolicy): Promise<boolean> {
     const files = await listBackupFiles(model);
     const newest = files[0];
@@ -662,8 +686,8 @@ export class DeviceManager extends Emitter {
    * Under WebHID nothing has a serial, so the browser edition keys serial-less
    * Hub mice by family instead (`serialless: 'family'`), which merges the V8's
    * two endpoints the same way. The cost is that two Hub mice would share one
-   * card — and `findVendorCollection` only ever attaches the first unit of a
-   * VID/PID anyway, on either host.
+   * card there. Two units of any other kind are two cards (`scan`: one entry
+   * per unit's config collection).
    */
   private key(descriptor: DeviceDescriptor, serial: string, path: string): string {
     if (serial) return `${descriptor.model}:${serial}`;
@@ -825,6 +849,8 @@ export class DeviceManager extends Emitter {
   private async checkLayout(e: Entry): Promise<void> {
     const d = e.descriptor;
     const km = d.spec.keyMatrix;
+    const geometry = boardLayoutGeometry(d);
+    if (geometry) return this.placeLayout(e, geometry);
     if (d.simulated || d.kind !== 'keyboard' || km?.layoutStatus !== 'certain' || !km.layout) {
       e.layoutChecked = true;
       return;
@@ -834,24 +860,88 @@ export class DeviceManager extends Emitter {
     e.layoutChecked = true;
     const a = layoutAgreement(km.layout, base);
     if (layoutHolds(a)) return;
-    frameLog.push({
-      deviceId: e.live.id,
-      dir: 'rx',
-      hex: '',
-      note: `layout check: ${a.agree} of ${a.checked} keys agree with the imported layout — per-key settings off for this board`,
-    });
-    const next: DeviceDescriptor = {
-      ...d,
-      spec: { ...d.spec, keyMatrix: { ...km, layoutStatus: 'none' } },
-    };
+    this.layoutNote(
+      e,
+      `layout check: ${a.agree} of ${a.checked} keys agree with the imported layout — per-key settings off for this board`,
+    );
+    this.rebuild(e, { ...d, spec: { ...d.spec, keyMatrix: { ...km, layoutStatus: 'none' } } });
+  }
+
+  /**
+   * A board with a drawing but no slot map (most of the line): each key placed
+   * on the slot the board's own key map says types it (layout-check.ts
+   * `deriveLayout`), then every per-key menu its row has. Placed once and
+   * kept per model, so a key the owner remaps afterwards stays where it is
+   * drawn; placed again only after a factory reset (`relayout`), the one time
+   * the board's map is sure to be the factory one. A demo board keeps its
+   * placing in memory: nothing of demo mode reaches the store.
+   */
+  private async placeLayout(e: Entry, geometry: KeyLayoutEntry[]): Promise<void> {
+    const d = e.descriptor;
+    const fresh = !!e.relayout;
+    if (d.spec.keyMatrix?.layoutStatus === 'board' && !fresh) {
+      e.layoutChecked = true;
+      return;
+    }
+    const kept = d.simulated ? this.demoLayouts : null;
+    const state = d.simulated ? null : deviceStateFor(d.model);
+    const stored = fresh
+      ? null
+      : kept
+        ? kept.get(d.model)
+        : await state!.get(BOARD_LAYOUT_STATE_KEY);
+    let layout = placeKept(geometry, stored);
+    if (!layout) {
+      const base = await e.driver.readKeyBindings('base');
+      if (!base) return; // asked again on a later pass
+      layout = deriveLayout(geometry, base);
+      if (!layout) {
+        e.layoutChecked = true;
+        e.relayout = false;
+        this.layoutNote(
+          e,
+          `layout: the board's key map does not match its drawing (${geometry.length} keys) — per-key settings off for this board`,
+        );
+        return;
+      }
+      if (kept) kept.set(d.model, keepLayout(layout));
+      else await state!.set(BOARD_LAYOUT_STATE_KEY, keepLayout(layout));
+      this.layoutNote(
+        e,
+        `layout: ${layout.length} of ${geometry.length} keys placed from the board's own key map`,
+      );
+    }
+    e.layoutChecked = true;
+    e.relayout = false;
+    this.rebuild(e, withBoardLayout(d, layout));
+  }
+
+  /** Place a board's keys afresh on the next pass: its key map was just reset. */
+  relayout(id: string): void {
+    const e = this.entries.get(id);
+    if (!e || !boardLayoutGeometry(e.descriptor)) return;
+    e.relayout = true;
+    e.layoutChecked = false;
+  }
+
+  private layoutNote(e: Entry, note: string): void {
+    frameLog.push({ deviceId: e.live.id, dir: 'rx', hex: '', note });
+  }
+
+  /** Swap an attached device's descriptor, and with it the driver and the menus it draws. */
+  private rebuild(e: Entry, next: DeviceDescriptor): void {
+    const onWarning = (message: string) =>
+      this.emit('write:warning', { deviceId: e.live.id, message });
     e.descriptor = next;
-    e.driver = createDriver({
-      descriptor: next,
-      channel: e.channel,
-      onWarning: (message) => this.emit('write:warning', { deviceId: e.live.id, message }),
-      state: deviceStateFor(next.model),
-    });
-    e.live = { ...e.live, ui: deviceUi(next) };
+    e.driver = next.simulated
+      ? new VirtualDriver({ descriptor: next, channel: e.channel, onWarning })
+      : createDriver({
+          descriptor: next,
+          channel: e.channel,
+          onWarning,
+          state: deviceStateFor(next.model),
+        });
+    e.live = { ...e.live, capabilities: next.capabilities, ui: deviceUi(next) };
   }
 
   private async newLiveDevice(id: string, descriptor: DeviceDescriptor): Promise<LiveDevice> {
@@ -1043,14 +1133,20 @@ export class DeviceManager extends Emitter {
         }
         continue;
       }
-      const vc = findVendorCollection(
+      // One entry per unit, each on its own config collection: two boards of
+      // one USB id (an R85 HE beside an R98 HE: 3151:5029 both) are two cards.
+      // It used to be the first collection for every candidate, so the second
+      // board never got one. A unit is handled on its own collection; with a
+      // single unit, any of its collections leads to it, as before.
+      const units = configCollections(
         allCollections,
         descriptor.vid,
         descriptor.pid,
         descriptor.usagePage,
         descriptor.usage,
       );
-      if (!vc) {
+      const vc = units.length === 1 ? units[0]! : (units.find((u) => u.path === cand.path) ?? null);
+      if (!units.length) {
         if (!flagged.has(dedupe)) {
           flagged.add(dedupe);
           diag.unmatched.push({
@@ -1062,6 +1158,8 @@ export class DeviceManager extends Emitter {
         }
         continue;
       }
+      // Another collection of one of several units: that unit is handled on its own.
+      if (!vc) continue;
 
       const id = this.key(descriptor, vc.serialNumber ?? '', vc.path);
       const existing = this.entries.get(id);

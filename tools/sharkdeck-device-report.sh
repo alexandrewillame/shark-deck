@@ -6,6 +6,7 @@
 #   ... --record / --no-record                        Linux: record without asking / never offer it
 #   ... --steps deep,macro,specific                   record only the steps whose ids start with
 #                                                     these words ('specific': one thing you choose)
+#   ... --kind mouse | keyboard                       what the device is (else read from how it is connected)
 #   sh sharkdeck-device-report.sh --preview-steps mouse   walk the recording steps; nothing is recorded
 #
 # Part of Shark Deck (GPL-3.0-or-later): https://github.com/alexandrewillame/shark-deck
@@ -25,6 +26,7 @@
 set -u
 TOOL_VERSION=2
 ISSUE_URL='https://github.com/alexandrewillame/shark-deck/issues/new?template=new-device.yml'
+ISSUES_URL='https://github.com/alexandrewillame/shark-deck/issues'
 REPORT_MARKER='----- For the Shark Deck maintainer: keep everything below exactly as it is -----'
 # USB vendor ids of the families Shark Deck knows (main/devices/registry.ts knownVendorIds).
 KNOWN_VIDS='3151 39AB 3554 373E 1D57'
@@ -40,6 +42,7 @@ ANSWERS="${SHARKDECK_TTY:-/dev/tty}"
 WANT=''
 RECORD=''
 STEPS=''
+KIND_ARG=''
 PREVIEW=''
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -51,6 +54,10 @@ while [ $# -gt 0 ]; do
       case "$STEPS" in
         '' | *[!a-z,]* | ,* | *, | *,,*) printf '%s\n' '--steps takes words, like deep,macro,specific' >&2; exit 2 ;;
       esac
+      ;;
+    --kind)
+      shift
+      case "${1:-}" in mouse | keyboard) KIND_ARG=$1 ;; *) printf '%s\n' '--kind takes mouse or keyboard' >&2; exit 2 ;; esac
       ;;
     --preview-steps)
       case "${2:-}" in mouse | keyboard) PREVIEW=$2; shift ;; *) PREVIEW=mouse ;; esac
@@ -131,12 +138,9 @@ start.idle|both|Start|||auto15|Leave everything alone for 15 seconds: no clicks,
 start.info|both|Start||||If the software shows the device's firmware version or other information somewhere, open that page. Never start a firmware update.
 start.tour|both|Start||||Open every page or tab of the software once, without changing anything. Then go back to the main page.
 dpi.s1.400|mouse|DPI|400|dpi.s1||Set DPI stage 1 to 400.
-dpi.s1.800|mouse|DPI|800|dpi.s1||Set DPI stage 1 to 800.
-dpi.s1.1600|mouse|DPI|1600|dpi.s1||Set DPI stage 1 to 1600.
 dpi.s1.3200|mouse|DPI|3200|dpi.s1||Set DPI stage 1 to 3200.
 dpi.s1.100|mouse|DPI|100|dpi.s1|ask|Set DPI stage 1 to 100, or to the lowest value it allows. Type the value it shows now.
 dpi.s1.1000|mouse|DPI|1000|dpi.s1||Set DPI stage 1 to 1000.
-dpi.s1.6400|mouse|DPI|6400|dpi.s1||Set DPI stage 1 to 6400.
 dpi.s1.12000|mouse|DPI|12000|dpi.s1||Set DPI stage 1 to 12000.
 dpi.s1.max|mouse|DPI|max|dpi.s1|ask|Set DPI stage 1 to the highest value it allows. Type the value it shows now.
 dpi.s1.back|mouse|DPI||dpi.s1|undo ask|Set DPI stage 1 back to what you use (800 if unsure). Type the value it shows now.
@@ -150,16 +154,13 @@ dpi.active.2|mouse|DPI|2|dpi.active||In the software, make stage 2 the active (c
 dpi.active.1|mouse|DPI|1|dpi.active|undo|Make stage 1 the active stage again.
 dpi.button|mouse|DPI|||nochange|Press the DPI button on the mouse once, then press it again until stage 1 is back.
 dpi.red|mouse|DPI|#FF0000|dpi.color||If DPI stages have colours: set stage 1's colour to pure red (#FF0000: red 255, green 0, blue 0).
-dpi.green|mouse|DPI|#00FF00|dpi.color||Set stage 1's colour to pure green (#00FF00).
 dpi.blue|mouse|DPI|#0000FF|dpi.color||Set stage 1's colour to pure blue (#0000FF).
 dpi.color.back|mouse|DPI|||undo|Set stage 1's colour back to what you use.
 dpi.xy|mouse|DPI|800x1600|||If X and Y can be set apart: set stage 1 to X 800 and Y 1600.
 dpi.xy.off|mouse|DPI|||undo|Turn separate X and Y off again.
 poll.125|both|Polling rate|125|poll||Set the polling rate (report rate) to 125 Hz.
-poll.250|both|Polling rate|250|poll||Set the polling rate to 250 Hz.
 poll.500|both|Polling rate|500|poll||Set the polling rate to 500 Hz.
 poll.1000|both|Polling rate|1000|poll||Set the polling rate to 1000 Hz.
-poll.2000|both|Polling rate|2000|poll||Set the polling rate to 2000 Hz, if offered.
 poll.4000|both|Polling rate|4000|poll||Set the polling rate to 4000 Hz, if offered.
 poll.8000|both|Polling rate|8000|poll||Set the polling rate to 8000 Hz, if offered.
 poll.back|both|Polling rate||poll|undo ask|Set the polling rate back to what you use (1000 Hz if unsure). Type the value it shows now.
@@ -172,11 +173,10 @@ ripple.on|mouse|Sensor|on|ripple||Turn ripple control on.
 ripple.off|mouse|Sensor|off|ripple|undo|Turn ripple control off (back on afterwards, if you use it).
 motion.on|mouse|Sensor|on|motion||Turn motion sync on.
 motion.off|mouse|Sensor|off|motion|undo|Turn motion sync off (back on afterwards, if you use it).
-mode.each|mouse|Sensor||sensor.mode|repeat|If the mouse has sensor or performance modes (Office, Gaming, Competitive...): choose the first one, type its name in the note, click Next one. Then the next mode, and so on.
+mode.each|mouse|Sensor||sensor.mode|repeat|If the mouse has sensor or performance modes (Office, Gaming, Competitive...): choose the first one, type its name in the note, click Save this one. Then the next mode, and so on.
 mode.back|mouse|Sensor|||undo|Choose the mode you use again.
 debounce.min|both|Response|min|debounce|ask|Set the debounce time (button or key response, often in ms) to its lowest value. Type the value it shows now.
 debounce.max|both|Response|max|debounce|ask|Set the debounce time to its highest value. Type the value it shows now.
-debounce.8|both|Response|8|debounce|ask|Set the debounce time to 8 ms, or the closest value. Type the value it shows now.
 debounce.4|both|Response|4|debounce|ask|Set the debounce time to 4 ms, or the closest value. Type the value it shows now.
 debounce.back|both|Response|||undo|Set the debounce time back to what you use.
 sleep.min|both|Power|min|sleep|ask|Set the sleep (power saving) time to its shortest. Type the value it shows now.
@@ -187,7 +187,6 @@ deep.min|both|Power|min|deep|ask|If there is a second, deeper sleep time: set it
 deep.max|both|Power|max|deep|ask|Set the deep sleep time to its longest. Type the value it shows now.
 deep.back|both|Power|||undo|Set the deep sleep time back to what you use.
 btn.b4.middle|mouse|Buttons|Middle click|btn.b4||Set button 4, the side button nearer the FRONT of the mouse ("Forward"), to Middle click.
-btn.b4.right|mouse|Buttons|Right click|btn.b4||Set button 4 (front side button) to Right click.
 btn.b4.key-a|mouse|Buttons|key A|btn.b4||Set button 4 (front side button) to the keyboard key A.
 btn.b4.ctrl-c|mouse|Buttons|Ctrl+C|btn.b4||Set button 4 (front side button) to the shortcut Ctrl + C.
 btn.b4.vol-up|mouse|Buttons|Volume up|btn.b4||Set button 4 (front side button) to Volume up.
@@ -241,11 +240,9 @@ macro.assign.mouse|mouse|Macros||||Assign the macro T1 to button 4.
 macro.assign.keyboard|keyboard|Macros||||Assign the macro T1 to the key F12.
 macro.repeat|both|Macros|3|||If offered: make the macro repeat 3 times.
 macro.clear|both|Macros|||undo|Set that button or key back to its default, then delete the macro.
-light.each|both|Lighting||light.effect|repeat|Choose the first lighting effect in the list and wait 2 seconds. Type its name in the note, click Next one. Then the next effect, and so on.
+light.each|both|Lighting||light.effect|repeat|Choose the first lighting effect in the list and wait 2 seconds. Type its name in the note, click Save this one. Then the next effect, and so on.
 light.red|both|Lighting|#FF0000|light.color||Choose a single-colour (static) effect, and set its colour to pure red (#FF0000).
-light.green|both|Lighting|#00FF00|light.color||Set the colour to pure green (#00FF00).
 light.blue|both|Lighting|#0000FF|light.color||Set the colour to pure blue (#0000FF).
-light.white|both|Lighting|#FFFFFF|light.color||Set the colour to white (#FFFFFF).
 light.dim|both|Lighting|min|light.bright||Set the brightness to its lowest (not off).
 light.bright|both|Lighting|max|light.bright||Set the brightness to its highest.
 light.half|both|Lighting|50%|light.bright||Set the brightness to the middle.
@@ -258,11 +255,10 @@ light.back|both|Lighting|||undo|Put your own lighting back (effect, colour, brig
 perkey.esc|keyboard|Per-key lighting|#FF0000|||If single keys can have their own colour: make Esc red and leave the rest.
 perkey.space|keyboard|Per-key lighting|#0000FF|||Make the space bar blue as well.
 perkey.clear|keyboard|Per-key lighting|||undo|Clear these custom colours.
-side.each|both|Second light||side.effect|repeat|If there is a second light (side strip, logo, receiver): choose its first effect, type its name in the note, click Next one. Then its next effect, and so on.
+side.each|both|Second light||side.effect|repeat|If there is a second light (side strip, logo, receiver): choose its first effect, type its name in the note, click Save this one. Then its next effect, and so on.
 side.red|both|Second light|#FF0000|side.color||Set the second light to pure red (#FF0000).
 side.blue|both|Second light|#0000FF|side.color||Set the second light to pure blue (#0000FF).
 side.back|both|Second light|||undo|Put the second light back as you had it.
-act.2.0|keyboard|Actuation|2.0|act.all||If keys have an adjustable actuation point: set all keys to 2.0 mm.
 act.3.5|keyboard|Actuation|3.5|act.all||Set all keys to 3.5 mm.
 act.0.5|keyboard|Actuation|0.5|act.all||Set all keys to 0.5 mm. That is very light: until the next step, a key just touched may type.
 act.back|keyboard|Actuation||act.all|undo ask|Set all keys back to what you use (2.0 mm if unsure). Type the value it shows now.
@@ -298,7 +294,6 @@ conn.poll.back|both|Other connection||conn.poll|undo ask|Set the polling rate ba
 conn.green|both|Other connection|#00FF00|||Set the lighting to static pure green (#00FF00).
 conn.light.back|both|Other connection|||undo|Put your own lighting back.
 conn.pair|both|Other connection|||nochange|If the software has a pairing button for the receiver: click it and follow its instructions until the device works again.
-other.each|both|Anything else||other|repeat|Any setting not asked about yet: change it once, type its name and the new value in the note, click Next one. When none are left, click Finished this list.
 end.reset|both|Finish||||Restore the factory settings in the software (Reset, Reset Profile or Restore defaults): it tells Shark Deck the factory values. Your own settings come back from the file you exported, or set them again afterwards. Rather not? Click Not in my software.
 end.close|both|Finish||||Close the official software.
 STEPS
@@ -335,7 +330,7 @@ WHERE
 custom_table() {
   cat <<'CUSTOM'
 start.open|both|Start|||window|Open the official software for your device and wait until it shows the device. Click once on its window, then click Done here.
-custom.each|both|Your recording|||repeat,describe|Do one thing in the official software: the setting Shark Deck should learn, or the one that does not work in it. Write in the note what you did (and what you expected), click Next one, then do the next thing. When you are done, click Finished this list.
+custom.each|both|Your recording|||repeat,describe|Do one thing in the official software: the setting Shark Deck should learn, or the one that does not work in it. Write in the note what you did (and what you expected), click Save this one, then do the next thing. After the last one, click That was the last one.
 end.close|both|Finish||||Close the official software.
 CUSTOM
 }
@@ -365,8 +360,8 @@ for_terminal() {
     -e 's/ Click once on its window, then click Done here\./ Then press Enter here./' \
     -e 's/click Done here/press Enter here/g' \
     -e 's/Click Not in my software/Type n (not in my software)/g' \
-    -e 's/click Next one/press Enter/g' \
-    -e 's/click Finished this list/type f (finished this list)/g' \
+    -e 's/click Save this one/press Enter/g' \
+    -e 's/click That was the last one/type f (that was the last one)/g' \
     -e 's/into the folder that just opened/into the folder named below/g'
 }
 
@@ -424,16 +419,35 @@ countdown() {
   printf '\r        \r'
 }
 
+# Where the step stands in its section, which is what s skips: G_AT of G_ALL,
+# G_LEFT from this one on.
+section() {
+  eval "$(awk -F'|' -v at="$W_I" '
+    { g[NR] = $3 }
+    END {
+      f = at; while (f > 1 && g[f - 1] == g[at]) f--
+      l = at; while (l < NR && g[l + 1] == g[at]) l++
+      printf "G_AT=%d G_ALL=%d G_LEFT=%d\n", at - f + 1, l - f + 1, l - at + 1
+    }' "$W_FILE")"
+}
+
+is_own() { case "$S_ID" in own.*) return 0 ;; esac; return 1; }
+
 show_step() {
+  section
   say ''
-  say "  ${CYAN}${BOLD}$(printf '%s' "$S_GROUP" | tr 'a-z' 'A-Z')${OFF}${DIM}  -  step $W_I of $W_TOTAL${OFF}"
+  head=$(printf '%s' "$S_GROUP" | tr 'a-z' 'A-Z')
+  [ "$G_ALL" -gt 1 ] && head="$head  $G_AT of $G_ALL"
+  say "  ${CYAN}${BOLD}${head}${OFF}${DIM}  -  step $W_I of $W_TOTAL${OFF}"
   t=$(for_terminal "$S_TEXT")
   has_flag ask && t=$(printf '%s' "$t" | sed 's/ Type the value it shows now\.$//')
   para "${BOLD}${t}${OFF}"
   w=$(where_for "$W_KIND" "$S_GROUP")
   [ -n "$w" ] && para "${DIM}Where to find it: $w${OFF}"
-  if [ "$REPEAT" = 1 ]; then
-    para "After each choice, type its name (and the value you set, if any), then Enter. After the last one, or if there is none: f."
+  if is_own; then
+    para "Do it in the official software, then type which setting and what you set it to, and press Enter. n: never mind, back to the step you were on."
+  elif [ "$REPEAT" = 1 ]; then
+    para "Type the name of each one (and the value you set, if any), then Enter. After the last one, or if there is none: f (that was the last one)."
   elif [ "$PUTBACK" = 1 ]; then
     para "Doing this step again. If the first try worked, just press Enter. If not, first put it back the way it was before this step and type r (I put it back); then do the step again and press Enter."
   elif [ "$TRIES" -gt 0 ]; then
@@ -449,12 +463,34 @@ show_step() {
     mkdir -p "$REC/attach"
     para "The folder: $REC/attach (from a virtual machine, copy the file out through a shared folder, or type n)."
   fi
-  say "  ${DIM}n: not in my software   s: skip this group   b: redo the previous step   q: finish and save${OFF}"
+  keys="n: not in my software"
+  is_own && keys="n: never mind"
+  if ! is_own && [ "$G_LEFT" -gt 1 ] && [ "$S_GROUP" != Start ] && [ "$S_GROUP" != Finish ]; then
+    if [ "$G_LEFT" = "$G_ALL" ]; then keys="$keys   s: skip all $G_ALL $S_GROUP steps"
+    else keys="$keys   s: skip the rest of $S_GROUP ($G_LEFT steps)"; fi
+  fi
+  is_own || keys="$keys   o: record a setting not listed   b: redo the previous step"
+  say "  ${DIM}$keys   q: stop and save${OFF}"
+}
+
+# "o": a step of the owner's own, now, before the step they were on: which
+# setting they changed goes in its note (the Windows window's OnOwn).
+OWN_COUNT=0
+add_own() {
+  OWN_COUNT=$((OWN_COUNT + 1))
+  own="own.$OWN_COUNT|both|Your own setting|||ask,describe|Change one setting in the official software that no step asked about, the way you would use it."
+  awk -v at="$W_I" -v row="$own" 'NR == at { print row } { print } END { if (NR < at) print row }' "$W_FILE" > "$W_FILE.new" && mv "$W_FILE.new" "$W_FILE"
+  W_TOTAL=$((W_TOTAL + 1))
+}
+drop_own() {
+  awk -v at="$W_I" 'NR != at' "$W_FILE" > "$W_FILE.new" && mv "$W_FILE.new" "$W_FILE"
+  W_TOTAL=$((W_TOTAL - 1))
 }
 
 prompt_for() {
-  if has_flag describe; then printf '  What you did, and what you expected (f: finished) > '
-  elif [ "$REPEAT" = 1 ]; then printf '  Its name, and the value you set if any (f: finished) > '
+  if is_own; then printf '  Which setting, and what you set it to > '
+  elif has_flag describe; then printf '  What you did, and what you expected (f: that was the last one) > '
+  elif [ "$REPEAT" = 1 ]; then printf '  Its name, and the value you set if any (f: that was the last one) > '
   elif has_flag ask; then printf '  The value it shows now > '
   elif [ "$PUTBACK" = 1 ]; then printf '  Enter: done   r: I put it back > '
   else printf '  Enter: done (or type a note first) > '
@@ -490,21 +526,36 @@ confirm_finish() {
     say "  ${YELLOW}Still changed on your device (put it back in the official software afterwards):${OFF}"
     printf '%s\n' "$still" | sed 's/^/    - /'
   fi
-  ask '  Finish and save now? [y/N] ' || return 0
+  ask '  Stop and save now? [y/N] ' || return 0
   case "$REPLY" in [yYoO]*) return 0 ;; esac
   return 1
 }
 
 # The steps, one at a time, as the Windows tool's step window has them: done
-# (Enter, with a note), not in my software (n), skip this group (s), redo the
-# previous step (b), finish and save (q). In a recording, a change that never
+# (Enter, with a note), not in my software (n), skip the rest of the section
+# (s), a setting not listed (o), redo the previous step (b), stop and save (q);
+# after the last step, Enter saves. In a recording, a change that never
 # reached the device is asked about once (LIVE: the filter's counts are fresh).
 walk() { # steps file, kind, record | preview
   W_FILE=$1; W_KIND=$2; W_MODE=$3
+  # A copy, as "o" adds steps to it.
+  cp "$W_FILE" "$WORK/walking"; W_FILE=$WORK/walking
   W_TOTAL=$(wc -l < "$W_FILE" | tr -d ' ')
   W_I=1; W_REDO=0; FINISHED_ALL=false
   : > "$WORK/log"; : > "$WORK/results"
-  while [ "$W_I" -le "$W_TOTAL" ]; do
+  while :; do
+    if [ "$W_I" -gt "$W_TOTAL" ]; then
+      say ''
+      say "  ${CYAN}${BOLD}ALL $W_TOTAL STEPS DONE${OFF}"
+      para "${BOLD}That was the last step. Save the recording.${OFF}"
+      say "  ${DIM}Changed a setting no step asked about? Type o to record it first.${OFF}"
+      ask '  Enter: save the recording   o: record a setting not listed > ' || break
+      case "$(printf '%s' "$REPLY" | tr -d '\r ' | tr 'A-Z' 'a-z')" in
+        o) add_own; continue ;;
+        b) W_I=$((W_I - 1)); W_REDO=1; continue ;;
+      esac
+      break
+    fi
     load_step "$W_FILE" "$W_I"
     TRIES=$(awk -F'|' -v id="$S_ID" '$1 == id && $2 == "done"' "$WORK/log" | wc -l | tr -d ' ')
     ATTEMPT=$TRIES
@@ -531,13 +582,23 @@ walk() { # steps file, kind, record | preview
           if confirm_finish; then return 0; fi
           continue
           ;;
+        o)
+          if is_own; then continue; fi
+          [ $(($(date +%s) - STEP_T)) -ge 2 ] && record_step left
+          add_own; W_NEXT=0
+          break
+          ;;
         b)
+          if is_own; then continue; fi
           if [ "$W_I" -le 1 ]; then say '  This is the first step.'; continue; fi
           [ $(($(date +%s) - STEP_T)) -ge 2 ] && record_step left
           W_I=$((W_I - 1)); W_REDO=1; W_NEXT=0
           break
           ;;
-        s) skip_group; W_NEXT=0; break ;;
+        s)
+          if is_own || [ "$S_GROUP" = Start ] || [ "$S_GROUP" = Finish ]; then continue; fi
+          skip_group; W_NEXT=0; break
+          ;;
         r)
           if [ "$PUTBACK" = 1 ]; then
             # What putting it back sent is kept apart from the step done again.
@@ -549,6 +610,8 @@ walk() { # steps file, kind, record | preview
           fi
           ;;
         n | f)
+          # An own setting the owner thought better of: gone, as if never asked.
+          if is_own; then drop_own; W_NEXT=0; break; fi
           if ! { [ "$REPEAT" = 1 ] && [ "$ATTEMPT" -gt 0 ]; }; then record_step not-offered; fi
           break
           ;;
@@ -570,7 +633,7 @@ walk() { # steps file, kind, record | preview
       if [ "$REPEAT" = 1 ]; then
         ATTEMPT=$((ATTEMPT + 1)); STEP_START=$(now_iso); STEP_T=$(date +%s)
         [ "$W_MODE" = record ] && STEP_SENT=$(sent_count)
-        say "  ${DIM}$ATTEMPT recorded. The next one, or f when the list is done.${OFF}"
+        say "  ${DIM}$ATTEMPT saved. The next one, or f: that was the last one.${OFF}"
         continue
       fi
       break
@@ -856,15 +919,36 @@ wait "$c" 2>/dev/null
 exit 0' sh "$FLAG" "$$"
 }
 
+# What the device is, from how it is connected (KindOf in the .bat). A family
+# that makes mice only (the Hub, JXC and Beken chips) says so; a ROYUAN
+# board's first USB interface is its keyboard. Not any device's: the X11, a
+# mouse, has its keyboard collection (for macros) on interface 0. Empty when
+# this does not tell.
+kind_of() {
+  case "$(cut -d'|' -f1 "$FOUND" | sort -u | paste -sd' ' -)" in
+    3554 | 373E | 1D57) echo mouse ;;
+    3151 | 39AB) first_kind ;;
+  esac
+}
+# The kind of the collection on the first USB interface: for a device of no
+# known family, the default answer to the question.
+first_kind() {
+  first=$(awk -F'|' '$7 == "0" { print $9 }' "$FOUND")
+  case "$first" in
+    *0906a101*) case "$first" in *0902a101*) ;; *) echo keyboard ;; esac ;;
+    *0902a101*) echo mouse ;;
+  esac
+}
+
 record() {
   say ''
   say "  ${CYAN}Shark Deck - recording${OFF}"
   say "  ${CYAN}======================${OFF}"
   para "The official software runs on Windows. Run it here in a Windows virtual machine (VirtualBox, GNOME Boxes, virt-manager, VMware) with the device passed through to it (the machine's USB menu), or with Wine. This tool records what goes over the USB cable on this computer, which is what reaches the device either way."
-  descs=$(cut -d'|' -f9 "$FOUND")
-  guess=''
-  case "$descs" in *0902a101*) case "$descs" in *0906a101*) ;; *) guess=M ;; esac ;; *0906a101*) guess=K ;; esac
-  KIND=''
+  # Known already: from Shark Deck (--kind), else from how it is connected.
+  # Asked only when neither tells.
+  KIND=${KIND_ARG:-$(kind_of)}
+  case "$(first_kind)" in keyboard) guess=K ;; mouse) guess=M ;; *) guess='' ;; esac
   while [ -z "$KIND" ]; do
     ask "  Is it a mouse (M) or a keyboard (K)?${guess:+ [$guess]} " || return 1
     case "${REPLY:-$guess}" in [mMsS]*) KIND=mouse ;; [kKcCtT]*) KIND=keyboard ;; esac
@@ -877,7 +961,7 @@ record() {
     say "  Shark Deck asked for a short recording, of these settings only: $asked."
   elif [ "$RECORD" != yes ]; then
     say '  What to record:'
-    say '    1  Everything, one setting at a time (about 30 minutes): for a device Shark Deck does not know yet.'
+    say '    1  Everything, one setting at a time (about 25 minutes): for a device Shark Deck does not know yet.'
     say '    2  Something specific (a few minutes): a setting missing from Shark Deck, or one that does not work.'
     say "       ${DIM}You do it in the official software and write in a note what you did.${OFF}"
     ask '  1 or 2 [1] ' || return 1
@@ -942,7 +1026,7 @@ record() {
   DEVICE_NAME=${MODEL:-device}
   say ''
   say "  ${GREEN}Recording.${OFF} Keep this window open until the end."
-  para "${DIM}Recorded: what the official software and the $DEVICE_NAME send each other. Not recorded: other devices, what you type on it (blanked), its serial number.${OFF}"
+  para "${DIM}Recorded: what the official software and the $DEVICE_NAME send each other. Not recorded: other devices, what you type on it, its serial number.${OFF}"
   walk "$WORK/steps" "$KIND" record
   ENDED=$(now_iso)
   [ "$LIVE" = 1 ] && [ "$(kept_count)" = "$K0" ] &&
@@ -999,15 +1083,31 @@ record() {
   RECORDED=yes
   say ''
   say "  ${GREEN}Ready to send: $PACK${OFF}"
-  para "capture.pcap in it is the USB traffic, report.txt describes the device."
+  typed=''
+  [ "$KIND" = keyboard ] && typed=", without what you typed on the $DEVICE_NAME"
+  para "capture.pcap in it is the USB traffic$typed, report.txt describes the device."
   say ''
-  say '  Next: open a "New device" request on GitHub and attach that file:'
-  say "  $ISSUE_URL"
+  say "  ${BOLD}Send it to Shark Deck: attach it to an issue on GitHub, so the $DEVICE_NAME can be supported.${OFF}"
+  say '    1  Open a new issue'
+  say '    2  Add it to an issue already open'
+  say '    Enter  Not now'
+  opener=''
   if [ -z "${SHARKDECK_OUT:-}" ] && command -v xdg-open >/dev/null 2>&1; then
+    opener=xdg-open
     xdg-open "$OUT_DIR" >/dev/null 2>&1 &
-    if ask '  Press Enter to open that page in your browser, or close this window ' ; then
-      xdg-open "$ISSUE_URL" >/dev/null 2>&1 &
-    fi
+  fi
+  ask '  1, 2 or Enter > ' || REPLY=''
+  case "$(printf '%s' "$REPLY" | tr -d ' \r')" in
+    1) url=$ISSUE_URL; next='On the page: fill it in, then drag the file onto it.' ;;
+    2) url=$ISSUES_URL; next='On the page: open the issue about your device, then drag the file onto a comment.' ;;
+    *) url=''; next='' ;;
+  esac
+  if [ -n "$url" ]; then
+    if [ -n "$opener" ]; then "$opener" "$url" >/dev/null 2>&1 & else say "  $url"; fi
+    say "  $next"
+  else
+    say '  To send it later: open a "New device" request on GitHub and attach that file:'
+    say "  $ISSUE_URL"
   fi
   return 0
 }
@@ -1177,7 +1277,7 @@ if [ "$PLATFORM" = linux ] && [ "$RECORD" != no ]; then
     go=yes
     if [ "$RECORD" != yes ]; then
       say ''
-      para "Next, a recording: you change each setting once in the official software while this tool records what it sends the device. About 30 minutes, or a few for one setting. Only this device's traffic is kept, what you type on it is blanked as it is recorded, and nothing is sent anywhere."
+      para "Next, a recording: you change each setting once in the official software while this tool records what it sends the device. About 25 minutes, or a few for one setting. Only this device's traffic is kept, never what you type on it, and nothing is sent anywhere."
       if ask '  Record now? [Y/n] '; then
         case "$REPLY" in [nN]*) go=no ;; esac
       else

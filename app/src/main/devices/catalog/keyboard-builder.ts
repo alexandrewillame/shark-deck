@@ -1,5 +1,10 @@
 import type { Capability } from '@shared/types/capability';
-import type { DeviceDescriptor, MagneticSpec, TravelRangeSpec } from '@shared/types/device';
+import type {
+  DeviceDescriptor,
+  LayoutStatus,
+  MagneticSpec,
+  TravelRangeSpec,
+} from '@shared/types/device';
 import type { KeyLayoutEntry } from '@shared/types/keys';
 import { ANSI_79_SG9047 } from '@shared/layouts';
 import { KB_TRAVEL_RANGE } from '@shared/keyboard-travel';
@@ -109,11 +114,18 @@ export function magneticWritable(row: Pick<KeyboardRow, 'family' | 'internalName
   return false;
 }
 
-/** The slot map for a row, and how far it is trusted. */
-export function slotLayoutFor(row: KeyboardRow): {
+/** A row's key layout and how far it is trusted (shared/types/device.ts `LayoutStatus`). */
+export interface RowLayout {
   layout: KeyLayoutEntry[] | undefined;
-  status: 'verified' | 'certain' | 'none';
-} {
+  status: LayoutStatus;
+}
+
+/**
+ * The slot map for a row, and how far it is trusted. A row with a drawing but
+ * no slot map comes back `none`; on a gen2 board the manager then places the
+ * drawing on the board's own key map (catalog/keyboards.ts `withBoardLayout`).
+ */
+export function slotLayoutFor(row: KeyboardRow): RowLayout {
   if (row.id === 3123) return { layout: ANSI_79_SG9047, status: 'verified' };
   const verified = VERIFIED_LAYOUTS[row.layout];
   if (verified) return { layout: verified, status: 'certain' };
@@ -146,10 +158,12 @@ function magneticSpec(row: KeyboardRow): MagneticSpec {
   };
 }
 
-export function buildKeyboardDescriptor(row: KeyboardRow): DeviceDescriptor {
+export function buildKeyboardDescriptor(
+  row: KeyboardRow,
+  { layout, status }: RowLayout = slotLayoutFor(row),
+): DeviceDescriptor {
   const supported = SUPPORTED_FAMILIES.has(row.family);
   const yc500 = row.family === 'yc500';
-  const { layout, status } = slotLayoutFor(row);
   const addressable = status !== 'none';
   // The yc500 driver has no magnetic pages yet (different units, 126 one-byte
   // slots, a board-wide record below revision 2.00): its one magnetic board,
@@ -226,12 +240,12 @@ export function buildKeyboardDescriptor(row: KeyboardRow): DeviceDescriptor {
                 ...(row.magnetic && !magnetic ? (['actuation'] as const) : []),
               ],
               // The keys' own steps show where a key sits; the software's
-              // pages, its picture of the board. Then "Anything else", the one
-              // open step, for a setting none of these asked about.
+              // pages, its picture of the board. A setting none of these asks
+              // about, the owner adds with the tool's "Record a setting not
+              // listed", at any step.
               record: [
                 ...(addressable ? [] : ['start', 'key', 'perkey']),
                 ...(row.magnetic && !magnetic ? ['act', 'rt', 'dz', 'dks', 'mt', 'tgl'] : []),
-                'other',
               ],
             },
           }

@@ -18,7 +18,7 @@ body:
         what a driver is written from. It needs
         [USBPcap](https://github.com/desowin/usbpcap/releases), a free USB capture
         driver the tool offers to install for you (it needs one restart), and
-        about 30 minutes. It changes nothing on the device, sends nothing
+        about 25 minutes. It changes nothing on the device, sends nothing
         anywhere, and saves a .zip on your Desktop: look through its pictures
         first, since anything attached here is public.
 
