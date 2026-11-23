@@ -769,6 +769,22 @@ export class DeviceManager extends Emitter {
     entry.liveStages = null;
     entry.liveProbed = false;
     entry.liveUnsupported = false;
+    // The OK is kept per model + firmware, and the endpoint is a new one.
+    await this.askWaiverUpFront(entry);
+  }
+
+  /**
+   * A device a backup cannot fully cover asks for its OK when its menus open,
+   * as one identified by its answer does (`applyIdentity`). One recognised by
+   * its USB id alone — a Beken mouse on its cable — asked only once its first
+   * change had been refused: the X11's owner saw the menus open, then a
+   * change answered by "some settings can't be backed up" (issue #2).
+   */
+  private async askWaiverUpFront(e: Entry): Promise<void> {
+    if (e.descriptor.simulated || e.descriptor.identity === 'pending') return;
+    if (isReadOnly(e.descriptor)) return;
+    if (e.driver.backupPolicy().kind !== 'partial') return;
+    await this.waived(e).catch(() => undefined);
   }
 
   /** The renderer-facing snapshot for a freshly-attached device. Shared by the
@@ -1272,6 +1288,7 @@ export class DeviceManager extends Emitter {
           lastWedge: 0,
         });
         changed = true;
+        await this.askWaiverUpFront(this.entries.get(id)!);
       }
 
       const entry = this.entries.get(id)!;

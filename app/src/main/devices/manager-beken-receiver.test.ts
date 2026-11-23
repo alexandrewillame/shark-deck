@@ -52,6 +52,7 @@ vi.mock('../store', () => ({
     deviceState: () => '/tmp/device-state.json',
     deviceColors: () => '/tmp/device-colors.json',
     onboardProfileNames: () => '/tmp/onboard-names.json',
+    backupWaivers: () => '/tmp/backup-waivers.json',
   },
   readJson: async (_p: string, d: unknown) => d,
   writeJson: async () => undefined,
@@ -105,6 +106,32 @@ describe('the receiver several brands share', () => {
     expect(channelPath(mgr)).toBe(SETTINGS.path);
     expect(new Set(opened)).toEqual(new Set([NOTIFY.path]));
     // Identifying sent nothing at all.
+    expect(written).toEqual([]);
+  });
+
+  it('asks for the OK on the first look, on its cable as through the receiver (issue #2)', async () => {
+    modelByte = 0x55;
+    const mgr = new DeviceManager();
+    await scanOnce(mgr);
+    expect(mgr.list()[0]!.backupWaiver?.unreadable).toContain('mouseLighting');
+
+    // On its cable it is known by its USB id alone, and asked all the same:
+    // it used to ask only once its first change had been refused.
+    const cable = (col: string, usagePage: number) => ({
+      ...collection(col, usagePage),
+      path: `\\?\HID#VID_1D57&PID_FA55&MI_02&${col}#cable`,
+      productId: 0xfa55,
+      serialNumber: '',
+      product: 'X11 Mouse',
+    });
+    bus.length = 0;
+    bus.push(cable('Col03', 0x000a), cable('Col04', 0x000b));
+    written.length = 0;
+    const wired = new DeviceManager();
+    await scanOnce(wired);
+    const d = wired.list()[0]!;
+    expect([d.displayName, d.connection]).toEqual(['Attack Shark X11', 'usb']);
+    expect(d.backupWaiver?.unreadable).toContain('mouseLighting');
     expect(written).toEqual([]);
   });
 
