@@ -91,6 +91,9 @@ export const BUTTON_ACTIONS_TREE: ButtonActionDef[] = [
   },
   { key: 'firepower', vendorValue: '4', wire: 0x04, labelKey: 'btnact.firepower', fire: true },
   { key: 'combo', vendorValue: '5', wire: 0x05, labelKey: 'btnact.combo', combo: true },
+  // The Beken mice's "Easy Aim" (the X8 PRO's recording): a lower DPI while
+  // held. No Hub mouse has it; its byte is the Beken one (drivers/beken-8k-mouse.ts).
+  { key: 'easyAim', vendorValue: '', wire: 0x10, labelKey: 'btnact.easyAim' },
   {
     key: 'multimedia',
     vendorValue: '1005',

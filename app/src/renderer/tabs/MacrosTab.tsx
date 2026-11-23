@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { HeroPane, type TabProps } from './common';
 import { useT } from '../state/i18n';
 import { MacroEditor } from '../components/macro/MacroEditor';
@@ -12,9 +13,17 @@ import { MacroEditor } from '../components/macro/MacroEditor';
  */
 export function MacrosTab({ device }: TabProps) {
   const t = useT();
+  // The library sits under the device photo, beside the editor at any width:
+  // stacked above the editor on a normal-size window, it read as part of it.
+  const [aside, setAside] = useState<HTMLDivElement | null>(null);
   return (
-    <HeroPane device={device} title={t('cfg.tab.macros')} sub={t('cfg.tab.macros.desc')}>
-      <MacroEditor device={device} />
+    <HeroPane
+      device={device}
+      title={t('cfg.tab.macros')}
+      sub={t('cfg.tab.macros.desc')}
+      asideRef={setAside}
+    >
+      <MacroEditor device={device} libraryHost={aside} />
     </HeroPane>
   );
 }

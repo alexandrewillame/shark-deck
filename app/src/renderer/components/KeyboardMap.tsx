@@ -170,6 +170,14 @@ export interface KeyGauge {
  */
 const DRAG_MIN_PX = 8;
 
+/** What a key shows: its legend; a knob's control, its part of "Knob −"
+ *  ("−"), the outline around the three saying "Knob" once. */
+const faceOf = (k: { label: string; control?: string }) =>
+  k.control === 'knob' ? k.label.replace(/^Knob\s+/, '') : k.label;
+
+/** The rows a key spans: 1, or 2 for a numpad's + and Enter (`h` 1.87). */
+const rowsOf = (k: { h?: number }) => (k.h && k.h > 1.2 ? Math.round(k.h) : 1);
+
 export const KeyboardMap = forwardRef<
   HTMLDivElement,
   {
@@ -371,19 +379,30 @@ export const KeyboardMap = forwardRef<
     return { min, span: max - min };
   }, [keys]);
 
-  // The same thing vertically. Every key is 1u tall (KeyLayoutEntry has no
-  // height), so a row owns the cell [y, y + 1) and the board spans the last
-  // row's bottom — including the extra 0.2u a layout may put above the number
-  // row. No `bakedGap` here: a vendor layout bakes the gutter into `w` only,
-  // never into `y`, so the vertical gutter is always the full GAP_U.
+  // The same thing vertically. A row owns the cell [y, y + 1), a taller key
+  // (a numpad's + and Enter, `h` 1.87: two rows less the gutter) as many rows
+  // as it spans, and the board spans the last row's bottom — including the
+  // extra 0.2u a layout may put above the number row. No `bakedGap` here: the
+  // vertical gutter is always the full GAP_U.
   const yBounds = useMemo(() => {
     let min = Infinity;
     let max = -Infinity;
     for (const k of keys) {
       if (k.y < min) min = k.y;
-      if (k.y + 1 > max) max = k.y + 1;
+      const end = k.y + rowsOf(k);
+      if (end > max) max = end;
     }
     return { min, span: max - min };
+  }, [keys]);
+
+  // A knob's turns and press (KeyLayoutEntry.control): one control, outlined
+  // as one, so it does not read as three keys the board does not have.
+  const knobBox = useMemo(() => {
+    const ks = keys.filter((k) => k.control === 'knob');
+    if (!ks.length) return null;
+    const x = Math.min(...ks.map((k) => k.x));
+    const end = Math.max(...ks.map((k) => k.x + (k.w ?? 1)));
+    return { x, span: end - x, y: Math.min(...ks.map((k) => k.y)) };
   }, [keys]);
 
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -751,10 +770,14 @@ export const KeyboardMap = forwardRef<
                   key={`${k.row}-${k.col}`}
                   data-row={k.row}
                   data-col={k.col}
-                  className={`kbkey ${on ? 'sel' : ''} ${led ? 'is-lit' : ''}`}
+                  className={`kbkey ${on ? 'sel' : ''} ${led ? 'is-lit' : ''} ${k.control ? 'kbkey-control' : ''}`}
                   style={{
                     left: `calc(var(--kb-u) * ${k.x - xBounds.min} + var(--kb-gap) / 2)`,
                     width: `calc(var(--kb-u) * ${w} - var(--kb-gap))`,
+                    // A key taller than its row spans the rows below it.
+                    ...(rowsOf(k) > 1
+                      ? { height: `calc(var(--kb-h) + var(--kb-u) * ${rowsOf(k) - 1})` }
+                      : {}),
                     // On the look-only board the label keeps its own readable
                     // colour (+ shadow, see .kbmap-static) instead of flipping to
                     // the near-black --on-accent, which vanished on dim keys.
@@ -850,7 +873,7 @@ export const KeyboardMap = forwardRef<
                 >
                   {showLabels && (
                     <span className="kbkey-label">
-                      {icon ? <Icon name={icon} size={13} /> : k.label}
+                      {icon ? <Icon name={icon} size={13} /> : faceOf(k)}
                     </span>
                   )}
                   {cap && <span className="kbkey-cap">{cap(k)}</span>}
@@ -890,6 +913,20 @@ export const KeyboardMap = forwardRef<
             })}
           </div>
         ))}
+        {knobBox && (
+          <div
+            className="kbmap-knob"
+            aria-hidden="true"
+            style={{
+              left: `calc(var(--kb-pad) + var(--kb-u) * ${knobBox.x - xBounds.min} - 3px)`,
+              top: `calc(var(--kb-pad) + var(--kb-u) * ${knobBox.y - yBounds.min} - 3px)`,
+              width: `calc(var(--kb-u) * ${knobBox.span} + 6px)`,
+              height: 'calc(var(--kb-u) + 6px)',
+            }}
+          >
+            <span>Knob</span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -18,7 +18,7 @@ import type {
   Provenance,
   SupportPlan,
 } from './device';
-import type { KeyLayoutEntry } from './keys';
+import type { KeyLayoutEntry, KnobSlots } from './keys';
 
 export interface LiveDevice {
   /** unique per physical endpoint: `${model}:${serialOrPath}` */
@@ -152,6 +152,7 @@ export interface DeviceUi {
     cols: number;
     layout?: KeyLayoutEntry[];
     layoutStatus?: LayoutStatus;
+    knobSlots?: KnobSlots;
   };
   /** magnetic-switch limits (absent parts fall back to KB_TRAVEL_RANGE) */
   magnetic?: MagneticSpec;
@@ -175,6 +176,17 @@ export interface DeviceUi {
   buttonSlotOrder?: number[];
   /** which BUTTON_ACTIONS_TREE keys this model offers */
   buttonActions?: string[];
+  /**
+   * A button's shortcut is one key with any modifiers (the Beken mice): the
+   * Buttons tab sends it once that key is in, not on a modifier picked first,
+   * which the mouse refuses on its own.
+   */
+  comboOneKey?: boolean;
+  /**
+   * A button's rapid fire clicks while it is held, with no count or interval to
+   * set (the Beken mice): the Buttons tab shows no fields for it.
+   */
+  fireWhileHeld?: boolean;
   /** true if the sensor exposes an LP/HP performance-mode select */
   sensorModes?: boolean;
   /** DPI dynamic-sensitivity modes, if the model has that pane */
@@ -209,6 +221,12 @@ export interface MacroLimits {
   /** name-field length, or absent when the device stores no name at all */
   nameMax?: number;
   delaysConsumeSteps: boolean;
+  /**
+   * A device whose key events carry the pause after them (a keyboard,
+   * shared/keyboard-macro.ts): a pause of 1 to this many ms rides on its
+   * event's own byte, any other takes the room of another step.
+   */
+  inlineWaitMs?: number;
 }
 
 // ---------------------------------------------------------------------------

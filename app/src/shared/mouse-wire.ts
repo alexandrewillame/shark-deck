@@ -311,6 +311,20 @@ export const hubMacroSlots = (codec: DpiCodecId | undefined): number =>
 export const V8_MACRO_NAME_LEN_OFF = 0x00;
 export const V8_MACRO_NAME_OFF = 0x01;
 export const V8_MACRO_NAME_MAX = 30;
+/**
+ * A macro's name as a V8 slot keeps it: at most V8_MACRO_NAME_MAX characters
+ * of printable ASCII, `?` for anything else (the slot has no byte for it),
+ * "Macro" when blank. A macro pushed again is found in its slot by this.
+ */
+export function v8MacroName(name: string): string {
+  return [...(name.trim() || 'Macro')]
+    .slice(0, V8_MACRO_NAME_MAX)
+    .map((c) => {
+      const code = c.codePointAt(0) ?? 0x3f;
+      return code >= 0x20 && code <= 0x7e ? c : '?';
+    })
+    .join('');
+}
 export const V8_MACRO_COUNT_OFF = 0x1f;
 export const V8_MACRO_BODY_OFF = 0x20;
 export const V8_MACRO_STEP_BYTES = 5;

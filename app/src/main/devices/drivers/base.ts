@@ -539,7 +539,7 @@ export abstract class Driver {
   async setKeyRemap(_layer: 'base' | 'fn', _index: number, _action: string): Promise<WriteResult> {
     return this.notSupported('Key remap');
   }
-  async saveMacro(_m: Macro): Promise<WriteResult> {
+  async saveMacro(_m: Macro, _slot?: number): Promise<WriteResult> {
     return this.notSupported('Macros');
   }
   async deleteMacro(_id: string): Promise<WriteResult> {

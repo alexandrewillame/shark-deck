@@ -20,6 +20,12 @@ import {
   sideEffectName,
   sideEffectWire,
 } from '@shared/lighting';
+import {
+  asKeyboardStores,
+  KB_MACRO_INLINE_WAIT_MS,
+  KB_MACRO_MAX_WAIT_MS,
+  macroSlotOf,
+} from '@shared/keyboard-macro';
 import { decodeKeyQuad } from '@shared/keyboard-fn-codes';
 
 /**
@@ -186,6 +192,24 @@ export function decodeQuad(slot: number, raw: [number, number, number, number]):
 }
 
 const KEYMATRIX_CHUNKS = 8;
+
+/**
+ * How long a board takes to save a committed write before a paged read can be
+ * trusted — measured on an R98 HE (firmware 5.06, 2026-11-22), one write and
+ * one read at a time:
+ *
+ * - a key map write: a read within ~50 ms answered the OLD binding, or
+ *   nothing; from 100 ms, the new one;
+ * - a magnetism write: nothing answered for ~100 ms, then up to ~300 ms a page
+ *   read answered WRONG values (Esc's 2.0 mm read as 138 and 0 units), and
+ *   from ~400 ms the right ones.
+ *
+ * Paged replies carry no command echo to catch a wrong answer with, so a read
+ * waits the board out (`untilSaved`). Writes need no wait: two committed
+ * writes back to back both landed, at any spacing.
+ */
+export const KEYMATRIX_SAVE_MS = 120;
+export const MAGNETISM_SAVE_MS = 450;
 const KEYMATRIX_SLOT_STRIDE = 4;
 /**
  * Reply payload offset for GET_KEYMATRIX/GET_FN's bulk chunk data —
@@ -202,10 +226,8 @@ const KEYMATRIX_SLOT_STRIDE = 4;
  * chunk is not a multiple of the stride.
  */
 const KEYMATRIX_REPLY_OFFSET = 1;
-/** SET_FN writes the whole table: 10 chunks x 56 bytes = 128 slots x 4 bytes. */
+/** The Fn layer's slots: 8 pages of 16, as GET_FN reads them. SET_FN writes one (setFnSlot). */
 const FN_MATRIX_SLOTS = 128;
-const FN_CHUNK = 56;
-const FN_WRITE_CHUNKS = 10;
 
 /** Re-exported so this family's own modules keep importing it from here
  *  (compx-he-keyboard); it lives in base.ts because `writeVerified`'s
@@ -292,77 +314,144 @@ function decodeUserPicBytes(bytes: number[]): PerKeyColor[] {
 }
 
 // -- macro wire encoding ------------------------------------------------
-// 256-byte payload: [index, stepCount, repeat, reserved] header then 4 bytes
-// per step: [kind, value, msLo, msHi]. kind 1=key down, 2=key up, 3=delay,
-// 4=mouse down, 5=mouse up. Ported shape (vendor `_setMacro`), checksum inferred.
+/**
+ * The keyboard's macros, as Attack Shark Driver v4 writes them to an R98 HE
+ * (its owner's recording and its own macros read back, 2026-11-22): a
+ * two-byte repeat count, then the key events — two bytes each, the usage and
+ * a byte whose top bit says pressed and whose low seven bits are the wait
+ * after it, 1-127 ms, or 0 with the wait in two more bytes (up to 65535 ms).
+ * The rule and its examples: shared/keyboard-macro.ts.
+ *
+ * `provenance: verified-capture` for the frame and the events. This replaces
+ * two guesses: a `[index, count, repeat, 0]` + `[kind, value, msLo, msHi]`
+ * shape sent with the pre-capture `bit7` checksum (which the board drops),
+ * then a seven-bit wait capped at 127 ms, which wrote a 0 ms wait as "two
+ * wait bytes follow" — the next event read as a wait of up to 65 s.
+ */
+/**
+ * The macros' room on the board: 256 bytes each, read as one run of 64-byte
+ * pages — `GET_MACRO 8b 00 <page>`, macro n in pages 4n to 4n+3, unwritten
+ * flash (0xFF) past the last. `provenance: verified-capture` for the read (an
+ * R98 HE holding three macros of the official software's and one of ours);
+ * the official software never reads a macro (it keeps its own copies).
+ */
 const MACRO_BYTES = 256;
-/** Chunks in a GET_MACRO sweep, and where each reply's data starts. Same
- *  no-echo, no-checksum family as GET_USERPIC. `provenance: inferred`. */
-const MACRO_READ_CHUNKS = 5;
+const MACRO_READ_PAGES = 4;
+/**
+ * Macro slots a keyboard holds: 64 — the whole 16 KB a read reaches (pages
+ * 0-255). On an R98 HE (2026-11-23) a macro written with the slot byte at 3,
+ * 15, 31 and 63 landed in that slot and nowhere else, and read back.
+ * `provenance: verified-capture` for writing and reading them; that a key
+ * plays the top ones is the board's to show.
+ */
+export const KB_MACRO_SLOTS = 64;
 const MACRO_REPLY_OFFSET = 1;
-const MACRO_HEADER = 4;
-const MK = { KEY_DOWN: 1, KEY_UP: 2, DELAY: 3, MOUSE_DOWN: 4, MOUSE_UP: 5 } as const;
-/** Step records one onboard slot holds — surfaced to the renderer through
- *  `DeviceUi.macroLimits` so the macro editor can warn before truncation. */
-export const KB_MACRO_MAX_STEPS = Math.floor((MACRO_BYTES - MACRO_HEADER) / 4);
+const MACRO_HEADER = 2;
+/** Payload bytes per SET_MACRO frame, as the official software sends them. */
+const MACRO_CHUNK = 56;
+/**
+ * The most a write may fill. Writes go in 56-byte chunks, so a fifth chunk
+ * would run from byte 224 to 279 — 24 bytes into the next macro. Four chunks
+ * keep every write inside macro 0's own 256 bytes.
+ */
+const MACRO_WRITE_BYTES = 4 * MACRO_CHUNK;
+/**
+ * The empty event that closes the events, always written. The board builds a
+ * slot in a 256-byte buffer and saves all of it: bytes a write does not send
+ * keep the last macro's (seen on an R98 HE), so a macro filling its chunks
+ * exactly would run on into them.
+ */
+const MACRO_END = 2;
+const MACRO_PRESSED = 0x80;
+/**
+ * Room one slot gives, in two-byte units — what the macro editor counts: a
+ * key event takes one, and its wait one more when it is 0 or over 127 ms
+ * (MacroLimits.inlineWaitMs).
+ */
+export const KB_MACRO_MAX_STEPS = Math.floor((MACRO_WRITE_BYTES - MACRO_HEADER - MACRO_END) / 2);
 
-/** A step's `value` is a hex string for keys ("04"=A) or a small int for mouse buttons. */
+/** A step's `value` is a hex string for keys ("04"=A). */
 function stepValue(v: number | string | undefined): number {
   if (typeof v === 'number') return v & 0xff;
   if (typeof v === 'string' && /^[0-9a-fA-F]{1,4}$/.test(v)) return parseInt(v, 16) & 0xff;
   return 0;
 }
 
+/**
+ * The macro's payload: as many bytes as its events take, from the steps as
+ * the keyboard holds them (shared/keyboard-macro.ts `asKeyboardStores`: a
+ * wait rides on the key event before it; a mouse button or pointer motion is
+ * left out, never written as a phantom key). Stops before an event that would
+ * not fit the slot.
+ */
 export function encodeMacro(m: Macro): number[] {
-  const buf = new Array(MACRO_BYTES).fill(0);
-  const events: [number, number, number][] = [];
-  for (const s of m.steps) {
-    if (s.type === 'delay') events.push([MK.DELAY, 0, Math.max(0, Math.round(s.ms ?? 0))]);
-    else if (s.type === 'mouse')
-      events.push([s.action === 'up' ? MK.MOUSE_UP : MK.MOUSE_DOWN, stepValue(s.value), 0]);
-    // Pointer motion has no record kind here, same as the V8 slot (see
-    // mouse-macro-codec.ts, which drops it too). Without this branch a 'move'
-    // step fell through to the key case below and — having no `value` —
-    // encoded as a phantom "press usage 0x00", silently corrupting the macro
-    // rather than just omitting the unrepresentable step.
-    else if (s.type === 'move') continue;
-    else events.push([s.action === 'up' ? MK.KEY_UP : MK.KEY_DOWN, stepValue(s.value), 0]);
+  const stored = asKeyboardStores(m.steps);
+  const repeat = Math.max(1, Math.min(0xffff, Math.round(m.repeatCount || 1)));
+  const buf = [repeat & 0xff, (repeat >> 8) & 0xff];
+  for (let i = 0; i < stored.length; i++) {
+    const s = stored[i]!;
+    if (s.type !== 'key') continue;
+    const next = stored[i + 1];
+    const wait = next?.type === 'delay' ? Math.min(KB_MACRO_MAX_WAIT_MS, next.ms ?? 0) : 0;
+    const event = [stepValue(s.value), s.action === 'down' ? MACRO_PRESSED : 0];
+    if (wait >= 1 && wait <= KB_MACRO_INLINE_WAIT_MS) event[1]! |= wait;
+    else event.push(wait & 0xff, (wait >> 8) & 0xff);
+    if (buf.length + event.length > MACRO_WRITE_BYTES - MACRO_END) break;
+    buf.push(...event);
   }
-  const max = KB_MACRO_MAX_STEPS;
-  const use = events.slice(0, max);
-  buf[0] = 0;
-  buf[1] = use.length & 0xff;
-  buf[2] = Math.max(1, Math.min(255, m.repeatCount || 1));
-  use.forEach(([kind, val, ms], i) => {
-    const o = MACRO_HEADER + i * 4;
-    buf[o] = kind;
-    buf[o + 1] = val;
-    buf[o + 2] = ms & 0xff;
-    buf[o + 3] = (ms >> 8) & 0xff;
-  });
   return buf;
 }
 
+/**
+ * The events of a macro's bytes: where they end (the offset of the empty event
+ * that closes them), or -1 when they run past what `buf` holds.
+ */
+function macroEnd(buf: readonly number[]): number {
+  let o = MACRO_HEADER;
+  while (o < Math.min(buf.length, MACRO_BYTES)) {
+    const usage = buf[o]!;
+    // The events end at an empty one; 0xFF is unwritten flash past them.
+    if (usage === 0 || usage === 0xff) return o;
+    if (o + 1 >= buf.length) return -1;
+    o += (buf[o + 1]! & KB_MACRO_INLINE_WAIT_MS) === 0 ? 4 : 2;
+  }
+  return o >= MACRO_BYTES ? MACRO_BYTES : -1;
+}
+
 export function decodeMacro(id: string, name: string, buf: number[]): Macro {
-  const count = buf[1] ?? 0;
-  const repeatCount = buf[2] || 1;
+  const repeatCount = (buf[0] ?? 0) | ((buf[1] ?? 0) << 8) || 1;
   const steps: Macro['steps'] = [];
-  for (let i = 0; i < count; i++) {
-    const o = MACRO_HEADER + i * 4;
-    const kind = buf[o] ?? 0;
-    const val = buf[o + 1] ?? 0;
-    const ms = (buf[o + 2] ?? 0) | ((buf[o + 3] ?? 0) << 8);
-    if (kind === MK.DELAY) steps.push({ type: 'delay', ms });
-    else if (kind === MK.MOUSE_DOWN || kind === MK.MOUSE_UP)
-      steps.push({ type: 'mouse', action: kind === MK.MOUSE_UP ? 'up' : 'down', value: val });
-    else if (kind === MK.KEY_DOWN || kind === MK.KEY_UP)
-      steps.push({
-        type: 'key',
-        action: kind === MK.KEY_UP ? 'up' : 'down',
-        value: val.toString(16).padStart(2, '0'),
-      });
+  let o = MACRO_HEADER;
+  while (o + 1 < Math.min(buf.length, MACRO_BYTES)) {
+    const usage = buf[o]!;
+    if (usage === 0 || usage === 0xff) break;
+    const b = buf[o + 1]!;
+    steps.push({
+      type: 'key',
+      action: b & MACRO_PRESSED ? 'down' : 'up',
+      value: usage.toString(16).padStart(2, '0'),
+    });
+    let wait = b & KB_MACRO_INLINE_WAIT_MS;
+    o += 2;
+    if (!wait) {
+      wait = (buf[o] ?? 0) | ((buf[o + 1] ?? 0) << 8);
+      o += 2;
+    }
+    if (wait) steps.push({ type: 'delay', ms: wait });
   }
   return { id, name, repeatCount, steps };
+}
+
+/** A macro's payload put back together from its SET_MACRO frames (report id
+ *  off): `0b <macro> <chunk> <length> <last> 00 00 <ck>`, then the bytes. */
+export function macroPayloadOf(frames: readonly ArrayLike<number>[]): number[] {
+  const bytes: number[] = [];
+  for (const f of frames) {
+    const at = (f[2] ?? 0) * MACRO_CHUNK;
+    const len = Math.min(f[3] ?? 0, MACRO_CHUNK);
+    for (let i = 0; i < len; i++) bytes[at + i] = f[8 + i] ?? 0;
+  }
+  return Array.from(bytes, (b) => b ?? 0);
 }
 
 /** Re-exported for the existing call sites and `compx-keyboard.test.ts`; the
@@ -420,6 +509,19 @@ export class CompxKeyboard extends Driver {
   // Annotated `number`, not left to infer the literal 30, so a subclass (or a
   // test) can pace itself differently.
   protected readonly settleMs: number = 30;
+
+  /** When the board will have saved the last committed write (see KEYMATRIX_SAVE_MS). */
+  private savedAt = 0;
+  /** A committed write was just sent: the board is saving for `ms`. */
+  protected savingFor(ms: number): void {
+    this.savedAt = Math.max(this.savedAt, Date.now() + ms);
+  }
+  /** Wait until the board has saved, before a paged read. An unpaced driver
+   *  (a test's, the recording check's) has nothing real to wait for. */
+  protected async untilSaved(): Promise<void> {
+    const wait = this.savedAt - Date.now();
+    if (wait > 0 && this.settleMs) await delay(wait);
+  }
 
   /**
    * This family's replies do NOT all start at a fixed offset — the firmware
@@ -699,6 +801,12 @@ export class CompxKeyboard extends Driver {
     const off = feaPayloadStart(r, KB_CMD.GET_LEDPARAM);
     const effIdx = r[off] ?? 1;
     const num = ((r[off + 4] ?? 0) << 16) | ((r[off + 5] ?? 0) << 8) | (r[off + 6] ?? 0);
+    // The colour mode is the option's low nibble, read as setLighting writes
+    // it: a music effect says rainbow with 0 (plain is 4), the others with 8.
+    // Seen on an R98 HE: Music Follow from Driver v4 reads `option 00`.
+    const id = KB_LIGHT_EFFECTS_TABLE[effIdx]?.id;
+    const music = id === 'LightMusicFollow2' || id === 'LightMusicFollow3';
+    const colourMode = (r[off + 3] ?? 0) & 0x0f;
     return [
       {
         zone: 'keyboard',
@@ -707,7 +815,7 @@ export class CompxKeyboard extends Driver {
         brightness: brightnessFromWire(r[off + 2] ?? 4),
         color: numToRgb(num === WHITE_SENTINEL ? 0xffffff : num),
         enabled: effIdx !== 0,
-        dazzle: ((r[off + 3] ?? 0) & 0x0f) === 8,
+        dazzle: music ? colourMode === 0 : colourMode === 8,
         option: ((r[off + 3] ?? 0) >> 4) & 0x0f,
       },
     ];
@@ -792,26 +900,50 @@ export class CompxKeyboard extends Driver {
   }
 
   /**
-   * Read back the single onboard macro slot. GET_MACRO returns the 256-byte
-   * payload in 56-byte chunks; concatenate and decode. `provenance: inferred`
-   * (chunk framing follows the per-key `GET_USERPIC` pattern).
+   * Every macro the board holds, slot by slot (see MACRO_BYTES), each read
+   * only as far as its events run — one page for most — up to the first slot
+   * of unwritten flash. An empty slot between two macros is skipped, not the
+   * end. Each comes back as `onboard-<slot>`, named by its number: the board
+   * keeps no names.
+   *
+   * The stop is what keeps this to a few pages: all 64 slots would be 64
+   * paced reads, two seconds, on every open of the Macros or Keys tab. Shark
+   * Deck itself only pushes to a slot in use or the first empty one, so it
+   * leaves no macro past unwritten flash; one put there by other software is
+   * missing from the list (a key bound to it still says "Macro 64"), never
+   * written over — Push offers that first empty slot, which comes before it.
    */
   override async readMacros(): Promise<Macro[]> {
-    const bytes = await this.ch.transaction((io) =>
-      this.readMacroWith(io.write, io.read, MACRO_READ_CHUNKS),
-    );
-    if (!bytes) return [];
-    const slot = bytes.slice(0, MACRO_BYTES);
-    // Two empty-slot shapes. All-zero is a slot that was written and cleared;
-    // all-0xFF is erased flash, which is what a factory board actually returns
-    // (FINDINGS-R85HE.md records the bare GET_MACRO reply as `00 ff ff ff …`,
-    // "empty slot = 0xFF fill"). Only the first was checked, so an erased slot
-    // reached decodeMacro with `count = buf[1] = 0xff` and fabricated 255
-    // steps out of padding — four times KB_MACRO_MAX_STEPS.
-    if (!slot.some((b) => b)) return [];
-    if (slot.every((b) => b === 0xff)) return [];
-    const m = decodeMacro('onboard', 'Onboard macro', slot);
-    return m.steps.length ? [m] : [];
+    await this.untilSaved();
+    return this.ch.transaction(async (io) => {
+      const out: Macro[] = [];
+      for (let slot = 0; slot < KB_MACRO_SLOTS; slot++) {
+        const bytes = await this.readMacroSlotWith(io, slot);
+        if (!bytes) return out;
+        if (bytes.slice(0, MACRO_HEADER + 2).every((b) => b === 0xff)) break;
+        const m = decodeMacro(`onboard-${slot}`, `Macro ${slot + 1}`, bytes);
+        if (m.steps.length) out.push(m);
+      }
+      return out;
+    });
+  }
+
+  /** One slot's bytes, read only as far as its events run; null when a page goes unanswered. */
+  protected async readMacroSlotWith(
+    io: {
+      write: (frame: Uint8Array) => Promise<void>;
+      read: (timeoutMs?: number, featureLen?: number) => Promise<Uint8Array | null>;
+    },
+    slot: number,
+  ): Promise<number[] | null> {
+    const bytes: number[] = [];
+    for (let p = 0; p < MACRO_READ_PAGES; p++) {
+      const page = await this.readMacroWith(io.write, io.read, 1, slot * MACRO_READ_PAGES + p);
+      if (!page) return null;
+      bytes.push(...page);
+      if (macroEnd(bytes) !== -1) break;
+    }
+    return bytes;
   }
 
   /**
@@ -828,15 +960,20 @@ export class CompxKeyboard extends Driver {
    * every sibling in this family (GET_KEYMATRIX / GET_USERPIC /
    * GET_MULTI_MAGNETISM) starts its data at byte 1, and the captured reply
    * agrees that byte 1 is not a command echo.
+   *
+   * The query is `[0, page]`. It was `[0, 0xff, page]`, the key map's shape,
+   * which an R98 HE answers with 0xFF fill whatever it holds — so a macro
+   * pushed and stored read back as an empty slot.
    */
   protected async readMacroWith(
     write: (frame: Uint8Array) => Promise<void>,
     read: (timeoutMs?: number, featureLen?: number) => Promise<Uint8Array | null>,
     chunks: number,
+    first = 0,
   ): Promise<number[] | null> {
     const bytes: number[] = [];
-    for (let n = 0; n < chunks; n++) {
-      const query = this.frame(KB_CMD.GET_MACRO, [0, 0xff, n]);
+    for (let n = first; n < first + chunks; n++) {
+      const query = this.frame(KB_CMD.GET_MACRO, [0, n]);
       await write(query);
       if (this.settleMs) await delay(this.settleMs);
       const back = await read(250, this.d.reportLength);
@@ -913,22 +1050,23 @@ export class CompxKeyboard extends Driver {
     if (effect === KB_PERKEY_EFFECT_INDEX) rgb = [0, 200, 200];
 
     /**
-     * Off is sent as a fully zeroed frame, not merely as effect 0.
+     * Off is effect 0 at the lowest speed and brightness, plain colour mode,
+     * the colour kept — not merely effect 0.
      *
-     * Selecting Off left `speed`, `brightness`, the option nibble and the RGB
-     * triple at whatever the previous effect had, so the board received
-     * "effect 0, brightness 4, colour <something>". Reported symptom: choosing
-     * Off changes nothing — the lights stay as they were.
+     * Selecting Off left `speed`, `brightness` and the option nibble at
+     * whatever the previous effect had, so the board received "effect 0,
+     * brightness 4". Reported symptom: choosing Off changes nothing — the
+     * lights stay as they were.
      *
-     * Zeroing the whole payload is what the vendor sends and removes the
-     * ambiguity: there is no reading of `00 07 00 00 00 00 00 00 00` other
-     * than "dark". `provenance: inferred` — reasoned from the effect table's
-     * own "LightOff carries no parameters" (it declares no brightness, speed,
-     * colour or dazzle), not from a capture of the vendor's Off frame.
+     * `provenance: verified-capture`: Attack Shark Driver v4 choosing Off on
+     * an R98 HE (its owner's recording, 2026-11-22) sends
+     * `07 00 04 00 07 fa ff fa` — speed 0 (wire 4: speed is inverted),
+     * brightness 0, option 7, the colour it had. This sent all zeros, which
+     * was reasoned from the effect table rather than seen.
      */
     const args =
       effect === 0
-        ? [0, 0, 0, 0, 0, 0, 0]
+        ? [0, speedToWire(0), 0, 7, ...rgb]
         : [effect, speedToWire(l.speed), brightnessToWire(l.brightness), option, ...rgb];
     return this.writeVerified(KB_CMD.SET_LEDPARAM, args, {
       // A streaming frame skips the read-back: it is one of several a second
@@ -958,13 +1096,12 @@ export class CompxKeyboard extends Driver {
   override async setSideLighting(l: SideLightingSettings): Promise<WriteResult> {
     const effect = l.enabled ? sideEffectWire(l.effect) : 0;
     const option = l.dazzle ? 8 : 7;
-    const args = [
-      effect,
-      sideSpeedToWire(l.speed),
-      brightnessToWire(l.brightness),
-      option,
-      ...l.color,
-    ];
+    // Off as the official software sends it (R98 HE recording, 2026-11-22):
+    // `08 00 00 00 07 fa ff fa` — speed and brightness 0, plain, colour kept.
+    const args =
+      effect === 0
+        ? [0, sideSpeedToWire(0), 0, 7, ...l.color]
+        : [effect, sideSpeedToWire(l.speed), brightnessToWire(l.brightness), option, ...l.color];
     return this.writeVerified(KB_CMD.SET_SLEDPARAM, args, {
       getCommand: KB_CMD.GET_SLEDPARAM,
       compare: (p) => (p[0] ?? -1) === effect,
@@ -1214,10 +1351,13 @@ export class CompxKeyboard extends Driver {
     // honest verification — a paged sweep, in the shape the firmware expects.
     // The last four bytes ARE the quad, in order — so a raw quad goes on the
     // wire exactly as given, and a plain usage still produces `[0, hi, lo, 0]`.
-    return this.writeVerified(
+    const r = await this.writeVerified(
       KB_CMD.SET_KEYMATRIX,
       keymatrixArgs(slot, quad, { commit: true, zone: 0 }),
     );
+    // That re-read waits for the board to save it (KEYMATRIX_SAVE_MS).
+    this.savingFor(KEYMATRIX_SAVE_MS);
+    return r;
   }
 
   /**
@@ -1318,6 +1458,7 @@ export class CompxKeyboard extends Driver {
     // `isEchoOf` correctly refuses, but "busy for another 30ms" then surfaced
     // to the user as "couldn't read the current base-layer bindings from the
     // device". Retrying the sweep once costs a beat and removes that.
+    await this.untilSaved();
     const once = () => this.readMatrixChunksOnce(cmd, args);
     const first = await once();
     if (first) return first;
@@ -1352,96 +1493,77 @@ export class CompxKeyboard extends Driver {
   }
 
   /**
-   * Write one Fn-layer slot.
+   * Write one Fn-layer slot, as the official software does: one SET_FN frame
+   * naming the slot, `[fnOS, fnProfile, slot, 0, 0, 0]`, then its four bytes.
    *
-   * SET_FN is a WHOLE-MATRIX write, not a per-slot one. The vendor's
-   * ___cmdSetFnKeyConfig sends the full 128-slot quad table as 10 chunks of 56
-   * bytes, with the same header shape as SET_USERPIC:
-   *
-   *   r[1]=fnOS  r[2]=fnProfile  r[3]=0xff  r[4]=chunk
-   *   r[5]=length (56, or 0 on the last)   r[6]=commit (0, or 1 on the last)
-   *   …then 56 payload bytes
-   *
-   * This driver previously sent [0, 0, slot, 0, 0, 0, hi, lo] — a single-slot
-   * frame from the older generation, carrying the same wrong-argument hazard
-   * as the GET did. So the write is read-modify-write: pull the current
-   * matrix, patch the one quad, send it all back.
-   * provenance: ported-from-vendor — confirm the read-back diff on hardware.
+   * `verified-capture`: the frame Attack Shark Driver v4 sent an R98 HE to
+   * give Fn + P a new action (its owner's recording), byte for byte the one
+   * this builds (capture/checks.ts makes it again and compares). This used to
+   * be a read-modify-write of the whole 128-slot table in ten chunks
+   * (`r[3] = 0xff`, the shape of qmk.top's ___cmdSetFnKeyConfig): eight reads
+   * and ten writes for one key, and as many again for each Fn key a profile
+   * changed. The page holding the slot is read back to confirm it.
    */
   protected async setFnSlot(
     slot: number,
     quad: readonly [number, number, number, number],
   ): Promise<WriteResult> {
-    const args = await this.fnArgs();
-    const current = await this.readMatrixChunks(KB_CMD.GET_FN, args);
-    if (!current) {
-      return {
-        ok: false,
-        verified: 'unverified',
-        error: 'Could not read the Fn layer to modify it.',
-      };
-    }
-    const total = FN_MATRIX_SLOTS * KEYMATRIX_SLOT_STRIDE;
-    const o = slot * KEYMATRIX_SLOT_STRIDE;
-    if (o + 3 >= total) {
+    if (slot < 0 || slot >= FN_MATRIX_SLOTS) {
       return {
         ok: false,
         verified: 'unverified',
         error: 'Fn slot ' + slot + ' is outside the matrix.',
       };
     }
-    const buf: number[] = new Array(total).fill(0);
-    for (let i = 0; i < Math.min(current.length, total); i++) buf[i] = current[i]!;
-    // Verbatim: the quad the caller built is the quad that gets stored. It
-    // used to be forced to `[0, hi, lo, 0]`, which is why a factory Fn binding
-    // that is not a plain key — every media key, every lighting control —
-    // could never be written back.
-    buf[o] = quad[0] & 0xff;
-    buf[o + 1] = quad[1] & 0xff;
-    buf[o + 2] = quad[2] & 0xff;
-    buf[o + 3] = quad[3] & 0xff;
-
-    const frames: string[] = [];
-    const header = args(0).slice(0, 3); // [fnOS, fnProfile, 0xff]
+    const args = await this.fnArgs();
+    const [fnOs = 0, fnProfile = 0] = args(0);
+    // Verbatim: the quad the caller built is the quad that gets stored, media
+    // keys and lighting controls included.
+    const q = this.frame(KB_CMD.SET_FN, [
+      fnOs,
+      fnProfile,
+      slot,
+      0,
+      0,
+      0,
+      ...quad.map((b) => b & 0xff),
+    ]);
+    const frames = [toHex(q)];
     const write = await this.ch.transaction(async (io) => {
-      for (let n = 0; n < FN_WRITE_CHUNKS; n++) {
-        const last = n === FN_WRITE_CHUNKS - 1;
-        const payload = buf.slice(n * FN_CHUNK, n * FN_CHUNK + FN_CHUNK);
-        while (payload.length < FN_CHUNK) payload.push(0);
-        const q = this.frame(KB_CMD.SET_FN, [
-          ...header,
-          n,
-          last ? 0 : FN_CHUNK,
-          last ? 1 : 0,
-          ...payload,
-        ]);
-        frames.push(toHex(q));
-        try {
-          await io.write(q);
-        } catch (e) {
-          return { ok: false, verified: 'unverified' as const, error: String(e), frames };
-        }
-        // Paced like every other multi-frame write on this endpoint.
-        if (this.settleMs) await delay(this.settleMs);
+      try {
+        await io.write(q);
+      } catch (e) {
+        return { ok: false, verified: 'unverified' as const, error: String(e), frames };
       }
-      // The commit chunk kicks off a flash write; the vendor waits
-      // its own defaultVendorSleepTime (100ms) before any further traffic. Without
-      // this the verification read below comes back null — measured: the write
-      // itself landed (the slot count went 22 -> 23) but the immediate re-read
-      // answered nothing, so the result reported 'unverified' for a write that
-      // had actually worked. Held INSIDE the transaction so nothing else can
-      // slip a frame in mid-commit.
+      // A flash write: the vendor waits its defaultVendorSleepTime (100 ms)
+      // before any further traffic, or the read below answers nothing.
       await delay(this.backupPaceMs);
       return { ok: true, verified: 'unverified' as const, frames };
     });
     if (!write.ok) return write;
+    this.savingFor(KEYMATRIX_SAVE_MS);
+    const page = await this.readMatrixPage(KB_CMD.GET_FN, args, Math.floor(slot / 16));
+    const o = (slot % 16) * KEYMATRIX_SLOT_STRIDE;
+    // All four bytes, not the two a plain usage happens to occupy.
+    const match = !!page && quad.every((b, i) => page[o + i] === (b & 0xff));
+    return { ...write, verified: page ? (match ? 'match' : 'mismatch') : 'unverified' };
+  }
 
-    // Read the matrix back and confirm the one quad that changed.
-    const back = await this.readMatrixChunks(KB_CMD.GET_FN, args);
-    // All four bytes, not the two a plain usage happens to occupy: a quad
-    // write that landed in three of them and not the fourth is a mismatch.
-    const match = !!back && quad.every((b, i) => back[o + i] === (b & 0xff));
-    return { ...write, verified: back ? (match ? 'match' : 'mismatch') : 'unverified' };
+  /** One page of a GET_KEYMATRIX / GET_FN sweep (`readMatrixChunks`): 16 slots. */
+  protected async readMatrixPage(
+    cmd: number,
+    args: (chunk: number) => number[],
+    page: number,
+  ): Promise<number[] | null> {
+    await this.untilSaved();
+    return this.ch.transaction(async (io) => {
+      const query = this.frame(cmd, args(page));
+      await io.write(query);
+      if (this.settleMs) await delay(this.settleMs);
+      const r = await io.read(250, this.d.reportLength);
+      if (!r || isEchoOf(r, query)) return null;
+      return Array.from(r.subarray(KEYMATRIX_REPLY_OFFSET, r.length));
+    });
   }
 
   /** Back-compat thin alias — prefer `readKeyBindings('fn')`. */
@@ -1458,20 +1580,26 @@ export class CompxKeyboard extends Driver {
    * split into 56-byte chunks, each `SET_MACRO [0, 0xFF, chunkIdx, len, last]` +
    * data, signed Bit7. Ported frame shape, inferred checksum.
    */
-  override async saveMacro(m: Macro): Promise<WriteResult> {
+  /** Write a macro into `slot` (0-based; the first unless named), replacing it. */
+  override async saveMacro(m: Macro, slot = 0): Promise<WriteResult> {
+    if (!Number.isInteger(slot) || slot < 0 || slot >= KB_MACRO_SLOTS) {
+      return { ok: false, verified: 'unverified', error: `macro slot out of range: ${slot + 1}` };
+    }
     const buf = encodeMacro(m);
-    const CHUNK = 56;
-    const chunks = Math.ceil(MACRO_BYTES / CHUNK);
+    // As many chunks as the events take, each 56 bytes, the last one flagged:
+    // `0b 00 <chunk> 38 <last> 00 00 <ck>` + data, the official software's
+    // frame (see the macro encoding above), checksum the family's own.
+    const chunks = Math.max(1, Math.ceil((buf.length + MACRO_END) / MACRO_CHUNK));
     const frames: string[] = [];
     // Same reasoning as setPerKeyLighting: these chunks are one logical write
     // (assembled by `chunkIdx` + the final chunk's `lastFlag`) and must not
     // interleave with anything else on this channel.
     const writeResult = await this.ch.transaction<WriteResult | null>(async (io) => {
       for (let n = 0; n < chunks; n++) {
-        const data = buf.slice(n * CHUNK, n * CHUNK + CHUNK);
-        while (data.length < CHUNK) data.push(0);
+        const data = buf.slice(n * MACRO_CHUNK, n * MACRO_CHUNK + MACRO_CHUNK);
+        while (data.length < MACRO_CHUNK) data.push(0);
         const last = n === chunks - 1 ? 1 : 0;
-        const tx = this.frame(KB_CMD.SET_MACRO, [0, 0xff, n, data.length, last, ...data], 'bit7');
+        const tx = this.frame(KB_CMD.SET_MACRO, [slot, n, MACRO_CHUNK, last, 0, 0, ...data]);
         frames.push(toHex(tx));
         try {
           await io.write(tx);
@@ -1482,28 +1610,39 @@ export class CompxKeyboard extends Driver {
       return null;
     });
     if (writeResult) return writeResult;
-    // A real read-back check, not just "some macro now exists": compare the
-    // count of representable steps (a 'move' step has no wire encoding; the
-    // slot also truncates at KB_MACRO_MAX_STEPS). An empty-macro write
+    // Not measured for the macro; the key map's wait, the nearer kind of save.
+    this.savingFor(KEYMATRIX_SAVE_MS);
+    // A real read-back check, not just "some macro now exists": what the slot
+    // written holds now against what was written, byte for byte as the board
+    // stores it (a slot too small cuts the events, so the written ones are
+    // counted from the payload itself). Only that slot is read — the list's
+    // stop at unwritten flash would miss a slot past it. An empty-macro write
     // (deleteMacro) legitimately reads back as nothing.
-    const wrote = Math.min(m.steps.filter((s) => s.type !== 'move').length, KB_MACRO_MAX_STEPS);
-    const back = await this.readMacros();
-    const got = back[0]?.steps.length ?? 0;
-    const verified: WriteResult['verified'] =
-      wrote === 0
-        ? got === 0
+    const wrote = decodeMacro('', '', buf);
+    await this.untilSaved();
+    const bytes = await this.ch.transaction((io) => this.readMacroSlotWith(io, slot));
+    const back = bytes ? decodeMacro(`onboard-${slot}`, '', bytes) : null;
+    const same = (x: Macro) =>
+      x.repeatCount === wrote.repeatCount &&
+      JSON.stringify(x.steps) === JSON.stringify(wrote.steps);
+    const verified: WriteResult['verified'] = !back
+      ? 'unverified'
+      : !wrote.steps.length
+        ? back.steps.length
+          ? 'mismatch'
+          : 'match'
+        : same(back)
           ? 'match'
-          : 'mismatch'
-        : got === wrote
-          ? 'match'
-          : got > 0
-            ? 'mismatch'
-            : 'unverified';
+          : 'mismatch';
     return { ok: true, verified, frames };
   }
 
-  override async deleteMacro(): Promise<WriteResult> {
-    return this.saveMacro({ id: 'onboard', name: '', repeatCount: 1, steps: [] });
+  /** Empty a slot: `onboard-<slot>` from readMacros (the first when unnamed). */
+  override async deleteMacro(id?: string): Promise<WriteResult> {
+    const slot = id === undefined ? 0 : macroSlotOf(id);
+    if (slot === null)
+      return { ok: false, verified: 'unverified', error: 'Not a macro on the keyboard' };
+    return this.saveMacro({ id: 'onboard', name: '', repeatCount: 1, steps: [] }, slot);
   }
 
   override async restoreDefaults(): Promise<WriteResult> {

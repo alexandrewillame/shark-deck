@@ -288,7 +288,7 @@ export const ja: Partial<Messages> = {
   'macro.repeat': '繰り返し回数',
   'macro.empty': 'デバイスから読み取れたマクロはありません。',
   'macro.newMacro': '新規マクロ',
-  'macro.defaultName': 'マクロ {n}',
+  'macro.defaultName': 'マイマクロ {n}',
   'macro.library': 'ライブラリ',
   'macro.savedToLibrary': 'マクロライブラリに保存しました。',
   'macro.nameRequired': '保存する前にこのマクロに名前を付けてください。',
@@ -296,7 +296,7 @@ export const ja: Partial<Messages> = {
   'macro.pushed': '"{name}" をデバイスのオンボードマクロスロットに書き込みました。',
   'macro.deviceSlot': '現在デバイスにあるマクロ',
   'macro.deviceSlot.hint':
-    'このキーボードにはオンボードマクロスロットが1つあります — マクロを書き込むと、そこにあった内容は上書きされます。',
+    '現在デバイスに保存されている内容です。マクロを送信すると、そのスロットの内容が置き換わります。',
   'macro.libraryEmpty': '保存されたマクロはまだありません。',
   'macro.step.press': '押す',
   'macro.step.release': '離す',
@@ -315,7 +315,6 @@ export const ja: Partial<Messages> = {
   'macro.lib.steps': '{n} ステップ',
   'macro.lib.onDevice': 'デバイス上',
   'macro.lib.onDeviceBadge': 'デバイス上',
-  'macro.discard.title': '保存していない変更を破棄しますか？',
   'macro.discard.body': '「{name}」に保存されていない変更があります。',
   'macro.discard.confirm': '破棄',
   'macro.delete.title': 'このマクロを削除しますか？',
@@ -324,7 +323,7 @@ export const ja: Partial<Messages> = {
   'macro.repeat.hint': '1 回の押下でシーケンス全体を再生する回数です。',
   'macro.rec.title': '録音',
   'macro.rec.focusHint':
-    '録音中はこのウィンドウを前面に保ってください。Shark Deck は自分に届いた入力しか見えず、他のアプリへの入力は見えません。',
+    '録音中はこのウィンドウを前面に保ってください。Shark Deck は自分に届いた入力しか見えず、他のアプリへの入力は見えません。Win + Shift + S など、システムが自分で使うショートカットも届きません。それらは手順として追加してください。',
   'macro.rec.armed': '準備完了 — 任意のキーを押すと開始します。',
   'macro.rec.escStops': 'Esc で停止',
   'macro.rec.timing': 'タイミング',
@@ -921,8 +920,6 @@ export const ja: Partial<Messages> = {
   'act.cal.finishRefused': 'キーボードがキャリブレーション終了コマンドを受け付けませんでした。',
   'act.cal.aria': 'スイッチのキャリブレーション',
   'act.cal.title': 'スイッチをキャリブレーション中',
-  'act.cal.preparing':
-    'キーボードを準備しています — 最初の書き込みの前に、現在の設定をバックアップしています。数秒かかることがあります。',
   'act.cal.press':
     '{every}をしっかり底まで押し込んで少し保持してから、「終了」を選んでください。実行中はケーブルを抜かないでください。',
   'act.cal.press.every': 'すべてのキー',
@@ -1454,10 +1451,6 @@ export const ja: Partial<Messages> = {
   'support.body.class':
     'Shark Deck はこのマウスをセンサーでしか識別できないため、そのセンサーを持つマウスに共通の設定を表示しています。デバイスレポートでモデルが分かります。1分で終わり、何も記録せず、GitHub のリクエストに添付するだけです。',
   'support.gaps': 'Shark Deck で未対応: {list}。',
-  'support.body.steps':
-    'デバイスレポートツールで、これらだけを記録できます。公式ソフトウェアで設定している間に、ソフトウェアが送る内容を記録します。数分。その後、記録を GitHub のリクエストに添付してください。',
-  'support.body.specific':
-    'うまく動かないものがありますか？デバイスレポートツールなら、公式ソフトウェアから数分で記録できます。その後、記録を GitHub のリクエストに添付してください。',
   'support.action.all': 'このデバイスを記録',
   'support.action.report': 'デバイスレポートを作成',
   'support.action.steps': '不足分を記録',
@@ -1487,11 +1480,69 @@ export const ja: Partial<Messages> = {
   'support.preview':
     'デバイスレポートツールが、所有者がたどる手順で開きました。デモデバイスには記録するものがありません。',
   'support.gap.mediaKeys':
-    'ボタンに割り当てる一部のメディアキー（ミュート、停止、前のトラック、電卓…）',
+    'ボタンに割り当てる一部のメディアキー（前のトラック、停止、メディアプレーヤー、検索）',
   'support.body.mac':
     'これには公式ソフトウェアの記録が必要ですが、Mac では記録できません。公式ソフトウェアは Windows で動作し、Shark Deck はデバイスを接続した Windows または Linux のコンピューターで記録します。この Mac でも、ツールでデバイスレポートは作成できます（約1分、システムが把握している情報を読み取るだけです）。',
   'support.web':
     'デバイスレポートツールは Windows と Linux で記録できます。Mac ではレポートの作成のみです。',
   'support.confirm.title': '記録のために Shark Deck を閉じますか?',
   'support.starting': '起動中…',
+  'support.unconfirmed': 'このモデルでは未確認: {list}。',
+  'support.strip.unconfirmed.keyboard': 'このキーボードでは未確認: {list}。',
+  'support.strip.unconfirmed.mouse': 'このマウスでは未確認: {list}。',
+  'support.strip.confirm': '確認に協力する',
+  'support.action.confirm': '記録して確認する',
+  'support.topic.keys': 'キー割り当てと Fn レイヤー',
+  'support.topic.knob': 'ノブ',
+  'support.topic.lighting': 'ライティング',
+  'support.topic.actuation': 'アクチュエーション',
+  'support.topic.keyModes': 'キーモード',
+  'support.topic.switches': 'スイッチの種類',
+  'support.topic.options': 'キーボードオプション',
+  'support.topic.profiles': 'プロファイル',
+  'support.topic.pollRate': 'ポーリングレート',
+  'support.topic.macros': 'マクロ',
+  'support.topic.dpi': 'DPI',
+  'support.topic.sensor': 'センサー設定',
+  'support.topic.buttons': 'ボタン',
+  'support.topic.power': 'スリープ',
+  'support.topic.response': '応答時間',
+  'support.topic.pairing': 'ペアリング',
+  'support.topic.receiverLight': 'レシーバーのライト',
+  'act.cal.handsOff':
+    'しばらくキーボードに触れないでください。Shark Deck が設定をバックアップしたあと、キーボードが各キーの静止位置を学習します。',
+  'keyfn.macro': 'マクロ',
+  'keyfn.macroN': 'マクロ {n}',
+  'keypick.group.macro': 'マクロ',
+  'keypick.macro.tip':
+    'キーボードがこのスロットに保持しているマクロを再生します。Shark Deck を閉じていても動作します。',
+  'macro.import': 'ライブラリにコピー',
+  'macro.import.tip':
+    'このマクロをライブラリにコピーして、編集したり後でもう一度送信したりできます。',
+  'macro.import.name': 'キーボードのマクロ {n}',
+  'macro.imported': '「{name}」をライブラリにコピーしました。',
+  'macro.deviceSlot.hint.keyboard':
+    '現在キーボードにあるマクロです。それぞれ「キー」タブで割り当てたキーで再生されます。「デバイスに送信」は選んだスロットに書き込みます。',
+  'macro.pushTo': '送信先',
+  'macro.slot.empty': '空き',
+  'macro.slot.used': 'デバイス上',
+  'macro.pushedTo': '「{name}」を {slot} に送信しました。',
+  'macro.pushToDevice.tip.slot':
+    'このマクロをデバイスの {slot} に書き込み、そこにあるものを置き換えます。',
+  'macro.deleteOnDevice': 'デバイスから削除',
+  'macro.deleteOnDevice.tip':
+    'このマクロをデバイスから削除します。割り当てたキーやボタンは何もしなくなります。',
+  'macro.deleteOnDevice.title': '{name} をデバイスから削除しますか？',
+  'macro.deleteOnDevice.body':
+    '割り当てたキーやボタンは、そのスロットに別のマクロが入るまで何もしません。',
+  'buttons.macro.oneSlot.title': 'このマウスのマクロを変更しますか？',
+  'buttons.macro.oneSlot.body':
+    'このマウスが保持できるマクロは 1 つで、ボタン {n} もそれを再生します。ボタン {n} も「{name}」を再生するようになります。',
+  'buttons.macro.oneSlot.ok': '変更する',
+  'buttons.macro.full':
+    'このマウスのマクロスロットはすべて別のマクロで埋まっています。「マクロ」で、このマクロを置き換えるスロットに書き込んでください。',
+  'macro.switch.title': '先にこのマクロを保存しますか？',
+  'macro.lib.delete': '「{name}」をライブラリから削除',
+  'keyfn.macroNamed': 'マクロ {n} · {name}',
+  'btnact.easyAim': 'イージーエイム',
 };

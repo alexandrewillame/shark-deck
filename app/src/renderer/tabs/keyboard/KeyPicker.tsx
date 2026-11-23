@@ -53,7 +53,8 @@ export function KeyPicker({
   // A media or launcher key is named for what it does, and that name is
   // translated; a key legend stays as printed — but for Win and Alt, which a
   // Mac calls ⌘ and ⌥.
-  const nameOf = (k: KeyDef) => (k.labelKey ? t(k.labelKey) : keyName(k.code, k.label));
+  const nameOf = (k: KeyDef) =>
+    k.labelKey ? t(k.labelKey, k.labelVars) : keyName(k.code, k.label);
   const groupNameOf = (g: KeyGroup) => (g.labelKey ? t(g.labelKey) : g.label);
   const shown = searchable ? filterKeyGroups(groups, query, nameOf, groupNameOf) : groups;
   /** The picker's own code for each usage it offers, by normalised usage. */
@@ -143,7 +144,7 @@ export function KeyPicker({
                   aria-label={name}
                   // The ISO key is on no board this app draws, so its name
                   // alone does not say what or where it is.
-                  title={k.code === '64' ? t('remap.iso.tip') : name}
+                  title={k.code === '64' ? t('remap.iso.tip') : k.tipKey ? t(k.tipKey) : name}
                   disabled={disabled}
                   onClick={() => onPick(k.code)}
                 >

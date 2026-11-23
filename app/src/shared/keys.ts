@@ -18,6 +18,10 @@ export interface KeyDef {
   /** The name to show instead of `label`, in the app's language — for a key
    *  whose name is a function rather than a legend ("Media player"). */
   labelKey?: MessageKey;
+  /** What the key does, when its name alone does not say (the macro). */
+  tipKey?: MessageKey;
+  /** `labelKey`'s placeholders ("Macro {n}"). */
+  labelVars?: Record<string, string>;
 }
 
 export interface KeyGroup {

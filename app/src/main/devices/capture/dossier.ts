@@ -277,6 +277,23 @@ export function layoutsFromReport(devices: ReportDevice[]): Map<string, HidDescr
   return out;
 }
 
+/** The recording's HID messages, and each step's, as the dossier reads them
+ *  (capture/checks.ts runs Shark Deck's driver on them). */
+export function stepMessages(input: DossierInput): {
+  messages: HidMessage[];
+  steps: { step: RecordingStep; messages: HidMessage[] }[];
+} {
+  const hid = readHid(transfersOf(readPcap(input.pcap)), layoutsFromReport(list(input.devices)));
+  return {
+    messages: hid.messages,
+    steps: list(input.recording.steps).map((step) => {
+      const from = micros(step.start);
+      const to = micros(step.end);
+      return { step, messages: hid.messages.filter((m) => m.t >= from && m.t <= to) };
+    }),
+  };
+}
+
 export function dossier(input: DossierInput): string {
   const rec = input.recording;
   const steps = list(rec.steps);

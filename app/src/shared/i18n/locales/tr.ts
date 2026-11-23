@@ -297,7 +297,7 @@ export const tr: Partial<Messages> = {
   'macro.repeat': 'Tekrar sayısı',
   'macro.empty': 'Aygıttan hiçbir makro okunamadı.',
   'macro.newMacro': 'Yeni makro',
-  'macro.defaultName': 'Makro {n}',
+  'macro.defaultName': 'Makrom {n}',
   'macro.library': 'Kitaplık',
   'macro.savedToLibrary': 'Makro kitaplığınıza kaydedildi.',
   'macro.nameRequired': 'Kaydetmeden önce bu makroya bir ad verin.',
@@ -305,7 +305,7 @@ export const tr: Partial<Messages> = {
   'macro.pushed': '"{name}" aygıtın dahili makro yuvasına gönderildi.',
   'macro.deviceSlot': 'Şu anda aygıtta',
   'macro.deviceSlot.hint':
-    'Bu klavyede tek bir dahili makro yuvası vardır — bir makro gönderildiğinde orada ne varsa değiştirilir.',
+    'Cihazda şu an bulunanlar. Gönderilen bir makro, yuvasındakinin yerine geçer.',
   'macro.libraryEmpty': 'Henüz kaydedilmiş makro yok.',
   'macro.step.press': 'bas',
   'macro.step.release': 'bırak',
@@ -324,7 +324,6 @@ export const tr: Partial<Messages> = {
   'macro.lib.steps': '{n} adım',
   'macro.lib.onDevice': 'Cihazda',
   'macro.lib.onDeviceBadge': 'Cihazda',
-  'macro.discard.title': 'Kaydedilmemiş değişiklikler atılsın mı?',
   'macro.discard.body': '“{name}” içinde hiç kaydetmediğiniz değişiklikler var.',
   'macro.discard.confirm': 'At',
   'macro.delete.title': 'Bu makro silinsin mi?',
@@ -333,7 +332,7 @@ export const tr: Partial<Messages> = {
   'macro.repeat.hint': 'Her basışta tüm dizinin kaç kez çalınacağı.',
   'macro.rec.title': 'Kaydet',
   'macro.rec.focusHint':
-    'Kayıt sırasında bu pencereyi önde tutun — Shark Deck yalnızca kendisine gelen girdiyi görür, başka uygulamalara gideni değil.',
+    'Kayıt sırasında bu pencereyi önde tutun — Shark Deck yalnızca kendisine gelen girdiyi görür, başka uygulamalara gideni değil. Sistemin kendine ayırdığı kısayollar da (Win + Shift + S gibi) ona ulaşmaz: bunları adım olarak ekleyin.',
   'macro.rec.armed': 'Hazır — başlamak için bir tuşa basın.',
   'macro.rec.escStops': 'Esc durdurur',
   'macro.rec.timing': 'Zamanlama',
@@ -930,8 +929,6 @@ export const tr: Partial<Messages> = {
   'act.cal.finishRefused': 'Klavye, kalibrasyonu bitirme komutunu kabul etmedi.',
   'act.cal.aria': 'Anahtar kalibrasyonu',
   'act.cal.title': 'Anahtarlar kalibre ediliyor',
-  'act.cal.preparing':
-    'Klavye hazırlanıyor — ilk yazmadan önce mevcut ayarları yedekleniyor. Bu birkaç saniye sürebilir.',
   'act.cal.press':
     '{every} sonuna kadar sıkıca basıp bir an basılı tutun, ardından Bitir’e tıklayın. İşlem sürerken kabloyu çıkarmayın.',
   'act.cal.press.every': 'Her tuşa',
@@ -1461,10 +1458,6 @@ export const tr: Partial<Messages> = {
   'support.body.class':
     "Shark Deck bu fareyi yalnızca sensöründen tanıyor; bu yüzden o sensöre sahip her farenin ayarlarını sunar. Bir cihaz raporu modeli belirtir: bir dakika sürer, hiçbir şey kaydetmez ve onu GitHub'daki bir isteğe eklersin.",
   'support.gaps': "Henüz Shark Deck'te yok: {list}.",
-  'support.body.steps':
-    "Cihaz raporu aracı yalnızca bunları kaydedebilir: sen bunları resmî yazılımda ayarlarken o, yazılımın gönderdiklerini kaydeder. Birkaç dakika; ardından kaydı GitHub'daki bir isteğe ekle.",
-  'support.body.specific':
-    "Bir şey olması gerektiği gibi çalışmıyor mu? Cihaz raporu aracı bunu birkaç dakikada resmî yazılımdan kaydeder; ardından kaydı GitHub'daki bir isteğe ekle.",
   'support.action.all': 'Bu cihazı kaydet',
   'support.action.report': 'Cihaz raporu oluştur',
   'support.action.steps': 'Eksik olanı kaydet',
@@ -1494,11 +1487,68 @@ export const tr: Partial<Messages> = {
   'support.preview':
     'Cihaz raporu aracı, bir sahibin izleyeceği adımlarla açıldı. Bir demo cihazın kaydedecek bir şeyi yok.',
   'support.gap.mediaKeys':
-    'düğmeleri için bazı medya tuşları (Sessiz, Durdur, Önceki parça, Hesap makinesi…)',
+    'düğmeleri için birkaç medya tuşu (Önceki parça, Durdur, Medya oynatıcı, Arama)',
   'support.body.mac':
     "Bunun için resmî yazılımın bir kaydı gerekir ve bir Mac bunu yapamaz: o yazılım Windows'ta çalışır, Shark Deck de onu cihazın takılı olduğu bir Windows veya Linux bilgisayarda kaydeder. Bu Mac'te araç yine de cihaz raporunu oluşturabilir: bir dakika sürer ve yalnızca sistemin bildiklerini okur.",
   'support.web':
     "Cihaz raporu aracı Windows ve Linux'ta kayıt yapar; Mac'te yalnızca raporu oluşturur.",
   'support.confirm.title': 'Kayıt için Shark Deck kapatılsın mı?',
   'support.starting': 'Başlatılıyor…',
+  'support.unconfirmed': 'Bu modelde henüz doğrulanmadı: {list}.',
+  'support.strip.unconfirmed.keyboard': 'Bu klavyede henüz doğrulanmadı: {list}.',
+  'support.strip.unconfirmed.mouse': 'Bu farede henüz doğrulanmadı: {list}.',
+  'support.strip.confirm': 'Doğrulanmalarına yardım et',
+  'support.action.confirm': 'Doğrulamak için kaydet',
+  'support.topic.keys': 'tuş atama ve Fn katmanı',
+  'support.topic.knob': 'döner düğme',
+  'support.topic.lighting': 'aydınlatma',
+  'support.topic.actuation': 'tetikleme noktası',
+  'support.topic.keyModes': 'tuş modları',
+  'support.topic.switches': 'switch türleri',
+  'support.topic.options': 'klavye seçenekleri',
+  'support.topic.profiles': 'profiller',
+  'support.topic.pollRate': 'yoklama hızı',
+  'support.topic.macros': 'makrolar',
+  'support.topic.dpi': 'DPI',
+  'support.topic.sensor': 'sensör ayarları',
+  'support.topic.buttons': 'düğmeler',
+  'support.topic.power': 'uyku',
+  'support.topic.response': 'tepki süresi',
+  'support.topic.pairing': 'eşleştirme',
+  'support.topic.receiverLight': 'alıcı ışığı',
+  'act.cal.handsOff':
+    'Bir an klavyeye dokunmayın: Shark Deck ayarlarını yedekliyor, ardından klavye her tuşun serbest konumunu öğreniyor.',
+  'keyfn.macro': 'Makro',
+  'keyfn.macroN': 'Makro {n}',
+  'keypick.group.macro': 'Makro',
+  'keypick.macro.tip': 'Klavyenin bu yuvada tuttuğu makroyu çalar; Shark Deck kapalıyken bile.',
+  'macro.import': 'Kitaplığa kopyala',
+  'macro.import.tip':
+    'Bu makroyu düzenlemek ya da daha sonra yeniden göndermek için kitaplığınıza kopyalayın.',
+  'macro.import.name': 'Klavye makrosu {n}',
+  'macro.imported': '“{name}” kitaplığınıza kopyalandı.',
+  'macro.deviceSlot.hint.keyboard':
+    'Klavyede şu an bulunan makrolar; her birini Tuşlar sekmesinde ona atanan bir tuş çalar. Cihaza gönder, seçtiğiniz yuvaya yazar.',
+  'macro.pushTo': 'Şuraya gönder',
+  'macro.slot.empty': 'boş',
+  'macro.slot.used': 'cihazda',
+  'macro.pushedTo': '“{name}”, {slot} yuvasına gönderildi.',
+  'macro.pushToDevice.tip.slot':
+    'Bu makroyu cihazdaki {slot} yuvasına yazar, oradakinin yerine geçer.',
+  'macro.deleteOnDevice': 'Cihazdan sil',
+  'macro.deleteOnDevice.tip':
+    'Bu makroyu cihazdan kaldırın: ona atanmış bir tuş ya da düğme artık bir şey yapmaz.',
+  'macro.deleteOnDevice.title': '{name} cihazdan silinsin mi?',
+  'macro.deleteOnDevice.body':
+    'Ona atanmış bir tuş ya da düğme, yuvasına başka bir makro gelene kadar bir şey yapmaz.',
+  'buttons.macro.oneSlot.title': 'Bu farenin makrosu değişsin mi?',
+  'buttons.macro.oneSlot.body':
+    'Bu fare tek bir makro tutar ve {n}. düğme de onu çalar: o da “{name}” makrosunu çalacak.',
+  'buttons.macro.oneSlot.ok': 'Değiştir',
+  'buttons.macro.full':
+    'Bu farenin her makro yuvasında başka bir makro var. Makrolar bölümünde bu makroyu yerini alacağı yuvaya gönderin.',
+  'macro.switch.title': 'Önce bu makro kaydedilsin mi?',
+  'macro.lib.delete': '“{name}” makrosunu kitaplıktan sil',
+  'keyfn.macroNamed': 'Makro {n} · {name}',
+  'btnact.easyAim': 'Kolay nişan',
 };

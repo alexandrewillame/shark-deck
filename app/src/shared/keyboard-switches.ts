@@ -44,6 +44,18 @@ export interface MagneticSwitchModel {
 export const SWITCH_FACTORY_DEFAULT = 0;
 
 /**
+ * Wire value 255: a key never given a switch type (erased flash reads 0xFF).
+ * The official software shows it as the model's stock switch, like 0: an R98
+ * HE read 255 on 94 keys while Attack Shark Driver v4 listed every key as
+ * Outemu, its stock switch (its owner's recording).
+ */
+export const SWITCH_UNSET = 0xff;
+
+/** A stored switch type as the switch it means: 0 and 255 are the stock one. */
+export const isStockSwitch = (raw: number) =>
+  raw === SWITCH_FACTORY_DEFAULT || raw === SWITCH_UNSET;
+
+/**
  * What one board lets you choose between.
  *
  * qmk.top does NOT offer the whole 127-model id space per board — each device

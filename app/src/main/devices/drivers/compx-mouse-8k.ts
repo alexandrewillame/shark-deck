@@ -32,6 +32,8 @@ import {
   v8ButtonOffset,
   v8ButtonExtOffset,
   v8MacroOffset,
+  v8MacroName,
+  V8_MACRO_NAME_MAX,
   V8_MACRO_STRIDE,
   RX_LED_COUNT,
   RX_LED_VALUES,
@@ -1058,18 +1060,37 @@ export class CompxMouse8K extends Driver {
     return out;
   }
 
-  override async saveMacro(m: Macro): Promise<WriteResult> {
-    // pick the slot the macro already occupies, else the first empty one
+  /**
+   * Into `slot` when one is named; else the slot this macro already holds — an
+   * onboard copy's own (`onboard-<slot>`), or one holding a macro of the same
+   * name, so pushing a library macro again updates it rather than filling a
+   * second slot with it — else the first empty one.
+   */
+  override async saveMacro(m: Macro, slot?: number): Promise<WriteResult> {
     let target = -1;
-    for (let slot = 0; slot < this.macroSlots; slot++) {
-      const buf = await this.readBlock(v8MacroOffset(slot), 16);
-      if (!buf) continue;
-      if (buf.every((b) => b === 0x00 || b === 0xff)) {
-        if (target < 0) target = slot;
-      } else if (m.id === `onboard-${slot}`) {
-        target = slot;
-        break;
+    if (slot !== undefined) {
+      if (!Number.isInteger(slot) || slot < 0 || slot >= this.macroSlots)
+        return { ok: false, verified: 'unverified', error: `macro slot out of range: ${slot + 1}` };
+      target = slot;
+    } else {
+      let empty = -1;
+      for (let s = 0; s < this.macroSlots; s++) {
+        // The name and its length: the first 1 + V8_MACRO_NAME_MAX bytes.
+        const buf = await this.readBlock(v8MacroOffset(s), 32);
+        if (!buf) continue;
+        if (buf.every((b) => b === 0x00 || b === 0xff)) {
+          if (empty < 0) empty = s;
+          continue;
+        }
+        // The name: its length, then up to V8_MACRO_NAME_MAX ASCII bytes.
+        const len = Math.min(buf[0] ?? 0, V8_MACRO_NAME_MAX);
+        const named = len ? String.fromCharCode(...buf.subarray(1, 1 + len)) : undefined;
+        if (m.id === `onboard-${s}` || (named !== undefined && named === v8MacroName(m.name))) {
+          target = s;
+          break;
+        }
       }
+      if (target < 0) target = empty;
     }
     if (target < 0)
       return { ok: false, verified: 'unverified', error: 'No free onboard macro slot' };

@@ -294,7 +294,7 @@ export const es: Partial<Messages> = {
   'macro.repeat': 'Número de repeticiones',
   'macro.empty': 'No se leyeron macros del dispositivo.',
   'macro.newMacro': 'Nueva macro',
-  'macro.defaultName': 'Macro {n}',
+  'macro.defaultName': 'Mi macro {n}',
   'macro.library': 'Biblioteca',
   'macro.savedToLibrary': 'Guardada en tu biblioteca de macros.',
   'macro.nameRequired': 'Ponle un nombre a esta macro antes de guardarla.',
@@ -302,7 +302,7 @@ export const es: Partial<Messages> = {
   'macro.pushed': '«{name}» enviada a la ranura de macro del dispositivo.',
   'macro.deviceSlot': 'Actualmente en el dispositivo',
   'macro.deviceSlot.hint':
-    'Este teclado tiene una sola ranura de macro — enviar una reemplaza la que ya estaba.',
+    'Lo que el dispositivo guarda ahora. Enviar una macro reemplaza la de su espacio.',
   'macro.libraryEmpty': 'Aún no hay macros guardadas.',
   'macro.step.press': 'presionar',
   'macro.step.release': 'soltar',
@@ -321,7 +321,6 @@ export const es: Partial<Messages> = {
   'macro.lib.steps': '{n} pasos',
   'macro.lib.onDevice': 'En el dispositivo',
   'macro.lib.onDeviceBadge': 'En el dispositivo',
-  'macro.discard.title': '¿Descartar los cambios sin guardar?',
   'macro.discard.body': '«{name}» tiene cambios que nunca guardaste.',
   'macro.discard.confirm': 'Descartar',
   'macro.delete.title': '¿Eliminar esta macro?',
@@ -330,7 +329,7 @@ export const es: Partial<Messages> = {
   'macro.repeat.hint': 'Cuántas veces se reproduce toda la secuencia en cada pulsación.',
   'macro.rec.title': 'Grabar',
   'macro.rec.focusHint':
-    'Mantén esta ventana al frente mientras grabas: Shark Deck solo ve lo que se le envía, no lo que va a otras aplicaciones.',
+    'Mantén esta ventana al frente mientras grabas: Shark Deck solo ve lo que se le envía, no lo que va a otras aplicaciones. Los atajos que el sistema se reserva, como Win + Mayús + S, tampoco le llegan: añádelos como pasos.',
   'macro.rec.armed': 'Listo: pulsa cualquier tecla para empezar.',
   'macro.rec.escStops': 'Esc detiene',
   'macro.rec.timing': 'Ritmo',
@@ -935,8 +934,6 @@ export const es: Partial<Messages> = {
   'act.cal.finishRefused': 'El teclado no aceptó la orden de finalizar la calibración.',
   'act.cal.aria': 'Calibración de interruptores',
   'act.cal.title': 'Calibrando interruptores',
-  'act.cal.preparing':
-    'Preparando el teclado: se guarda una copia de seguridad de sus ajustes actuales antes de la primera escritura. Puede tardar unos segundos.',
   'act.cal.press':
     'Pulsa {every} con firmeza hasta el fondo y mantenla un momento; luego elige Finalizar. No desconectes el cable mientras dura.',
   'act.cal.press.every': 'cada tecla',
@@ -1471,10 +1468,6 @@ export const es: Partial<Messages> = {
   'support.body.class':
     'Shark Deck solo conoce este ratón por su sensor, así que ofrece los ajustes de cualquier ratón con ese sensor. Un informe del dispositivo indica el modelo: tarda un minuto, no graba nada y lo adjuntas a una solicitud en GitHub.',
   'support.gaps': 'Aún no está en Shark Deck: {list}.',
-  'support.body.steps':
-    'La herramienta de informe de dispositivos puede grabar solo esto: lo ajustas en el software oficial mientras graba lo que envía el software. Unos minutos; después adjunta la grabación a una solicitud en GitHub.',
-  'support.body.specific':
-    '¿Algo no funciona como debería? La herramienta de informe de dispositivos lo graba desde el software oficial en unos minutos; después adjunta la grabación a una solicitud en GitHub.',
   'support.action.all': 'Grabar este dispositivo',
   'support.action.report': 'Crear un informe del dispositivo',
   'support.action.steps': 'Grabar lo que falta',
@@ -1505,11 +1498,69 @@ export const es: Partial<Messages> = {
   'support.preview':
     'La herramienta de informe de dispositivos se abrió con los pasos que seguiría un propietario. Un dispositivo de demostración no tiene nada que grabar.',
   'support.gap.mediaKeys':
-    'algunas teclas multimedia para sus botones (Silencio, Detener, Pista anterior, Calculadora…)',
+    'algunas teclas multimedia para sus botones (Pista anterior, Detener, Reproductor multimedia, Buscar)',
   'support.body.mac':
     'Para eso hace falta una grabación del software oficial, y un Mac no puede hacerla: ese software funciona en Windows, y Shark Deck lo graba en un ordenador con Windows o Linux, con el dispositivo conectado allí. En este Mac, la herramienta sí puede crear el informe del dispositivo: un minuto, y solo lee lo que el sistema ya sabe.',
   'support.web':
     'La herramienta de informe de dispositivos graba en Windows y Linux; en Mac solo crea el informe.',
   'support.confirm.title': '¿Cerrar Shark Deck para grabar?',
   'support.starting': 'Iniciando…',
+  'support.unconfirmed': 'Aún sin confirmar en este modelo: {list}.',
+  'support.strip.unconfirmed.keyboard': 'Aún sin confirmar en este teclado: {list}.',
+  'support.strip.unconfirmed.mouse': 'Aún sin confirmar en este ratón: {list}.',
+  'support.strip.confirm': 'Ayuda a confirmarlos',
+  'support.action.confirm': 'Grabar para confirmarlos',
+  'support.topic.keys': 'la reasignación de teclas y la capa Fn',
+  'support.topic.knob': 'la rueda',
+  'support.topic.lighting': 'la iluminación',
+  'support.topic.actuation': 'el punto de activación',
+  'support.topic.keyModes': 'los modos de tecla',
+  'support.topic.switches': 'los tipos de interruptor',
+  'support.topic.options': 'las opciones del teclado',
+  'support.topic.profiles': 'los perfiles',
+  'support.topic.pollRate': 'la frecuencia de sondeo',
+  'support.topic.macros': 'las macros',
+  'support.topic.dpi': 'los DPI',
+  'support.topic.sensor': 'los ajustes del sensor',
+  'support.topic.buttons': 'los botones',
+  'support.topic.power': 'el reposo',
+  'support.topic.response': 'el tiempo de respuesta',
+  'support.topic.pairing': 'el emparejamiento',
+  'support.topic.receiverLight': 'la luz del receptor',
+  'act.cal.handsOff':
+    'No toques el teclado un momento: Shark Deck guarda una copia de sus ajustes y luego el teclado aprende dónde reposa cada tecla.',
+  'keyfn.macro': 'Macro',
+  'keyfn.macroN': 'Macro {n}',
+  'keypick.group.macro': 'Macro',
+  'keypick.macro.tip':
+    'Reproduce la macro que el teclado guarda en esta ranura, incluso con Shark Deck cerrado.',
+  'macro.import': 'Copiar a la biblioteca',
+  'macro.import.tip':
+    'Copia esta macro a tu biblioteca, para editarla o volver a enviarla más tarde.',
+  'macro.import.name': 'Macro del teclado {n}',
+  'macro.imported': '«{name}» copiada a tu biblioteca.',
+  'macro.deviceSlot.hint.keyboard':
+    'Las macros del teclado ahora, cada una la reproduce una tecla que la recibe en la pestaña Teclas. Enviar al dispositivo escribe el espacio que elijas.',
+  'macro.pushTo': 'Enviar a',
+  'macro.slot.empty': 'vacío',
+  'macro.slot.used': 'en el dispositivo',
+  'macro.pushedTo': '«{name}» enviada a {slot}.',
+  'macro.pushToDevice.tip.slot':
+    'Escribe esta macro en {slot} del dispositivo y reemplaza lo que haya.',
+  'macro.deleteOnDevice': 'Eliminar del dispositivo',
+  'macro.deleteOnDevice.tip':
+    'Quita esta macro del dispositivo: una tecla o botón que la tenga deja de hacer nada.',
+  'macro.deleteOnDevice.title': '¿Eliminar {name} del dispositivo?',
+  'macro.deleteOnDevice.body':
+    'Una tecla o botón que la tenga no hará nada hasta que otra macro ocupe su espacio.',
+  'buttons.macro.oneSlot.title': '¿Cambiar la macro de este ratón?',
+  'buttons.macro.oneSlot.body':
+    'Este ratón guarda una sola macro y el botón {n} también la reproduce: reproducirá «{name}» también.',
+  'buttons.macro.oneSlot.ok': 'Cambiarla',
+  'buttons.macro.full':
+    'Cada ranura de macro de este ratón contiene otra macro. En Macros, envía esta a la ranura que debe reemplazar.',
+  'macro.switch.title': '¿Guardar esta macro primero?',
+  'macro.lib.delete': 'Eliminar «{name}» de la biblioteca',
+  'keyfn.macroNamed': 'Macro {n} · {name}',
+  'btnact.easyAim': 'Puntería fácil',
 };

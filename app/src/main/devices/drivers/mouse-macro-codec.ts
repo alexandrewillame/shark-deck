@@ -3,6 +3,7 @@ import {
   companion,
   V8_MACRO_NAME_OFF,
   V8_MACRO_NAME_MAX,
+  v8MacroName,
   V8_MACRO_COUNT_OFF,
   V8_MACRO_BODY_OFF,
   V8_MACRO_STEP_BYTES,
@@ -45,29 +46,14 @@ const usageOf = (v: MacroStep['value']): number => {
   return 0;
 };
 
-/** Printable-ASCII ceiling for the name field below — the wire format is a
- *  plain ASCII byte string (see the slot layout above), so anything outside
- *  it has no representation on the device at all. */
-const ASCII_PRINTABLE_MAX = 0x7e; // '~'
-
 /** Encode to the full slot byte array (padded to MOUSE_MACRO_MAX_BYTES). */
 export function encodeMouseMacro(m: Macro): number[] {
   // name area is base+0x00 (length) .. base+0x1E; the step count sits at
   // base+0x1F, so the header we build here is exactly V8_MACRO_COUNT_OFF long.
   const buf = new Array<number>(V8_MACRO_COUNT_OFF).fill(0xff);
-  // `[...m.name]` iterates by Unicode code point (not UTF-16 code unit), so
-  // an astral character (most emoji) or a surrogate pair never gets split
-  // mid-way. Anything outside printable ASCII — accented letters, CJK,
-  // emoji, control characters — has no byte on this wire format at all;
-  // `c.charCodeAt(0) & 0xff` used to take the low byte of whatever UTF-16
-  // unit that character started with regardless, silently writing a
-  // garbled/wrong name (worse, an unpaired low surrogate's own low byte for
-  // an astral character) with no warning. `?` is at least a visible,
-  // stable stand-in instead of a mangled byte.
-  const name = [...(m.name.trim() || 'Macro')].slice(0, V8_MACRO_NAME_MAX).map((c) => {
-    const code = c.codePointAt(0) ?? 0x3f;
-    return code >= 0x20 && code <= ASCII_PRINTABLE_MAX ? code : 0x3f; // '?'
-  });
+  // The name as the slot keeps it (v8MacroName): printable ASCII by code
+  // point, `?` for anything else — never the low byte of a UTF-16 unit.
+  const name = [...v8MacroName(m.name)].map((c) => c.charCodeAt(0));
   buf[0] = name.length;
   name.forEach((c, i) => (buf[V8_MACRO_NAME_OFF + i] = c));
 

@@ -305,6 +305,9 @@ export interface DecodedQuad {
  * layer plus the vendor's static `defaultFnMatrix` — put Fn+DEL, Fn+PgUp and
  * Fn+PgDn at `[…,0,0]` and reported them as bound to nothing.
  */
+/** Quad type 9: the board's macro, its number in byte 1 (see decodeKeyQuad). */
+export const MACRO_QUAD_TYPE = 9;
+
 export function decodeKeyQuad(raw: [number, number, number, number]): DecodedQuad {
   const [type, a, b, c] = raw;
   if (!raw.some((x) => x))
@@ -385,6 +388,25 @@ export function decodeKeyQuad(raw: [number, number, number, number]): DecodedQua
           : 'keyfn.firmwareFunction',
       short: 'Fw',
       locked: !named,
+    };
+  }
+
+  /**
+   * A macro: `[9, 0, n, 0]` plays the board's macro in slot `n`, shown from 1.
+   * `provenance: verified-capture` — an R98 HE (its owner's, 2026-11-22):
+   * Driver v4 gave F12 its first macro as `[9, 0, 0, 0]`, and Fn + N*, N- and
+   * N/ its three as `[9, 0, 0, 0]`, `[9, 0, 1, 0]` and `[9, 0, 2, 0]`.
+   */
+  if (type === MACRO_QUAD_TYPE && !a && !c) {
+    const n = String(b + 1);
+    return {
+      kind: 'macro',
+      code: null,
+      label: `Macro ${n}`,
+      labelKey: 'keyfn.macroN',
+      labelVars: { n },
+      short: `M${n}`,
+      locked: false,
     };
   }
 

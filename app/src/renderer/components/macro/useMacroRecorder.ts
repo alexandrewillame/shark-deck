@@ -14,6 +14,9 @@ export type RecPhase = 'idle' | 'armed' | 'recording' | 'review';
 
 export interface RecorderTake {
   groups: MacroGroup[];
+  /** The same take with its pauses as typed, whatever the timing: what the
+   *  editor's "As typed" puts back. */
+  typed: MacroGroup[];
   /** key presses with no HID usage on this device — reported, not hidden */
   skipped: number;
 }
@@ -122,7 +125,11 @@ export function useMacroRecorder(options: {
     releaseHeld(events.current, held.current, events.current.at(-1)?.t ?? 0);
     // Group here too, so a take pairs its taps exactly like a loaded macro.
     const steps = buildSteps(events.current, timingRef.current, fixedRef.current);
-    setTake({ groups: toGroups(steps), skipped: skipped.current });
+    setTake({
+      groups: toGroups(steps),
+      typed: toGroups(buildSteps(events.current, 'real', 0)),
+      skipped: skipped.current,
+    });
     setPhase('review');
   }, []);
 

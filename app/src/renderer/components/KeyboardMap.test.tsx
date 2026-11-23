@@ -26,6 +26,37 @@ const keyEl = (label: string): HTMLElement => {
 };
 
 describe('KeyboardMap', () => {
+  it("draws a key taller than its row (a numpad's + and Enter) across the rows it spans", () => {
+    render(
+      <KeyboardMap
+        layout={[
+          { label: 'N+', row: 2, col: 18, slot: 111, code: 0x57, x: 0, y: 0, w: 0.87, h: 1.87 },
+          { label: 'N9', row: 2, col: 17, slot: 104, code: 0x61, x: 1, y: 0 },
+        ]}
+      />,
+    );
+    expect(keyEl('N+').style.height).toBe('calc(var(--kb-h) + var(--kb-u) * 1)');
+    expect(keyEl('N9').style.height).toBe('');
+  });
+
+  it("outlines a knob's controls as one knob, each showing its own part", () => {
+    const { container } = render(
+      <KeyboardMap
+        layout={[
+          { label: 'A', row: 0, col: 0, slot: 0, code: 0x04, x: 0, y: 0 },
+          { label: 'Knob −', row: 0, col: 1000, slot: 120, x: 1, y: 0, control: 'knob' },
+          { label: 'Knob +', row: 0, col: 1001, slot: 121, x: 2, y: 0, control: 'knob' },
+          { label: 'Knob press', row: 0, col: 1002, slot: 122, x: 3, y: 0, control: 'knob' },
+        ]}
+      />,
+    );
+    const outline = container.querySelector('.kbmap-knob');
+    expect(outline?.textContent).toBe('Knob');
+    expect(keyEl('−').classList.contains('kbkey-control')).toBe(true);
+    expect(keyEl('press').classList.contains('kbkey-control')).toBe(true);
+    expect(keyEl('A').classList.contains('kbkey-control')).toBe(false);
+  });
+
   it('draws Tab as its keycap glyph, not the word', () => {
     // Every board in the app draws from this one legend table, so the Tab key
     // looks the same on Remap, Actuation and Lighting — like Backspace and

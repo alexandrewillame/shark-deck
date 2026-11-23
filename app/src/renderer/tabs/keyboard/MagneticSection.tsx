@@ -407,6 +407,8 @@ function CalibrationOverlay({
   const [streamOk, setStreamOk] = useState(false);
   /** The board's lighting before we took it over, to be put back on exit. */
   const priorLighting = useRef<LightingSettings | null>(null);
+  /** The board is learning how deep its keys go: begun, not finished yet. */
+  const learning = useRef(false);
   /** Last painted set, so an unchanged `seen` never repaints. */
   const paintedRef = useRef<string>('');
   // `seen` mirrored into a ref so the painter below reads the current set
@@ -447,15 +449,23 @@ function CalibrationOverlay({
       // `ensureBackup()`, which on this board is a ~70-chunk paged sweep. That
       // is several seconds during which the dialog would otherwise sit there
       // with both buttons dead and nothing said, so `starting` is a state the
-      // UI names rather than a gap.
+      // UI names rather than a gap — and a hands-off one: the begin itself
+      // has the board learn where each key rests (two seconds, see the
+      // driver's setMagneticCalibration), and a key pressed then is learnt
+      // as resting pressed.
       const r = await run(t('act.cal.startLabel'), () =>
         sd.setMagneticCalibration(deviceId, 'zero'),
       );
-      if (stopped) return;
+      if (stopped) {
+        // Closed while it began: end the depth learning it has just started.
+        if (r.ok) void sd.setMagneticCalibration(deviceId, 'max');
+        return;
+      }
       if (!r.ok) {
         setFailed(r.error ?? t('act.cal.startRefused'));
         return;
       }
+      learning.current = true;
       setPhase('pressing');
       const stream = await sd.startTravelStream(deviceId, CALIBRATION_POLL_MS);
       if (!stopped) setStreamOk(stream.ok);
@@ -481,6 +491,12 @@ function CalibrationOverlay({
       stopped = true;
       off();
       void sd.stopTravelStream(deviceId, CALIBRATION_POLL_MS);
+      // Closed before Finish (Cancel, Escape): end the depth learning all the
+      // same, as Finish does, rather than leave the board in it.
+      if (learning.current) {
+        learning.current = false;
+        void sd.setMagneticCalibration(deviceId, 'max');
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceId]);
@@ -559,6 +575,7 @@ function CalibrationOverlay({
       setPhase('pressing');
       return;
     }
+    learning.current = false;
     onClose();
   };
 
@@ -570,12 +587,15 @@ function CalibrationOverlay({
     <div className="modal-scrim" role="dialog" aria-modal="true" aria-label={t('act.cal.aria')}>
       <div className="calib-panel">
         <h3>{t('act.cal.title')}</h3>
-        {phase === 'starting' && !failed && <p className="hint">{t('act.cal.preparing')}</p>}
-        <p className="hint">
-          {pressBefore}
-          <strong>{t('act.cal.press.every')}</strong>
-          {pressAfter}
-        </p>
+        {phase === 'starting' && !failed ? (
+          <p className="hint">{t('act.cal.handsOff')}</p>
+        ) : (
+          <p className="hint">
+            {pressBefore}
+            <strong>{t('act.cal.press.every')}</strong>
+            {pressAfter}
+          </p>
+        )}
         <p className="hint">
           {t(
             os === 'darwin'

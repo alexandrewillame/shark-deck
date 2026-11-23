@@ -396,6 +396,12 @@
   gap: 2px;
   pointer-events: none;
 }
+/* A binding legend spans the key, so the box holding it does too: as a
+   corner box it had no width, and the legend under every remapped or bound
+   key was drawn zero pixels wide. */
+.kbkey-cap:has(> .kbkey-bind) {
+  inset: 0;
+}
 .kbkey-dot {
   width: 6px;
   height: 6px;
@@ -1114,4 +1120,30 @@
 }
 .dks-legend-none {
   color: var(--text-mut);
+}
+
+/* A knob's turns and press (KeyLayoutEntry.control, Remap view only): one
+   knob, so one outline around the three, and round controls rather than
+   keycaps the board does not have. */
+.kbmap-knob {
+  position: absolute;
+  border: 1.5px dashed var(--accent);
+  border-radius: calc(var(--kb-u) / 2 + 3px);
+  pointer-events: none;
+  opacity: 0.75;
+}
+.kbmap-knob > span {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  padding: 0 4px;
+  background: var(--bg-1);
+  color: var(--accent);
+  font-size: var(--kb-font);
+  line-height: 1;
+  white-space: nowrap;
+}
+.kbkey.kbkey-control {
+  border-radius: calc(var(--kb-h) / 2);
 }

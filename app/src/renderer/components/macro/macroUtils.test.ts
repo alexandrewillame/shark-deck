@@ -5,6 +5,7 @@ import {
   encodedStepCount,
   fromGroups,
   groupsDuration,
+  retime,
   toGroups,
 } from './macroUtils';
 
@@ -231,5 +232,43 @@ describe('groupsDuration', () => {
       { type: 'key', action: 'up', value: '5' },
     ]);
     expect(groupsDuration(g)).toBe(150);
+  });
+});
+
+describe('retime', () => {
+  const recorded = toGroups([
+    { type: 'key', action: 'down', value: '4' },
+    { type: 'delay', ms: 63 },
+    { type: 'key', action: 'up', value: '4' },
+    { type: 'delay', ms: 761 },
+    { type: 'key', action: 'down', value: '5' },
+    { type: 'key', action: 'up', value: '5' },
+  ]);
+
+  it('Even: every tap held, and every gap between steps, the same', () => {
+    const even = retime(recorded, 50);
+    expect(even.map((g) => (g.kind === 'wait' ? `wait ${g.ms}` : `${g.kind} ${g.holdMs}`))).toEqual(
+      ['tap 50', 'wait 50', 'tap 50'],
+    );
+  });
+
+  it('None: no pause anywhere', () => {
+    expect(fromGroups(retime(recorded, 0)).filter((s) => s.type === 'delay')).toEqual([]);
+  });
+});
+
+describe('encodedStepCount on a keyboard', () => {
+  // Each key event one unit, and its pause one more when it is 0 or over 127 ms.
+  const kb = { maxSteps: 110, slots: 64, delaysConsumeSteps: false, inlineWaitMs: 127 };
+  it('counts a long pause, or none, as the extra room it takes', () => {
+    const groups = toGroups([
+      { type: 'key', action: 'down', value: '4' },
+      { type: 'delay', ms: 63 }, // in its own byte
+      { type: 'key', action: 'up', value: '4' },
+      { type: 'delay', ms: 761 }, // two more bytes
+      { type: 'key', action: 'down', value: '5' },
+      { type: 'key', action: 'up', value: '5' }, // no pause: two more bytes
+    ]);
+    expect(encodedStepCount(groups, kb)).toBe(1 + 2 + 2 + 2);
   });
 });

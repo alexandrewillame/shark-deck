@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { LiveDevice } from '@shared/types/live';
-import { switchChoices, switchColor, switchModel } from '@shared/keyboard-switches';
+import { isStockSwitch, switchChoices, switchColor, switchModel } from '@shared/keyboard-switches';
 import { Panel, Row } from '../../components/common';
 import { Icon } from '../../components/icons';
 import { KeyboardMap, type KeyRef } from '../../components/KeyboardMap';
@@ -58,7 +58,7 @@ export function SwitchTypeSection({ device }: { device: LiveDevice }) {
   const idOf = (slot: number): number | undefined => {
     const raw = bySlot?.[slot];
     if (raw === undefined) return undefined;
-    return raw === 0 ? stockId : raw;
+    return isStockSwitch(raw) ? stockId : raw;
   };
 
   const selectedSlots = useMemo(() => {

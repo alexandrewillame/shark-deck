@@ -1,5 +1,5 @@
-import type { Dispatch, SetStateAction } from 'react';
-import { Panel, Select } from '../../components/common';
+import { useState, type Dispatch, type SetStateAction } from 'react';
+import { ConfirmDialog, Panel, Select } from '../../components/common';
 import {
   type TabProps,
   sd,
@@ -18,6 +18,10 @@ import {
 import { ALL_KEYS } from '@shared/keys';
 import { buttonActionAllowed } from '@shared/menuGates';
 import type { ButtonMapping } from '@shared/types/mouse-settings';
+import type { Macro } from '@shared/types/macros';
+import { macroSlotOf } from '@shared/keyboard-macro';
+import { isModifierUsage } from '@shared/keyboard-fn-codes';
+import { holdsMacro, pushSlotFor } from '../../components/macro/macroUtils';
 
 /**
  * A row-per-button table (# / Button / Action / Options) — replaces the old
@@ -47,6 +51,17 @@ export function ButtonsSection({
     'buttons',
   );
   const { data: macros } = useDeviceData(device.id, () => sd.listMacroLibrary(), []);
+  // The macros the mouse holds, by slot (the Macros tab's read): which one a
+  // button plays, and where a library macro given to a button goes.
+  const hasMacros = device.capabilities.includes('macros');
+  const { data: onboard, reload: reloadOnboard } = useDeviceData<Macro[]>(
+    device.id,
+    (id) => (hasMacros ? sd.readMacros(id) : Promise.resolve([])),
+    [],
+    [],
+    'macros',
+  );
+  const slots = device.ui.macroLimits?.slots ?? 1;
   const { commit } = useAutoWrite(250, { deviceId: device.id });
   const count = device.ui.buttons ?? 6;
   const allow = device.ui.buttonActions?.length
@@ -57,6 +72,11 @@ export function ButtonsSection({
   // LED, would be an option that does nothing (shared/menuGates.ts).
   const actions = BUTTON_ACTIONS_TREE.filter(
     (a) => allow.includes(a.key) && buttonActionAllowed(a.key, device),
+  );
+
+  // Asked before a one-macro mouse's macro changes under another button (giveMacro).
+  const [oneMacro, setOneMacro] = useState<{ i: number; m: ButtonMapping; other: number } | null>(
+    null,
   );
 
   // No heading of its own: the pane above is already titled "Buttons", and
@@ -78,28 +98,83 @@ export function ButtonsSection({
       // would ride along on every later `{...m}` spread with no re-render).
       let payload = m;
       if (m.actionKey === 'macro' && m.macroId) {
-        // push the library macro to a device slot first, then bind it
-        await sd.pushMacroToDevice(device.id, m.macroId);
-        const onboard = await sd.readMacros(device.id).catch(() => []);
-        const wantName = macros.find((y) => y.id === m.macroId)?.name;
-        const slot = wantName ? onboard.findIndex((x) => x.name === wantName) : -1;
-        payload = { ...m, macroSlot: slot >= 0 ? slot : 0 };
+        // The library macro goes to the slot already holding it, else the
+        // first empty one, and the button plays the slot written (a mouse
+        // with one macro: its one). Read afresh: the slot is written blind.
+        const lib = macros.find((y) => y.id === m.macroId);
+        const now = await sd.readMacros(device.id).catch(() => onboard);
+        const slot =
+          slots > 1 ? pushSlotFor(now, slots, (d) => !!lib && holdsMacro(d, lib, false)) : 0;
+        if (slot === null)
+          return { ok: false, verified: 'unverified', error: t('buttons.macro.full') };
+        const pushed = await sd.pushMacroToDevice(
+          device.id,
+          m.macroId,
+          slots > 1 ? slot : undefined,
+        );
+        if (!pushed.ok) return pushed;
+        payload = { ...m, macroSlot: slot };
       }
-      return sd.setButtonMapping(device.id, i, payload);
+      const r = await sd.setButtonMapping(device.id, i, payload);
+      if (payload !== m) reloadOnboard();
+      return r;
     });
+  };
+
+  /**
+   * The macro a button plays, as the picker names it: the library macro the
+   * mouse's macro in that slot is, else that macro itself (`onboard-<slot>`).
+   */
+  const playing = (m: ButtonMapping | undefined): string => {
+    if (m?.actionKey !== 'macro') return '';
+    if (m.macroId) return m.macroId;
+    const dev = onboard.find((x) => macroSlotOf(x.id) === (m.macroSlot ?? 0));
+    if (!dev) return '';
+    return macros.find((x) => holdsMacro(dev, x, false))?.id ?? dev.id;
+  };
+  /** The mouse's macros with no copy in the library: offered as they are. */
+  const unlisted = onboard.filter((d) => !macros.some((x) => holdsMacro(d, x, false)));
+  const bindMacro = (i: number, m: ButtonMapping | undefined, v: string) => {
+    const { macroId: _old, ...rest } = m ?? { actionKey: 'macro', action: 0x06 };
+    const slot = macroSlotOf(v);
+    // One the mouse already holds: bound where it is, nothing pushed.
+    if (slot !== null)
+      return giveMacro(i, { ...rest, actionKey: 'macro', action: 0x06, macroSlot: slot });
+    giveMacro(i, { ...rest, actionKey: 'macro', action: 0x06, macroId: v });
+  };
+
+  /**
+   * A mouse that holds one macro (the Beken mice: MacroLimits.slots 1) plays
+   * it on every button given a macro, so a second button given a different one
+   * changes what the first plays too. That is asked, not done silently.
+   */
+  const giveMacro = (i: number, m: ButtonMapping) => {
+    if (slots === 1 && m.macroId) {
+      const other = Object.entries(cur).find(
+        ([j, x]) => Number(j) !== i && playing(x) !== '' && playing(x) !== m.macroId,
+      );
+      if (other) return setOneMacro({ i, m, other: Number(other[0]) });
+    }
+    write(i, m);
   };
 
   // A shortcut with no key yet is nothing a mouse can take (the Beken mice
   // refused it with an error the moment "Combo key" was chosen): it is only
-  // shown, and goes out once a key is in it.
-  const writeCombo = (i: number, m: ButtonMapping) =>
-    m.combo?.length ? write(i, m) : setData({ ...cur, [i]: m });
+  // shown, and goes out once a key is in it. On a mouse whose shortcut is one
+  // key with modifiers, a modifier picked first waits for that key too: Ctrl
+  // alone was refused the same way, before the key could be picked.
+  const writeCombo = (i: number, m: ButtonMapping) => {
+    const keys = m.combo ?? [];
+    const ready = device.ui.comboOneKey ? keys.some((k) => !isModifierUsage(k)) : keys.length > 0;
+    return ready ? write(i, m) : setData({ ...cur, [i]: m });
+  };
 
   const chooseAction = (i: number, key: string) => {
     const def = BUTTON_ACTION_BY_KEY[key]!;
     const m: ButtonMapping = { actionKey: key, action: def.wire ?? 0 };
     if (def.children) m.param = def.children[0]!.value;
-    if (def.fire) m.fire = { times: 3, interval: 50 };
+    // A Beken mouse's rapid fire has no count or interval (DeviceUi.fireWhileHeld).
+    if (def.fire && !device.ui.fireWhileHeld) m.fire = { times: 3, interval: 50 };
     if (def.combo) return writeCombo(i, { ...m, combo: [] });
     write(i, m);
   };
@@ -187,12 +262,19 @@ export function ButtonsSection({
           )}
           {!locked && def?.macro && (
             <Select
-              value={m?.macroId ?? ''}
+              value={playing(m)}
               options={[
-                { value: '', label: macros.length ? '—' : t('buttons.macro.none') },
+                {
+                  value: '',
+                  label: macros.length || unlisted.length ? '—' : t('buttons.macro.none'),
+                },
                 ...macros.map((mac) => ({ value: mac.id, label: mac.name })),
+                ...unlisted.map((d) => ({
+                  value: d.id,
+                  label: `${d.name} · ${t('macro.slot.used')}`,
+                })),
               ]}
-              onChange={(v) => write(i, { ...m!, actionKey: 'macro', action: 0x06, macroId: v })}
+              onChange={(v) => bindMacro(i, m, v)}
             />
           )}
           {!locked && def?.combo && (
@@ -236,6 +318,21 @@ export function ButtonsSection({
       )}
       {!loading && actions.some((a) => a.wire === null) && (
         <DevNote style={{ marginTop: 8 }}>{t('buttons.unconfirmed')}</DevNote>
+      )}
+      {oneMacro && (
+        <ConfirmDialog
+          title={t('buttons.macro.oneSlot.title')}
+          body={t('buttons.macro.oneSlot.body', {
+            n: String(oneMacro.other + 1),
+            name: macros.find((x) => x.id === oneMacro.m.macroId)?.name ?? '',
+          })}
+          confirmLabel={t('buttons.macro.oneSlot.ok')}
+          onResolve={(ok) => {
+            const pending = oneMacro;
+            setOneMacro(null);
+            if (ok) write(pending.i, pending.m);
+          }}
+        />
       )}
     </Panel>
   );

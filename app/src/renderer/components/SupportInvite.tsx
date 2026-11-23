@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { LiveDevice } from '@shared/types/live';
-import type { SupportGap, SupportPlan } from '@shared/types/device';
+import type { SupportGap, SupportPlan, SupportTopic } from '@shared/types/device';
 import type { MessageKey } from '@shared/i18n';
 import { MISSING_DEVICE_URL } from '@shared/links';
 import { ConfirmDialog, Panel } from './common';
@@ -23,18 +23,59 @@ const GAP: Record<SupportGap, MessageKey> = {
   receiver: 'support.gap.receiver',
 };
 
+/** A list the invitation is about: its heading, then each item highlighted. */
+interface Listed {
+  heading: string;
+  items: string[];
+}
+
 interface Copy {
   title: MessageKey;
-  lead?: string;
-  body: MessageKey;
+  /** What the button records, as lists of highlighted items: no paragraph
+   *  between them and the button (an owner found one in between confusing). */
+  lists?: Listed[];
+  /** Said under the title where no list says it (a whole device, a report). */
+  body?: MessageKey;
   action: MessageKey;
   strip?: string;
   stripAction?: MessageKey;
 }
 
+const TOPIC: Record<SupportTopic, MessageKey> = {
+  keys: 'support.topic.keys',
+  knob: 'support.topic.knob',
+  lighting: 'support.topic.lighting',
+  actuation: 'support.topic.actuation',
+  keyModes: 'support.topic.keyModes',
+  switches: 'support.topic.switches',
+  options: 'support.topic.options',
+  profiles: 'support.topic.profiles',
+  pollRate: 'support.topic.pollRate',
+  macros: 'support.topic.macros',
+  dpi: 'support.topic.dpi',
+  sensor: 'support.topic.sensor',
+  buttons: 'support.topic.buttons',
+  power: 'support.topic.power',
+  response: 'support.topic.response',
+  pairing: 'support.topic.pairing',
+  receiverLight: 'support.topic.receiverLight',
+};
+
+/** A translated "… {list}." cut before the list: its heading, in every language. */
+const headingOf = (t: T, key: MessageKey) => t(key, { list: '\u0001' }).split('\u0001')[0]!.trim();
+
 /** What the invitation says for a plan (DeviceUi.support). */
 function copyFor(plan: SupportPlan, kind: LiveDevice['kind'], t: T): Copy {
-  const list = plan.gaps.map((g) => t(GAP[g])).join(', ');
+  const gapItems = plan.gaps.map((g) => t(GAP[g]));
+  const topicItems = (plan.unconfirmed ?? []).map((u) => t(TOPIC[u]));
+  const list = gapItems.join(', ');
+  const topics = topicItems.join(', ');
+  const lists: Listed[] = [
+    ...(gapItems.length ? [{ heading: headingOf(t, 'support.gaps'), items: gapItems }] : []),
+    ...(topicItems.length
+      ? [{ heading: headingOf(t, 'support.unconfirmed'), items: topicItems }]
+      : []),
+  ];
   if (plan.level === 'none') {
     return plan.record === 'report'
       ? {
@@ -53,11 +94,25 @@ function copyFor(plan: SupportPlan, kind: LiveDevice['kind'], t: T): Copy {
       stripAction: 'support.strip.name',
     };
   }
+  // Nothing missing, but settings no recording of this model confirmed yet.
+  if (!list) {
+    return {
+      title: 'support.title.complete',
+      lists,
+      action: 'support.action.confirm',
+      strip: t(
+        kind === 'keyboard'
+          ? 'support.strip.unconfirmed.keyboard'
+          : 'support.strip.unconfirmed.mouse',
+        { list: topics },
+      ),
+      stripAction: 'support.strip.confirm',
+    };
+  }
   const steps = Array.isArray(plan.record) && plan.record.some((s) => s !== 'specific');
   return {
     title: 'support.title.complete',
-    lead: t('support.gaps', { list }),
-    body: steps ? 'support.body.steps' : 'support.body.specific',
+    lists,
     action: steps ? 'support.action.steps' : 'support.action.specific',
     strip: t(kind === 'keyboard' ? 'support.strip.keyboard' : 'support.strip.mouse', { list }),
     stripAction: 'support.strip.add',
@@ -147,7 +202,7 @@ function Actions({ device, plan, copy }: { device: LiveDevice; plan: SupportPlan
  * browser keep the plan's own body; Linux and the browser add a line of their
  * own under it (`Actions`).
  */
-function bodyFor(plan: SupportPlan, copy: Copy, os: string | undefined): MessageKey {
+function bodyFor(plan: SupportPlan, copy: Copy, os: string | undefined): MessageKey | undefined {
   if (hostFeatures.reportTool && os === 'darwin' && plan.record !== 'report') {
     return 'support.body.mac';
   }
@@ -194,7 +249,7 @@ export function SupportInvite({
     return (
       <div className="support-invite support-in-identity">
         <h5>{t(copy.title)}</h5>
-        <p className="hint">{t(body)}</p>
+        {body && <p className="hint">{t(body)}</p>}
         <Actions device={device} plan={plan} copy={copy} />
       </div>
     );
@@ -202,8 +257,17 @@ export function SupportInvite({
   if (plan.level === 'none') return null;
   return (
     <Panel title={t(copy.title)} className="support-invite">
-      {copy.lead && <p className="support-lead">{copy.lead}</p>}
-      <p className="hint">{t(body)}</p>
+      {copy.lists?.map((l) => (
+        <p className="support-lead" key={l.heading}>
+          {l.heading}{' '}
+          {l.items.map((item) => (
+            <span className="support-item" key={item}>
+              {item}
+            </span>
+          ))}
+        </p>
+      ))}
+      {body && <p className="hint">{t(body)}</p>}
       <Actions device={device} plan={plan} copy={copy} />
     </Panel>
   );

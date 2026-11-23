@@ -55,7 +55,7 @@ roughly. Selected:
 | 8 / 136 | `SET_SLEDPARAM` / `GET_SLEDPARAM` | side lighting |
 | 9 / 137 | `SET_KBOPTION` / `GET_KBOPTION` | option bitfield |
 | 10 / 138 | `SET_KEYMATRIX` / `GET_KEYMATRIX` | base-layer remap; GET needs a layer/page arg (TBD) |
-| 11 / 139 | `SET_MACRO` / `GET_MACRO` | 256-byte payload, 56-byte chunks |
+| 11 / 139 | `SET_MACRO` / `GET_MACRO` | 64 slots of 256 bytes, 56-byte chunks; see Macros |
 | 12 / 140 | `SET_USERPIC` / `GET_USERPIC` | per-key colour map |
 | 16 / 144 | `SET_FN` / `GET_FN` | Fn-layer remap |
 | 17 / 145 | `SET_SLEEPTIME` / `GET_SLEEPTIME` | uint16 LE pairs from data offset 7 (frame [9]): idle/deep × 2 contexts |
@@ -726,6 +726,55 @@ bytes 2..3, firmware uint16 at 8..9. `GET_REPORT`'s rate index is at byte 3.
 byte 2. Paged `GET_MULTI_MAGNETISM` is the exception to all of this: no command
 echo at all, data from byte 1 (see above).
 
+
+## Macros — `verified-capture`
+
+Settled on an R98 HE (model id 3743, firmware 5.06) in November 2026: three
+macros its owner made in Driver v4 read back and re-encoded byte for byte, the
+macro steps of two owner recordings replayed through the driver, and test
+macros written to slots 4, 16, 32 and 64, two of them played from a key.
+
+**Storage.** 64 slots of 256 bytes, 16 KB. `GET_MACRO` (139) with the args
+`[0, page]` answers one 64-byte page, data from byte 1; slot *n* (from 0) is
+pages 4*n* to 4*n* + 3. The key matrix's shape, `[0, 0xff, page]`, is answered
+with `0xFF` fill whatever the slot holds. Flash never written reads `0xFF`; a
+slot emptied by the official software or by Shark Deck reads zeros.
+
+**Payload.** Two bytes of repeat count, little-endian, then one event per key
+press or release: the usage, then `pressed << 7 | wait`, `wait` being the pause
+after the event in ms (1–127). A `wait` of 0 means two more bytes follow, a
+little-endian wait of 0–65 535 ms: the board plays multi-second waits written
+this way. The events end at a usage of 0 (`0xFF` in unwritten flash). The start
+of the owner's first macro:
+
+| bytes | meaning |
+|---|---|
+| `01 00` | play once |
+| `04 80 f2 00` | A down (`80`: pressed, wait 0), then 242 ms (`f2 00`) |
+| `04 00 dd 04` | A up, then 1245 ms |
+| `06 32` | C up, then 50 ms (`32`: released, wait 50) |
+| `00 00` | end |
+
+**Writing.** `SET_MACRO` (11): `0b <slot> <chunk> 38 <last> 00 00 <checksum>`,
+then 56 data bytes, as many chunks as the events take, the last one flagged.
+The firmware assembles a slot in a 256-byte buffer and saves all of it, so the
+bytes after the ones sent keep what the previous write left there: a write
+always ends its events with a zero event. Shark Deck writes at most four chunks
+(224 bytes, 110 events).
+
+**Binding a key.** A key plays slot *n* when its base or Fn binding is
+`[9, 0, n, 0]` (`SET_KEYMATRIX` / `SET_FN`), the official software's own: its
+owner's Fn + N\*, N- and N/ play slots 1 to 3, and Fn + N+ and Fn + N Enter
+bound to slots 4 and 64 played what was written there.
+
+## After a committed write — `verified-capture`
+
+The board takes a moment to save a committed write, and a read in that time
+answers with what it held before. Measured on the R98 HE: after a key map write,
+stale reads for under 100 ms; after a magnetism commit, no answer for about
+100 ms, wrong values from 150 to 300 ms, the right ones from 400 ms. Writes made
+in that time land. The driver waits it out before its next paged read
+(`KEYMATRIX_SAVE_MS`, `MAGNETISM_SAVE_MS` in `compx-keyboard.ts`).
 
 ## Main lighting — `SET_LEDPARAM` / `GET_LEDPARAM`
 

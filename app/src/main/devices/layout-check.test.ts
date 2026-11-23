@@ -4,7 +4,14 @@ import { ANSI_79_SG9047 } from '@shared/layouts';
 import { KB_FN_DEFAULT_SLOTS } from '@shared/keyboard-fn-defaults';
 import { decodeQuad } from './drivers/compx-keyboard';
 import { LAYOUT_GEOMETRY } from './catalog/generated/layout-geometry';
-import { deriveLayout, keepLayout, layoutAgreement, layoutHolds, placeKept } from './layout-check';
+import {
+  deriveLayout,
+  findKnob,
+  keepLayout,
+  layoutAgreement,
+  layoutHolds,
+  placeKept,
+} from './layout-check';
 import { R98HE_FN_PAGES, r98hePages } from './r98he-keymap.fixture';
 
 /** A recorded layer as the driver reads it: page p's quad q is slot p * 16 + q. */
@@ -167,5 +174,20 @@ describe('keepLayout / placeKept', () => {
     // two keys on one slot
     const twice = keepLayout(layout).map(([r, c, s], i) => [r, c, i === 1 ? 0 : s]);
     expect(placeKept(R98, twice)).toBeNull();
+  });
+});
+
+describe('findKnob', () => {
+  const R98 = LAYOUT_GEOMETRY.Common98_SG9097_F!;
+
+  it("finds the R98 HE's knob beside its keys: Volume -, Volume + and Mute", () => {
+    const map = boardMap(r98hePages());
+    expect(findKnob(map, deriveLayout(R98, map)!)).toEqual({ left: 120, right: 121, press: 122 });
+  });
+
+  it('does not guess at a knob its owner remapped', () => {
+    const map = boardMap(r98hePages());
+    map[122] = decodeQuad(122, [3, 0, 0xcd, 0]); // the press made Play / Pause
+    expect(findKnob(map, deriveLayout(R98, map)!)).toBeNull();
   });
 });

@@ -192,8 +192,13 @@ export interface Api {
   listMacroLibrary(): Promise<Macro[]>;
   saveMacroLibraryEntry(m: Macro): Promise<Macro[]>;
   deleteMacroLibraryEntry(id: string): Promise<Macro[]>;
-  /** Writes one library macro into the device's one onboard macro slot. */
-  pushMacroToDevice(deviceId: string, macroId: string): Promise<WriteResult>;
+  /**
+   * Writes one library macro to the device: into `slot` (0-based) where the
+   * device has numbered slots the user picks (a keyboard), else where the
+   * driver puts it (a mouse: the slot holding a macro of that name, or the
+   * first free one).
+   */
+  pushMacroToDevice(deviceId: string, macroId: string, slot?: number): Promise<WriteResult>;
 
   // ---- app-side per-key lighting library (device-independent — see main/lighting/store.ts) --
   listPerKeyLightingLibrary(): Promise<PerKeyLightingPreset[]>;

@@ -249,14 +249,25 @@ export function planModeChange(map: KeyMap, keys: readonly KeyRef[], mode: Magne
   return withPartnersReleased(map, changes);
 }
 
-/** Put `keys` back to `defaults`, releasing the partners they leave behind. */
+/**
+ * Put `keys` back to `defaults` — and the partner of a key in a snap-tap
+ * pair with it: the pair is one setting of two keys, so a reset of either is
+ * a reset of both. That is what the official software does (an R98 HE
+ * owner's recording, 2026-11-22: Reset on A put A and D back), and what its
+ * owner asked of Shark Deck. A partner that does not name the key back is
+ * only released, as before.
+ */
 export function planReset(
   map: KeyMap,
   keys: readonly KeyRef[],
   defaults: (k: KeyRef) => MagneticKeySettings,
 ): Plan {
   const changes = new Map<string, MagneticKeySettings>();
-  for (const k of keys) changes.set(keyIdOf(k), defaults(k));
+  for (const k of keys) {
+    changes.set(keyIdOf(k), defaults(k));
+    const partner = partnerOf(map, k);
+    if (partner && !changes.has(keyIdOf(partner))) changes.set(keyIdOf(partner), defaults(partner));
+  }
   return withPartnersReleased(map, changes);
 }
 

@@ -25,13 +25,30 @@ export interface KeyLayoutEntry {
   y: number;
   w?: number;
   h?: number;
+  /** Not a key of the drawing but a control beside it: a volume knob's turn
+   *  or press (`KnobSlots`), drawn and remapped in the Remap view only. */
+  control?: 'knob';
+  /** The factory binding of a control with no HID usage of its own (the
+   *  knob's Volume -), so Reset can put it back and a change shows. */
+  defaultQuad?: readonly [number, number, number, number];
+}
+
+/** Where a volume knob's three bindings sit in the key matrix. */
+export interface KnobSlots {
+  /** turned left: Volume - from the factory */
+  left: number;
+  /** turned right: Volume + */
+  right: number;
+  /** pressed: Mute */
+  press: number;
 }
 
 /**
  * One firmware-matrix slot's current binding, read from the device (base or
  * Fn layer). See `readKeyBindings` (shared/ipc.ts) and `KeyRemapSection.tsx`.
  */
-export type KeyBindingKind = 'key' | 'consumer' | 'system' | 'lighting' | 'unused' | 'unknown';
+export type KeyBindingKind =
+  'key' | 'consumer' | 'system' | 'lighting' | 'macro' | 'unused' | 'unknown';
 
 export interface KeyBinding {
   /** firmware matrix slot (see KeyLayoutEntry.slot), not the layout array index */

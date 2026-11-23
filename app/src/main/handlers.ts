@@ -235,7 +235,7 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
     listMacroLibrary: () => mstore.listLibraryMacros(),
     saveMacroLibraryEntry: (m: Macro) => mstore.saveLibraryMacro(m),
     deleteMacroLibraryEntry: (mid: string) => mstore.deleteLibraryMacro(mid),
-    pushMacroToDevice: (id: string, macroId: string) =>
+    pushMacroToDevice: (id: string, macroId: string, slot?: number) =>
       guardedWrite(id, async () => {
         const all = await mstore.listLibraryMacros();
         const m = all.find((x) => x.id === macroId);
@@ -245,7 +245,7 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
             verified: 'unverified' as const,
             error: 'Macro not found in library',
           };
-        return driverOrThrow(id).saveMacro(m);
+        return driverOrThrow(id).saveMacro(m, slot);
       }),
 
     listPerKeyLightingLibrary: () => lstore.listPerKeyPresets(),

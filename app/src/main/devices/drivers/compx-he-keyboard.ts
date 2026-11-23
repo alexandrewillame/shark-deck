@@ -8,6 +8,8 @@ import type { KeyBinding } from '@shared/types/keys';
 import {
   CompxKeyboard,
   KB_CMD,
+  KEYMATRIX_SAVE_MS,
+  MAGNETISM_SAVE_MS,
   type KeyQuad,
   decodeQuad,
   kbWorst,
@@ -135,6 +137,10 @@ const MM_REPLY_OFFSET = 1;
  */
 const SWITCH_READBACK_WAIT_MS = 120;
 const SWITCH_READBACK_TRIES = 3;
+/** How long the official software lets the board learn where each key rests
+ *  before it stops that half of a calibration: 2.0 s in its owner's recording
+ *  of an R98 HE (see setMagneticCalibration). */
+const CAL_REST_MS = 2000;
 
 /**
  * Mode-byte (page 7) bit layout, from qmk.top's `___utils_磁轴NumToOption` /
@@ -402,8 +408,14 @@ export class CompxHeKeyboard extends CompxKeyboard {
    * 4 chunks = 2 bytes/key little-endian (travel, release, RT press/release,
    * DKS points, dead zone bottom), 8 chunks = 4 bytes/key (DKS detail).
    */
-  protected readMagnetismPage(page: number, chunks = pageChunks(page)): Promise<number[] | null> {
+  protected async readMagnetismPage(
+    page: number,
+    chunks = pageChunks(page),
+  ): Promise<number[] | null> {
     const width = Math.max(1, Math.round(chunks / 2));
+    // A board still saving a committed write answers WRONG values here, not
+    // nothing (see MAGNETISM_SAVE_MS): wait it out first.
+    await this.untilSaved();
     return this.ch.transaction(async (io) => {
       const bytes: number[] = [];
       for (let c = 0; c < chunks; c++) {
@@ -673,6 +685,7 @@ export class CompxHeKeyboard extends CompxKeyboard {
     const tx = this.frame(KB_CMD.SET_MULTI_MAGNETISM, args);
     try {
       await this.ch.write(tx);
+      if (commit) this.savingFor(MAGNETISM_SAVE_MS);
       return { ok: true, verified: 'unverified', frames: [toHex(tx)] };
     } catch (e) {
       return { ok: false, verified: 'unverified', error: String(e), frames: [toHex(tx)] };
@@ -761,6 +774,7 @@ export class CompxHeKeyboard extends CompxKeyboard {
       }
       if (this.settleMs) await delay(this.settleMs);
     }
+    this.savingFor(KEYMATRIX_SAVE_MS);
     return { ok: true, verified: 'unverified', frames };
   }
 
@@ -972,21 +986,38 @@ export class CompxHeKeyboard extends CompxKeyboard {
   }
 
   /**
-   * Recalibrate the Hall sensors. `zero` = re-zero the rest point
-   * (`SET_MAGNETISM_CAL`=28), `max` = learn full travel
-   * (`SET_MAGNETISM_MAXIMUM_CALIBRATION`=30). Sent with a single `0x01`
-   * "start" arg; there is no read-back. `ported-from-vendor` — confirm the
-   * exact payload in CAPTURE-KEYBOARD.md step 10.
+   * Recalibrate the Hall sensors, in the official software's two halves —
+   * Attack Shark Driver v4 on an R98 HE, its owner's recording (2026-11-22):
+   *
+   *   begin (`zero`):  `1c 01` — learn where each key rests, hands off;
+   *                    2 s later `1c 00`; then `1e 01` — learn how deep each
+   *                    key goes, while every key is pressed to the bottom;
+   *   finish (`max`):  `1e 00`.
+   *
+   * `provenance: verified-capture`. This used to send `1c 01` to begin and
+   * `1e 01` to finish, from the vendor's command names alone: the rest point
+   * never stopped learning while the keys were pressed, and the depth only
+   * started learning once they had been. No read-back exists for either.
    */
   override async setMagneticCalibration(scope: 'zero' | 'max'): Promise<WriteResult> {
-    const cmd =
-      scope === 'max' ? KB_CMD.SET_MAGNETISM_MAXIMUM_CALIBRATION : KB_CMD.SET_MAGNETISM_CAL;
-    try {
-      const tx = this.frame(cmd, [0x01]);
+    const frames: string[] = [];
+    const send = async (cmd: number, on: 0 | 1) => {
+      const tx = this.frame(cmd, [on]);
+      frames.push(toHex(tx));
       await this.ch.write(tx);
-      return { ok: true, verified: 'unverified', frames: [toHex(tx)] };
+    };
+    try {
+      if (scope === 'zero') {
+        await send(KB_CMD.SET_MAGNETISM_CAL, 1);
+        await delay(CAL_REST_MS);
+        await send(KB_CMD.SET_MAGNETISM_CAL, 0);
+        await send(KB_CMD.SET_MAGNETISM_MAXIMUM_CALIBRATION, 1);
+      } else {
+        await send(KB_CMD.SET_MAGNETISM_MAXIMUM_CALIBRATION, 0);
+      }
+      return { ok: true, verified: 'unverified', frames };
     } catch (e) {
-      return { ok: false, verified: 'unverified', error: String(e) };
+      return { ok: false, verified: 'unverified', error: String(e), frames };
     }
   }
 

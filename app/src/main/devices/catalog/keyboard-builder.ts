@@ -5,12 +5,15 @@ import type {
   MagneticSpec,
   TravelRangeSpec,
 } from '@shared/types/device';
-import type { KeyLayoutEntry } from '@shared/types/keys';
+import type { KeyBinding, KeyLayoutEntry, KnobSlots } from '@shared/types/keys';
+import { decodeKeyQuad } from '@shared/keyboard-fn-codes';
 import { ANSI_79_SG9047 } from '@shared/layouts';
 import { KB_TRAVEL_RANGE } from '@shared/keyboard-travel';
 import type { KeyboardFamily, KeyboardRow, TravelRange } from './keyboard-row';
 import { VENDOR_LAYOUTS } from './generated/vendor-layouts';
 import { LAYOUT_GEOMETRY } from './generated/layout-geometry';
+import { RECORDED_KEYMAPS } from './recorded-keymaps';
+import { deriveLayout, findKnob } from '../layout-check';
 
 /**
  * One Attack Shark keyboard row (the vendor registry, via sharkfin — see
@@ -114,10 +117,27 @@ export function magneticWritable(row: Pick<KeyboardRow, 'family' | 'internalName
   return false;
 }
 
+/** A recorded key map's pages (hex) as the bindings the driver would read. */
+function bindingsOf(pages: readonly string[]): Record<number, KeyBinding> {
+  const out: Record<number, KeyBinding> = {};
+  pages.forEach((page, p) => {
+    const bytes = (page.match(/../g) ?? []).map((h) => parseInt(h, 16));
+    for (let q = 0; q * 4 + 3 < bytes.length; q++) {
+      const slot = p * 16 + q;
+      const raw = bytes.slice(q * 4, q * 4 + 4) as [number, number, number, number];
+      const d = decodeKeyQuad(raw);
+      out[slot] = { slot, raw, code: d.code, kind: d.kind, provenance: 'device' };
+    }
+  });
+  return out;
+}
+
 /** A row's key layout and how far it is trusted (shared/types/device.ts `LayoutStatus`). */
 export interface RowLayout {
   layout: KeyLayoutEntry[] | undefined;
   status: LayoutStatus;
+  /** its volume knob's bindings, when the map they come from shows them */
+  knobSlots?: KnobSlots;
 }
 
 /**
@@ -129,6 +149,16 @@ export function slotLayoutFor(row: KeyboardRow): RowLayout {
   if (row.id === 3123) return { layout: ANSI_79_SG9047, status: 'verified' };
   const verified = VERIFIED_LAYOUTS[row.layout];
   if (verified) return { layout: verified, status: 'certain' };
+  // A board's own factory map, from an owner's recording: its drawing, each
+  // key on the slot that types it there.
+  const recorded = RECORDED_KEYMAPS[row.internalName];
+  const drawing = LAYOUT_GEOMETRY[row.layout];
+  if (recorded && drawing) {
+    const bindings = bindingsOf(recorded.pages);
+    const layout = deriveLayout(drawing, bindings);
+    const knobSlots = row.knob && layout ? findKnob(bindings, layout) : null;
+    if (layout) return { layout, status: 'certain', ...(knobSlots ? { knobSlots } : {}) };
+  }
   if (row.slotLayout && VENDOR_LAYOUTS[row.slotLayout]) {
     return { layout: VENDOR_LAYOUTS[row.slotLayout], status: 'certain' };
   }
@@ -160,7 +190,7 @@ function magneticSpec(row: KeyboardRow): MagneticSpec {
 
 export function buildKeyboardDescriptor(
   row: KeyboardRow,
-  { layout, status }: RowLayout = slotLayoutFor(row),
+  { layout, status, knobSlots }: RowLayout = slotLayoutFor(row),
 ): DeviceDescriptor {
   const supported = SUPPORTED_FAMILIES.has(row.family);
   const yc500 = row.family === 'yc500';
@@ -221,7 +251,13 @@ export function buildKeyboardDescriptor(
       // Only for a board that has the setting: a list on a yc500 board (no
       // report-rate command) would be a menu entry the family cannot answer.
       ...(caps.includes('pollRate') ? { pollRates: POLL_RATES.filter((r) => r <= cableMax) } : {}),
-      keyMatrix: { rows: 6, cols: 22, layout, layoutStatus: status },
+      keyMatrix: {
+        rows: 6,
+        cols: 22,
+        layout,
+        layoutStatus: status,
+        ...(knobSlots && status !== 'none' ? { knobSlots } : {}),
+      },
       lighting: {
         zones: row.sideLight ? ['per-key', 'side'] : ['per-key'],
         // yc500 per-key colours write flash and read back stale: not offered.
@@ -232,6 +268,7 @@ export function buildKeyboardDescriptor(
       ...(magnetic ? { magnetic: magneticSpec(row) } : {}),
       ...(row.switchTypes.length ? { supportedSwitches: row.switchTypes.map((s) => s.code) } : {}),
       ...(wireless ? { wireless: true } : {}),
+      ...(row.knob ? { knob: true } : {}),
       ...(supported && (!addressable || (row.magnetic && !magnetic))
         ? {
             support: {

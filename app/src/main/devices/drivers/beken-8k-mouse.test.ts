@@ -19,6 +19,7 @@ const {
   putDeepSleep,
   SEED_BUTTONS,
   bekenFrame,
+  bekenStageColours,
   decodeBekenButton,
   decodeBekenDpi,
   decodeX11Dpi,
@@ -115,7 +116,11 @@ function rig(answers: Uint8Array[] = [ACK_GOT, ACK_DONE], kept: Record<string, n
     onWarning: () => undefined,
     state,
   });
-  Object.assign(drv as unknown as Record<string, number>, { minGapMs: 0, ackTimeoutMs: 40 });
+  Object.assign(drv as unknown as Record<string, number>, {
+    minGapMs: 0,
+    ackTimeoutMs: 40,
+    firstBatteryWaitMs: 0,
+  });
   return { drv, sent, store, queue, events };
 }
 
@@ -320,7 +325,58 @@ describe('Beken8kMouse: what it keeps, and when', () => {
     expect((await drv.setButtonMapping(6, { actionKey: 'disable', action: 0 })).ok).toBe(false);
     expect((await drv.setSensor({ lod: 2 })).ok).toBe(false);
     expect(sent).toEqual([]);
-    expect(encodeBekenButton({ actionKey: 'firepower', action: 4 })).toMatch(/no such/);
+    expect(encodeBekenButton({ actionKey: 'pollRateSwitch', action: 7 })).toMatch(/no such/);
+  });
+
+  // The X8 PRO owner's 11-23 recording: one change a step, button 2 (slot 1)
+  // through the vendor software's media and shortcut lists, button 4 to its
+  // fire key, button 3 to easy aim, button 5 to mute. The slot bytes it wrote:
+  it('writes the buttons the 11-23 recording showed, and reads them back as themselves', () => {
+    const media = (multimedia: number) =>
+      encodeBekenButton({ actionKey: 'multimedia', action: 5, multimedia });
+    expect(
+      [0x00e2, 0x0192, 0x018a, 0x0225, 0x0224, 0x0226, 0x0194, 0x0227, 0x0223].map(media),
+    ).toEqual([0x1a, 0x1d, 0x1e, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25].map((a) => [a, 0x00, 0x00]));
+    // Favorites is the vendor software's Ctrl + Shift + O.
+    expect(media(0x022a)).toEqual([0x11, 0x03, 0x12]);
+    expect(encodeBekenButton({ actionKey: 'firepower', action: 4 })).toEqual([0x08, 0x00, 0x00]);
+    expect(encodeBekenButton({ actionKey: 'easyAim', action: 0x10 })).toEqual([0x10, 0x00, 0x03]);
+    // Media player and Search were not in it: still refused rather than guessed.
+    expect(media(0x0183)).toMatch(/no such/);
+    expect(media(0x0221)).toMatch(/no such/);
+
+    expect(decodeBekenButton([0x08, 0x00, 0x00]).actionKey).toBe('firepower');
+    expect(decodeBekenButton([0x10, 0x00, 0x03]).actionKey).toBe('easyAim');
+    expect(decodeBekenButton([0x25, 0x00, 0x00])).toMatchObject({
+      actionKey: 'multimedia',
+      multimedia: 0x0223,
+    });
+    // The shortcuts tab is keys with modifiers: Alt + F4, Win + Shift + S.
+    expect(decodeBekenButton([0x11, 0x04, 0x3d]).combo).toEqual([0xe2, 0x3d]);
+    expect(decodeBekenButton([0x11, 0x0a, 0x16]).combo).toEqual([0xe1, 0xe3, 0x16]);
+  });
+
+  // The owner's two reports: stage 1 sent, every change came back red (11-19);
+  // stage 2 sent, stage 2 lit red and stage 1 magenta (11-23).
+  it('turns the colours so the stage a block makes current keeps its own', () => {
+    const name = (c: number[]) =>
+      ({
+        ff0000: 'R',
+        '00ff00': 'G',
+        '0000ff': 'B',
+        ffff00: 'Y',
+        '00ffff': 'C',
+        ff00ff: 'M',
+        ff4000: 'O',
+        ffffff: 'W',
+      })[c.map((x) => x.toString(16).padStart(2, '0')).join('')];
+    const table = (active: number, count: number) =>
+      bekenStageColours(active, count).map(name).join('');
+    expect(table(1, 6)).toBe('RGBYCMOW');
+    expect(table(2, 6)).toBe('GBYCMROW');
+    expect(table(6, 6)).toBe('MRGBYCOW');
+    // Four stages on: the four turn among themselves, the rest stay.
+    expect(table(3, 4)).toBe('BYRGCMOW');
   });
 
   it('turns stages off with the mask, and reads them back off', async () => {
@@ -421,9 +477,10 @@ describe('Beken8kCableMouse, against the cable recording', () => {
     const stages = await drv.readDpiStages();
     expect(hexOf(sent[0]!)).toBe('a0 04 38 00 01 00 00 00');
     expect(stages.map((s) => s.dpi)).toEqual([1600, 750, 8750, 10000, 40000, 300]);
-    // Stage 1 is green on the mouse, stage 6 orange-red (colour entries 1–6).
-    expect(stages[0]!.color).toEqual([0x00, 0xff, 0x00]);
-    expect(stages[5]!.color).toEqual([0xff, 0x40, 0x00]);
+    // Each stage in its own colour, in the vendor software's order: stage 1
+    // red, stage 6 magenta (bekenStageColours keeps them so on the mouse).
+    expect(stages[0]!.color).toEqual([0xff, 0x00, 0x00]);
+    expect(stages[5]!.color).toEqual([0xff, 0x00, 0xff]);
     const r = await drv.setDpiStages(withStage(stages, 0, 400));
     expect(writes()).toEqual([DPI_400]);
     expect(r.ok).toBe(true);
@@ -680,9 +737,13 @@ describe('BekenX11Mouse, against the X11 recording', () => {
     d[21] = 0x02;
     const { drv, writes } = x11Rig(report10(1, d, START.power!, START.buttons!));
     await drv.setDpiStages(await drv.readDpiStages());
-    // dpi.active.2: the software made stage 2 active.
+    // dpi.active.2: the software made stage 2 active. The colours go turned to
+    // start at stage 2's own (green), where the vendor software sent them as
+    // they are: the mouse starts its light over at the first entry, and stage
+    // 2 would light red. The same bytes, so the same sum.
     expect(writes()).toEqual([
-      dpi('00 00 3f 20 20 12 25 38 4b 75 81 01 01 00 00 00 00 00 01 00 00 02', '0f 69'),
+      '04 38 01 00 00 3f 20 20 12 25 38 4b 75 81 01 01 00 00 00 00 00 01 00 00 02 ' +
+        '00 ff 00 00 00 ff ff ff 00 00 ff ff ff 00 ff ff 00 00 ff 40 00 ff ff ff 02 0f 69',
     ]);
   });
 
@@ -1086,8 +1147,19 @@ describe('Beken mice: macros, deep sleep, announcements', () => {
     events.push(bytes('03 08 40 03 64'), bytes('03 08 10 03 00'));
     expect(await drv.getBattery()).toMatchObject({ level: 100, charging: true });
     expect(await drv.readLiveState()).toMatchObject({ activeDpiStage: 2 });
-    // A sensor change sends the stage the mouse is on, not the one Shark Deck last sent.
+    // A sensor change sends the stage the mouse is on, not the one Shark Deck last sent,
+    // and the colours turned so stage 3 keeps its own (blue).
     await drv.setSensor({ motionSync: true });
     expect(sent[0]![6 + 21]).toBe(3);
+    expect([...sent[0]!.subarray(6 + 22, 6 + 25)]).toEqual([0x00, 0x00, 0xff]);
+  });
+
+  it('hears what the mouse announces on every pass, not only at the battery poll', async () => {
+    const { drv, events } = rig();
+    events.push(bytes('03 08 40 01 5a'), bytes('03 08 10 04 00'));
+    expect(await drv.ping()).toBe(true);
+    expect(events).toEqual([]);
+    expect(await drv.getBattery()).toMatchObject({ level: 90, charging: false });
+    expect(await drv.readLiveState()).toMatchObject({ activeDpiStage: 3 });
   });
 });

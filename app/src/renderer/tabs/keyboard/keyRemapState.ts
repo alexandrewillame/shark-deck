@@ -1,5 +1,5 @@
 import { KB_FN_DEFAULT_SLOTS } from '@shared/keyboard-fn-defaults';
-import { decodeKeyQuad, isModifierUsage } from '@shared/keyboard-fn-codes';
+import { MACRO_QUAD_TYPE, decodeKeyQuad, isModifierUsage } from '@shared/keyboard-fn-codes';
 import { KEY_DISABLED_CODE } from '@shared/keys';
 import type { KeyBinding, KeyLayoutEntry } from '@shared/types/keys';
 
@@ -53,7 +53,9 @@ export function factoryBinding(
 ): FactoryBinding {
   if (layer === 'base') {
     const code = factoryCode(entry);
-    return code === null ? { kind: 'opaque' } : { kind: 'usage', code };
+    if (code !== null) return { kind: 'usage', code };
+    // A knob's turn or press: its factory binding is a media key.
+    return entry?.defaultQuad ? { kind: 'quad', raw: entry.defaultQuad } : { kind: 'opaque' };
   }
   if (slot === null) return { kind: 'opaque' };
   const def = KB_FN_DEFAULT_SLOTS[slot];
@@ -244,7 +246,9 @@ export function isRemapped(
   // is the legend on the cap), so `quad` cannot arise here — but narrow it
   // rather than assert it.
   const factory = factoryBinding(entry, layer, slot);
-  if (factory.kind === 'opaque' || factory.kind === 'quad') return false;
+  // A knob's control: the quad it holds against the one it shipped with.
+  if (factory.kind === 'quad') return binding.raw.some((b, i) => b !== factory.raw[i]);
+  if (factory.kind === 'opaque') return false;
   // Bound to nothing. That is only a change where the factory sent something.
   if (!binding.code) return factory.kind === 'usage';
   if (factory.kind === 'none') return true;
@@ -305,11 +309,13 @@ export interface RemapPick {
   quad: string | null;
 }
 
-/** A binding as the picker shows it — its usages, or its consumer quad. Any
- *  other kind (a lighting control, a firmware function) lights nothing. */
+/** A binding as the picker shows it — its usages, or its consumer or macro
+ *  quad. Any other kind (a lighting control, a firmware function) lights
+ *  nothing. */
 export function pickOf(raw: readonly number[] | undefined): RemapPick {
   if (!raw) return { usages: [], quad: null };
-  if (raw[0] === CONSUMER_TYPE) return { usages: [], quad: quadAction(raw) };
+  if (raw[0] === CONSUMER_TYPE || raw[0] === MACRO_QUAD_TYPE)
+    return { usages: [], quad: quadAction(raw) };
   return { usages: comboUsages(raw), quad: null };
 }
 

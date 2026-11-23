@@ -12,7 +12,7 @@ import {
   KB_LIGHT_EFFECTS,
   KB_LIGHT_STEPS,
   KB_PERKEY_EFFECT_INDEX,
-  SIDE_LIGHT_EFFECTS,
+  SIDE_LIGHT_PICKER,
   kbEffect,
 } from '@shared/lighting';
 import { DPI_LED_EFFECTS, LIGHT_MODES, LIGHT_OFF_TIMEOUTS } from '@shared/mouse-options';
@@ -845,7 +845,7 @@ function UnderglowPane({ device }: TabProps) {
               value={cur.effect}
               color={cur.color}
               rainbow={!!cur.dazzle}
-              effects={SIDE_LIGHT_EFFECTS.map((e) => ({ label: e.name }))}
+              effects={SIDE_LIGHT_PICKER.map((e) => ({ label: e.name }))}
               // One long LED bar across the front of the case, so its tiles
               // are one continuous rectangle rather than a second keyboard.
               strip

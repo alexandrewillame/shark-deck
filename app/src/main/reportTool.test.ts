@@ -47,7 +47,8 @@ describe('reportToolArgs', () => {
       '--kind',
       'mouse',
       '--steps',
-      'media',
+      // the software's start-up reads, then the media keys
+      'start,media',
     ]);
     expect(reportToolArgs(X8_PRO, ['deep', 'macro', 'specific'], 'win32').slice(2)).toEqual([
       '--record',
@@ -99,7 +100,7 @@ describe('reportToolArgs', () => {
       '--preview-steps',
       'mouse',
       '--steps',
-      'media',
+      'start,media',
     ]);
     expect(previewArgs('keyboard', ['act', 'dks'])).toEqual([
       '--preview-steps',
@@ -175,6 +176,6 @@ describe('the steps the catalogue asks for', () => {
     const missing = offered.filter((label) => !recorded.includes(label));
     expect(missing.length).toBeGreaterThan(10);
     for (const label of missing) expect(media, label).toContain(label);
-    expect(supportPlan(X8_PRO)!.record).toEqual(['media']);
+    expect(supportPlan(X8_PRO)!.record).toEqual(['start', 'media']);
   });
 });

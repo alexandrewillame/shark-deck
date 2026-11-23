@@ -77,7 +77,7 @@ const api: Api = {
   listMacroLibrary: () => invoke('listMacroLibrary'),
   saveMacroLibraryEntry: (m) => invoke('saveMacroLibraryEntry', m),
   deleteMacroLibraryEntry: (id) => invoke('deleteMacroLibraryEntry', id),
-  pushMacroToDevice: (id, macroId) => invoke('pushMacroToDevice', id, macroId),
+  pushMacroToDevice: (id, macroId, slot) => invoke('pushMacroToDevice', id, macroId, slot),
 
   listPerKeyLightingLibrary: () => invoke('listPerKeyLightingLibrary'),
   savePerKeyLightingLibraryEntry: (p) => invoke('savePerKeyLightingLibraryEntry', p),

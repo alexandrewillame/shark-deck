@@ -1,3 +1,4 @@
+import { asKeyboardStores, macroSlotOf } from '@shared/keyboard-macro';
 import type { DeviceDescriptor } from '@shared/types/device';
 import type {
   KeyboardOptions,
@@ -28,7 +29,7 @@ import type {
 import { KB_LIGHT_EFFECTS, KB_PERKEY_EFFECT_INDEX } from '@shared/lighting';
 import { KB_TRAVEL_RANGE } from '@shared/keyboard-travel';
 import { SWITCH_FACTORY_DEFAULT } from '@shared/keyboard-switches';
-import { applicableDpiStages, clampActiveDpiStage } from '@shared/mouse-wire';
+import { applicableDpiStages, clampActiveDpiStage, v8MacroName } from '@shared/mouse-wire';
 import { CATALOG } from './catalog';
 import { KEYBOARDS } from './catalog/keyboards';
 import { hubMouseRoster } from './catalog/hub-mice';
@@ -36,6 +37,7 @@ import { GEARHUB_MICE } from './catalog/gearhub-mice';
 import { jxcMouseRoster } from './catalog/jxc-mice';
 import { bekenMouseRoster } from './catalog/beken-mice';
 import { readOnly } from './identity';
+import { deviceUi } from './deviceUi';
 import { Driver, type MagneticWriteOpts, type TravelSample } from './drivers/base';
 import { decodeQuad, quadFor } from './drivers/compx-keyboard';
 import { MT_HOLD_ZONE, MT_TAP_ZONE, isModTapEntry } from '@shared/key-zones';
@@ -303,6 +305,20 @@ export class VirtualDriver extends Driver {
       base[k.slot] = binding(k.slot, k.code ?? null, k.label, isFn ? [10, 1, 0, 0] : undefined);
       fn[k.slot] = binding(k.slot, null, `Fn+${k.label}`);
       fnLayer[k.slot] = `Fn+${k.label}`;
+    }
+
+    // A knob's turns and press hold its factory media keys, as a real board's do.
+    const knob = spec.keyMatrix?.knobSlots;
+    if (knob) {
+      const media: [number, [number, number, number, number], string][] = [
+        [knob.left, [3, 0, 0xea, 0], 'Volume -'],
+        [knob.right, [3, 0, 0xe9, 0], 'Volume +'],
+        [knob.press, [3, 0, 0xe2, 0], 'Mute'],
+      ];
+      for (const [slot, raw, label] of media) {
+        base[slot] = { ...binding(slot, null, label, raw), kind: 'consumer' };
+        fn[slot] = binding(slot, null, `Fn+${label}`);
+      }
     }
 
     const buttons: Record<number, ButtonMapping> = {};
@@ -737,10 +753,48 @@ export class VirtualDriver extends Driver {
     }
     return this.ack('SET_KEYMAP', [index]);
   }
-  override async saveMacro(m: Macro): Promise<WriteResult> {
-    const i = this.s.macros.findIndex((x) => x.id === m.id);
-    if (i >= 0) this.s.macros[i] = { ...m };
-    else this.s.macros.push({ ...m });
+  override async saveMacro(m: Macro, slot?: number): Promise<WriteResult> {
+    // A keyboard holds one macro the way its board stores it: no name, its
+    // pauses held to what an event carries (shared/keyboard-macro.ts) — so the
+    // demo shows under "On the device" what a real board would read back.
+    if (this.d.kind === 'keyboard') {
+      // Push writes the slot it names (the first by default); the others keep
+      // what they hold. An empty macro empties its slot.
+      const id = `onboard-${slot ?? 0}`;
+      const rest = this.s.macros.filter((x) => x.id !== id);
+      const own = m.steps.length
+        ? [
+            {
+              id,
+              name: `Macro ${(slot ?? 0) + 1}`,
+              repeatCount: m.repeatCount,
+              steps: asKeyboardStores(m.steps),
+            },
+          ]
+        : [];
+      this.s.macros = [...rest, ...own].sort((a, b) =>
+        a.id.localeCompare(b.id, 'en', { numeric: true }),
+      );
+      return this.ack('SET_MACRO');
+    }
+    // A mouse as its driver keeps them: the slot named, else the one holding
+    // a macro of this name, else the first empty one, under the name the mouse
+    // keeps (a V8 slot: 30 ASCII characters). A one-macro mouse: its one.
+    const slots = deviceUi(this.d).macroLimits?.slots ?? 1;
+    const name = slots > 1 ? v8MacroName(m.name) : m.name;
+    let target: number | null = slots > 1 ? (slot ?? null) : 0;
+    if (target === null) {
+      const held = this.s.macros.find((x) => x.id === m.id || x.name === name);
+      target = held ? macroSlotOf(held.id) : null;
+    }
+    const taken = new Set(this.s.macros.map((x) => macroSlotOf(x.id)));
+    for (let s = 0; s < slots && target === null; s++) if (!taken.has(s)) target = s;
+    if (target === null || target < 0 || target >= slots)
+      return { ok: false, verified: 'unverified', error: 'No free onboard macro slot' };
+    const id = `onboard-${target}`;
+    this.s.macros = [...this.s.macros.filter((x) => x.id !== id), { ...m, id, name }].sort((a, b) =>
+      a.id.localeCompare(b.id, 'en', { numeric: true }),
+    );
     return this.ack('SET_MACRO');
   }
   override async deleteMacro(id: string): Promise<WriteResult> {

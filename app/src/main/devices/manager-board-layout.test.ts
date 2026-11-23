@@ -40,9 +40,10 @@ import { decodeQuad } from './drivers/compx-keyboard';
 import { VirtualDriver } from './virtual';
 import { r98hePages } from './r98he-keymap.fixture';
 
-const R98HE = KEYBOARDS_BY_ID.get(3743)!;
+/** The R98 PRO: the R98 HE's drawing, and no recording of its own. */
+const BOARD = KEYBOARDS_BY_ID.get(3754)!;
 
-/** The R98 HE's recorded factory base layer, as the driver reads it. */
+/** The R98 HE's recorded factory base layer (the same drawing), as the driver reads it. */
 function r98Map(): Record<number, KeyBinding> {
   const out: Record<number, KeyBinding> = {};
   r98hePages().forEach((bytes, p) => {
@@ -77,26 +78,26 @@ function attach(m: DeviceManager, descriptor: DeviceDescriptor, map = r98Map()) 
 
 const kept = () =>
   (files.get('/tmp/device-state.json') as Record<string, Record<string, unknown>> | undefined)?.[
-    R98HE.model
+    BOARD.model
   ]?.boardLayout;
 
 describe('a board with a drawing but no slot map', () => {
   beforeEach(() => files.clear());
 
   it('starts with whole-board settings only', () => {
-    expect(R98HE.spec.keyMatrix?.layoutStatus).toBe('none');
-    expect(R98HE.capabilities).not.toContain('keyRemap');
-    expect(R98HE.spec.support?.gaps).toContain('keymap');
+    expect(BOARD.spec.keyMatrix?.layoutStatus).toBe('none');
+    expect(BOARD.capabilities).not.toContain('keyRemap');
+    expect(BOARD.spec.support?.gaps).toContain('keymap');
   });
 
   it('gets its keys placed from its own key map, and every per-key menu', async () => {
     const m = new DeviceManager();
-    const { e, reads, check } = attach(m, R98HE);
+    const { e, reads, check } = attach(m, BOARD);
     await check();
     expect(reads).toHaveBeenCalledTimes(1);
     const d = e.descriptor;
     expect(d.spec.keyMatrix?.layoutStatus).toBe('board');
-    expect(d.spec.keyMatrix?.layout).toHaveLength(R98HE.spec.keyMatrix!.layout!.length);
+    expect(d.spec.keyMatrix?.layout).toHaveLength(BOARD.spec.keyMatrix!.layout!.length);
     expect(layoutAddressable({ keyMatrix: d.spec.keyMatrix })).toBe(true);
     for (const cap of ['keyRemap', 'fnLayer', 'macros', 'dks', 'socd', 'modTap'] as const)
       expect(d.capabilities).toContain(cap);
@@ -105,20 +106,20 @@ describe('a board with a drawing but no slot map', () => {
     expect(d.spec.support).toBeUndefined();
     expect(e.live.capabilities).toEqual(d.capabilities);
     expect(e.layoutChecked).toBe(true);
-    expect(kept()).toHaveLength(R98HE.spec.keyMatrix!.layout!.length);
+    expect(kept()).toHaveLength(BOARD.spec.keyMatrix!.layout!.length);
     m.stop();
   });
 
   it('keeps the placing: a key remapped afterwards stays where it is drawn', async () => {
     const m = new DeviceManager();
-    await attach(m, R98HE).check();
+    await attach(m, BOARD).check();
     const placed = (m as unknown as { entries: Map<string, TestEntry> }).entries.get('kb')!
       .descriptor.spec.keyMatrix!.layout;
 
     // Caps Lock remapped to Ctrl, then the board is plugged in again
     const map = r98Map();
     map[3] = decodeQuad(3, [0, 0, 0xe0, 0]);
-    const again = attach(new DeviceManager(), R98HE, map);
+    const again = attach(new DeviceManager(), BOARD, map);
     await again.check();
     expect(again.reads).not.toHaveBeenCalled();
     expect(again.e.descriptor.spec.keyMatrix!.layout).toEqual(placed);
@@ -126,17 +127,17 @@ describe('a board with a drawing but no slot map', () => {
 
   it('is placed afresh after a factory reset', async () => {
     const m = new DeviceManager();
-    const { e, reads, check } = attach(m, R98HE);
+    const { e, reads, check } = attach(m, BOARD);
     await check();
     // placing swapped in the board's real driver; the board answers the same
     e.driver = { readKeyBindings: reads };
-    files.set('/tmp/device-state.json', { [R98HE.model]: { boardLayout: [[0, 0, 5]] } });
+    files.set('/tmp/device-state.json', { [BOARD.model]: { boardLayout: [[0, 0, 5]] } });
     m.relayout('kb');
     expect(e.layoutChecked).toBe(false);
     await check();
     expect(reads).toHaveBeenCalledTimes(2);
     expect(e.relayout).toBe(false);
-    expect(kept()).toHaveLength(R98HE.spec.keyMatrix!.layout!.length);
+    expect(kept()).toHaveLength(BOARD.spec.keyMatrix!.layout!.length);
     m.stop();
   });
 
@@ -144,9 +145,9 @@ describe('a board with a drawing but no slot map', () => {
     const empty: Record<number, KeyBinding> = {};
     for (let s = 0; s < 128; s++) empty[s] = decodeQuad(s, [0, 0, 0, 0]);
     const m = new DeviceManager();
-    const { e, check } = attach(m, R98HE, empty);
+    const { e, check } = attach(m, BOARD, empty);
     await check();
-    expect(e.descriptor).toBe(R98HE);
+    expect(e.descriptor).toBe(BOARD);
     expect(e.layoutChecked).toBe(true);
     expect(kept()).toBeUndefined();
     m.stop();
@@ -154,16 +155,35 @@ describe('a board with a drawing but no slot map', () => {
 
   it('is asked again on a later pass when the read fails', async () => {
     const m = new DeviceManager();
-    const { e, check } = attach(m, R98HE);
+    const { e, check } = attach(m, BOARD);
     e.driver.readKeyBindings = async () => null;
     await check();
     expect(e.layoutChecked).toBeFalsy();
-    expect(e.descriptor).toBe(R98HE);
+    expect(e.descriptor).toBe(BOARD);
+    m.stop();
+  });
+
+  it("finds a knob board's knob with its keys, and keeps it with them", async () => {
+    // The R98 GT: the same drawing, a knob, and nobody's recording.
+    const gt = KEYBOARDS_BY_ID.get(3748)!;
+    expect(gt.spec.knob).toBe(true);
+    const knob = { left: 120, right: 121, press: 122 };
+    const m = new DeviceManager();
+    const { e, check } = attach(m, gt);
+    await check();
+    expect(e.descriptor.spec.keyMatrix?.knobSlots).toEqual(knob);
+    const state = files.get('/tmp/device-state.json') as Record<string, Record<string, unknown>>;
+    expect(state[gt.model]?.boardKnob).toEqual(knob);
+    // plugged in again: the kept placing, knob and all, without reading the board
+    const again = attach(new DeviceManager(), gt);
+    await again.check();
+    expect(again.reads).not.toHaveBeenCalled();
+    expect(again.e.descriptor.spec.keyMatrix?.knobSlots).toEqual(knob);
     m.stop();
   });
 
   it('on a demo board, is placed for the session and never stored', async () => {
-    const demo: DeviceDescriptor = { ...R98HE, simulated: true };
+    const demo: DeviceDescriptor = { ...BOARD, simulated: true };
     const m = new DeviceManager();
     const sim = new VirtualDriver({ descriptor: demo, channel: {} as never, onWarning: () => {} });
     const { e, check } = attach(m, demo, (await sim.readKeyBindings('base'))!);

@@ -263,6 +263,17 @@ export const SIDE_LIGHT_EFFECTS: { name: string; wire: number }[] = [
   { name: 'Music (Level)', wire: 22 },
 ];
 
+/**
+ * The side effects the board runs on its own: the side light's picker. 20-22
+ * are fed by the computer (the music level, the screen colour), which Shark
+ * Deck does for the main lighting only (main/lighting/ambient.ts), so on the
+ * side strip they would just go dark; the official software does not offer
+ * them for the side light either (an R98 HE owner's recording, 2026-11-22:
+ * Off, Always On, Breath, Neon, Wave, Snake). They stay in
+ * `SIDE_LIGHT_EFFECTS`, so a board left on one still reads as what it is.
+ */
+export const SIDE_LIGHT_PICKER = SIDE_LIGHT_EFFECTS.filter((e) => e.wire < 20);
+
 export function sideEffectWire(name: string): number {
   const n = currentEffectLabel(name);
   return SIDE_LIGHT_EFFECTS.find((e) => e.name === n)?.wire ?? 0;

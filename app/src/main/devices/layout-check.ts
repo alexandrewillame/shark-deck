@@ -1,4 +1,4 @@
-import type { KeyBinding, KeyLayoutEntry } from '@shared/types/keys';
+import type { KeyBinding, KeyLayoutEntry, KnobSlots } from '@shared/types/keys';
 
 /**
  * Is an imported layout really this board's?
@@ -102,6 +102,35 @@ export function deriveLayout(
   }
   if (!geometry.length || placed.size / geometry.length < LAYOUT_AGREEMENT_MIN) return null;
   return geometry.filter((k) => placed.has(k)).map((k) => ({ ...k, slot: placed.get(k)! }));
+}
+
+/** The knob's factory bindings: Volume -, Volume + and Mute, consumer usages. */
+const KNOB_QUADS: Readonly<Record<keyof KnobSlots, readonly number[]>> = {
+  left: [3, 0, 0xea, 0],
+  right: [3, 0, 0xe9, 0],
+  press: [3, 0, 0xe2, 0],
+};
+
+/**
+ * Where a board's volume knob sits in its key matrix: the slots, outside the
+ * drawn keys, holding its factory bindings (an R98 HE's: 120, 121 and 122).
+ * Null unless each is there exactly once: a knob its owner remapped is not
+ * guessed at, like a remapped key.
+ */
+export function findKnob(
+  base: Readonly<Record<number, KeyBinding>>,
+  placed: readonly KeyLayoutEntry[],
+): KnobSlots | null {
+  const taken = new Set(placed.map((k) => k.slot));
+  const out: Partial<KnobSlots> = {};
+  for (const [part, quad] of Object.entries(KNOB_QUADS) as [keyof KnobSlots, number[]][]) {
+    const at = Object.values(base).filter(
+      (b) => !taken.has(b.slot) && quad.every((x, i) => b.raw[i] === x),
+    );
+    if (at.length !== 1) return null;
+    out[part] = at[0]!.slot;
+  }
+  return out as KnobSlots;
 }
 
 /** What is kept of a placed layout: each drawn key's slot, by its place in the drawing. */

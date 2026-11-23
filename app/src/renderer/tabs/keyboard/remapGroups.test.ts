@@ -10,7 +10,7 @@ import {
   quadBytes,
   togglePick,
 } from './keyRemapState';
-import { REMAP_GROUPS } from './remapGroups';
+import { MACRO_ACTION, REMAP_GROUPS, remapGroupsFor } from './remapGroups';
 
 /**
  * The Remap picker's media and launcher keys.
@@ -109,5 +109,44 @@ describe('a pick', () => {
     let p = { usages: [] as number[], quad: null as string | null };
     for (const code of ['e0', 'e1', '29']) p = togglePick(p, code);
     expect(pickAction(p)).toBe('00e0e129');
+  });
+});
+
+/**
+ * The keyboard's macros as key bindings: `[9, 0, slot, 0]`, the official
+ * software's own (an R98 HE: F12 given its first macro; Fn + N*, N- and N/ its
+ * three), which a real R98 HE accepted and read back.
+ */
+describe('the macros in the Remap picker', () => {
+  it('offers a button per macro on the board, and none for an empty board', () => {
+    const codes = (slots: number[] | null) =>
+      remapGroupsFor(slots)
+        .flatMap((g) => g.keys)
+        .map((k) => k.code)
+        .filter((c) => c.startsWith('09'));
+    expect(codes([])).toEqual([]);
+    expect(MACRO_ACTION).toBe('09000000');
+    expect(codes([2, 0, 1])).toEqual(['09000000', '09000100', '09000200']);
+    expect(codes(null)).toEqual([]);
+  });
+
+  it('names a button by the library macro its slot holds, where there is one', () => {
+    const macros = remapGroupsFor([0, 1], (slot) => (slot === 1 ? 'Rolling' : null)).find(
+      (g) => g.labelKey === 'keypick.group.macro',
+    )!.keys;
+    expect(macros.map((k) => k.label)).toEqual(['Macro 1', 'Macro 2 · Rolling']);
+    expect(macros.map((k) => k.labelKey)).toEqual(['keyfn.macroN', 'keyfn.macroNamed']);
+    expect(en['keyfn.macroNamed']).toBe('Macro {n} · {name}');
+  });
+
+  it('reads them back as the macros they are, and lights the one a key holds', () => {
+    const first = decodeKeyQuad(quadBytes(MACRO_ACTION));
+    expect([first.kind, first.label, first.short]).toEqual(['macro', 'Macro 1', 'M1']);
+    expect(decodeKeyQuad([9, 0, 2, 0]).label).toBe('Macro 3');
+    expect(en[first.labelKey!]).toBe('Macro {n}');
+    const bound = pickOf([9, 0, 2, 0]);
+    expect(pickHas(bound, '09000200')).toBe(true);
+    expect(pickHas(bound, MACRO_ACTION)).toBe(false);
+    expect(pickAction(togglePick(pickOf([0, 0, 0x45, 0]), MACRO_ACTION))).toBe(MACRO_ACTION);
   });
 });

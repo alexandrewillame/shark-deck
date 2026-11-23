@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyBinding, KeyLayoutEntry } from '@shared/types/keys';
+import type { Macro } from '@shared/types/macros';
+import { macroSlotOf } from '@shared/keyboard-macro';
 import { ConfirmDialog, Panel, Row, Tooltip } from '../../components/common';
+import { holdsMacro } from '../../components/macro/macroUtils';
 import { KeyboardMap, type KeyRef } from '../../components/KeyboardMap';
 import { ArtAnchor } from '../../components/ArtAnchor';
 import {
@@ -12,7 +15,7 @@ import {
   Loading,
 } from '../common';
 import { KEY_DISABLED_CODE, hidUsageForBrowserCode } from '@shared/keys';
-import { slotOf } from '../../keyLayout';
+import { slotOf, withKnob } from '../../keyLayout';
 import { useT } from '../../state/i18n';
 import { NAVIGATION_SURFACES, usePendingChange } from '../../state/leaveGuard';
 import { keyNameForCode, useIsMac } from '../../state/shortcuts';
@@ -34,7 +37,7 @@ import {
 } from './keyRemapState';
 import { KeyCap, quadFace, usageFace } from './remapKeyFace';
 import { KeyPicker } from './KeyPicker';
-import { REMAP_GROUPS } from './remapGroups';
+import { remapGroupsFor } from './remapGroups';
 import { decodeKeyQuad, quadLabel } from '@shared/keyboard-fn-codes';
 import { Icon } from '../../components/icons';
 
@@ -53,7 +56,16 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
   const t = useT();
   // Right Alt is Right Option on a Mac keyboard.
   const isMac = useIsMac();
-  const layout = device.ui.keyMatrix?.layout;
+  // The knob's turns and press as keys too, in this view only (keyLayout.ts),
+  // and on the base layer only: Attack Shark Driver v4 shows the knob in its
+  // Fn layer but lets no one change it there (an R98 HE owner's recording).
+  const layout = useMemo(
+    () =>
+      layer === 'base'
+        ? withKnob(device.ui.keyMatrix?.layout, device.ui.keyMatrix?.knobSlots)
+        : device.ui.keyMatrix?.layout,
+    [device.ui.keyMatrix, layer],
+  );
   const { run } = useWrite();
   const [sel, setSel] = useState<KeyRef | null>(null);
   const onScreen = useDeviceTabOnScreen(device.id);
@@ -122,6 +134,37 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
     [layer],
     `keyBindings:${layer}`,
   );
+
+  // The macros the board holds, one picker button each (Macros tab's read).
+  const hasMacros = device.capabilities.includes('macros');
+  const { data: boardMacros } = useDeviceData<Macro[]>(
+    device.id,
+    (id) => (hasMacros ? sd.readMacros(id) : Promise.resolve([])),
+    [],
+    [],
+    'macros',
+  );
+  const boardMacroSlots = useMemo(
+    () => boardMacros.map((m) => macroSlotOf(m.id)).filter((n): n is number => n !== null),
+    [boardMacros],
+  );
+  // The library only names them: a board macro is shown as the library macro
+  // it holds the same steps as (the keyboard keeps no names), and stays
+  // "Macro 2" when the library has none — taken out of it, say.
+  const { data: library } = useDeviceData<Macro[]>(
+    device.id,
+    () => (hasMacros ? sd.listMacroLibrary() : Promise.resolve([])),
+    [],
+  );
+  const macroNames = useMemo(() => {
+    const names = new Map<number, string>();
+    for (const d of boardMacros) {
+      const slot = macroSlotOf(d.id);
+      const lib = library.find((x) => holdsMacro(d, x, true));
+      if (slot !== null && lib) names.set(slot, lib.name);
+    }
+    return names;
+  }, [boardMacros, library]);
 
   const byRowCol = useMemo(() => {
     const m = new Map<string, KeyLayoutEntry>();
@@ -386,6 +429,9 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
    */
   const bindingLabel = (b: KeyBinding | undefined): string | undefined => {
     if (!b || b.kind === 'unused') return undefined;
+    const macroName = b.kind === 'macro' ? macroNames.get(b.raw[2] ?? -1) : undefined;
+    if (macroName)
+      return t('keyfn.macroNamed', { n: String((b.raw[2] ?? 0) + 1), name: macroName });
     if (b.label) return quadLabel(b.raw, t);
     return b.code ? keyNameForCode(b.code) : undefined;
   };
@@ -640,7 +686,10 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
                 // is bound here now". One state, answering both questions.
                 isOn={(code) => pickHas(pick, code)}
                 onPick={toggleUsage}
-                groups={REMAP_GROUPS}
+                groups={remapGroupsFor(
+                  hasMacros ? boardMacroSlots : null,
+                  (slot) => macroNames.get(slot) ?? null,
+                )}
                 disabled={!sel || selSlot === null}
                 searchable
               />

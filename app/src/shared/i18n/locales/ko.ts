@@ -283,7 +283,7 @@ export const ko: Partial<Messages> = {
   'macro.repeat': '반복 횟수',
   'macro.empty': '장치에서 읽어온 매크로가 없습니다.',
   'macro.newMacro': '새 매크로',
-  'macro.defaultName': '매크로 {n}',
+  'macro.defaultName': '내 매크로 {n}',
   'macro.library': '라이브러리',
   'macro.savedToLibrary': '매크로 라이브러리에 저장했습니다.',
   'macro.nameRequired': '저장하기 전에 이 매크로에 이름을 지정하세요.',
@@ -291,7 +291,7 @@ export const ko: Partial<Messages> = {
   'macro.pushed': '"{name}"을(를) 장치의 온보드 매크로 슬롯으로 전송했습니다.',
   'macro.deviceSlot': '현재 장치에 저장된 매크로',
   'macro.deviceSlot.hint':
-    '이 키보드에는 온보드 매크로 슬롯이 하나뿐입니다 — 매크로를 전송하면 기존 내용을 덮어씁니다.',
+    '지금 장치에 저장된 내용입니다. 매크로를 보내면 해당 슬롯의 내용이 바뀝니다.',
   'macro.libraryEmpty': '아직 저장된 매크로가 없습니다.',
   'macro.step.press': '누름',
   'macro.step.release': '뗌',
@@ -310,7 +310,6 @@ export const ko: Partial<Messages> = {
   'macro.lib.steps': '{n}단계',
   'macro.lib.onDevice': '장치에 저장됨',
   'macro.lib.onDeviceBadge': '장치에 있음',
-  'macro.discard.title': '저장하지 않은 변경 사항을 버릴까요?',
   'macro.discard.body': '“{name}”에 저장하지 않은 변경 사항이 있습니다.',
   'macro.discard.confirm': '버리기',
   'macro.delete.title': '이 매크로를 삭제할까요?',
@@ -319,7 +318,7 @@ export const ko: Partial<Messages> = {
   'macro.repeat.hint': '한 번 누를 때 전체 시퀀스를 몇 번 재생할지입니다.',
   'macro.rec.title': '녹화',
   'macro.rec.focusHint':
-    '녹화 중에는 이 창을 앞에 두세요 — Shark Deck은 자신에게 오는 입력만 볼 수 있고 다른 앱으로 가는 입력은 보지 못합니다.',
+    '녹화 중에는 이 창을 앞에 두세요 — Shark Deck은 자신에게 오는 입력만 볼 수 있고 다른 앱으로 가는 입력은 보지 못합니다. Win + Shift + S처럼 시스템이 자체적으로 쓰는 단축키도 전달되지 않습니다. 이런 키는 단계로 직접 추가하세요.',
   'macro.rec.armed': '준비됨 — 아무 키나 누르면 시작합니다.',
   'macro.rec.escStops': 'Esc로 중지',
   'macro.rec.timing': '타이밍',
@@ -906,8 +905,6 @@ export const ko: Partial<Messages> = {
   'act.cal.finishRefused': '키보드가 보정 완료 명령을 받아들이지 않았습니다.',
   'act.cal.aria': '스위치 보정',
   'act.cal.title': '스위치 보정 중',
-  'act.cal.preparing':
-    '키보드를 준비하는 중입니다 — 첫 쓰기 전에 현재 설정을 백업하고 있습니다. 몇 초 걸릴 수 있습니다.',
   'act.cal.press':
     '{every}를 바닥까지 꾹 눌러 잠시 유지한 다음 “완료”를 선택하세요. 진행 중에는 케이블을 뽑지 마세요.',
   'act.cal.press.every': '모든 키',
@@ -1436,10 +1433,6 @@ export const ko: Partial<Messages> = {
   'support.body.class':
     'Shark Deck는 이 마우스를 센서로만 알고 있어서, 같은 센서를 가진 모든 마우스의 설정을 제공합니다. 장치 보고서로 모델을 알 수 있습니다. 1분이면 되고, 아무것도 기록하지 않으며, GitHub 요청에 첨부하면 됩니다.',
   'support.gaps': '아직 Shark Deck에 없음: {list}.',
-  'support.body.steps':
-    '장치 보고 도구로 이 항목만 기록할 수 있습니다. 공식 소프트웨어에서 설정하는 동안 소프트웨어가 보내는 내용을 기록합니다. 몇 분이면 되며, 그다음 기록을 GitHub 요청에 첨부하세요.',
-  'support.body.specific':
-    '제대로 작동하지 않는 것이 있나요? 장치 보고 도구로 몇 분 만에 공식 소프트웨어의 동작을 기록할 수 있습니다. 그다음 기록을 GitHub 요청에 첨부하세요.',
   'support.action.all': '이 장치 기록',
   'support.action.report': '장치 보고서 만들기',
   'support.action.steps': '빠진 부분 기록',
@@ -1468,10 +1461,66 @@ export const ko: Partial<Messages> = {
     'Linux에서는 장치를 넘겨준 Windows 가상 머신이나 Wine에서 공식 소프트웨어를 실행하세요. 도구는 USB 케이블로 오가는 내용을 기록하며, 이를 읽기 위해 비밀번호를 묻습니다.',
   'support.preview':
     '장치 보고 도구가 소유자가 따를 단계로 열렸습니다. 데모 장치에는 기록할 것이 없습니다.',
-  'support.gap.mediaKeys': '버튼에 지정할 일부 미디어 키(음소거, 정지, 이전 트랙, 계산기…)',
+  'support.gap.mediaKeys': '버튼에 지정할 일부 미디어 키(이전 트랙, 정지, 미디어 플레이어, 검색)',
   'support.body.mac':
     '이를 위해서는 공식 소프트웨어의 기록이 필요하지만, Mac에서는 기록할 수 없습니다. 공식 소프트웨어는 Windows에서 실행되며, Shark Deck는 장치를 연결한 Windows 또는 Linux 컴퓨터에서 이를 기록합니다. 이 Mac에서도 도구로 장치 보고서는 만들 수 있습니다. 1분이면 되고, 시스템이 이미 아는 정보만 읽습니다.',
   'support.web': '장치 보고 도구는 Windows와 Linux에서 기록하며, Mac에서는 보고서만 만듭니다.',
   'support.confirm.title': '녹화를 위해 Shark Deck을 닫을까요?',
   'support.starting': '시작하는 중…',
+  'support.unconfirmed': '이 모델에서 아직 확인되지 않음: {list}.',
+  'support.strip.unconfirmed.keyboard': '이 키보드에서 아직 확인되지 않음: {list}.',
+  'support.strip.unconfirmed.mouse': '이 마우스에서 아직 확인되지 않음: {list}.',
+  'support.strip.confirm': '확인 돕기',
+  'support.action.confirm': '기록하여 확인',
+  'support.topic.keys': '키 재지정과 Fn 레이어',
+  'support.topic.knob': '노브',
+  'support.topic.lighting': '조명',
+  'support.topic.actuation': '작동점',
+  'support.topic.keyModes': '키 모드',
+  'support.topic.switches': '스위치 종류',
+  'support.topic.options': '키보드 옵션',
+  'support.topic.profiles': '프로필',
+  'support.topic.pollRate': '폴링 레이트',
+  'support.topic.macros': '매크로',
+  'support.topic.dpi': 'DPI',
+  'support.topic.sensor': '센서 설정',
+  'support.topic.buttons': '버튼',
+  'support.topic.power': '절전',
+  'support.topic.response': '응답 시간',
+  'support.topic.pairing': '페어링',
+  'support.topic.receiverLight': '수신기 조명',
+  'act.cal.handsOff':
+    '잠시 키보드를 만지지 마세요. Shark Deck이 설정을 백업한 뒤 키보드가 각 키의 기본 위치를 학습합니다.',
+  'keyfn.macro': '매크로',
+  'keyfn.macroN': '매크로 {n}',
+  'keypick.group.macro': '매크로',
+  'keypick.macro.tip':
+    '키보드가 이 슬롯에 저장한 매크로를 실행합니다. Shark Deck이 닫혀 있어도 작동합니다.',
+  'macro.import': '라이브러리에 복사',
+  'macro.import.tip': '이 매크로를 라이브러리에 복사해 편집하거나 나중에 다시 보낼 수 있습니다.',
+  'macro.import.name': '키보드 매크로 {n}',
+  'macro.imported': '“{name}”을(를) 라이브러리에 복사했습니다.',
+  'macro.deviceSlot.hint.keyboard':
+    '지금 키보드에 있는 매크로입니다. 각 매크로는 키 탭에서 지정한 키로 실행됩니다. 장치로 보내기는 선택한 슬롯에 씁니다.',
+  'macro.pushTo': '보낼 곳',
+  'macro.slot.empty': '비어 있음',
+  'macro.slot.used': '장치에 있음',
+  'macro.pushedTo': '“{name}”을(를) {slot}에 보냈습니다.',
+  'macro.pushToDevice.tip.slot': '이 매크로를 장치의 {slot}에 써서 그 자리의 내용을 바꿉니다.',
+  'macro.deleteOnDevice': '장치에서 삭제',
+  'macro.deleteOnDevice.tip':
+    '이 매크로를 장치에서 지웁니다. 이 매크로가 지정된 키나 버튼은 아무 동작도 하지 않습니다.',
+  'macro.deleteOnDevice.title': '{name}을(를) 장치에서 삭제할까요?',
+  'macro.deleteOnDevice.body':
+    '이 매크로가 지정된 키나 버튼은 그 슬롯에 다른 매크로가 들어올 때까지 아무 동작도 하지 않습니다.',
+  'buttons.macro.oneSlot.title': '이 마우스의 매크로를 바꿀까요?',
+  'buttons.macro.oneSlot.body':
+    '이 마우스는 매크로를 하나만 저장하며, 버튼 {n}도 그 매크로를 실행합니다. 버튼 {n}도 “{name}”을(를) 실행하게 됩니다.',
+  'buttons.macro.oneSlot.ok': '바꾸기',
+  'buttons.macro.full':
+    '이 마우스의 모든 매크로 슬롯에 다른 매크로가 들어 있습니다. 매크로에서 이 매크로를 대체할 슬롯으로 보내세요.',
+  'macro.switch.title': '먼저 이 매크로를 저장할까요?',
+  'macro.lib.delete': '“{name}”을(를) 라이브러리에서 삭제',
+  'keyfn.macroNamed': '매크로 {n} · {name}',
+  'btnact.easyAim': '이지 에임',
 };

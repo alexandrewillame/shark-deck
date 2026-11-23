@@ -124,11 +124,22 @@ export function decodeBekenDpi(raw: number, doubled: boolean): number {
   return (raw + 1) * (doubled ? 100 : 50);
 }
 
-/** The block's eight colours. The mouse lights stage i (1-based) with entry i,
- *  whatever is sent: green, blue, yellow, cyan, magenta, orange-red — the
- *  owner's order, and the vendor software sends no colour change. Entry 0 and
- *  7 are not a stage's. */
-const COLOURS = [
+/**
+ * The block's eight colours, in the vendor software's order: stage 1 red, then
+ * green, blue, yellow, cyan, magenta (orange and white unused). The vendor
+ * software always sends them so, and the mouse keeps them so (its cable read).
+ *
+ * The mouse starts its light over at the first entry whenever a DPI block
+ * lands, on whatever stage the block makes current. Shark Deck 0.3.1 always
+ * sent stage 1, and every change came back red, then green, blue, yellow,
+ * teal, purple as the button went round (the X8 PRO's owner, 2026-11-19).
+ * Sending the stage the mouse is on instead (0.3.3) put red on that stage:
+ * stage 2 red, stage 1 magenta (the same owner, 2026-11-23). So a block that
+ * makes stage s current carries the colours turned to start at stage s's own
+ * (`stageColours`), and each stage keeps its colour. `inferred` from those two
+ * reports; the X11 uses the same block and software, and is treated alike.
+ */
+const COLOURS: [number, number, number][] = [
   [0xff, 0x00, 0x00],
   [0x00, 0xff, 0x00],
   [0x00, 0x00, 0xff],
@@ -138,6 +149,35 @@ const COLOURS = [
   [0xff, 0x40, 0x00],
   [0xff, 0xff, 0xff],
 ];
+
+/**
+ * The colour table for a block that makes stage `active` (1-based) current
+ * with `count` stages on: the first `count` entries turned so the one the
+ * light starts on is that stage's own colour; the rest as they are.
+ */
+export function bekenStageColours(active: number, count: number): [number, number, number][] {
+  const n = Math.max(1, Math.min(count, STAGES));
+  const start = (((active - 1) % n) + n) % n;
+  return COLOURS.map(
+    (c, j) => [...(j < n ? COLOURS[(start + j) % n]! : c)] as [number, number, number],
+  );
+}
+
+/** Stages on: the mask's bits (contiguous from stage 1). */
+const stagesOn = (mask: number): number => {
+  let n = 0;
+  for (let i = 0; i < STAGES; i++) if ((mask >> i) & 1) n++;
+  return n;
+};
+
+/** The block with its colour table turned for the stage it makes current. */
+function withStageColours(d: readonly number[]): number[] {
+  const out = [...d];
+  bekenStageColours(out[D.ACTIVE] ?? 1, stagesOn(out[D.MASK] ?? 0x3f)).forEach((c, i) =>
+    out.splice(D.RGB + 3 * i, 3, ...c),
+  );
+  return out;
+}
 
 function dpiData(stages: number[], flagsA: number, flagsB: number): number[] {
   const d = new Array<number>(47).fill(0);
@@ -228,7 +268,7 @@ export const SEED_BUTTONS: readonly number[] = [
   0x0a, 0x09,
 ].flatMap((a) => [a, 0x00, 0x00]);
 
-const ACT = { DISABLED: 0x01, KEY: 0x11, MACRO: 0x12 } as const;
+const ACT = { DISABLED: 0x01, FIRE: 0x08, EASY_AIM: 0x10, KEY: 0x11, MACRO: 0x12 } as const;
 
 /**
  * The macro, as the X8 PRO's vendor software sent it (both recordings,
@@ -332,7 +372,20 @@ const MEDIA: ReadonlyMap<number, number> = new Map([
   [0x00e2, 0x1a],
   [0x00e9, 0x1b],
   [0x00ea, 0x1c],
+  // The X8 PRO owner's 11-23 recording, one each: calculator, email, browser
+  // forward, back, stop, My Computer, refresh, home.
+  [0x0192, 0x1d],
+  [0x018a, 0x1e],
+  [0x0225, 0x20],
+  [0x0224, 0x21],
+  [0x0226, 0x22],
+  [0x0194, 0x23],
+  [0x0227, 0x24],
+  [0x0223, 0x25],
 ]);
+/** Favorites is no media code: the vendor software sends Ctrl + Shift + O (the same recording). */
+const FAVORITES = 0x022a;
+const FAVORITES_KEYS: [number, number, number] = [0x11, 0x03, 0x12];
 const invert = (m: ReadonlyMap<number, number>) => new Map([...m].map(([k, v]) => [v, k]));
 const MOUSE_BUTTON_FROM = invert(MOUSE_BUTTON);
 const DPI_SWITCH_FROM = invert(DPI_SWITCH);
@@ -356,9 +409,18 @@ export function encodeBekenButton(m: ButtonMapping): [number, number, number] | 
     case 'scrollUD':
       action = pick(SCROLL, m.param);
       break;
-    case 'multimedia':
-      action = pick(MEDIA, m.multimedia ?? m.param);
+    case 'multimedia': {
+      const v = m.multimedia ?? m.param;
+      if (v === FAVORITES) return [...FAVORITES_KEYS];
+      action = pick(MEDIA, v);
       break;
+    }
+    case 'firepower':
+      // Clicks while held; the vendor software sets nothing else (11-23).
+      return [ACT.FIRE, 0x00, 0x00];
+    case 'easyAim':
+      // Its byte 3 as the vendor software sends it, which offers no setting.
+      return [ACT.EASY_AIM, 0x00, 0x03];
     case 'disable':
       action = ACT.DISABLED;
       break;
@@ -383,6 +445,8 @@ export function encodeBekenButton(m: ButtonMapping): [number, number, number] | 
 export function decodeBekenButton([action, mods, usage]: number[]): ButtonMapping {
   const a = action ?? ACT.DISABLED;
   if (a === ACT.DISABLED) return { actionKey: 'disable', action: a };
+  if (a === ACT.FIRE) return { actionKey: 'firepower', action: a };
+  if (a === ACT.EASY_AIM) return { actionKey: 'easyAim', action: a };
   if (a === ACT.MACRO) {
     return { actionKey: 'macro', action: a, macroSlot: (usage ?? MACRO_SLOT) - MACRO_SLOT };
   }
@@ -522,6 +586,8 @@ export class Beken8kMouse extends Driver {
 
   /** Send a block whole; it is kept only once the mouse has said it took it. */
   protected async send(key: BlockKey, data: number[]): Promise<WriteResult> {
+    // Each stage keeps its colour, whichever stage the block makes current.
+    if (key === 'dpi') data = withStageColours(data);
     const result = await this.transmit(key, data);
     if (result.ok) await this.remember(key, data);
     return result;
@@ -578,8 +644,15 @@ export class Beken8kMouse extends Driver {
 
   // — what a poll may ask: nothing goes out ---------------------------------
 
-  /** The receiver is there; whether the mouse is awake shows only when a change goes out. */
+  /**
+   * The receiver is there; whether the mouse is awake shows only when a change
+   * goes out. Each pass also takes what the mouse announced: the handle opens
+   * on the first read and keeps only what arrives after it, so listening only
+   * at the minute's battery poll left the battery unknown for a minute or more
+   * (the X8 PRO's owner, 11-23). Nothing is sent.
+   */
   override async ping(): Promise<boolean> {
+    await this.listen().catch(() => undefined);
     return true;
   }
 
@@ -600,12 +673,9 @@ export class Beken8kMouse extends Driver {
     return Array.from({ length: STAGES }, (_, i) => ({
       index: i,
       dpi: this.stageDpi(d, i),
-      // Stage i lights with colour entry i + 1 (see COLOURS).
-      color: [
-        d[D.RGB + 3 * (i + 1)] ?? 0,
-        d[D.RGB + 3 * (i + 1) + 1] ?? 0,
-        d[D.RGB + 3 * (i + 1) + 2] ?? 0,
-      ],
+      // Stage i lights with its own colour in the vendor's order (see COLOURS):
+      // Shark Deck's blocks keep it so, however the table is turned.
+      color: [...COLOURS[i]!],
       enabled: ((mask >> i) & 1) === 1,
     }));
   }
@@ -723,6 +793,9 @@ export class Beken8kMouse extends Driver {
 
   /** Its last battery report, and the stage (1-based) it last said it is on. */
   protected heard: { battery?: { level: number; charging: boolean }; stage?: number } = {};
+  private waitedForBattery = false;
+  /** How long the first battery poll waits for a report (they come every 2 s). */
+  protected firstBatteryWaitMs = 2_100;
 
   /**
    * Takes what the mouse announced since the last look, on its announcement
@@ -750,6 +823,13 @@ export class Beken8kMouse extends Driver {
     millivolts?: number | null;
   }> {
     await this.listen();
+    // It reports every 2 s: the first poll, just after the handle opened,
+    // waits for one report, once.
+    if (!this.heard.battery && !this.waitedForBattery) {
+      this.waitedForBattery = true;
+      await delay(this.firstBatteryWaitMs);
+      await this.listen();
+    }
     const b = this.heard.battery;
     return { level: b?.level ?? null, charging: b?.charging ?? false, raw: null, millivolts: null };
   }

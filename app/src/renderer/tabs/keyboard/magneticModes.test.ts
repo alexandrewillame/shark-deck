@@ -128,12 +128,16 @@ describe('leaving a pair', () => {
     expect(after[keyIdOf(D)]).toMatchObject({ mode: 'normal', socdPartner: null });
   });
 
-  it('a reset of one key releases its partner', () => {
+  it('a reset of one key resets its partner too, as the official software does', () => {
+    const tuned = apply(start, [{ ...start[keyIdOf(A)]!, actuationMm: 1.2 }]);
     const after = apply(
-      start,
-      planReset(start, [D], (k) => key(k.row, k.col)),
+      tuned,
+      planReset(tuned, [D], (k) => key(k.row, k.col)),
     );
-    expect(after[keyIdOf(A)]).toMatchObject({ mode: 'normal', socdPartner: null });
+    // the pair is one setting: both keys back to the defaults, not just unpaired
+    expect(after[keyIdOf(A)]).toMatchObject({ mode: 'normal', actuationMm: 2.5 });
+    expect(after[keyIdOf(A)]!.socdPartner ?? null).toBeNull();
+    expect(after[keyIdOf(D)]).toMatchObject({ mode: 'normal', actuationMm: 2.5 });
   });
 
   it('a reset of both keys writes each once', () => {

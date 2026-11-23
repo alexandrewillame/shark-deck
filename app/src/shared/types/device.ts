@@ -4,7 +4,7 @@
  * Split out of the former shared/types.ts.
  */
 import type { Capability } from './capability';
-import type { KeyLayoutEntry } from './keys';
+import type { KeyLayoutEntry, KnobSlots } from './keys';
 
 export type DeviceKind = 'mouse' | 'keyboard' | 'dongle' | 'unknown';
 
@@ -206,7 +206,11 @@ export interface DeviceSpec {
     layout?: KeyLayoutEntry[];
     /** absent = `verified` when every key has a slot, else `none` */
     layoutStatus?: LayoutStatus;
+    /** the knob's bindings, once known (recorded, or found on the board) */
+    knobSlots?: KnobSlots;
   };
+  /** a volume knob: its turns and press are bindings of the key matrix */
+  knob?: boolean;
   /** magnetic-switch limits for this board */
   magnetic?: MagneticSpec;
   /** a keyboard that also runs on a battery over 2.4 GHz / Bluetooth (mice
@@ -293,6 +297,29 @@ export type SupportGap =
  */
 export type RecordingPlan = 'report' | 'all' | 'specific' | string[];
 
+/**
+ * A setting a model shows that no recording of it has confirmed, by the topic
+ * an owner knows it under (main/devices/recording-steps.ts `WORD_TOPIC`).
+ */
+export type SupportTopic =
+  | 'keys'
+  | 'knob'
+  | 'lighting'
+  | 'actuation'
+  | 'keyModes'
+  | 'switches'
+  | 'options'
+  | 'profiles'
+  | 'pollRate'
+  | 'macros'
+  | 'dpi'
+  | 'sensor'
+  | 'buttons'
+  | 'power'
+  | 'response'
+  | 'pairing'
+  | 'receiverLight';
+
 /** What a device's owner can do to help Shark Deck support it (DeviceUi.support). */
 export interface SupportPlan {
   /** `none`: nothing is configured (a read-only card); `partial`: some is;
@@ -300,6 +327,9 @@ export interface SupportPlan {
   level: 'none' | 'partial' | 'class';
   gaps: SupportGap[];
   record: RecordingPlan;
+  /** Settings it shows that no recording of this model confirmed yet: the
+   *  recording asked for covers them too, so one recording completes it. */
+  unconfirmed?: SupportTopic[];
 }
 
 /** One selectable lift-off distance: the byte written to the device and its mm label. */

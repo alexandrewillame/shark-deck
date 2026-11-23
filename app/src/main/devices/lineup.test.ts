@@ -21,7 +21,7 @@ describe('docs/devices/attack-shark-lineup.md', () => {
   it('says plainly which devices were tested on hardware, and puts them first', () => {
     const tables = lineupTables();
     const tested = tables.split('\n').filter((l) => l.startsWith('| 🟢 Tested'));
-    expect(tested.map((l) => l.split(' | ')[1])).toEqual(['V8', 'R85 HE']);
+    expect(tested.map((l) => l.split(' | ')[1])).toEqual(['V8', 'R85 HE', 'R98 HE']);
     // Sorted by status: a mouse table that starts on anything but the tested row is out of order.
     const mice = tables.slice(tables.indexOf('## Mice'));
     expect(mice.split('\n').find((l) => l.startsWith('| 🟢') || l.startsWith('| 🟡'))).toMatch(

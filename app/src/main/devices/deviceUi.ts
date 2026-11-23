@@ -8,6 +8,7 @@
  * mean opening a 1,200-line file that is otherwise all scan loop, hotplug and
  * timers.
  */
+import { KB_MACRO_INLINE_WAIT_MS } from '@shared/keyboard-macro';
 import type { DeviceDescriptor } from '@shared/types/device';
 import { mouseButtonMap } from './catalog/mouse-buttons';
 import { supportPlan } from './support';
@@ -15,7 +16,7 @@ import type { DeviceUi, MacroLimits } from '@shared/types/live';
 import { PERFORMANCE_TIMEOUTS } from '@shared/mouse-options';
 import { artKeyOf, colorVariantsOf } from '@shared/device-art';
 import { SWITCH_CHOICES_DEFAULT } from '@shared/keyboard-switches';
-import { KB_MACRO_MAX_STEPS } from './drivers/compx-keyboard';
+import { KB_MACRO_MAX_STEPS, KB_MACRO_SLOTS } from './drivers/compx-keyboard';
 import { BEKEN_MACRO_MAX_EVENTS } from './drivers/beken-8k-mouse';
 import {
   V8_MACRO_MAX_STEPS,
@@ -41,8 +42,8 @@ export const SLEEP_PRESETS = PERFORMANCE_TIMEOUTS.map((o) => o.value * 10);
  */
 export const MACRO_LIMITS: Record<string, MacroLimits> = {
   // The V8 slot folds a step's preceding delay into that step's own record, so
-  // a delay costs no record of its own; the keyboard spends a full record on
-  // each one.
+  // a delay costs no record of its own; the keyboard carries the wait after
+  // each key event in that event's own two bytes (compx-keyboard.ts).
   'compx-mouse-8k': {
     maxSteps: V8_MACRO_MAX_STEPS,
     slots: V8_MACRO_SLOTS,
@@ -51,14 +52,34 @@ export const MACRO_LIMITS: Record<string, MacroLimits> = {
   },
   // One slot, and the payload has no name field at all — readMacros() always
   // reports it as "Onboard macro" (see compx-keyboard.ts), hence no nameMax.
-  'compx-keyboard': { maxSteps: KB_MACRO_MAX_STEPS, slots: 1, delaysConsumeSteps: true },
-  'compx-he-keyboard': { maxSteps: KB_MACRO_MAX_STEPS, slots: 1, delaysConsumeSteps: true },
+  'compx-keyboard': {
+    maxSteps: KB_MACRO_MAX_STEPS,
+    slots: KB_MACRO_SLOTS,
+    delaysConsumeSteps: false,
+    inlineWaitMs: KB_MACRO_INLINE_WAIT_MS,
+  },
+  'compx-he-keyboard': {
+    maxSteps: KB_MACRO_MAX_STEPS,
+    slots: KB_MACRO_SLOTS,
+    delaysConsumeSteps: false,
+    inlineWaitMs: KB_MACRO_INLINE_WAIT_MS,
+  },
   // The Beken mice (X8 PRO, X11): one macro of 50 key events, each carrying the
   // delay after it, and no name on the mouse (drivers/beken-8k-mouse.ts).
   'beken-8k-mouse': { maxSteps: BEKEN_MACRO_MAX_EVENTS, slots: 1, delaysConsumeSteps: false },
   'beken-8k-mouse-cable': { maxSteps: BEKEN_MACRO_MAX_EVENTS, slots: 1, delaysConsumeSteps: false },
   'beken-x11-mouse': { maxSteps: BEKEN_MACRO_MAX_EVENTS, slots: 1, delaysConsumeSteps: false },
 };
+
+/**
+ * The Beken mice's button slots (drivers/beken-8k-mouse.ts `encodeBekenButton`):
+ * one key with any modifiers per shortcut, and rapid fire with nothing to set.
+ */
+const BEKEN_BUTTONS: ReadonlySet<string> = new Set([
+  'beken-8k-mouse',
+  'beken-8k-mouse-cable',
+  'beken-x11-mouse',
+]);
 
 /** A Hub mouse's slot count follows its sensor (shared/mouse-wire.ts `hubMacroSlots`). */
 function macroLimitsFor(d: DeviceDescriptor): MacroLimits | undefined {
@@ -117,6 +138,7 @@ export function deviceUi(d: DeviceDescriptor): DeviceUi {
     debounceRange: s.debounceRange,
     buttonSlotOrder: s.buttonSlotOrder,
     buttonActions: s.buttonActions,
+    ...(BEKEN_BUTTONS.has(d.driver) ? { comboOneKey: true, fireWhileHeld: true } : {}),
     sensorModes: s.sensorModes,
     dpiDynamicModes: s.dpiDynamicModes,
     bodyLightZones: s.bodyLightZones,

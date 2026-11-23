@@ -1,5 +1,5 @@
 import type { DeviceDescriptor } from '@shared/types/device';
-import type { KeyLayoutEntry } from '@shared/types/keys';
+import type { KeyLayoutEntry, KnobSlots } from '@shared/types/keys';
 import { KEYBOARD_ROWS } from './generated/keyboard-rows';
 import { FOREIGN_BRANDS, FOREIGN_IDS } from './generated/foreign-ids';
 import { buildKeyboardDescriptor, slotLayoutFor } from './keyboard-builder';
@@ -45,11 +45,20 @@ export function boardLayoutGeometry(d: DeviceDescriptor): KeyLayoutEntry[] | nul
   return status === 'none' && layout?.length ? layout : null;
 }
 
-/** The descriptor again with a layout placed from the board: every per-key menu its row has. */
-export function withBoardLayout(d: DeviceDescriptor, layout: KeyLayoutEntry[]): DeviceDescriptor {
+/** The descriptor again with a layout placed from the board (and its knob,
+ *  where the board's map shows it): every per-key menu its row has. */
+export function withBoardLayout(
+  d: DeviceDescriptor,
+  layout: KeyLayoutEntry[],
+  knobSlots?: KnobSlots | null,
+): DeviceDescriptor {
   const row = builtFrom(d);
   if (!row) return d;
-  const built = buildKeyboardDescriptor(row, { layout, status: 'board' });
+  const built = buildKeyboardDescriptor(row, {
+    layout,
+    status: 'board',
+    ...(knobSlots ? { knobSlots } : {}),
+  });
   return { ...d, capabilities: built.capabilities, spec: built.spec };
 }
 

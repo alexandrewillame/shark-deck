@@ -1,6 +1,6 @@
 import { KEY_GROUPS, type KeyDef, type KeyGroup } from '@shared/keys';
-import { CONSUMER_LABEL, CONSUMER_LABEL_KEY } from '@shared/keyboard-fn-codes';
-import { consumerAction } from './keyRemapState';
+import { CONSUMER_LABEL, CONSUMER_LABEL_KEY, MACRO_QUAD_TYPE } from '@shared/keyboard-fn-codes';
+import { consumerAction, quadAction } from './keyRemapState';
 
 /**
  * The Remap tab's picker: every key `KEY_GROUPS` offers, with its media keys
@@ -42,3 +42,44 @@ export const REMAP_GROUPS: KeyGroup[] = [
   { label: 'Launch', labelKey: 'keypick.group.launch', keys: LAUNCH },
   { label: 'Browser', labelKey: 'keypick.group.browser', keys: BROWSER },
 ];
+
+/** A macro on the board as a binding: `[9, 0, slot, 0]`, the official
+ *  software's own (see `decodeKeyQuad`). */
+export const macroAction = (slot: number): string => quadAction([MACRO_QUAD_TYPE, 0, slot, 0]);
+/** The first macro. */
+export const MACRO_ACTION = macroAction(0);
+
+/**
+ * The picker's groups for a board: a button per macro it holds — what the
+ * keyboard holds, not the library, so a macro taken out of the library (or
+ * written by other software) can still be given to a key. `nameOf` adds the
+ * name of the library macro a slot matches, as the Macros tab's On the device
+ * list does. A board holding none has no Macro row: a button for an empty
+ * slot would give a key that does nothing.
+ */
+export function remapGroupsFor(
+  macroSlots: readonly number[] | null,
+  nameOf: (slot: number) => string | null = () => null,
+): KeyGroup[] {
+  if (!macroSlots?.length) return REMAP_GROUPS;
+  const slots = [...new Set(macroSlots)].sort((a, b) => a - b);
+  return [
+    ...REMAP_GROUPS,
+    {
+      label: 'Macro',
+      labelKey: 'keypick.group.macro',
+      keys: slots.map((n) => {
+        const name = nameOf(n);
+        const labelVars: Record<string, string> = { n: String(n + 1) };
+        if (name) labelVars.name = name;
+        return {
+          label: name ? `Macro ${n + 1} · ${name}` : `Macro ${n + 1}`,
+          labelKey: name ? 'keyfn.macroNamed' : 'keyfn.macroN',
+          labelVars,
+          tipKey: 'keypick.macro.tip',
+          code: macroAction(n),
+        };
+      }),
+    },
+  ];
+}

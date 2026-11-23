@@ -54,16 +54,21 @@ whole block as shown; the confirmation before the first write says so.
 | `0x04` | DPI and sensor | 47 data bytes: flags A (bit 4 lift-off 2 mm, else 1 mm; bit 0 ripple control), flags B (bit 4 angle snapping; bit 0 motion sync), stage mask (`3f` = six stages), one "doubled" bit per stage, `00`, 8 low bytes, 8 high bytes, active stage (1-based), 8 RGB colours, `02`; then their sum and 4 zeros. A stage is `(raw + 1) × 50`, or `× 100` with its doubled bit: 40000 is raw 399 doubled. |
 | `0x05` | power | 8 data bytes: `00 03 a8 00 ff 00` (meaning unknown, sent back unchanged), sleep in half-minutes, key response in 2 ms units; then their sum and 2 zeros. |
 | `0x06` | polling | `<code> <FF − code> 00 00 00 00`: 125 Hz `14`, 250 `24`, 500 `34`, 1000 `44`, 2000 `54`, 4000 `64`, 8000 `74`. |
-| `0x08` | buttons | 18 slots `[action, modifiers, usage]`, then their sum. Slots 0–2 left, right, middle; 3 the DPI button; 4 forward; 5 backward; 6 `3c` (unknown); 16–17 the wheel. |
+| `0x08` | buttons | 18 slots `[action, modifiers, usage]`, then their sum. Slots 0–2 left, right, middle; 3 the DPI button; 4 the rear side button (Backward by default); 5 the front one (Forward); 6 `3c` (unknown); 16–17 the wheel. |
 | `0x09` | macros | Two reports: `04 40 00 09 6f 11 <data 56>` and `04 39 01 <data 50> <sum16 of the data>`, each closed by the sum of its own bytes. The data, 106 bytes: four zeros, the repeat count, the event count, then two bytes an event — the delay after it in ms (7 bits), its top bit set on a release, then the key's usage. `11` is the macro's slot: the vendor software gave its first macro `11` and its button `12 00 11`. The receiver answers the first report `c0` only, the second `c0` then `c1`. |
 | `0x0C` | ? | `0c 0a 01 fe 01 fe 00 00 00 00`, sent before every whole-profile write. Never sent by Shark Deck. |
 
 Button actions recorded: `01` off, `02` left, `03` right, `04` middle, `05`
-forward, `06` backward, `08` fire, `09` scroll up, `0e` / `0f` DPI + / −,
-`11` a key (modifier bits, then its usage: Ctrl + C is `11 01 06`), `12` a
-macro, `17` next track, `18` play / pause, `1b` / `1c` volume + / −. Inferred
-from the defaults and the run of codes: `0a` scroll down, `0d` DPI loop, `16`
-previous, `19` stop, `1a` mute.
+backward, `06` forward, `08` fire (clicks while held, nothing to set), `09`
+scroll up, `0e` / `0f` DPI + / −, `10 00 03` easy aim, `11` a key (modifier
+bits, then its usage: Ctrl + C is `11 01 06`), `12` a macro, `17` next track,
+`18` play / pause, `1a` mute, `1b` / `1c` volume + / −, `1d` calculator, `1e`
+email, `20` / `21` browser forward / back, `22` browser stop, `23` My Computer,
+`24` refresh, `25` browser home. The vendor software's Favorites is the key
+Ctrl + Shift + O (`11 03 12`), and its whole shortcut list is keys with
+modifiers (Alt + F4 is `11 04 3d`, Win + Shift + S `11 0a 16`). Inferred from
+the defaults and the run of codes: `0a` scroll down, `0d` DPI loop, `16`
+previous, `19` stop. Not seen: media player, search.
 
 Profiles live in the vendor software: switching one rewrites every block
 (`0x0C`, `0x04`, `0x05`, `0x06`, `0x08`, a second apart). Its macro editor
@@ -95,12 +100,18 @@ low half only.
 
 **What both recordings show.**
 - The DPI block's byte 21 (frame byte 24 on the cable) is the active stage,
-  1-based. The DPI button changes it on the mouse and the cable reports it
-  (`03 08 10 <stage>` on input report 3); through the receiver Shark Deck does
-  not read that report, so a change sent there resets the stage to the one it
-  last sent.
-- The eight colours are fixed: stage *n* lights with entry *n* (green, blue,
-  yellow, cyan, magenta, orange-red); the vendor software sends no colour change.
+  1-based. The DPI button changes it on the mouse, and the mouse announces it
+  (`03 08 10 <stage>` on input report 3, through the receiver and on the
+  cable). Shark Deck sends the stage it last heard, so a change does not move
+  the mouse to another stage.
+- The eight colours, in the vendor software's order: red, green, blue, yellow,
+  cyan, magenta, orange, white. The vendor software never changes them, and
+  the mouse keeps them so (the cable's read). The mouse starts its light over
+  at the first entry whenever a DPI block lands, on the stage the block makes
+  current: sent stage 1, every change came back red; sent stage 2, stage 2 lit
+  red and stage 1 magenta (the X8 PRO's owner, 2026-11-19 and 11-23). Shark
+  Deck turns the first entries so the light starts on the current stage's own
+  colour (`bekenStageColours`), and each stage keeps its colour. `inferred`.
 - Button slots: 0 Left, 1 Right, 2 Middle, 3 the DPI button (underneath),
   4 Backward (button 5, the side button nearer the rear, factory `05`),
   5 Forward (button 4, nearer the front, factory `06`). The report tool used to

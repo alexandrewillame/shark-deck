@@ -277,7 +277,7 @@ export const fr: Partial<Messages> = {
   'macro.repeat': 'Nombre de répétitions',
   'macro.empty': 'Aucune macro lue depuis le périphérique.',
   'macro.newMacro': 'Nouvelle macro',
-  'macro.defaultName': 'Macro {n}',
+  'macro.defaultName': 'Ma macro {n}',
   'macro.library': 'Bibliothèque',
   'macro.savedToLibrary': 'Enregistrée dans votre bibliothèque de macros.',
   'macro.nameRequired': 'Donnez un nom à cette macro avant de l’enregistrer.',
@@ -285,7 +285,7 @@ export const fr: Partial<Messages> = {
   'macro.pushed': '« {name} » envoyée à l’emplacement de macro du périphérique.',
   'macro.deviceSlot': 'Actuellement sur le périphérique',
   'macro.deviceSlot.hint':
-    'Ce clavier n’a qu’un seul emplacement de macro — en envoyer une remplace celle déjà présente.',
+    'Ce que l’appareil contient en ce moment. Envoyer une macro remplace celle de son emplacement.',
   'macro.libraryEmpty': 'Aucune macro enregistrée pour l’instant.',
   'macro.step.press': 'presser',
   'macro.step.release': 'relâcher',
@@ -304,7 +304,6 @@ export const fr: Partial<Messages> = {
   'macro.lib.steps': '{n} étapes',
   'macro.lib.onDevice': 'Sur le périphérique',
   'macro.lib.onDeviceBadge': 'Sur l’appareil',
-  'macro.discard.title': 'Abandonner les modifications ?',
   'macro.discard.body': '« {name} » comporte des modifications jamais enregistrées.',
   'macro.discard.confirm': 'Abandonner',
   'macro.delete.title': 'Supprimer cette macro ?',
@@ -313,7 +312,7 @@ export const fr: Partial<Messages> = {
   'macro.repeat.hint': 'Nombre de répétitions de toute la séquence à chaque appui.',
   'macro.rec.title': 'Enregistrement',
   'macro.rec.focusHint':
-    'Gardez cette fenêtre au premier plan pendant l’enregistrement — Shark Deck ne voit que ce qui lui est envoyé, pas ce qui va aux autres applications.',
+    'Gardez cette fenêtre au premier plan pendant l’enregistrement — Shark Deck ne voit que ce qui lui est envoyé, pas ce qui va aux autres applications. Les raccourcis que le système garde pour lui, comme Win + Maj + S, ne lui parviennent pas non plus : ajoutez-les comme étapes.',
   'macro.rec.armed': 'Prêt — appuyez sur une touche pour commencer.',
   'macro.rec.escStops': 'Échap arrête',
   'macro.rec.timing': 'Rythme',
@@ -916,8 +915,6 @@ export const fr: Partial<Messages> = {
   'act.cal.finishRefused': 'Le clavier n’a pas accepté la commande de fin de calibrage.',
   'act.cal.aria': 'Calibrage des switches',
   'act.cal.title': 'Calibrage des switches',
-  'act.cal.preparing':
-    'Préparation du clavier — sauvegarde de ses réglages actuels avant la première écriture. Cela peut prendre quelques secondes.',
   'act.cal.press':
     'Enfoncez {every} fermement jusqu’au fond et maintenez un instant, puis choisissez Terminer. Ne débranchez pas le câble pendant l’opération.',
   'act.cal.press.every': 'chaque touche',
@@ -1454,10 +1451,6 @@ export const fr: Partial<Messages> = {
   'support.body.class':
     'Shark Deck ne connaît cette souris que par son capteur : il propose les réglages de toute souris dotée de ce capteur. Un rapport de périphérique en donne le modèle : il prend une minute, n’enregistre rien, et vous le joignez à une demande sur GitHub.',
   'support.gaps': 'Pas encore dans Shark Deck : {list}.',
-  'support.body.steps':
-    'L’outil de rapport de périphérique peut enregistrer seulement ceux-ci : vous les réglez dans le logiciel officiel pendant qu’il enregistre ce que le logiciel envoie. Quelques minutes ; joignez ensuite l’enregistrement à une demande sur GitHub.',
-  'support.body.specific':
-    'Quelque chose ne fonctionne pas comme prévu ? L’outil de rapport de périphérique l’enregistre depuis le logiciel officiel en quelques minutes ; joignez ensuite l’enregistrement à une demande sur GitHub.',
   'support.action.all': 'Enregistrer ce périphérique',
   'support.action.report': 'Créer un rapport de périphérique',
   'support.action.steps': 'Enregistrer ce qui manque',
@@ -1488,11 +1481,69 @@ export const fr: Partial<Messages> = {
   'support.preview':
     'L’outil de rapport de périphérique s’est ouvert sur les étapes qu’un propriétaire suivrait. Un périphérique de démonstration n’a rien à enregistrer.',
   'support.gap.mediaKeys':
-    'certaines touches multimédias pour ses boutons (Muet, Arrêt, Piste précédente, Calculatrice…)',
+    'quelques touches multimédias pour ses boutons (Piste précédente, Arrêt, Lecteur multimédia, Recherche)',
   'support.body.mac':
     'Il faut pour cela un enregistrement du logiciel officiel, et un Mac ne peut pas en faire : ce logiciel tourne sous Windows, et Shark Deck l’enregistre sur un ordinateur Windows ou Linux, le périphérique branché dessus. Sur ce Mac, l’outil peut tout de même créer le rapport de périphérique : une minute, et il ne fait que lire ce que le système sait.',
   'support.web':
     'L’outil de rapport de périphérique enregistre sous Windows et Linux ; sur Mac, il crée seulement le rapport.',
   'support.confirm.title': 'Fermer Shark Deck pour enregistrer ?',
   'support.starting': 'Démarrage…',
+  'support.unconfirmed': 'Pas encore confirmé sur ce modèle : {list}.',
+  'support.strip.unconfirmed.keyboard': 'Pas encore confirmé sur ce clavier : {list}.',
+  'support.strip.unconfirmed.mouse': 'Pas encore confirmé sur cette souris : {list}.',
+  'support.strip.confirm': 'Aidez à les confirmer',
+  'support.action.confirm': 'Enregistrer pour les confirmer',
+  'support.topic.keys': 'la réaffectation des touches et la couche Fn',
+  'support.topic.knob': 'la molette',
+  'support.topic.lighting': 'l’éclairage',
+  'support.topic.actuation': 'le point d’activation',
+  'support.topic.keyModes': 'les modes de touche',
+  'support.topic.switches': 'les types de switch',
+  'support.topic.options': 'les options du clavier',
+  'support.topic.profiles': 'les profils',
+  'support.topic.pollRate': 'le taux d’interrogation',
+  'support.topic.macros': 'les macros',
+  'support.topic.dpi': 'le DPI',
+  'support.topic.sensor': 'les réglages du capteur',
+  'support.topic.buttons': 'les boutons',
+  'support.topic.power': 'la veille',
+  'support.topic.response': 'le temps de réponse',
+  'support.topic.pairing': 'l’appairage',
+  'support.topic.receiverLight': 'le voyant du récepteur',
+  'act.cal.handsOff':
+    'Ne touchez pas le clavier un instant : Shark Deck sauvegarde ses réglages, puis le clavier apprend où chaque touche repose.',
+  'keyfn.macro': 'Macro',
+  'keyfn.macroN': 'Macro {n}',
+  'keypick.group.macro': 'Macro',
+  'keypick.macro.tip':
+    'Joue la macro que le clavier garde dans cet emplacement, même quand Shark Deck est fermé.',
+  'macro.import': 'Copier dans la bibliothèque',
+  'macro.import.tip':
+    'Copier cette macro dans votre bibliothèque, pour la modifier ou la renvoyer plus tard.',
+  'macro.import.name': 'Macro du clavier {n}',
+  'macro.imported': '« {name} » copiée dans votre bibliothèque.',
+  'macro.deviceSlot.hint.keyboard':
+    'Les macros du clavier en ce moment, chacune jouée par une touche qui la reçoit dans l’onglet Touches. Envoyer à l’appareil écrit l’emplacement que vous choisissez.',
+  'macro.pushTo': 'Envoyer dans',
+  'macro.slot.empty': 'vide',
+  'macro.slot.used': 'sur l’appareil',
+  'macro.pushedTo': '« {name} » envoyée dans {slot}.',
+  'macro.pushToDevice.tip.slot':
+    'Écrit cette macro dans {slot} sur l’appareil, en remplaçant ce qui s’y trouve.',
+  'macro.deleteOnDevice': 'Supprimer de l’appareil',
+  'macro.deleteOnDevice.tip':
+    'Retirer cette macro de l’appareil : une touche ou un bouton qui l’a reçue ne fait alors plus rien.',
+  'macro.deleteOnDevice.title': 'Supprimer {name} de l’appareil ?',
+  'macro.deleteOnDevice.body':
+    'Une touche ou un bouton qui l’a reçue ne fera plus rien tant qu’une autre macro n’occupe pas son emplacement.',
+  'buttons.macro.oneSlot.title': 'Changer la macro de cette souris ?',
+  'buttons.macro.oneSlot.body':
+    'Cette souris garde une seule macro, et le bouton {n} la joue aussi : il jouera « {name} » lui aussi.',
+  'buttons.macro.oneSlot.ok': 'La changer',
+  'buttons.macro.full':
+    'Chaque emplacement de macro de cette souris contient une autre macro. Dans Macros, envoyez celle-ci vers l’emplacement qu’elle doit remplacer.',
+  'macro.switch.title': 'Enregistrer cette macro d’abord ?',
+  'macro.lib.delete': 'Supprimer « {name} » de la bibliothèque',
+  'keyfn.macroNamed': 'Macro {n} · {name}',
+  'btnact.easyAim': 'Visée facile',
 };

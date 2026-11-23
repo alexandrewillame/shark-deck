@@ -1,3 +1,5 @@
+import { asKeyboardStores, extraWaitBytes, macroSlotOf } from '@shared/keyboard-macro';
+import { v8MacroName } from '@shared/mouse-wire';
 import type { MacroLimits } from '@shared/types/live';
 import type { Macro, MacroStep } from '@shared/types/macros';
 import type { MessageKey } from '@shared/i18n';
@@ -147,6 +149,23 @@ export function toGroups(steps: MacroStep[]): MacroGroup[] {
   return out;
 }
 
+/**
+ * The macro with every pause set to `ms`, or removed (`ms` 0): each tap holds
+ * for it, and one pause of it sits between consecutive steps — the editor's
+ * Even and None timings, applied to the steps already there, the same gaps a
+ * recording made under them gets (useMacroRecorder `buildSteps`).
+ */
+export function retime(groups: readonly MacroGroup[], ms: number): MacroGroup[] {
+  const gap = Math.max(0, Math.round(ms));
+  const out: MacroGroup[] = [];
+  for (const g of groups) {
+    if (g.kind === 'wait') continue;
+    if (out.length && gap > 0) out.push(waitGroup(gap));
+    out.push(g.kind === 'tap' ? { ...g, holdMs: gap } : g);
+  }
+  return out;
+}
+
 export function fromGroups(groups: MacroGroup[]): MacroStep[] {
   const out: MacroStep[] = [];
   for (const g of groups) {
@@ -175,11 +194,23 @@ export function fromGroups(groups: MacroGroup[]): MacroStep[] {
 
 /**
  * Step records this group list costs in one onboard slot — the number the
- * capacity meter shows. The two codecs differ: the keyboard writes a delay as
- * its own 4-byte record, while the V8 folds a delay into the following step's
- * record, so an identical macro is cheaper there.
+ * capacity meter shows. Whether a delay costs a record of its own is the
+ * device's (`delaysConsumeSteps`): the V8 folds it into the following step's
+ * record, the keyboards and the Beken mice into the event before it.
  */
 export function encodedStepCount(groups: MacroGroup[], limits: MacroLimits | undefined): number {
+  // A keyboard counts as it stores: each key event one unit, and its pause one
+  // more unless it rides in the event's own byte (shared/keyboard-macro.ts).
+  if (limits?.inlineWaitMs !== undefined) {
+    const stored = asKeyboardStores(fromGroups(groups));
+    let units = 0;
+    stored.forEach((s, i) => {
+      if (s.type !== 'key') return;
+      const next = stored[i + 1];
+      units += 1 + extraWaitBytes(next?.type === 'delay' ? (next.ms ?? 0) : 0) / 2;
+    });
+    return units;
+  }
   let events = 0;
   let delays = 0;
   for (const g of groups) {
@@ -244,4 +275,41 @@ export function macroEquals(
     a.repeatCount === b.repeatCount &&
     JSON.stringify(canonicalSteps(a.steps)) === JSON.stringify(canonicalSteps(b.steps))
   );
+}
+
+/**
+ * Whether a macro the device holds is `lib`: a keyboard's by what it holds (it
+ * keeps no names; shared/keyboard-macro.ts), a mouse's by its name — as the
+ * mouse keeps it (a V8 slot: 30 ASCII characters), or whole (a Beken mouse,
+ * whose one macro Shark Deck remembers).
+ */
+export function holdsMacro(
+  dev: Macro,
+  lib: Pick<Macro, 'name' | 'repeatCount' | 'steps'>,
+  keyboard: boolean,
+): boolean {
+  if (keyboard)
+    return (
+      JSON.stringify([dev.repeatCount, asKeyboardStores(dev.steps)]) ===
+      JSON.stringify([lib.repeatCount, asKeyboardStores(lib.steps)])
+    );
+  return dev.name.trim() === lib.name.trim() || dev.name === v8MacroName(lib.name);
+}
+
+/**
+ * The slot a push goes to on a device with numbered slots: the one already
+ * holding the macro (`holds`), else the first empty one; null when every slot
+ * holds another macro.
+ */
+export function pushSlotFor(
+  onDevice: readonly Macro[],
+  slots: number,
+  holds: (dev: Macro) => boolean,
+): number | null {
+  const held = onDevice.find(holds);
+  const at = held ? macroSlotOf(held.id) : null;
+  if (at !== null) return at;
+  const taken = new Set(onDevice.map((m) => macroSlotOf(m.id)));
+  for (let slot = 0; slot < slots; slot++) if (!taken.has(slot)) return slot;
+  return null;
 }

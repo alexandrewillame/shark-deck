@@ -295,7 +295,7 @@ export const de: Partial<Messages> = {
   'macro.repeat': 'Wiederholungen',
   'macro.empty': 'Keine Makros vom Gerät gelesen.',
   'macro.newMacro': 'Neues Makro',
-  'macro.defaultName': 'Makro {n}',
+  'macro.defaultName': 'Mein Makro {n}',
   'macro.library': 'Bibliothek',
   'macro.savedToLibrary': 'In Ihrer Makrobibliothek gespeichert.',
   'macro.nameRequired': 'Geben Sie diesem Makro einen Namen, bevor Sie es speichern.',
@@ -303,7 +303,7 @@ export const de: Partial<Messages> = {
   'macro.pushed': '„{name}“ an den Onboard-Makrospeicher des Geräts übertragen.',
   'macro.deviceSlot': 'Aktuell auf dem Gerät',
   'macro.deviceSlot.hint':
-    'Diese Tastatur hat einen einzigen Onboard-Makrospeicherplatz — das Übertragen eines Makros ersetzt den vorhandenen Inhalt.',
+    'Was das Gerät jetzt enthält. Ein gesendetes Makro ersetzt das in seinem Platz.',
   'macro.libraryEmpty': 'Noch keine Makros gespeichert.',
   'macro.step.press': 'drücken',
   'macro.step.release': 'loslassen',
@@ -322,7 +322,6 @@ export const de: Partial<Messages> = {
   'macro.lib.steps': '{n} Schritte',
   'macro.lib.onDevice': 'Auf dem Gerät',
   'macro.lib.onDeviceBadge': 'Auf dem Gerät',
-  'macro.discard.title': 'Ungespeicherte Änderungen verwerfen?',
   'macro.discard.body': '„{name}“ hat Änderungen, die nie gespeichert wurden.',
   'macro.discard.confirm': 'Verwerfen',
   'macro.delete.title': 'Dieses Makro löschen?',
@@ -331,7 +330,7 @@ export const de: Partial<Messages> = {
   'macro.repeat.hint': 'Wie oft die ganze Folge pro Tastendruck abläuft.',
   'macro.rec.title': 'Aufnehmen',
   'macro.rec.focusHint':
-    'Lass dieses Fenster während der Aufnahme im Vordergrund — Shark Deck sieht nur Eingaben, die an es gehen, nicht die an andere Programme.',
+    'Lass dieses Fenster während der Aufnahme im Vordergrund — Shark Deck sieht nur Eingaben, die an es gehen, nicht die an andere Programme. Tastenkürzel, die das System für sich behält, etwa Win + Umschalt + S, erreichen es auch nicht: füge sie als Schritte hinzu.',
   'macro.rec.armed': 'Bereit — drücke eine Taste zum Starten.',
   'macro.rec.escStops': 'Esc beendet',
   'macro.rec.timing': 'Timing',
@@ -947,8 +946,6 @@ export const de: Partial<Messages> = {
     'Die Tastatur hat den Befehl zum Abschließen der Kalibrierung nicht angenommen.',
   'act.cal.aria': 'Switch-Kalibrierung',
   'act.cal.title': 'Switches werden kalibriert',
-  'act.cal.preparing':
-    'Tastatur wird vorbereitet — vor dem ersten Schreibvorgang werden ihre aktuellen Einstellungen gesichert. Das kann einige Sekunden dauern.',
   'act.cal.press':
     'Drücken Sie {every} fest bis zum Anschlag, halten Sie sie kurz gedrückt und wählen Sie dann „Abschließen“. Ziehen Sie währenddessen nicht das Kabel ab.',
   'act.cal.press.every': 'jede Taste',
@@ -1485,10 +1482,6 @@ export const de: Partial<Messages> = {
   'support.body.class':
     'Shark Deck kennt diese Maus nur an ihrem Sensor und bietet daher die Einstellungen, die jede Maus mit diesem Sensor hat. Ein Gerätebericht nennt das Modell: Er dauert eine Minute, zeichnet nichts auf, und du hängst ihn an eine Anfrage auf GitHub an.',
   'support.gaps': 'Noch nicht in Shark Deck: {list}.',
-  'support.body.steps':
-    'Das Gerätebericht-Tool kann genau diese aufzeichnen: Du stellst sie in der offiziellen Software ein, während es aufzeichnet, was die Software sendet. Ein paar Minuten; danach hängst du die Aufzeichnung an eine Anfrage auf GitHub an.',
-  'support.body.specific':
-    'Funktioniert etwas nicht wie erwartet? Das Gerätebericht-Tool zeichnet es in ein paar Minuten aus der offiziellen Software auf; danach hängst du die Aufzeichnung an eine Anfrage auf GitHub an.',
   'support.action.all': 'Dieses Gerät aufzeichnen',
   'support.action.report': 'Gerätebericht erstellen',
   'support.action.steps': 'Fehlendes aufzeichnen',
@@ -1518,11 +1511,69 @@ export const de: Partial<Messages> = {
   'support.preview':
     'Das Gerätebericht-Tool wurde mit den Schritten geöffnet, denen ein Besitzer folgen würde. Ein Demo-Gerät hat nichts aufzuzeichnen.',
   'support.gap.mediaKeys':
-    'einige Medientasten für seine Tasten (Stumm, Stopp, Vorheriger Titel, Rechner…)',
+    'einige Medientasten für seine Tasten (Vorheriger Titel, Stopp, Mediaplayer, Suche)',
   'support.body.mac':
     'Dafür braucht es eine Aufzeichnung der offiziellen Software, und ein Mac kann keine machen: Diese Software läuft unter Windows, und Shark Deck zeichnet sie auf einem Windows- oder Linux-Computer auf, an dem das Gerät angeschlossen ist. Auf diesem Mac kann das Tool trotzdem den Gerätebericht erstellen: eine Minute, und es liest nur, was das System schon weiß.',
   'support.web':
     'Das Gerätebericht-Tool zeichnet unter Windows und Linux auf; auf dem Mac erstellt es nur den Bericht.',
   'support.confirm.title': 'Shark Deck zum Aufnehmen schließen?',
   'support.starting': 'Wird gestartet…',
+  'support.unconfirmed': 'Auf diesem Modell noch nicht bestätigt: {list}.',
+  'support.strip.unconfirmed.keyboard': 'Auf dieser Tastatur noch nicht bestätigt: {list}.',
+  'support.strip.unconfirmed.mouse': 'Auf dieser Maus noch nicht bestätigt: {list}.',
+  'support.strip.confirm': 'Hilf beim Bestätigen',
+  'support.action.confirm': 'Zum Bestätigen aufzeichnen',
+  'support.topic.keys': 'Tastenbelegung und Fn-Ebene',
+  'support.topic.knob': 'Drehregler',
+  'support.topic.lighting': 'Beleuchtung',
+  'support.topic.actuation': 'Auslösepunkt',
+  'support.topic.keyModes': 'Tastenmodi',
+  'support.topic.switches': 'Schaltertypen',
+  'support.topic.options': 'Tastaturoptionen',
+  'support.topic.profiles': 'Profile',
+  'support.topic.pollRate': 'Abfragerate',
+  'support.topic.macros': 'Makros',
+  'support.topic.dpi': 'DPI',
+  'support.topic.sensor': 'Sensoreinstellungen',
+  'support.topic.buttons': 'Tasten',
+  'support.topic.power': 'Ruhezustand',
+  'support.topic.response': 'Reaktionszeit',
+  'support.topic.pairing': 'Kopplung',
+  'support.topic.receiverLight': 'Empfängerlicht',
+  'act.cal.handsOff':
+    'Berühren Sie die Tastatur einen Moment nicht: Shark Deck sichert ihre Einstellungen, dann lernt die Tastatur, wo jede Taste in Ruhe steht.',
+  'keyfn.macro': 'Makro',
+  'keyfn.macroN': 'Makro {n}',
+  'keypick.group.macro': 'Makro',
+  'keypick.macro.tip':
+    'Spielt das Makro, das die Tastatur auf diesem Platz speichert – auch wenn Shark Deck geschlossen ist.',
+  'macro.import': 'In die Bibliothek kopieren',
+  'macro.import.tip':
+    'Dieses Makro in Ihre Bibliothek kopieren, um es zu bearbeiten oder später erneut zu senden.',
+  'macro.import.name': 'Tastaturmakro {n}',
+  'macro.imported': '„{name}“ in Ihre Bibliothek kopiert.',
+  'macro.deviceSlot.hint.keyboard':
+    'Die Makros, die jetzt auf der Tastatur liegen, jedes abgespielt von einer Taste, der es im Tab „Tasten“ zugewiesen ist. „An Gerät senden“ schreibt den gewählten Platz.',
+  'macro.pushTo': 'Senden an',
+  'macro.slot.empty': 'leer',
+  'macro.slot.used': 'auf dem Gerät',
+  'macro.pushedTo': '„{name}“ an {slot} gesendet.',
+  'macro.pushToDevice.tip.slot':
+    'Schreibt dieses Makro auf dem Gerät in {slot} und ersetzt, was dort ist.',
+  'macro.deleteOnDevice': 'Vom Gerät löschen',
+  'macro.deleteOnDevice.tip':
+    'Dieses Makro vom Gerät entfernen: Eine Taste oder ein Knopf mit diesem Makro tut dann nichts mehr.',
+  'macro.deleteOnDevice.title': '{name} vom Gerät löschen?',
+  'macro.deleteOnDevice.body':
+    'Eine Taste oder ein Knopf mit diesem Makro tut nichts, bis ein anderes Makro an seinen Platz kommt.',
+  'buttons.macro.oneSlot.title': 'Das Makro dieser Maus ändern?',
+  'buttons.macro.oneSlot.body':
+    'Diese Maus speichert ein einziges Makro, und Taste {n} spielt es ebenfalls: Sie spielt dann auch „{name}“.',
+  'buttons.macro.oneSlot.ok': 'Ändern',
+  'buttons.macro.full':
+    'Jeder Makroplatz dieser Maus enthält ein anderes Makro. Übertrage dieses unter „Makros“ auf den Platz, den es ersetzen soll.',
+  'macro.switch.title': 'Dieses Makro zuerst speichern?',
+  'macro.lib.delete': '„{name}“ aus der Bibliothek löschen',
+  'keyfn.macroNamed': 'Makro {n} · {name}',
+  'btnact.easyAim': 'Leichtes Zielen',
 };

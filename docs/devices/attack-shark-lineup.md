@@ -20,7 +20,7 @@ reads every change back. Own a 🟡 or 🟠 device? Tell us whether it works:
 
 <!-- generated:lineup — `npm run lineup` rewrites this block -->
 
-**At a glance:** 🟢 Tested 2 · 🟡 Should work 87 · 🟠 Partial 12 · ⚪ Recognised 6
+**At a glance:** 🟢 Tested 3 · 🟡 Should work 86 · 🟠 Partial 12 · ⚪ Recognised 6
 
 ## Mice
 
@@ -59,6 +59,7 @@ One row per firmware model id: a name can cover several versions (wired or wirel
 | Status | Model | Model id | Switches | Wireless | Notes |
 |---|---|---|---|---|---|
 | 🟢 Tested | R85 HE | 3123 | Hall effect | — |  |
+| 🟢 Tested | R98 HE | 3743 | Hall effect | — |  |
 | 🟡 Should work | Beat75 | 2633 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | K75 RGB | 1343 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | K75 RGB | 1679 | mechanical | — |  |
@@ -82,8 +83,7 @@ One row per firmware model id: a name can cover several versions (wired or wirel
 | 🟡 Should work | R96 PRO | 3788 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | R96 Ultra | 3774 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | R98 GT | 3748 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | R98 HE | 3743 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | R98 HE | 3903 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R98 HE | 3903 | Hall effect | — |  |
 | 🟡 Should work | R98 PRO | 3754 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | R98 PRO HE | 4068 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | R98 Ultra | 3737 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |

@@ -27,6 +27,7 @@ import { isReadOnly, resolveIdentity } from './identity';
 import { colorVariantsOf } from '@shared/device-art';
 import {
   deriveLayout,
+  findKnob,
   keepLayout,
   type KeptLayout,
   layoutAgreement,
@@ -34,10 +35,21 @@ import {
   placeKept,
 } from './layout-check';
 import { boardLayoutGeometry, withBoardLayout } from './catalog/keyboards';
-import type { KeyLayoutEntry } from '@shared/types/keys';
+import type { KeyLayoutEntry, KnobSlots } from '@shared/types/keys';
 
 /** Where a board's placed layout is kept, per model (deviceState.ts). */
 const BOARD_LAYOUT_STATE_KEY = 'boardLayout';
+/** And its knob's slots, found with it. */
+const BOARD_KNOB_STATE_KEY = 'boardKnob';
+
+/** A kept knob, believed only in its own shape. */
+function keptKnob(v: unknown): KnobSlots | null {
+  if (!v || typeof v !== 'object') return null;
+  const k = v as Record<string, unknown>;
+  return ['left', 'right', 'press'].every((p) => Number.isInteger(k[p]))
+    ? (k as unknown as KnobSlots)
+    : null;
+}
 import type { IdentityKey } from './identity-key';
 import { Emitter } from '../emitter';
 import { createDriver, Driver } from './drivers';
@@ -606,6 +618,8 @@ export class DeviceManager extends Emitter {
 
   /** model -> a demo board's placed layout, for the session (see placeLayout). */
   private readonly demoLayouts = new Map<string, KeptLayout>();
+  /** model -> a demo board's knob, found with its layout. */
+  private readonly demoKnobs = new Map<string, KnobSlots>();
 
   private async storedBackupCovers(model: string, policy: BackupPolicy): Promise<boolean> {
     const files = await listBackupFiles(model);
@@ -891,6 +905,16 @@ export class DeviceManager extends Emitter {
         ? kept.get(d.model)
         : await state!.get(BOARD_LAYOUT_STATE_KEY);
     let layout = placeKept(geometry, stored);
+    // Its knob, found once beside its keys and kept with them.
+    let knob = layout
+      ? keptKnob(
+          fresh
+            ? null
+            : kept
+              ? this.demoKnobs.get(d.model)
+              : await state!.get(BOARD_KNOB_STATE_KEY),
+        )
+      : null;
     if (!layout) {
       const base = await e.driver.readKeyBindings('base');
       if (!base) return; // asked again on a later pass
@@ -904,8 +928,14 @@ export class DeviceManager extends Emitter {
         );
         return;
       }
-      if (kept) kept.set(d.model, keepLayout(layout));
-      else await state!.set(BOARD_LAYOUT_STATE_KEY, keepLayout(layout));
+      knob = d.spec.knob ? findKnob(base, layout) : null;
+      if (kept) {
+        kept.set(d.model, keepLayout(layout));
+        if (knob) this.demoKnobs.set(d.model, knob);
+      } else {
+        await state!.set(BOARD_LAYOUT_STATE_KEY, keepLayout(layout));
+        if (knob) await state!.set(BOARD_KNOB_STATE_KEY, knob);
+      }
       this.layoutNote(
         e,
         `layout: ${layout.length} of ${geometry.length} keys placed from the board's own key map`,
@@ -913,7 +943,7 @@ export class DeviceManager extends Emitter {
     }
     e.layoutChecked = true;
     e.relayout = false;
-    this.rebuild(e, withBoardLayout(d, layout));
+    this.rebuild(e, withBoardLayout(d, layout, knob));
   }
 
   /** Place a board's keys afresh on the next pass: its key map was just reset. */

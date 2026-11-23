@@ -210,6 +210,17 @@
 .hero-art-col .art-hero-anchor {
   margin-bottom: 0;
 }
+/* A column with something under the photo (HeroPane `asideRef`): photo, then
+   that, top to bottom, held at the top rather than centred on the photo. */
+.hero-art-col.has-aside {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  top: 0;
+}
+.hero-aside {
+  width: 100%;
+}
 /* When a close-up detail shot (receiver / DPI LED / side-light) sits beside
  * the main photo, both shrink to a matched thumbnail size instead of the
  * detail shot competing with the hero photo's own (larger) box. */

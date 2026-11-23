@@ -389,7 +389,7 @@ export const en = {
   'macro.repeat': 'Repeat count',
   'macro.empty': 'No macros read back from the device.',
   'macro.newMacro': 'New macro',
-  'macro.defaultName': 'Macro {n}',
+  'macro.defaultName': 'My macro {n}',
   'macro.library': 'Library',
   'macro.savedToLibrary': 'Saved to your macro library.',
   'macro.nameRequired': 'Give this macro a name before saving.',
@@ -397,7 +397,7 @@ export const en = {
   'macro.pushed': 'Pushed "{name}" to the device’s onboard macro slot.',
   'macro.deviceSlot': 'On the device now',
   'macro.deviceSlot.hint':
-    'This keyboard has one onboard macro slot — pushing a macro replaces whatever was there.',
+    'What the device holds now. Pushing a macro replaces what is in its slot.',
   'macro.libraryEmpty': 'No macros saved yet.',
   'macro.step.press': 'press',
   'macro.step.release': 'release',
@@ -416,7 +416,6 @@ export const en = {
   'macro.lib.steps': '{n} steps',
   'macro.lib.onDevice': 'On the device',
   'macro.lib.onDeviceBadge': 'On device',
-  'macro.discard.title': 'Discard unsaved changes?',
   'macro.discard.body': '“{name}” has changes you never saved.',
   'macro.discard.confirm': 'Discard',
   'macro.delete.title': 'Delete this macro?',
@@ -425,7 +424,7 @@ export const en = {
   'macro.repeat.hint': 'How many times the whole sequence plays per press.',
   'macro.rec.title': 'Record',
   'macro.rec.focusHint':
-    'Keep this window in front while recording — Shark Deck only sees input sent to it, not input going to other apps.',
+    'Keep this window in front while recording — Shark Deck only sees input sent to it, not input going to other apps. Shortcuts the system keeps for itself, such as Win + Shift + S, do not reach it either: add those as steps.',
   'macro.rec.armed': 'Ready — press any key to start.',
   'macro.rec.escStops': 'Esc stops',
   'macro.rec.timing': 'Timing',
@@ -932,8 +931,6 @@ export const en = {
   'act.cal.finishRefused': 'The keyboard did not accept the finish-calibration command.',
   'act.cal.aria': 'Switch calibration',
   'act.cal.title': 'Calibrating switches',
-  'act.cal.preparing':
-    'Preparing the keyboard — backing up its current settings before the first write. This can take a few seconds.',
   'act.cal.press':
     'Press {every} firmly to the bottom and hold for a moment, then choose Finish. Do not unplug the cable while this runs.',
   'act.cal.press.every': 'every key',
@@ -1456,10 +1453,6 @@ export const en = {
   'support.body.class':
     'Shark Deck knows this mouse by its sensor only, so it offers the settings every mouse with that sensor has. A device report names the model: it takes a minute, records nothing, and you attach it to a request on GitHub.',
   'support.gaps': 'Not in Shark Deck yet: {list}.',
-  'support.body.steps':
-    'The device report tool can record just these: you set them in the official software while it records what the software sends. A few minutes; then attach the recording to a request on GitHub.',
-  'support.body.specific':
-    'Something not working as it should? The device report tool records it from the official software in a few minutes; then attach the recording to a request on GitHub.',
   'support.action.all': 'Record this device',
   'support.action.report': 'Make a device report',
   'support.action.steps': 'Record what is missing',
@@ -1489,13 +1482,70 @@ export const en = {
   'support.preview':
     'The device report tool opened on the steps an owner would follow. A demo device has nothing to record.',
   'support.gap.mediaKeys':
-    'some media keys for its buttons (Mute, Stop, Previous track, Calculator…)',
+    'a few media keys for its buttons (Previous track, Stop, Media player, Search)',
   'support.body.mac':
     'This takes a recording of the official software, and a Mac cannot make one: that software runs on Windows, and Shark Deck records it on a Windows or Linux computer, with the device plugged in there. On this Mac, the tool can still make the device report: a minute, and it only reads what the system knows.',
   'support.web':
     'The device report tool records on Windows and Linux; on a Mac it makes the report alone.',
   'support.confirm.title': 'Close Shark Deck to record?',
   'support.starting': 'Starting…',
+  'support.unconfirmed': 'Not confirmed on it yet: {list}.',
+  'support.strip.unconfirmed.keyboard': 'Not confirmed on this keyboard yet: {list}.',
+  'support.strip.unconfirmed.mouse': 'Not confirmed on this mouse yet: {list}.',
+  'support.strip.confirm': 'Help confirm them',
+  'support.action.confirm': 'Record to confirm them',
+  'support.topic.keys': 'key remapping and the Fn layer',
+  'support.topic.knob': 'the knob',
+  'support.topic.lighting': 'lighting',
+  'support.topic.actuation': 'actuation',
+  'support.topic.keyModes': 'key modes',
+  'support.topic.switches': 'switch types',
+  'support.topic.options': 'keyboard options',
+  'support.topic.profiles': 'profiles',
+  'support.topic.pollRate': 'polling rate',
+  'support.topic.macros': 'macros',
+  'support.topic.dpi': 'DPI',
+  'support.topic.sensor': 'sensor settings',
+  'support.topic.buttons': 'buttons',
+  'support.topic.power': 'sleep',
+  'support.topic.response': 'response time',
+  'support.topic.pairing': 'pairing',
+  'support.topic.receiverLight': 'the receiver light',
+  'act.cal.handsOff':
+    'Keep your hands off the keyboard for a moment: Shark Deck backs up its settings, then the keyboard learns where each key rests.',
+  'keyfn.macro': 'Macro',
+  'keyfn.macroN': 'Macro {n}',
+  'keypick.group.macro': 'Macro',
+  'keypick.macro.tip':
+    'Plays the macro the keyboard holds in this slot, even with Shark Deck closed.',
+  'macro.import': 'Copy to library',
+  'macro.import.tip': 'Copy this macro into your library, to edit it or push it again later.',
+  'macro.import.name': 'Keyboard macro {n}',
+  'macro.imported': 'Copied "{name}" into your library.',
+  'macro.deviceSlot.hint.keyboard':
+    'The macros on the keyboard now, each played by a key given it in the Keys tab. Push to device writes the slot you choose.',
+  'macro.pushTo': 'Push to',
+  'macro.slot.empty': 'empty',
+  'macro.slot.used': 'on the device',
+  'macro.pushedTo': 'Pushed "{name}" to {slot}.',
+  'macro.pushToDevice.tip.slot':
+    'Writes this macro to {slot} on the device, replacing what is there.',
+  'macro.deleteOnDevice': 'Delete from the device',
+  'macro.deleteOnDevice.tip':
+    'Remove this macro from the device: a key or button given it then does nothing.',
+  'macro.deleteOnDevice.title': 'Delete {name} from the device?',
+  'macro.deleteOnDevice.body':
+    'A key or button given it will do nothing until another macro goes in its slot.',
+  'buttons.macro.oneSlot.title': 'Change the macro on this mouse?',
+  'buttons.macro.oneSlot.body':
+    'This mouse holds one macro, and button {n} plays it too: it will play "{name}" as well.',
+  'buttons.macro.oneSlot.ok': 'Change it',
+  'buttons.macro.full':
+    'Every macro slot on this mouse holds another macro. In Macros, push this one to the slot it should replace.',
+  'macro.switch.title': 'Save this macro first?',
+  'macro.lib.delete': 'Delete “{name}” from the library',
+  'keyfn.macroNamed': 'Macro {n} · {name}',
+  'btnact.easyAim': 'Easy aim',
 } as const;
 
 export type MessageKey = keyof typeof en;

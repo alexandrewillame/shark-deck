@@ -310,3 +310,29 @@ describe('every factory Fn default can be restored', () => {
     expect(resetCodeOf(factoryBinding(undefined, 'fn', UNUSED_FN_SLOT))).toBe('00');
   });
 });
+
+describe("a knob's control", () => {
+  // The knob's turn left: no HID usage of its own, Volume - from the factory.
+  const entry: KeyLayoutEntry = {
+    label: 'Knob −',
+    row: 0,
+    col: 1000,
+    x: 0,
+    y: 0,
+    slot: 120,
+    code: null,
+    control: 'knob',
+    defaultQuad: [3, 0, 0xea, 0],
+  };
+  const holding = (raw: [number, number, number, number]) =>
+    ({ slot: 120, raw, kind: 'consumer', code: null }) as unknown as KeyBinding;
+
+  it('goes back to the media key it shipped with', () => {
+    expect(factoryBinding(entry, 'base', 120)).toEqual({ kind: 'quad', raw: [3, 0, 0xea, 0] });
+  });
+
+  it('shows as remapped only when it holds something else', () => {
+    expect(isRemapped(holding([3, 0, 0xea, 0]), entry, 'base', 120)).toBe(false);
+    expect(isRemapped(holding([3, 0, 0xcd, 0]), entry, 'base', 120)).toBe(true);
+  });
+});

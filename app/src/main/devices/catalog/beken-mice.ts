@@ -98,6 +98,8 @@ const BEKEN_BUTTON_ACTIONS = [
   'button',
   'dpiSwitch',
   'scrollUD',
+  'firepower',
+  'easyAim',
   'combo',
   'multimedia',
   'macro',

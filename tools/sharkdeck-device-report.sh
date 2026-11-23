@@ -158,6 +158,8 @@ dpi.blue|mouse|DPI|#0000FF|dpi.color||Set stage 1's colour to pure blue (#0000FF
 dpi.color.back|mouse|DPI|||undo|Set stage 1's colour back to what you use.
 dpi.xy|mouse|DPI|800x1600|||If X and Y can be set apart: set stage 1 to X 800 and Y 1600.
 dpi.xy.off|mouse|DPI|||undo|Turn separate X and Y off again.
+dyn.on|mouse|DPI|on|dyn||If offered: turn dynamic DPI (DPI that rises with speed, set as a curve) on, with any curve.
+dyn.off|mouse|DPI|off|dyn|undo|Turn dynamic DPI off (back on afterwards, if you use it).
 poll.125|both|Polling rate|125|poll||Set the polling rate (report rate) to 125 Hz.
 poll.500|both|Polling rate|500|poll||Set the polling rate to 500 Hz.
 poll.1000|both|Polling rate|1000|poll||Set the polling rate to 1000 Hz.
@@ -175,6 +177,14 @@ motion.on|mouse|Sensor|on|motion||Turn motion sync on.
 motion.off|mouse|Sensor|off|motion|undo|Turn motion sync off (back on afterwards, if you use it).
 mode.each|mouse|Sensor||sensor.mode|repeat|If the mouse has sensor or performance modes (Office, Gaming, Competitive...): choose the first one, type its name in the note, click Save this one. Then the next mode, and so on.
 mode.back|mouse|Sensor|||undo|Choose the mode you use again.
+fps.on|mouse|Sensor|on|fps||If offered: turn 20 kHz FPS scanning (the highest sensor frame rate) on.
+fps.off|mouse|Sensor|off|fps|undo|Turn 20 kHz FPS scanning off (back on afterwards, if you use it).
+far.on|mouse|Sensor|on|far||If offered: turn long-distance mode (a stronger wireless link) on.
+far.off|mouse|Sensor|off|far|undo|Turn long-distance mode off (back on afterwards, if you use it).
+perf.on|mouse|Sensor|on|perf||If offered: turn the highest-performance mode on.
+perf.off|mouse|Sensor|off|perf|undo|Turn the highest-performance mode off (back on afterwards, if you use it).
+anglemode.10|mouse|Sensor|10||ask|If offered: set the mouse angle (a slider in degrees, not angle snapping) to 10 degrees, or the closest value. Type the value it shows now.
+anglemode.back|mouse|Sensor|||undo|Set the mouse angle back to what you use.
 debounce.min|both|Response|min|debounce|ask|Set the debounce time (button or key response, often in ms) to its lowest value. Type the value it shows now.
 debounce.max|both|Response|max|debounce|ask|Set the debounce time to its highest value. Type the value it shows now.
 debounce.4|both|Response|4|debounce|ask|Set the debounce time to 4 ms, or the closest value. Type the value it shows now.
@@ -220,37 +230,53 @@ media.refresh|mouse|Media keys|Refresh page|media.b4||Set button 4 (front side b
 media.favorites|mouse|Media keys|Favorites|media.b4||Set button 4 (front side button) to Favorites (bookmarks), if offered.
 media.default|mouse|Media keys|Forward|media.b4|undo|Set button 4 (front side button) back to its default (Forward).
 key.a-b|keyboard|Keys|A types B|||Remap the key A so that it types B (main layer).
-key.a-b.undo|keyboard|Keys|A types A||undo|Put A back: make it type A again.
+key.a-b.undo|keyboard|Keys|A types A||undo|Reset A (Reset Key), so it types A again.
 key.caps-ctrl|keyboard|Keys|Caps Lock is Left Ctrl|||Remap Caps Lock to Left Ctrl.
-key.caps-ctrl.undo|keyboard|Keys|Caps Lock is Caps Lock||undo|Put Caps Lock back to Caps Lock.
-key.f1-volup|keyboard|Keys|F1 is Volume up|||Remap F1 to Volume up.
-key.f1-volup.undo|keyboard|Keys|F1 is F1||undo|Put F1 back to F1.
-key.esc-mute|keyboard|Keys|Esc is Mute|||Remap Esc to Mute.
-key.esc-mute.undo|keyboard|Keys|Esc is Esc||undo|Put Esc back to Esc.
-key.fn|keyboard|Keys|Fn + key is Play/Pause|||If there is an Fn layer: give Play / Pause to Fn + a key the software lets you change (some, like Fn + A, are fixed): Fn + P, say. Type the key in the note.
-key.fn.undo|keyboard|Keys|||undo|Put that Fn + key back as it was.
+key.caps-ctrl.undo|keyboard|Keys|Caps Lock is Caps Lock||undo|Reset Caps Lock (Reset Key), so it is Caps Lock again.
+key.f1-volup|keyboard|Keys|F1 is Volume up|||Remap F1 to Volume up: a media key (in Attack Shark Driver v4, Custom Keys > Functions).
+key.f1-volup.undo|keyboard|Keys|F1 is F1||undo|Reset F1 (Reset Key), so it is F1 again.
+key.esc-mute|keyboard|Keys|Esc is Mute|||Remap Esc to Mute: a media key (Custom Keys > Functions in Attack Shark Driver v4).
+key.esc-mute.undo|keyboard|Keys|Esc is Esc||undo|Reset Esc (Reset Key), so it is Esc again.
+key.fn|keyboard|Keys|Fn + key is Play/Pause|||If there is an Fn layer: give Play / Pause (a media key: Functions) to Fn + a key the software lets you change (some, like Fn + A, are fixed): Fn + P, say. Type the key in the note.
+key.fn.undo|keyboard|Keys|||undo|Reset that Fn + key (Reset Key), so it is as it was.
 key.reset|keyboard|Keys||||Optional, only if you do not mind losing your own key settings: restore all keys to their defaults at once.
-winlock.on|keyboard|Keys|on|winlock||Turn the Windows-key lock (game mode) on.
-winlock.off|keyboard|Keys|off|winlock|undo|Turn the Windows-key lock off.
-rollover.6|keyboard|Keys|6KRO|rollover||If offered: switch to 6-key rollover (6KRO).
-rollover.n|keyboard|Keys|NKRO|rollover|undo|Switch back to N-key rollover (NKRO).
-macro.make|both|Macros||||Create a macro named T1 that presses and releases A, then presses and releases B (record "ab", or add the four events by hand). Save it.
-macro.delay|both|Macros|100|||If delays can be edited: change the delay between A and B to 100 ms, and save.
+winlock.on|keyboard|Keys|on|winlock||If the software has a Windows-key lock (Win Lock, or game mode: the Windows key stops opening the Start menu during a game): turn it on. Not there? Click Not in my software.
+winlock.off|keyboard|Keys|off|winlock|undo|Turn the Windows-key lock off again.
+rollover.6|keyboard|Keys|6KRO|rollover||If the software lets you choose how many keys can be pressed at once (6KRO or NKRO): choose 6KRO. Not there? Click Not in my software.
+rollover.n|keyboard|Keys|NKRO|rollover|undo|Choose NKRO again.
+knob.left|keyboard|Knob|Knob left is Page Down|||If the keyboard has a knob or a wheel: remap turning it down (Volume down) to Page Down. In Attack Shark Driver v4 it is on the picture in Custom Keys.
+knob.left.undo|keyboard|Knob|||undo|Reset the knob's turn down (Reset Key), so it is Volume down again.
+knob.press|keyboard|Knob|Knob press is Play/Pause|||Remap pressing the knob (Mute) to Play / Pause: a media key (Functions).
+knob.press.undo|keyboard|Knob|||undo|Reset the knob's press (Reset Key), so it is Mute again.
+knob.fn|keyboard|Knob|Fn + knob right is Next track|||If the Fn layer lets you change the knob: give Fn + turning it up the action Next track. Shown but not clickable? Click Not in my software.
+knob.fn.undo|keyboard|Knob|||undo|Reset Fn + turning the knob up (Reset Key).
+opt.mac|keyboard|Options|Mac|os||If the software has a Windows / Mac mode: switch it to Mac. A mode only a key combination on the keyboard switches does not count: click Not in my software.
+opt.win|keyboard|Options|Windows|os|undo|Switch it back to Windows.
+opt.wasd|keyboard|Options|on|wasd||If offered: swap WASD and the arrow keys.
+opt.wasd.off|keyboard|Options|off|wasd|undo|Swap them back.
+opt.mistouch|keyboard|Options|on|mistouch||If offered: turn the anti-accidental trigger (anti-mistouch) on.
+opt.mistouch.off|keyboard|Options|off|mistouch|undo|Turn it off again (back on afterwards, if you use it).
+opt.rtstab|keyboard|Options|on|rtstab|ask|If offered: set RT stabilisation to 50% (a percentage, 25% from the factory). Type the value it shows now.
+opt.rtstab.off|keyboard|Options|off|rtstab|undo|Set RT stabilisation back to what it was (25% if unsure).
+macro.make|both|Macros||||Create a macro named T1 that types the letter a, then the letter b (record it, or add the four events by hand: a down, a up, b down, b up). Save it. It may reach the keyboard only once given to a key: the next steps.
+macro.delay|both|Macros|300|||If delays can be edited: change the delay between A and B to 300 ms, and save.
 macro.assign.mouse|mouse|Macros||||Assign the macro T1 to button 4.
 macro.assign.keyboard|keyboard|Macros||||Assign the macro T1 to the key F12.
 macro.repeat|both|Macros|3|||If offered: make the macro repeat 3 times.
-macro.clear|both|Macros|||undo|Set that button or key back to its default, then delete the macro.
+macro.second.mouse|mouse|Macros||||If the software keeps more than one macro: create a second macro named T2 that types the letter c, then the letter d, and assign it to button 5. If it says how many macros it can hold, type that number in the note.
+macro.second.keyboard|keyboard|Macros||||If the software keeps more than one macro: create a second macro named T2 that types the letter c, then the letter d, and assign it to the key F11. If it says how many macros it can hold, type that number in the note.
+macro.clear|both|Macros|||undo|Reset those buttons or keys (Reset Key) so they are as before, then delete the macros.
 light.each|both|Lighting||light.effect|repeat|Choose the first lighting effect in the list and wait 2 seconds. Type its name in the note, click Save this one. Then the next effect, and so on.
-light.red|both|Lighting|#FF0000|light.color||Choose a single-colour (static) effect, and set its colour to pure red (#FF0000).
+light.red|both|Lighting|#FF0000|light.color||Choose the effect that lights every key in one colour (Always on, or Static), and set its colour to pure red (#FF0000).
 light.blue|both|Lighting|#0000FF|light.color||Set the colour to pure blue (#0000FF).
 light.dim|both|Lighting|min|light.bright||Set the brightness to its lowest (not off).
 light.bright|both|Lighting|max|light.bright||Set the brightness to its highest.
 light.half|both|Lighting|50%|light.bright||Set the brightness to the middle.
 light.slow|both|Lighting|min|light.speed||Choose a moving effect, then set its speed to the slowest.
 light.fast|both|Lighting|max|light.speed||Set the speed to the fastest.
-light.dir|both|Lighting||||If the effect has a direction: change it once.
-light.off|both|Lighting|off|light.power||Turn the lighting off.
-light.on|both|Lighting|on|light.power||Turn the lighting on again.
+light.dir|both|Lighting||||Choose an effect that moves (Wave, say), then change its direction once.
+light.off|both|Lighting|off|light.power||Turn the lighting off: the Off effect, or an off switch. Neither? Set the brightness to 0.
+light.on|both|Lighting|on|light.power||Turn the lighting on again, as it was.
 light.back|both|Lighting|||undo|Put your own lighting back (effect, colour, brightness), as near as you remember it.
 perkey.esc|keyboard|Per-key lighting|#FF0000|||If single keys can have their own colour: make Esc red and leave the rest.
 perkey.space|keyboard|Per-key lighting|#0000FF|||Make the space bar blue as well.
@@ -259,28 +285,31 @@ side.each|both|Second light||side.effect|repeat|If there is a second light (side
 side.red|both|Second light|#FF0000|side.color||Set the second light to pure red (#FF0000).
 side.blue|both|Second light|#0000FF|side.color||Set the second light to pure blue (#0000FF).
 side.back|both|Second light|||undo|Put the second light back as you had it.
-act.3.5|keyboard|Actuation|3.5|act.all||Set all keys to 3.5 mm.
-act.0.5|keyboard|Actuation|0.5|act.all||Set all keys to 0.5 mm. That is very light: until the next step, a key just touched may type.
+rled.change|mouse|Receiver light|||ask|If the wireless receiver has a light you can set: change its effect or colour once. Type what you set.
+rled.back|mouse|Receiver light|||undo|Set the receiver's light back to what you use.
+act.3.5|keyboard|Actuation|3.5|act.all|ask|Select all keys (Select all), then set their actuation to 3.5 mm, or the deepest it allows. Type the value it shows now.
+act.0.5|keyboard|Actuation|0.5|act.all|ask|With all keys selected, set their actuation to 0.5 mm, or the least it allows. That is very light: until the next step, a key just touched may type. Type the value it shows now.
 act.back|keyboard|Actuation||act.all|undo ask|Set all keys back to what you use (2.0 mm if unsure). Type the value it shows now.
-act.esc|keyboard|Actuation|1.0|||Set only Esc to 1.0 mm.
+act.esc|keyboard|Actuation|1.0||ask|Select only Esc, and set its actuation to 1.0 mm. Type the value it shows now.
 act.esc.undo|keyboard|Actuation|||undo|Set Esc back to the same as the other keys.
-rt.on|keyboard|Actuation|on|rt||Turn rapid trigger on for all keys.
+rt.on|keyboard|Actuation|on|rt||Turn rapid trigger on for all keys (Select all, then rapid trigger).
 rt.0.1|keyboard|Actuation|0.1|rt.sens||Set the rapid trigger sensitivity to 0.1 mm.
 rt.0.5|keyboard|Actuation|0.5|rt.sens||Set the rapid trigger sensitivity to 0.5 mm.
 rt.off|keyboard|Actuation|off|rt|undo|Turn rapid trigger off (back on afterwards, if you use it).
-dz.top|keyboard|Actuation|0.2|||If offered: set the top dead zone to 0.2 mm.
+dz.top|keyboard|Actuation|0.2||ask|If offered: set the top dead zone (the travel ignored as a key starts to move) to 0.2 mm, for all keys. Type the value it shows now.
 dz.top.undo|keyboard|Actuation|||undo|Set the top dead zone back as it was.
-dz.bottom|keyboard|Actuation|0.2|||If offered: set the bottom dead zone to 0.2 mm.
+dz.bottom|keyboard|Actuation|0.2||ask|If offered: set the bottom dead zone (the travel ignored at the bottom) to 0.2 mm, for all keys. Type the value it shows now.
 dz.bottom.undo|keyboard|Actuation|||undo|Set the bottom dead zone back as it was.
-travel|keyboard|Actuation|||nochange|If the software shows key travel live: open that view, press A slowly to the bottom, and release it.
-dks.a|keyboard|Key modes||||Give the key A a dynamic keystroke (DKS) with any actions, and save.
-dks.a.undo|keyboard|Key modes|||undo|Take the dynamic keystroke off A again.
-mt.a|keyboard|Key modes||||Give the key A a mod-tap (tap: A, hold: Left Ctrl), and save.
-mt.a.undo|keyboard|Key modes|||undo|Take the mod-tap off A again.
-tgl.a|keyboard|Key modes||||Give the key A a toggle mode, and save.
-tgl.a.undo|keyboard|Key modes|||undo|Take the toggle off A again.
-snap.ad|keyboard|Key modes||||Turn on Snap Tap (SOCD) for A and D.
-snap.ad.undo|keyboard|Key modes|||undo|Turn Snap Tap off for A and D again.
+travel|keyboard|Actuation|||nochange|If the software shows key travel live (in Attack Shark Driver v4, press Simulation Setting first): open that view, press A slowly to the bottom, and release it.
+sw.show|keyboard|Switches|||ask,nochange|If the software sets which switch each key has: open that page, change nothing. Type the switch it shows for Esc, and for A (for example: Esc Magnetic Jade, A Magnetic Jade).
+sw.esc|keyboard|Switches|||ask|Select only Esc (unselect any other key), and set its switch to another type in the list. Type the name you chose.
+sw.esc.back|keyboard|Switches|||undo|Set Esc's switch back to what it showed before.
+dks.a|keyboard|Key modes||||Give the key A a dynamic keystroke (DKS, in Advanced Key Settings) with any actions, and save.
+mt.a|keyboard|Key modes||||Give A a mod-tap (Click - MT in Attack Shark Driver v4): tap types A, hold is Left Ctrl. Save. It takes the place of the DKS.
+tgl.a|keyboard|Key modes||||Give A a toggle (Toggle Switch - TGL). Save. It takes the place of the mod-tap.
+modereset.a|keyboard|Key modes|||undo|Reset A (Reset Key, in Advanced Key Settings), so it is a plain key again.
+snap.ad|keyboard|Key modes||||Turn on SnapKey (Snap Tap, SOCD) for A and D, in Advanced Key Settings.
+snap.ad.undo|keyboard|Key modes|||undo|Reset it (Reset Key on A resets A and D together).
 calibrate|keyboard|Key modes|||nochange|Optional: run the key calibration, following its instructions.
 profile.2|both|Profiles|2|profile||Switch to onboard profile 2.
 profile.1|both|Profiles|1|profile|undo|Switch back to profile 1 (or the one you use).
@@ -295,6 +324,7 @@ conn.green|both|Other connection|#00FF00|||Set the lighting to static pure green
 conn.light.back|both|Other connection|||undo|Put your own lighting back.
 conn.pair|both|Other connection|||nochange|If the software has a pairing button for the receiver: click it and follow its instructions until the device works again.
 end.reset|both|Finish||||Restore the factory settings in the software (Reset, Reset Profile or Restore defaults): it tells Shark Deck the factory values. Your own settings come back from the file you exported, or set them again afterwards. Rather not? Click Not in my software.
+end.reopen|both|Finish|||nochange|Close the official software, open it again and wait until it shows the device. Change nothing: it reads every setting back from the device.
 end.close|both|Finish||||Close the official software.
 STEPS
 }
@@ -324,6 +354,10 @@ Profiles|keyboard|Attack Shark Driver v4: the Profile 1 list on the Keyboard Set
 Profiles|mouse|Usually at the top or the side: Profile 1, 2, 3... or Config 1, 2, 3...
 Other connection|both|Usually where the software shows the connection: cable, 2.4 GHz receiver, Bluetooth. A switch under the device often chooses it.
 Finish|keyboard|Attack Shark Driver v4: Restore Factory Settings, bottom right of the Keyboard Settings page.
+Knob|keyboard|Attack Shark Driver v4: Keyboard Settings > Custom Keys, where the knob shows as Volume -, Volume + and Mute (Fn + knob: Fn Layer Settings). Elsewhere: Custom keys or Key settings.
+Options|keyboard|Attack Shark Driver v4: Keyboard Settings > Other Settings. Elsewhere: Settings.
+Switches|keyboard|Attack Shark Driver v4: Keyboard Settings > Magnetic Switch Settings, where each key's switch type is set. Elsewhere: Magnetic switch or Switch settings.
+Receiver light|mouse|Usually Lighting, or a Receiver page: the light on the wireless receiver.
 WHERE
 }
 

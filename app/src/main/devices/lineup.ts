@@ -28,8 +28,17 @@ const STATUS: Record<Status, { cell: string; rank: number }> = {
   recognised: { cell: '⚪ Recognised', rank: 3 },
 };
 
-/** Checked on a real unit: frames confirmed, read back, written. */
-const HARDWARE_CHECKED: ReadonlySet<string> = new Set(['attack-shark-r85he', 'attack-shark-v8']);
+/**
+ * Checked on a real unit: frames confirmed, read back, written. The R98 HE is
+ * its 3743: an owner's recording matched change for change, then its own
+ * settings, key map, magnetism and macros written and read back on one
+ * (2026-11-23). Its 3903 has not been on a desk.
+ */
+const HARDWARE_CHECKED: ReadonlySet<string> = new Set([
+  'attack-shark-r85he',
+  'attack-shark-r98-he-3743',
+  'attack-shark-v8',
+]);
 
 interface Row {
   status: Status;

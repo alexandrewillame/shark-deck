@@ -13,7 +13,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { parseDeviceReport, triageReport } from '../src/main/devices/deviceReport';
-import { dossier } from '../src/main/devices/capture/dossier';
+import { dossier, stepMessages } from '../src/main/devices/capture/dossier';
+import { sharkDeckChecks } from '../src/main/devices/capture/checks';
 import { readZip } from '../src/main/devices/capture/zip';
 
 const arg = process.argv[2];
@@ -76,15 +77,15 @@ if (folder && report.recording) {
     process.exit(1);
   }
   const out = join(folder, 'dossier.md');
-  writeFileSync(
-    out,
-    dossier({
-      model: report.model,
-      recording: report.recording,
-      pcap: new Uint8Array(readFileSync(pcap)),
-      files: new Set(filesUnder(folder)),
-      devices: report.devices,
-    }),
-  );
+  const input = {
+    model: report.model,
+    recording: report.recording,
+    pcap: new Uint8Array(readFileSync(pcap)),
+    files: new Set(filesUnder(folder)),
+    devices: report.devices,
+  };
+  // What Shark Deck's own driver makes of it (capture/checks.ts), after the frames.
+  const checks = await sharkDeckChecks({ ...stepMessages(input), devices: report.devices });
+  writeFileSync(out, `${dossier(input)}\n${checks.join('\n')}\n`);
   console.log(`\nDossier: ${out}\nPictures: ${join(folder, 'screens')}`);
 }

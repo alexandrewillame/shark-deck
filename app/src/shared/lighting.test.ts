@@ -6,6 +6,7 @@ import {
   KB_LIGHT_EFFECTS_TABLE,
   KB_PERKEY_EFFECT_INDEX,
   SIDE_LIGHT_EFFECTS,
+  SIDE_LIGHT_PICKER,
   kbEffect,
   RAINBOW_EFFECTS,
 } from './lighting';
@@ -141,5 +142,14 @@ describe.skipIf(!HAVE_BUNDLE)('SIDE_LIGHT_EFFECTS matches the vendor SIDE_LIGUT_
   it('puts Snake at 5, not the main list’s 7', () => {
     expect(list[5]).toBe('LightSnake');
     expect(SIDE_LIGHT_EFFECTS.find((e) => e.name === 'Snake')?.wire).toBe(5);
+  });
+});
+
+describe('the side light picker', () => {
+  it('offers the effects the board runs on its own, as the official software does', () => {
+    // An R98 HE owner's recording: Off, Always On, Breath, Neon, Wave, Snake.
+    expect(SIDE_LIGHT_PICKER.map((e) => e.wire)).toEqual([0, 1, 2, 3, 4, 5]);
+    // the streamed ones still read, for a board left on one
+    expect(SIDE_LIGHT_EFFECTS.map((e) => e.wire)).toContain(22);
   });
 });

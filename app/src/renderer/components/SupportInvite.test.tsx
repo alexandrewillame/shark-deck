@@ -30,6 +30,48 @@ const X8_PRO: SupportPlan = {
   record: ['deep', 'macro', 'specific'],
 };
 
+/** A keyboard with nothing missing, whose settings no recording confirmed yet. */
+const UNCONFIRMED: SupportPlan = {
+  level: 'partial',
+  gaps: [],
+  record: ['start', 'light', 'macro'],
+  unconfirmed: ['lighting', 'macros'],
+};
+
+describe('SupportInvite, settings to confirm', () => {
+  beforeEach(() => {
+    sd.openReportTool.mockClear();
+    sd.openReportTool.mockImplementation(async () => ({ ok: true }));
+  });
+
+  it('names them on the strip, and offers to confirm them', () => {
+    on('win32');
+    render(<SupportInvite device={device(UNCONFIRMED, { kind: 'keyboard' })} variant="strip" />);
+    expect(screen.getByText('Not confirmed on this keyboard yet: lighting, macros.')).toBeTruthy();
+    expect(screen.getByText('Help confirm them')).toBeTruthy();
+  });
+
+  it('says both what is missing and what is unconfirmed in the panel', async () => {
+    on('win32');
+    render(
+      <SupportInvite
+        device={device({ ...UNCONFIRMED, gaps: ['keymap'] }, { kind: 'keyboard' })}
+        variant="panel"
+      />,
+    );
+    // each list a heading and its items highlighted; nothing between them and the button
+    expect(screen.getByText(/^its key map/).className).toBe('support-item');
+    expect(screen.getByText('lighting').className).toBe('support-item');
+    expect(screen.getByText('macros').closest('p')!.textContent).toMatch(
+      /^Not confirmed on it yet:/,
+    );
+    expect(document.body.textContent).not.toMatch(/records these from the official software/);
+    fireEvent.click(screen.getByText('Record what is missing'));
+    fireEvent.click(screen.getByText('Close Shark Deck and start'));
+    await vi.waitFor(() => expect(sd.openReportTool).toHaveBeenCalledWith('dev'));
+  });
+});
+
 describe('SupportInvite', () => {
   beforeEach(() => {
     sd.openReportTool.mockClear();
@@ -66,8 +108,8 @@ describe('SupportInvite', () => {
     on('linux');
     render(<SupportInvite device={device(X8_PRO)} variant="panel" />);
     expect(
-      screen.getByText('Not in Shark Deck yet: deep sleep, macros, some button actions.'),
-    ).toBeTruthy();
+      ['deep sleep', 'macros', 'some button actions'].map((g) => screen.getByText(g).className),
+    ).toEqual(['support-item', 'support-item', 'support-item']);
     expect(screen.getByText(/Windows virtual machine/)).toBeTruthy();
     fireEvent.click(screen.getByText('Record what is missing'));
     expect(sd.openReportTool).not.toHaveBeenCalled();
@@ -87,8 +129,8 @@ describe('SupportInvite', () => {
     on('darwin');
     const { container } = render(<SupportInvite device={device(X8_PRO)} variant="panel" />);
     expect(
-      screen.getByText('Not in Shark Deck yet: deep sleep, macros, some button actions.'),
-    ).toBeTruthy();
+      ['deep sleep', 'macros', 'some button actions'].map((g) => screen.getByText(g).className),
+    ).toEqual(['support-item', 'support-item', 'support-item']);
     expect(screen.getByText(/a Mac cannot make one/)).toBeTruthy();
     expect(screen.getByText(/records it on a Windows or Linux computer/)).toBeTruthy();
     // Not the body that says the tool records here.

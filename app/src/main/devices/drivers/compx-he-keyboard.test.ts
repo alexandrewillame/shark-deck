@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MagneticKeySettings } from '@shared/types/keyboard-settings';
 import type { WriteResult } from '@shared/types/live';
 import { ATTACK_SHARK_R85HE } from '../catalog/r85he';
@@ -526,5 +526,39 @@ describe('setMagneticKeys', () => {
     const r = await d.setMagneticKeys([settings(), settings({ row: 99, col: 99 })]);
     expect(r.ok).toBe(false);
     expect(d.writes).toHaveLength(0);
+  });
+});
+
+describe('switch calibration', () => {
+  /**
+   * The official software's sequence, Attack Shark Driver v4 on an R98 HE
+   * (its owner's recording, 2026-11-22): `1c 01`, 2 s, `1c 00`, `1e 01` to
+   * begin; `1e 00` to finish.
+   */
+  it('begins and finishes in the four frames the official software sends', async () => {
+    vi.useFakeTimers();
+    try {
+      const sent: number[][] = [];
+      const drv = new CompxHeKeyboard({
+        descriptor: ATTACK_SHARK_R85HE,
+        channel: { write: async (f: Uint8Array) => void sent.push([...f.subarray(1, 3)]) } as never,
+        onWarning: () => undefined,
+      });
+      const begin = drv.setMagneticCalibration('zero');
+      await vi.advanceTimersByTimeAsync(1999);
+      // the rest point is still being learnt: hands off, nothing else sent yet
+      expect(sent).toEqual([[0x1c, 1]]);
+      await vi.advanceTimersByTimeAsync(1);
+      expect((await begin).ok).toBe(true);
+      expect(sent).toEqual([
+        [0x1c, 1],
+        [0x1c, 0],
+        [0x1e, 1],
+      ]);
+      await drv.setMagneticCalibration('max');
+      expect(sent.at(-1)).toEqual([0x1e, 0]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

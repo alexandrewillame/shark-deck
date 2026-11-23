@@ -296,15 +296,14 @@ export const ar: Partial<Messages> = {
   'macro.repeat': 'عدد مرات التكرار',
   'macro.empty': 'لم تتم قراءة أي وحدات ماكرو من الجهاز.',
   'macro.newMacro': 'ماكرو جديد',
-  'macro.defaultName': 'ماكرو {n}',
+  'macro.defaultName': 'الماكرو الخاص بي {n}',
   'macro.library': 'المكتبة',
   'macro.savedToLibrary': 'تم الحفظ في مكتبة الماكرو الخاصة بك.',
   'macro.nameRequired': 'أعطِ هذا الماكرو اسمًا قبل الحفظ.',
   'macro.pushToDevice': 'دفع إلى الجهاز',
   'macro.pushed': 'تم دفع "{name}" إلى فتحة الماكرو المدمجة في الجهاز.',
   'macro.deviceSlot': 'الموجود حاليًا على الجهاز',
-  'macro.deviceSlot.hint':
-    'تملك لوحة المفاتيح هذه فتحة ماكرو مدمجة واحدة — دفع ماكرو جديد يستبدل ما كان موجودًا فيها.',
+  'macro.deviceSlot.hint': 'ما يحفظه الجهاز الآن. يستبدل إرسال ماكرو ما في خانته.',
   'macro.libraryEmpty': 'لا توجد وحدات ماكرو محفوظة بعد.',
   'macro.step.press': 'ضغط',
   'macro.step.release': 'تحرير',
@@ -323,7 +322,6 @@ export const ar: Partial<Messages> = {
   'macro.lib.steps': '{n} خطوة',
   'macro.lib.onDevice': 'على الجهاز',
   'macro.lib.onDeviceBadge': 'على الجهاز',
-  'macro.discard.title': 'تجاهل التغييرات غير المحفوظة؟',
   'macro.discard.body': 'يحتوي «{name}» على تغييرات لم تحفظها.',
   'macro.discard.confirm': 'تجاهل',
   'macro.delete.title': 'حذف هذا الماكرو؟',
@@ -331,7 +329,7 @@ export const ar: Partial<Messages> = {
   'macro.repeat.hint': 'عدد مرات تشغيل التسلسل كاملًا عند كل ضغطة.',
   'macro.rec.title': 'تسجيل',
   'macro.rec.focusHint':
-    'أبقِ هذه النافذة في المقدمة أثناء التسجيل — لا يرى Shark Deck سوى ما يصله من إدخال، لا ما يذهب إلى التطبيقات الأخرى.',
+    'أبقِ هذه النافذة في المقدمة أثناء التسجيل — لا يرى Shark Deck سوى ما يصله من إدخال، لا ما يذهب إلى التطبيقات الأخرى. ولا تصله أيضًا الاختصارات التي يحتفظ بها النظام لنفسه، مثل Win + Shift + S: أضفها كخطوات.',
   'macro.rec.armed': 'جاهز — اضغط أي مفتاح للبدء.',
   'macro.rec.escStops': 'Esc يوقف',
   'macro.rec.timing': 'التوقيت',
@@ -910,8 +908,6 @@ export const ar: Partial<Messages> = {
   'act.cal.finishRefused': 'لم تقبل لوحة المفاتيح أمر إنهاء المعايرة.',
   'act.cal.aria': 'معايرة السويتشات',
   'act.cal.title': 'جارٍ معايرة السويتشات',
-  'act.cal.preparing':
-    'جارٍ تجهيز لوحة المفاتيح — تُؤخذ نسخة احتياطية من إعداداتها الحالية قبل أول عملية كتابة. قد يستغرق ذلك بضع ثوانٍ.',
   'act.cal.press':
     'اضغط {every} بقوة حتى القاع وأبقِه لحظة، ثم اختر «إنهاء». لا تفصل الكابل أثناء ذلك.',
   'act.cal.press.every': 'كل مفتاح',
@@ -1434,10 +1430,6 @@ export const ar: Partial<Messages> = {
   'support.body.class':
     'يعرف Shark Deck هذا الماوس من مستشعره فقط، لذا يعرض الإعدادات المشتركة لكل ماوس بهذا المستشعر. يحدّد تقرير الجهاز الطراز: يستغرق دقيقة، ولا يسجّل شيئًا، وترفقه بطلب على GitHub.',
   'support.gaps': 'غير متاح بعد في Shark Deck: {list}.',
-  'support.body.steps':
-    'يمكن لأداة تقرير الجهاز تسجيل هذه فقط: تضبطها في البرنامج الرسمي بينما تسجّل الأداة ما يرسله البرنامج. بضع دقائق؛ ثم أرفق التسجيل بطلب على GitHub.',
-  'support.body.specific':
-    'هل هناك ما لا يعمل كما ينبغي؟ تسجّله أداة تقرير الجهاز من البرنامج الرسمي في بضع دقائق؛ ثم أرفق التسجيل بطلب على GitHub.',
   'support.action.all': 'سجّل هذا الجهاز',
   'support.action.report': 'أنشئ تقرير الجهاز',
   'support.action.steps': 'سجّل ما ينقص',
@@ -1465,11 +1457,66 @@ export const ar: Partial<Messages> = {
     'على Linux، شغّل البرنامج الرسمي في جهاز Windows افتراضي مُرِّر إليه الجهاز، أو باستخدام Wine: تسجّل الأداة ما يمر عبر كابل USB، وتطلب كلمة مرورك لقراءته.',
   'support.preview':
     'فُتحت أداة تقرير الجهاز على الخطوات التي سيتبعها المالك. لا يوجد ما يُسجَّل لجهاز تجريبي.',
-  'support.gap.mediaKeys':
-    'بعض مفاتيح الوسائط لأزراره (كتم الصوت، إيقاف، المقطع السابق، الآلة الحاسبة…)',
+  'support.gap.mediaKeys': 'بعض مفاتيح الوسائط لأزراره (المقطع السابق، إيقاف، مشغل الوسائط، البحث)',
   'support.body.mac':
     'يتطلب ذلك تسجيلًا للبرنامج الرسمي، ولا يستطيع جهاز Mac إجراءه: فهذا البرنامج يعمل على Windows، ويسجّله Shark Deck على حاسوب يعمل بنظام Windows أو Linux والجهاز موصول به. أما على جهاز Mac هذا، فيمكن للأداة إنشاء تقرير الجهاز: دقيقة واحدة، وهي تقرأ فقط ما يعرفه النظام.',
   'support.web': 'تسجّل أداة تقرير الجهاز على Windows وLinux، أما على Mac فتنشئ التقرير فقط.',
   'support.confirm.title': 'هل تريد إغلاق Shark Deck للتسجيل؟',
   'support.starting': 'جارٍ البدء…',
+  'support.unconfirmed': 'لم يُؤكَّد بعد على هذا الطراز: {list}.',
+  'support.strip.unconfirmed.keyboard': 'لم يُؤكَّد بعد على هذه اللوحة: {list}.',
+  'support.strip.unconfirmed.mouse': 'لم يُؤكَّد بعد على هذا الماوس: {list}.',
+  'support.strip.confirm': 'ساعد في تأكيدها',
+  'support.action.confirm': 'سجّل لتأكيدها',
+  'support.topic.keys': 'إعادة تعيين المفاتيح وطبقة Fn',
+  'support.topic.knob': 'المقبض الدوّار',
+  'support.topic.lighting': 'الإضاءة',
+  'support.topic.actuation': 'نقطة التفعيل',
+  'support.topic.keyModes': 'أوضاع المفاتيح',
+  'support.topic.switches': 'أنواع المفاتيح',
+  'support.topic.options': 'خيارات لوحة المفاتيح',
+  'support.topic.profiles': 'الملفات الشخصية',
+  'support.topic.pollRate': 'معدل الاستقصاء',
+  'support.topic.macros': 'الماكرو',
+  'support.topic.dpi': 'DPI',
+  'support.topic.sensor': 'إعدادات المستشعر',
+  'support.topic.buttons': 'الأزرار',
+  'support.topic.power': 'السكون',
+  'support.topic.response': 'زمن الاستجابة',
+  'support.topic.pairing': 'الإقران',
+  'support.topic.receiverLight': 'ضوء جهاز الاستقبال',
+  'act.cal.handsOff':
+    'لا تلمس لوحة المفاتيح للحظة: يحفظ Shark Deck نسخة من إعداداتها، ثم تتعلّم لوحة المفاتيح موضع كل مفتاح وهو غير مضغوط.',
+  'keyfn.macro': 'ماكرو',
+  'keyfn.macroN': 'ماكرو {n}',
+  'keypick.group.macro': 'ماكرو',
+  'keypick.macro.tip':
+    'يشغّل الماكرو الذي تحفظه لوحة المفاتيح في هذه الخانة، حتى مع إغلاق Shark Deck.',
+  'macro.import': 'نسخ إلى المكتبة',
+  'macro.import.tip': 'انسخ هذا الماكرو إلى مكتبتك لتعديله أو إرساله مرة أخرى لاحقًا.',
+  'macro.import.name': 'ماكرو لوحة المفاتيح {n}',
+  'macro.imported': 'تم نسخ «{name}» إلى مكتبتك.',
+  'macro.deviceSlot.hint.keyboard':
+    'وحدات الماكرو الموجودة على لوحة المفاتيح الآن، يشغّل كلًّا منها مفتاح أُسند إليه في تبويب المفاتيح. «إرسال إلى الجهاز» يكتب الخانة التي تختارها.',
+  'macro.pushTo': 'إرسال إلى',
+  'macro.slot.empty': 'فارغ',
+  'macro.slot.used': 'على الجهاز',
+  'macro.pushedTo': 'تم إرسال «{name}» إلى {slot}.',
+  'macro.pushToDevice.tip.slot': 'يكتب هذا الماكرو في {slot} على الجهاز ويستبدل ما فيه.',
+  'macro.deleteOnDevice': 'حذف من الجهاز',
+  'macro.deleteOnDevice.tip':
+    'إزالة هذا الماكرو من الجهاز: المفتاح أو الزر المسند إليه لا يفعل شيئًا بعدها.',
+  'macro.deleteOnDevice.title': 'حذف {name} من الجهاز؟',
+  'macro.deleteOnDevice.body':
+    'لن يفعل المفتاح أو الزر المسند إليه شيئًا حتى يوضع ماكرو آخر في خانته.',
+  'buttons.macro.oneSlot.title': 'تغيير ماكرو هذا الفأرة؟',
+  'buttons.macro.oneSlot.body':
+    'تحفظ هذه الفأرة ماكرو واحدًا، والزر {n} يشغّله أيضًا: سيشغّل «{name}» كذلك.',
+  'buttons.macro.oneSlot.ok': 'تغييره',
+  'buttons.macro.full':
+    'كل خانات الماكرو في هذه الفأرة تحمل ماكرو آخر. في «وحدات الماكرو»، أرسل هذا الماكرو إلى الخانة التي يجب أن يحل محلها.',
+  'macro.switch.title': 'أتريد حفظ هذا الماكرو أولًا؟',
+  'macro.lib.delete': 'حذف «{name}» من المكتبة',
+  'keyfn.macroNamed': 'ماكرو {n} · {name}',
+  'btnact.easyAim': 'تصويب سهل',
 };

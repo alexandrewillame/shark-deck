@@ -57,6 +57,7 @@ const PROTOCOL_MODULES = [
   'src/shared/key-zones.ts',
   'src/shared/keyboard-fn-codes.ts',
   'src/shared/keyboard-fn-defaults.ts',
+  'src/shared/keyboard-macro.ts',
   'src/shared/keyboard-switches.ts',
   'src/shared/keyboard-options.ts',
   'src/shared/keyboard-travel.ts',

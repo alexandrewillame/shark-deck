@@ -623,6 +623,7 @@ export function HeroPane({
   sub,
   detail,
   artMode,
+  asideRef,
   children,
 }: {
   device: LiveDevice;
@@ -638,6 +639,11 @@ export function HeroPane({
    *  comment); this pane has no local art content of its own to render
    *  either way. */
   artMode?: ArtMode;
+  /**
+   * A place under the photo for what sits beside the whole pane rather than
+   * inside it — the Macros tab's library. Gets the element to render into.
+   */
+  asideRef?: (el: HTMLDivElement | null) => void;
   children: ReactNode;
 }) {
   const isKeyboard = device.kind === 'keyboard';
@@ -646,7 +652,7 @@ export function HeroPane({
       {/* The same header every pane has: the title, its description as an
           info dot rather than a paragraph. */}
       <PaneHeader title={title} sub={sub} />
-      <div className={`hero-art-col ${detail ? 'has-detail' : ''}`}>
+      <div className={`hero-art-col${detail ? ' has-detail' : ''}${asideRef ? ' has-aside' : ''}`}>
         <ArtAnchor mode={artMode ?? 'hero'} className="art-hero-anchor" />
         {/* Same reason as MouseLightingContainer's copy of this: the detail
             photo is a SIBLING of the anchor, so its decode re-lays-out the
@@ -661,6 +667,7 @@ export function HeroPane({
             onLoad={() => requestArtRemeasure()}
           />
         )}
+        {asideRef && <div className="hero-aside" ref={asideRef} />}
       </div>
       <div className="hero-side-content">{children}</div>
     </div>

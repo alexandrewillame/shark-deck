@@ -398,10 +398,11 @@ describe('the device report tool', () => {
       expect(['both', 'mouse', 'keyboard'], group).toContain(kind);
       expect(said!.length, group).toBeGreaterThan(20);
     }
-    // At the end, the whole recording folder opens, not just its pictures.
+    // At the end, one folder window: the one holding the .zip, the .zip selected.
     const rec = fn('RecordingPhase');
-    expect(rec).toContain('Start-Process explorer.exe "`"$recDir`""');
-    expect(rec).not.toMatch(/explorer\.exe "`"\$\(Join-Path \$recDir 'screens'\)/);
+    const recOnly = rec.slice(0, rec.indexOf('# ---- Main'));
+    expect(recOnly.match(/Start-Process explorer\.exe/g)).toHaveLength(1);
+    expect(rec).toContain('Start-Process explorer.exe "/select,`"$zip`""');
     // Then where it goes, in a window of its own: a new issue, or one already open.
     expect(rec).toContain('$send = [SdWizard]::AskToSend(');
     expect(rec).toContain('Start-Process $IssueUrl');
@@ -469,18 +470,28 @@ describe('the device report tool', () => {
     }
   });
 
-  it('puts every remap and key mode back with the very next step, and says what is still changed', () => {
-    // A remapped key or a key mode changes how the keyboard types: the step
-    // right after it puts it back.
+  it('puts every remap and key mode back, and says what is still changed', () => {
+    // A remapped key changes how the keyboard types: the step right after it
+    // puts it back.
     const keyboard = steps.filter((s) => s.kind !== 'mouse');
     for (const [i, s] of keyboard.entries()) {
       const remap = s.group === 'Keys' && s.id.startsWith('key.') && s.id !== 'key.reset';
-      const mode = s.group === 'Key modes' && s.flags !== 'nochange';
-      if ((remap || mode) && !s.id.endsWith('.undo')) {
+      if (remap && !s.id.endsWith('.undo')) {
         expect(keyboard[i + 1]?.id, s.id).toBe(`${s.id}.undo`);
         expect(keyboard[i + 1]?.flags, s.id).toBe('undo');
       }
     }
+    // The key modes are given to A one after the other, each taking the
+    // place of the last, and A is reset once after them (an owner's note:
+    // one key, then one reset, is quicker than putting each back).
+    const ids = keyboard.map((s) => s.id);
+    const at = (id: string) => ids.indexOf(id);
+    expect([at('dks.a'), at('mt.a'), at('tgl.a'), at('modereset.a')]).toEqual(
+      [0, 1, 2, 3].map((i) => at('dks.a') + i),
+    );
+    expect(keyboard[at('modereset.a')]!.flags).toBe('undo');
+    // SnapKey ties two keys: one reset puts both back.
+    expect(ids[at('snap.ad') + 1]).toBe('snap.ad.undo');
     // Fn + A is a system key in Attack Shark Driver v4, which refuses to change it.
     expect(text).not.toMatch(/Fn \+ A to|key\.fn-a/);
     // What is still changed: on stopping early, and at the end.
