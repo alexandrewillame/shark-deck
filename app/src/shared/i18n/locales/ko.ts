@@ -1523,4 +1523,8 @@ export const ko: Partial<Messages> = {
   'macro.lib.delete': '“{name}”을(를) 라이브러리에서 삭제',
   'keyfn.macroNamed': '매크로 {n} · {name}',
   'btnact.easyAim': '이지 에임',
+  'dev.log.title': '문제 신고',
+  'dev.log.hint':
+    'Shark Deck이 이 장치에 보낸 내용과 장치의 응답, 그리고 잘못된 모든 것을 담은 로그입니다. 설정과 보낸 매크로가 포함됩니다. GitHub 보고서에 첨부하세요.',
+  'dev.log.save': '로그 저장',
 };

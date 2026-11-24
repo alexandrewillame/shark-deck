@@ -269,6 +269,8 @@ export class HidChannel {
   private dev: HID.HIDAsync | null = null;
   /** The announcement collection's handle (`opts.events`), opened on the first `readEvent`. */
   private evDev: HID.HIDAsync | null = null;
+  /** The last trouble with it, logged once rather than on every pass. */
+  private evTrouble: string | null = null;
   private opening: Promise<HID.HIDAsync> | null = null;
   /**
    * Set by `close()`, and never cleared — a channel is closed for good.
@@ -498,10 +500,25 @@ export class HidChannel {
     return this.run(async () => {
       const where = this.opts.events;
       if (!where || this.disposed) return null;
+      // Whatever goes wrong here goes in the device's log (a device that never
+      // announces anything looked the same as one whose announcements could
+      // not be opened: the X8 PRO's cable, issue #1).
+      const trouble = (what: string, err: unknown) => {
+        const line = `announcements: ${what} (${String((err as Error)?.message ?? err)})`;
+        if (line !== this.evTrouble) this.log?.('rx', this.key, '', line);
+        this.evTrouble = line;
+      };
       if (!this.evDev) {
         try {
           this.evDev = await HID.HIDAsync.open(where.path, { nonExclusive: true });
-        } catch {
+          this.log?.(
+            'rx',
+            this.key,
+            '',
+            `announcements: listening on ${(where.usagePage ?? 0).toString(16).padStart(4, '0')}:${(where.usage ?? 0).toString(16).padStart(4, '0')}`,
+          );
+        } catch (err) {
+          trouble('could not open', err);
           return null;
         }
       }
@@ -516,6 +533,7 @@ export class HidChannel {
         return buf;
       } catch (err) {
         if (err instanceof HidWedgedError) throw err;
+        trouble('read failed', err);
         return null;
       }
     });

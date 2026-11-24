@@ -112,3 +112,33 @@ describe('per-key writes', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe("a device call's trouble, in that device's log", () => {
+  it('notes a read that answered nothing, a refused change and a failure', async () => {
+    const { deviceManager } = await import('./devices/manager');
+    const { frameLog } = await import('./diagnostics');
+    vi.spyOn(deviceManager, 'getDescriptor').mockImplementation((id: string) =>
+      id === 'x8' ? ({ model: 'attack-shark-x8-pro' } as never) : null,
+    );
+    frameLog.clear();
+    const dispatch = createDispatcher({
+      readActiveDpiStage: async () => null,
+      setActiveDpiStage: async () => ({ ok: false, verified: 'unverified', error: 'no stage 7' }),
+      readDpiStages: async () => {
+        throw new Error('gone');
+      },
+      readPollRate: async () => 1000,
+    } as never);
+    await dispatch('readActiveDpiStage', ['x8']);
+    await dispatch('setActiveDpiStage', ['x8', 6]);
+    await expect(dispatch('readDpiStages', ['x8'])).rejects.toThrow('gone');
+    await dispatch('readPollRate', ['x8']);
+    // not a device: nothing noted
+    await dispatch('readActiveDpiStage', ['nobody']);
+    expect(frameLog.all().map((e) => [e.deviceId, e.note])).toEqual([
+      ['x8', 'readActiveDpiStage: nothing read'],
+      ['x8', 'setActiveDpiStage refused: no stage 7'],
+      ['x8', 'readDpiStages failed: gone'],
+    ]);
+  });
+});

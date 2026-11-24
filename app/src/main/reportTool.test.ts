@@ -26,6 +26,8 @@ const { BUTTON_ACTIONS_TREE } = await import('@shared/mouse-buttons');
 
 const X1 = bekenDescriptorFor(0x2111)!; // an Attack Shark model with no driver
 const X8_PRO = bekenMouseRoster()[0]!;
+/** The X11 on its cable: its macros are what no recording of it has shown. */
+const X11 = bekenDescriptorFor(0xfa55)!;
 
 describe('reportToolArgs', () => {
   it('records a device with no driver whole, on Windows', () => {
@@ -39,16 +41,15 @@ describe('reportToolArgs', () => {
   });
 
   it('records only what a device lacks', () => {
-    // The X8 PRO lacks some media keys: the tool's "Media keys" steps name each.
-    expect(reportToolArgs(X8_PRO, supportPlan(X8_PRO)!.record, 'win32')).toEqual([
+    // The X11 lacks its macros: the tool's macro steps, after the start-up reads.
+    expect(reportToolArgs(X11, supportPlan(X11)!.record, 'win32')).toEqual([
       '--device',
-      '1D57:FA65',
+      '1D57:FA55',
       '--record',
       '--kind',
       'mouse',
       '--steps',
-      // the software's start-up reads, then the media keys
-      'start,media',
+      'start,macro',
     ]);
     expect(reportToolArgs(X8_PRO, ['deep', 'macro', 'specific'], 'win32').slice(2)).toEqual([
       '--record',
@@ -96,11 +97,11 @@ describe('reportToolArgs', () => {
   });
 
   it('shows a demo device the steps its owner would follow, recording nothing', () => {
-    expect(previewArgs('mouse', supportPlan(X8_PRO)!.record)).toEqual([
+    expect(previewArgs('mouse', supportPlan(X11)!.record)).toEqual([
       '--preview-steps',
       'mouse',
       '--steps',
-      'start,media',
+      'start,macro',
     ]);
     expect(previewArgs('keyboard', ['act', 'dks'])).toEqual([
       '--preview-steps',
@@ -164,7 +165,7 @@ describe('the steps the catalogue asks for', () => {
     }
   });
 
-  it('asks the X8 PRO for every media key its driver has not seen recorded', () => {
+  it("names in its media steps every media key the X8 PRO's first recordings left out", () => {
     const media = [...bat.matchAll(/^media\.[a-z]+\|mouse\|Media keys\|([^|]*)\|/gm)].map(
       (m) => m[1],
     );
@@ -176,6 +177,7 @@ describe('the steps the catalogue asks for', () => {
     const missing = offered.filter((label) => !recorded.includes(label));
     expect(missing.length).toBeGreaterThan(10);
     for (const label of missing) expect(media, label).toContain(label);
-    expect(supportPlan(X8_PRO)!.record).toEqual(['start', 'media']);
+    // Its owner recorded them all since (11-23, 11-24): it asks for nothing now.
+    expect(supportPlan(X8_PRO)).toBeUndefined();
   });
 });

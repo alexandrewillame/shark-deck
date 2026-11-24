@@ -1,9 +1,13 @@
 import type { FrameLogEntry } from '@shared/types/diagnostics';
 
-/** In-memory ring buffer of the last N HID frames, for the developer panel. */
+/**
+ * In-memory ring buffer of the last N HID frames, and of what went wrong
+ * around them (a refused change, a read that answered nothing): the developer
+ * panel, and the log an owner saves from the Device tab for a report.
+ */
 class FrameLog {
   private buf: FrameLogEntry[] = [];
-  private cap = 500;
+  private cap = 6000;
   private listeners = new Set<(e: FrameLogEntry) => void>();
 
   push(entry: Omit<FrameLogEntry, 'ts'>): void {

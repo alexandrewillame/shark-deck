@@ -1551,4 +1551,8 @@ export const tr: Partial<Messages> = {
   'macro.lib.delete': '“{name}” makrosunu kitaplıktan sil',
   'keyfn.macroNamed': 'Makro {n} · {name}',
   'btnact.easyAim': 'Kolay nişan',
+  'dev.log.title': 'Sorun bildir',
+  'dev.log.hint':
+    'Shark Deck’in bu cihaza gönderdiklerinin ve cihazın yanıtlarının, ters giden her şeyle birlikte kaydı: ayarları ve gönderdiğiniz makrolar. GitHub’daki bildiriminize ekleyin.',
+  'dev.log.save': 'Kaydı kaydet',
 };

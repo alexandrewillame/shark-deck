@@ -1455,4 +1455,8 @@ export const zhTW: Partial<Messages> = {
   'macro.lib.delete': '從巨集庫刪除「{name}」',
   'keyfn.macroNamed': '巨集 {n} · {name}',
   'btnact.easyAim': '輕鬆瞄準',
+  'dev.log.title': '回報問題',
+  'dev.log.hint':
+    'Shark Deck 傳送給此裝置的內容及其回應的記錄，包含所有出錯之處：它的設定，以及你傳送給它的任何巨集。請將它附加到你在 GitHub 上的回報。',
+  'dev.log.save': '儲存記錄',
 };

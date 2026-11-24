@@ -485,6 +485,41 @@ const COALESCED_READS: ReadonlySet<string> = new Set<keyof Api>([
  * handler that needs the click that triggered it (WebHID's `requestDevice`)
  * still has it.
  */
+/**
+ * A device call that came back empty, refused or failed, as a line in that
+ * device's log. These leave no frame of their own, and they are what an owner
+ * sees as "couldn't read this from the device" or an error toast: the X8 PRO's
+ * "DPI stage not supported" (issue #1) is the line its log would have held.
+ */
+function noteOutcome(method: string, args: unknown[], p: Promise<unknown>): Promise<unknown> {
+  const id = args[0];
+  if (typeof id !== 'string' || !deviceManager.getDescriptor(id)) return p;
+  return p.then(
+    (v) => {
+      if (v === null && /^(read|get)/.test(method))
+        frameLog.push({ deviceId: id, dir: 'rx', hex: '', note: `${method}: nothing read` });
+      const r = v as { ok?: unknown; error?: unknown } | null;
+      if (r && typeof r === 'object' && r.ok === false)
+        frameLog.push({
+          deviceId: id,
+          dir: 'tx',
+          hex: '',
+          note: `${method} refused: ${String(r.error ?? 'no reason given')}`,
+        });
+      return v;
+    },
+    (err: unknown) => {
+      frameLog.push({
+        deviceId: id,
+        dir: 'tx',
+        hex: '',
+        note: `${method} failed: ${String((err as Error)?.message ?? err)}`,
+      });
+      throw err;
+    },
+  );
+}
+
 export function createDispatcher(
   table: HandlerTable,
 ): (method: string, args: unknown[]) => Promise<unknown> {
@@ -498,11 +533,13 @@ export function createDispatcher(
     }
     const fn = table[method as keyof Api]!;
     const call = (): Promise<unknown> => {
+      let p: Promise<unknown>;
       try {
-        return Promise.resolve(fn(...args));
+        p = Promise.resolve(fn(...args));
       } catch (err) {
-        return Promise.reject(err);
+        p = Promise.reject(err);
       }
+      return noteOutcome(method, args, p);
     };
     if (!COALESCED_READS.has(method)) return call();
     // Keyed on method + args so Base and Fn stay separate reads, while a second

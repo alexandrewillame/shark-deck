@@ -1519,4 +1519,8 @@ export const ar: Partial<Messages> = {
   'macro.lib.delete': 'حذف «{name}» من المكتبة',
   'keyfn.macroNamed': 'ماكرو {n} · {name}',
   'btnact.easyAim': 'تصويب سهل',
+  'dev.log.title': 'الإبلاغ عن مشكلة',
+  'dev.log.hint':
+    'سجل بما أرسله Shark Deck إلى هذا الجهاز وما ردّ به، مع كل ما فشل: إعداداته، وأي ماكرو أرسلته إليه. أرفقه ببلاغك على GitHub.',
+  'dev.log.save': 'حفظ السجل',
 };

@@ -11,6 +11,7 @@ import { RestoreSection } from './device/RestoreSection';
 import { BrowserAccessSection } from './device/BrowserAccessSection';
 import { IdentityPanel } from './device/IdentityPanel';
 import { SupportInvite } from '../components/SupportInvite';
+import { DeviceLogSection } from './device/DeviceLogSection';
 import { hostFeatures } from '../state/host';
 import { SwitchTypeSection } from './keyboard/SwitchTypeSection';
 import { gate } from '@shared/menuGates';
@@ -104,6 +105,9 @@ export function DeviceTab({ device }: TabProps) {
           </Gated>
           <Gated id="dev.restore" device={device}>
             <RestoreSection device={device} />
+          </Gated>
+          <Gated id="dev.log" device={device}>
+            <DeviceLogSection device={device} />
           </Gated>
           {/* Not on a demo card: the browser grants by model, so forgetting
               "this" device there would revoke a real one of the same model. */}

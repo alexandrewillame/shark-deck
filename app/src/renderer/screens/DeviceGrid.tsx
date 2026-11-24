@@ -238,7 +238,13 @@ function Card({
             </Tooltip>
           )}
           {d.wireless && (
-            <Tooltip text={t('status.battery.tip', { pct: d.battery ?? '?' })}>
+            <Tooltip
+              text={
+                d.battery === null && d.charging
+                  ? t('status.battery.charging')
+                  : t('status.battery.tip', { pct: d.battery ?? '?' })
+              }
+            >
               <BatteryPill level={d.battery} charging={d.charging} />
             </Tooltip>
           )}

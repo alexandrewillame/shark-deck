@@ -1456,4 +1456,8 @@ export const zhCN: Partial<Messages> = {
   'macro.lib.delete': '从宏库中删除“{name}”',
   'keyfn.macroNamed': '宏 {n} · {name}',
   'btnact.easyAim': '轻松瞄准',
+  'dev.log.title': '报告问题',
+  'dev.log.hint':
+    'Shark Deck 发送给此设备的内容及其回应的日志，包括所有出错之处：它的设置，以及你发送给它的任何宏。请将其附加到你在 GitHub 上的报告中。',
+  'dev.log.save': '保存日志',
 };

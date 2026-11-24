@@ -16,7 +16,8 @@ export const CONFIRMED: Readonly<Record<string, Confirmed>> = {
   'attack-shark-r85he': 'all',
   'attack-shark-v8': 'all',
   // Its owner's recordings (issue #1): all but the media keys past Volume +.
-  'attack-shark-x8-pro': { allBut: ['media'] },
+  // Its media keys too since its owner's 11-23 and 11-24 recordings.
+  'attack-shark-x8-pro': 'all',
   // Its owner's recording (issue #2): all but macros, written from the X8 PRO's.
   'attack-shark-x11': { allBut: ['macro'] },
   // Its owner's recordings (2026-11-21, then everything on 2026-11-22), each

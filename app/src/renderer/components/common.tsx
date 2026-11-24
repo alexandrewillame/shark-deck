@@ -199,6 +199,17 @@ export function InfoDot({
 
 export function BatteryPill({ level, charging }: { level: number | null; charging: boolean }) {
   const t = useT();
+  if (level === null && charging) {
+    // Charging with no level: what a mouse on its cable says (and all the
+    // vendor software shows), rather than "?".
+    return (
+      <Tooltip text={t('status.battery.charging')}>
+        <span className="pill mono">
+          <Icon name="batteryCharging" size={12} />
+        </span>
+      </Tooltip>
+    );
+  }
   if (level === null) {
     // A battery glyph with "?" instead of the bare "n/a" text — reads at a
     // glance as "this is battery info, just not known right now" instead of

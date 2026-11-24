@@ -1563,4 +1563,8 @@ export const es: Partial<Messages> = {
   'macro.lib.delete': 'Eliminar «{name}» de la biblioteca',
   'keyfn.macroNamed': 'Macro {n} · {name}',
   'btnact.easyAim': 'Puntería fácil',
+  'dev.log.title': 'Informar de un problema',
+  'dev.log.hint':
+    'Un registro de lo que Shark Deck envió a este dispositivo y de lo que respondió, con todo lo que falló: sus ajustes y cualquier macro que le hayas enviado. Adjúntalo a tu informe en GitHub.',
+  'dev.log.save': 'Guardar el registro',
 };

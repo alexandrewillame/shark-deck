@@ -4,26 +4,10 @@ import { type TabProps, sd, useDeviceBusy, useWrite, Loading } from '../common';
 import { useT } from '../../state/i18n';
 import { useStore } from '../../state/store';
 import { hostFeatures } from '../../state/host';
+import { saveFile } from '../../state/saveFile';
 import type { BackupInfo } from '@shared/types/diagnostics';
 
 const useStoreToast = () => useStore((s) => s.toast);
-
-/**
- * Hand text to the user as a file: a download in a browser, a save dialog in
- * the desktop app. A Blob link rather than a request — nothing leaves the
- * page.
- */
-function saveFile(name: string, text: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  document.body.append(a);
-  a.click();
-  a.remove();
-  // Revoked late, not at once: Chromium starts the download asynchronously.
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
-}
 
 /**
  * Backup & restore.

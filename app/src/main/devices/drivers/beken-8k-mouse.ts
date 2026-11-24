@@ -382,6 +382,9 @@ const MEDIA: ReadonlyMap<number, number> = new Map([
   [0x0194, 0x23],
   [0x0227, 0x24],
   [0x0223, 0x25],
+  // …and its 11-24 one: media player, search (previous and stop confirmed above).
+  [0x0183, 0x15],
+  [0x0221, 0x26],
 ]);
 /** Favorites is no media code: the vendor software sends Ctrl + Shift + O (the same recording). */
 const FAVORITES = 0x022a;
@@ -690,6 +693,35 @@ export class Beken8kMouse extends Driver {
   }
 
   /**
+   * The stage it is on: the one it last announced, else the block's own (the
+   * mouse's, read over the cable; through the receiver the one last sent or
+   * heard, kept). It used to answer nothing, which the DPI tab showed as
+   * "couldn't read this from the device", with no stage picked until the DPI
+   * button was pressed (the X8 PRO's owner, 11-24).
+   */
+  override async readActiveDpiStage(): Promise<number | null> {
+    await this.listen();
+    const s = this.heard.stage ?? (await this.block('dpi'))[D.ACTIVE];
+    return s !== undefined && s >= 1 && s <= STAGES ? s - 1 : null;
+  }
+
+  /**
+   * Stage i made the one the mouse is on: the DPI block with its active byte
+   * set, as the vendor software does it (the 11-19 recording's "stage 1
+   * active again", the 11-23 one's "a stage in the middle"). It was refused
+   * as "DPI stage not supported" (the X8 PRO's owner, 11-24).
+   */
+  override async setActiveDpiStage(i: number): Promise<WriteResult> {
+    const d = await this.dpiBlock();
+    const on = stagesOn(d[D.MASK] ?? 0x3f);
+    if (!Number.isInteger(i) || i < 0 || i >= on) return this.refuse(`no DPI stage ${i + 1}`);
+    d[D.ACTIVE] = i + 1;
+    const r = await this.send('dpi', d);
+    if (r.ok) this.heard.stage = i + 1;
+    return r;
+  }
+
+  /**
    * The DPI block to change, on the stage the mouse last said it is on: a
    * change sends the active stage too, and through the receiver the block is
    * only what Shark Deck last sent — the X8 PRO's owner saw every sensor
@@ -792,7 +824,7 @@ export class Beken8kMouse extends Driver {
   // — what the mouse says unasked ----------------------------------------------
 
   /** Its last battery report, and the stage (1-based) it last said it is on. */
-  protected heard: { battery?: { level: number; charging: boolean }; stage?: number } = {};
+  protected heard: { battery?: { level: number | null; charging: boolean }; stage?: number } = {};
   private waitedForBattery = false;
   /** How long the first battery poll waits for a report (they come every 2 s). */
   protected firstBatteryWaitMs = 2_100;
@@ -804,16 +836,32 @@ export class Beken8kMouse extends Driver {
    * <model> 10 <stage>` when its DPI button moves. Nothing is sent.
    */
   protected async listen(): Promise<void> {
+    const before = this.heard.stage;
     for (let i = 0; i < 64; i++) {
       const r = await this.ch.readEvent(0).catch(() => null);
-      if (!r) return;
+      if (!r) break;
       if (r[0] !== 0x03 || r.length < 4) continue;
       const [, , what, a, b] = r;
       if (what === 0x40 && b !== undefined) {
-        this.heard.battery = { level: Math.min(100, b), charging: a === 0x03 };
+        // Charging (state 3, on its cable), the vendor software shows that and
+        // no level (the X8 PRO owner's video, 11-24); so does Shark Deck.
+        const charging = a === 0x03;
+        this.heard.battery = { level: charging ? null : Math.min(100, b), charging };
       }
       if (what === 0x10 && a !== undefined && a >= 1 && a <= STAGES) this.heard.stage = a;
     }
+    // Kept as the stage it is on, so the next start shows it before the mouse
+    // says it again (it only says when the DPI button moves). Nothing is sent.
+    const now = this.heard.stage;
+    if (now !== undefined && now !== before) await this.keepStage(now).catch(() => undefined);
+  }
+
+  /** The kept DPI block on `stage`, without asking the mouse (the receiver's way to keep it). */
+  private async keepStage(stage: number): Promise<void> {
+    const d = await Beken8kMouse.prototype.block.call(this, 'dpi');
+    if (d[D.ACTIVE] === stage) return;
+    d[D.ACTIVE] = stage;
+    await this.remember('dpi', d);
   }
 
   override async getBattery(): Promise<{

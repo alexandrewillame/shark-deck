@@ -313,7 +313,7 @@ describe('Beken8kMouse: what it keeps, and when', () => {
     const { drv, sent } = rig();
     expect((await drv.setPollRate(300)).ok).toBe(false);
     expect(
-      (await drv.setButtonMapping(4, { actionKey: 'multimedia', action: 5, multimedia: 0x0183 }))
+      (await drv.setButtonMapping(4, { actionKey: 'multimedia', action: 5, multimedia: 0x0999 }))
         .ok,
     ).toBe(false);
     expect(
@@ -341,9 +341,10 @@ describe('Beken8kMouse: what it keeps, and when', () => {
     expect(media(0x022a)).toEqual([0x11, 0x03, 0x12]);
     expect(encodeBekenButton({ actionKey: 'firepower', action: 4 })).toEqual([0x08, 0x00, 0x00]);
     expect(encodeBekenButton({ actionKey: 'easyAim', action: 0x10 })).toEqual([0x10, 0x00, 0x03]);
-    // Media player and Search were not in it: still refused rather than guessed.
-    expect(media(0x0183)).toMatch(/no such/);
-    expect(media(0x0221)).toMatch(/no such/);
+    // The 11-24 recording: media player, search, previous track, stop.
+    expect([0x0183, 0x0221, 0x00b6, 0x00b7].map(media)).toEqual(
+      [0x15, 0x26, 0x16, 0x19].map((a) => [a, 0x00, 0x00]),
+    );
 
     expect(decodeBekenButton([0x08, 0x00, 0x00]).actionKey).toBe('firepower');
     expect(decodeBekenButton([0x10, 0x00, 0x03]).actionKey).toBe('easyAim');
@@ -1145,7 +1146,8 @@ describe('Beken mice: macros, deep sleep, announcements', () => {
   it('shows the battery and the DPI stage the mouse announces, and keeps that stage', async () => {
     const { drv, sent, events } = rig();
     events.push(bytes('03 08 40 03 64'), bytes('03 08 10 03 00'));
-    expect(await drv.getBattery()).toMatchObject({ level: 100, charging: true });
+    // Charging: no level, as the vendor software shows it (the owner's video, 11-24).
+    expect(await drv.getBattery()).toMatchObject({ level: null, charging: true });
     expect(await drv.readLiveState()).toMatchObject({ activeDpiStage: 2 });
     // A sensor change sends the stage the mouse is on, not the one Shark Deck last sent,
     // and the colours turned so stage 3 keeps its own (blue).
@@ -1161,5 +1163,30 @@ describe('Beken mice: macros, deep sleep, announcements', () => {
     expect(events).toEqual([]);
     expect(await drv.getBattery()).toMatchObject({ level: 90, charging: false });
     expect(await drv.readLiveState()).toMatchObject({ activeDpiStage: 3 });
+  });
+
+  // The owner's 11-24 test: picking a stage was refused as "DPI stage not
+  // supported", and the DPI tab said it could not read the stage it is on.
+  it('makes a stage the one the mouse is on, as the vendor software does', async () => {
+    const { drv, sent } = rig();
+    const r = await drv.setActiveDpiStage(2);
+    expect(r.ok).toBe(true);
+    // The DPI block, stage 3 active, the colours turned so stage 3 keeps blue.
+    expect([sent[0]![3], sent[0]![6 + 21]]).toEqual([0x04, 3]);
+    expect([...sent[0]!.subarray(6 + 22, 6 + 25)]).toEqual([0x00, 0x00, 0xff]);
+    expect(await drv.readActiveDpiStage()).toBe(2);
+    expect((await drv.setActiveDpiStage(6)).ok).toBe(false);
+  });
+
+  it('says which stage it is on before the mouse has said anything, and keeps what it says', async () => {
+    // Nothing heard, nothing sent: the kept block's (stage 1 as the vendor sends it).
+    const first = rig();
+    expect(await first.drv.readActiveDpiStage()).toBe(0);
+    // The mouse says stage 4: kept, so a new start shows it before it says again.
+    first.events.push(bytes('03 08 10 04 00'));
+    expect(await first.drv.readActiveDpiStage()).toBe(3);
+    const kept = (await first.store.get('beken8k.dpi')) as number[];
+    const again = rig(undefined, { dpi: kept });
+    expect(await again.drv.readActiveDpiStage()).toBe(3);
   });
 });

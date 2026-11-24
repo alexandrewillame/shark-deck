@@ -1545,4 +1545,8 @@ export const ja: Partial<Messages> = {
   'macro.lib.delete': '「{name}」をライブラリから削除',
   'keyfn.macroNamed': 'マクロ {n} · {name}',
   'btnact.easyAim': 'イージーエイム',
+  'dev.log.title': '問題を報告',
+  'dev.log.hint':
+    'Shark Deck がこのデバイスに送った内容とデバイスの応答、うまくいかなかったことの記録です。設定と、送ったマクロが含まれます。GitHub の報告に添付してください。',
+  'dev.log.save': 'ログを保存',
 };

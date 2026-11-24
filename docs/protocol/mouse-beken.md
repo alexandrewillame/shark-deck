@@ -66,9 +66,14 @@ bits, then its usage: Ctrl + C is `11 01 06`), `12` a macro, `17` next track,
 email, `20` / `21` browser forward / back, `22` browser stop, `23` My Computer,
 `24` refresh, `25` browser home. The vendor software's Favorites is the key
 Ctrl + Shift + O (`11 03 12`), and its whole shortcut list is keys with
-modifiers (Alt + F4 is `11 04 3d`, Win + Shift + S `11 0a 16`). Inferred from
-the defaults and the run of codes: `0a` scroll down, `0d` DPI loop, `16`
-previous, `19` stop. Not seen: media player, search.
+modifiers (Alt + F4 is `11 04 3d`, Win + Shift + S `11 0a 16`), `15` media
+player, `16` previous track, `19` stop, `26` search (the 11-24 recording).
+Inferred from the defaults and the run of codes: `0a` scroll down, `0d` DPI
+loop.
+
+A macro's first data byte is how it plays (the 11-24 recording, the same
+macro sent three times): `00` the repeat count's number of times, `01` until
+any key is pressed, `02` while its button is held. Shark Deck sends `00`.
 
 Profiles live in the vendor software: switching one rewrites every block
 (`0x0C`, `0x04`, `0x05`, `0x06`, `0x08`, a second apart). Its macro editor

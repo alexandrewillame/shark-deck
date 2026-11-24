@@ -154,7 +154,6 @@ function x8Pro8k(): DeviceDescriptor {
       // Volume+ (Media player… Favorites) have no code, so the driver refuses
       // them — what its owner saw, 2026-11-19. The tool's "Media keys" steps
       // ask for each by name.
-      support: { gaps: ['mediaKeys'], record: ['media'] },
     },
   };
 }

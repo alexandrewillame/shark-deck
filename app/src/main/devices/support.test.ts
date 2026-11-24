@@ -24,11 +24,8 @@ describe('supportPlan', () => {
     const x11 = supportPlan(byModel('attack-shark-x11'))!;
     expect(x11.record).toEqual(['start', 'macro']);
     expect(x11.unconfirmed).toEqual(['macros']);
-    // the X8 PRO's media keys are its gap, named once
-    const x8 = supportPlan(byModel('attack-shark-x8-pro'))!;
-    expect(x8.record).toEqual(['start', 'media']);
-    expect(x8.gaps).toEqual(['mediaKeys']);
-    expect(x8.unconfirmed).toBeUndefined();
+    // the X8 PRO: every setting recorded, its media keys the last (issue #1)
+    expect(supportPlan(byModel('attack-shark-x8-pro'))).toBeUndefined();
   });
 
   it('asks a model no one recorded for every setting it shows', () => {

@@ -1546,6 +1546,10 @@ export const en = {
   'macro.lib.delete': 'Delete “{name}” from the library',
   'keyfn.macroNamed': 'Macro {n} · {name}',
   'btnact.easyAim': 'Easy aim',
+  'dev.log.title': 'Report a problem',
+  'dev.log.hint':
+    'A log of what Shark Deck sent to this device and what it answered, with anything that went wrong: its settings, and any macro you sent it. Attach it to your report on GitHub.',
+  'dev.log.save': 'Save log',
 } as const;
 
 export type MessageKey = keyof typeof en;
