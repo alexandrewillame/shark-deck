@@ -321,8 +321,8 @@ function drawTile(
 /**
  * Stills of the backgrounds, as image URLs, for the picker — each handed to
  * `onTile` as soon as its own shader is ready, in whatever order they finish.
- * Taken in the picker's order, every tile after Electricity waited on its
- * shader, which alone takes about two seconds to build on a Direct3D GPU.
+ * Taken in the picker's order, every tile after a slow shader waited on it:
+ * one took about two seconds to build on a Direct3D GPU.
  *
  * Drawn by ONE renderer kept for the purpose — ten small canvases with a
  * context each would spend nine of the sixteen live contexts Chromium allows —

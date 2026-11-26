@@ -5,19 +5,18 @@ from, and was informed by, the projects below.
 
 ## Data included in Shark Deck
 
-### sharkfin — keyboard registry and key layouts
+### sharkfin — keyboard rows Driver v4 does not describe
 
 - Project: <https://github.com/dniminenn/sharkfin> (by JR, @dniminenn)
 - Licence: GPL-3.0-or-later
-- Used: the Attack Shark rows of its device registry
-  (`app/src-tauri/data/devices.json`) and its vendor key layouts
-  (`app/src/lib/layouts/`), imported at commit
-  `8c999ba7d44254f5206fb0ff25ed7cea6ebbb496` by
-  `app/scripts/import-keyboard-registry.ts` into
-  `app/src/main/devices/catalog/generated/`, and one layout file kept as a
-  test fixture (`app/test/fixtures/sharkfin/`). sharkfin's author extracted
-  them from the vendor's own app and from firmware images on the vendor's
-  update channel.
+- Used: the rows of 16 Attack Shark keyboards the vendor's Driver v4 3.2.20
+  does not list, and the key layouts of 7 boards it draws from pictures
+  rather than key grids, as imported from sharkfin's registry at commit
+  `8c999ba7d44254f5206fb0ff25ed7cea6ebbb496`, kept in
+  `app/scripts/data/keyboard-rows-outside-v4.json` until an owner's report
+  or a newer Driver v4 replaces them. The rest of the keyboard registry comes
+  from Shark Deck's own reading of Driver v4
+  (`app/scripts/extract-keyboard-registry.ts`).
 
 ## Protocol references (facts only, no code copied)
 

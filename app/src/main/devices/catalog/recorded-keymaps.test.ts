@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { KEYBOARD_ROWS } from './generated/keyboard-rows';
 import { LAYOUT_GEOMETRY } from './generated/layout-geometry';
+import { VENDOR_LAYOUTS } from './generated/vendor-layouts';
 import { KEYBOARDS_BY_ID } from './keyboards';
 import { RECORDED_KEYMAPS } from './recorded-keymaps';
 
@@ -35,6 +36,12 @@ describe('recorded key maps', () => {
 
   it('leave a board of the same drawing but another firmware to its own key map', () => {
     // The R98 PRO: the R98 HE's drawing, another firmware, nobody's recording.
-    expect(KEYBOARDS_BY_ID.get(3754)!.spec.keyMatrix!.layoutStatus).toBe('none');
+    // Its slots come from its own factory matrix (Driver v4), never from the
+    // R98 HE's recording.
+    const row = KEYBOARD_ROWS.find((r) => r.id === 3754)!;
+    expect(row.slotLayout).toBe('Common98_SG9097_F#3754');
+    expect(KEYBOARDS_BY_ID.get(3754)!.spec.keyMatrix!.layout).toEqual(
+      VENDOR_LAYOUTS[row.slotLayout!],
+    );
   });
 });

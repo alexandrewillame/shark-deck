@@ -863,9 +863,6 @@ export const ja: Partial<Messages> = {
   'set.background': '背景',
   'set.background.none': 'なし',
   'set.background.smoke': '煙',
-  'set.background.fire': '炎',
-  'set.background.electricity': '電撃',
-  'set.background.lava': '溶岩',
   'set.background.aurora': 'オーロラ',
   'set.background.nebula': '星雲',
   'set.background.landscape': '風景',
@@ -900,15 +897,9 @@ export const ja: Partial<Messages> = {
   'set.palette.synthwave': 'シンセウェイブ',
   'set.palette.lime': 'ライム',
   'set.palette.frost': '霜',
-  'set.background.rain': '雨',
-  'act.allKeys': '全キー',
-  'act.allKeys.tip':
-    'キーボード全体に一度に作用する設定です — すべてのキーのトリガー応答と、ホールセンサーの再キャリブレーション。ここにキー単位の設定はありません。',
-  'act.allKeys.aria': 'すべてのキーに適用される設定',
   'act.cal.recalibrate': '再キャリブレーション',
   'act.cal.recalibrate.tip':
     '各スイッチの静止位置と底打ち位置をキーボードに学習させます。ガイドに沿って一度行うだけです：開始し、すべてのキーを底まで押し込んでから終了します — 実行中はケーブルを抜かないでください。スイッチを交換した後や、アクチュエーションに違和感があるときに実行してください。',
-  'act.cal.start': '開始',
   'act.rt.sensitivity': 'RT 感度',
   'act.rt.link.tip':
     '1 つの感度で、再押下とリリースの両方を制御します。個別に設定すると、方向ごとに調整できます。',
@@ -978,7 +969,7 @@ export const ja: Partial<Messages> = {
   'act.reset.all': 'すべてリセット',
   'act.reset.all.tip':
     'キーボードのすべてのキーのアクチュエーション、リリース、ラピッドトリガー、デッドゾーン、モードを工場出荷時の状態に戻します。キャリブレーションには影響せず、デバイス全体の工場出荷時リセットでもありません — それは「デバイス」タブにあります。',
-  'act.reset.selected': 'リセット',
+  'act.reset.selected': 'キーをリセット',
   'act.reset.selected.tip':
     '選択したキーのアクチュエーション、リリース、ラピッドトリガー、デッドゾーン、モードを工場出荷時の状態に戻します。キャリブレーションには影響しません。',
   'act.key.title': 'キー',
@@ -986,7 +977,7 @@ export const ja: Partial<Messages> = {
   'act.key.previewHint':
     '押されているキーを表示しています。設定を変更するには、上のキーボードでキーを選択してください。',
   'act.key.emptyHint':
-    '上のキーボードでキーを選択すると、アクチュエーション、ラピッドトリガー、モードを設定できます。',
+    '上のキーボードでキーを選択すると、アクチュエーション、ラピッドトリガー、モードを設定できます。複数選ぶには Shift か Ctrl を押しながらクリックするか、ボード上をドラッグします。',
   'act.release.point': 'リリースポイント',
   'act.release.point.tip':
     '連動時は、キーが反応したのと同じ深さでリリースされます — キーボード本来の既定です。個別に設定するとヒステリシスの幅ができ、指を置いたままでもチャタリングしにくくなります。その場合、リリースポイントはアクチュエーションポイントより上にある必要があります。',
@@ -1119,10 +1110,10 @@ export const ja: Partial<Messages> = {
   'act.switch.aria': 'スイッチのストローク',
   'act.trigger.title': 'トリガー応答',
   'act.trigger.tip':
-    'キー単位ではなく、キーボードのファームウェアに保存されるキーボード全体の設定です。',
+    'キーボード全体の設定で、キーボード本体に保存されます。すべてのオンボードプロファイル、すべてのキーで共通です。',
   'act.trigger.antiMistouch': '誤入力防止',
   'act.trigger.antiMistouch.tip':
-    'スイッチや机の揺れによってストロークの最下部に生じうる、約 0.1 mm のストロークの誤差を補正します — ベンダーアプリの「防误触」スイッチです。',
+    'スイッチや机の揺れによってストロークの最下部に生じうる、約 0.1 mm のストロークの誤差を補正します。',
   'act.trigger.rtStab': 'RT 安定化',
   'act.trigger.rtStab.tip':
     'ラピッドトリガー有効時に、反転位置付近のブレを抑えます。高いほど安定しますが遅延が増えます。0 でオフになります。',
@@ -1549,4 +1540,28 @@ export const ja: Partial<Messages> = {
   'dev.log.hint':
     'Shark Deck がこのデバイスに送った内容とデバイスの応答、うまくいかなかったことの記録です。設定と、送ったマクロが含まれます。GitHub の報告に添付してください。',
   'dev.log.save': 'ログを保存',
+  'remap.fn.shared':
+    'Fn レイヤーはすべてのオンボードプロファイルで共通です。プロファイルを切り替えて変わるのはベースレイヤーで、このレイヤーは変わりません。',
+  'act.reset.selectedMany': 'キーをリセット',
+  'set.missing.title': 'デバイスが見つかりませんか？',
+  'set.missing.row': 'Shark Deck に表示されないキーボードやマウス',
+  'set.missing.hint':
+    'Shark Deck は、公式ソフトウェアがデバイスとやり取りする様子を一度記録することで新しいデバイスに対応します。記録ツールが手順を案内します。',
+  'set.missing.button': '追加に協力する…',
+  'unlisted.title': 'デバイスの追加に協力する',
+  'unlisted.body':
+    'Shark Deck に表示されないキーボードかマウスを選んでください。記録ツールが公式ソフトウェアの設定を一つずつ案内し、ソフトウェアとデバイスのやり取りをデスクトップの .zip に保存します。GitHub の「New device」Issue に添付してください。',
+  'unlisted.body.mac':
+    'Shark Deck に表示されないキーボードかマウスを選んでください。Mac ではツールはレポートのみを作成します（USB ID とデバイス自身の記述）。GitHub の「New device」Issue に添付してください。記録には Windows か Linux が必要です。',
+  'unlisted.loading': 'USB デバイスを探しています…',
+  'unlisted.none': 'USB キーボードやマウスが見つかりません。接続してから更新してください。',
+  'unlisted.listed':
+    'すでに Shark Deck にあります。不足している情報はそのデバイスタブで依頼できます。',
+  'unlisted.unnamed': '名前のないデバイス',
+  'unlisted.kind': '種類',
+  'unlisted.kind.keyboard': 'キーボード',
+  'unlisted.kind.mouse': 'マウス',
+  'unlisted.closes':
+    'ツールが起動すると Shark Deck は終了し、デバイスとやり取りするのは公式ソフトウェアだけになります。',
+  'unlisted.start': '記録を開始',
 };

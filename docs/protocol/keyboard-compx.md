@@ -79,7 +79,15 @@ table (`npm run extract:qmk` -> `scripts/_raw/qmk-magnetism.json`), and a live
 read of an R85HE (fw v5.11, model id 3123).
 
 **Writes.** One key: `[page, 0, slot, commit]` + value. Whole page:
-`[page, 1, chunkIdx, isLast]` + 56 data bytes.
+`[page, 1, chunkIdx, commit]` + 56 data bytes, every slot little-endian at
+the page's width: five chunks for a two-byte page, three for a one-byte one
+(the last padded with zeros). Driver v4 sends a change to every key this way,
+page after page (modes, travel, release, RT press and release, bottom dead
+zone, DKS points, mod-tap, SOCD, top dead zone), with the commit flag on the
+batch's last chunk only: `65 01 01 04 01 00 00 93` ended an R98 HE's
+"every key at 3.5 mm" (its 2026-11-22 recording). Shark Deck writes a page
+whole from 12 keys on it, from the page read just before; fewer go key by
+key.
 
 **Reads.** `GET_MULTI_MAGNETISM` (229) with `[page, 1, chunkIdx]`. The reply
 carries **no command echo and no checksum** — it is 64 raw data bytes starting
@@ -259,11 +267,12 @@ place of the hold. A write to an onboard profile the board is not showing
 (`keepZoneBindings`: the comparator's per-key copy, a profile copy) leaves
 the bindings alone.
 
-**Open: profiles.** SharkDeck writes the key matrix at layer 0 whichever
-profile is active (below). If the board keeps a key matrix per profile, a
-mod-tap key's bindings land on profile 1's; if it keeps one for all, a key
-that is mod-tap on one profile types its hold on the others, where it is a
-plain key. Check on hardware: mod-tap on profile 1, switch, press it.
+**Profiles.** The board keeps a key matrix per profile (see "Key matrix reads
+and writes"), and `SET_KEYMATRIX`'s first byte names it: on an R85 HE
+(2026-11-26), F12 written with that byte at 1 changed profile 2's F12 and no
+other profile's, whether the board was on profile 1 or 2. Shark Deck writes
+every zone frame on the profile the board is on, and keeps the record of what
+it wrote per profile.
 
 The capture (`session-r85he.jsonl`) shows the vendor writing every zone,
 zone 0 included:
@@ -276,9 +285,9 @@ zone 0 included:
   toggle — the binding is unchanged — and the 2026-10-09 run confirmed the
   firmware does not need it.
 
-Two differences from SharkDeck's frames are open questions for that check. The
-vendor's layer byte is `03` where SharkDeck writes `00` — the doc above reads
-it as the vendor's current profile — and its quad carries the usage at byte 1
+Two differences from SharkDeck's frames were open questions. The vendor's
+first byte is `03` where SharkDeck wrote `00`: the profile the board was on
+(SharkDeck now sends that too) — and its quad carries the usage at byte 1
 (`00 04 00 00`), where SharkDeck's hardware-verified remap writes byte 2
 (`00 00 04 00`), the layout the board's own factory table and `GET_KEYMATRIX`
 use. The zone frames follow the verified remap; if a mod-tap or DKS key does
@@ -292,9 +301,9 @@ Mod-tap or DKS, before the pages; a saved Actuation layout keeps the bindings
 of its Mod-tap and DKS keys by position, written before its keys on apply.
 An entry recorded the old way round (`[null, hold]`) is turned the right way
 on apply and on restore, with the key's own binding as its tap.
-Profile copy carries none: SharkDeck writes layer 0 whichever profile is
-active, so the bindings are not the slot's — and a copy into another slot
-leaves them alone. The backup sweep skips page 8
+A profile copy carries the base layer, key by key, but not the zone bindings:
+the record of what was written is per profile, and holds nothing of the slot
+copied into, so a copy into another slot leaves them alone. The backup sweep skips page 8
 (the read returns our own checksum, which a restore used to write back as
 DKS flags); a restore writes a DKS key's flags to page 8 from the page-10
 read, last. `ported-from-vendor`; the frames are pinned in
@@ -307,10 +316,12 @@ SharkDeck switches a keyboard profile with a single `SET_PROFILE` (see
 `catalog/r85he.ts`), not by replaying settings. Two things are worth
 recording about what the slot actually covers:
 
-- **Slot-indexed on the wire:** the Fn layer (`SET_FN` byte 3 is the Fn
-  profile) and the key matrix (`GET_KEYMATRIX` byte 5 likewise; the vendor
-  puts its current profile in `SET_KEYMATRIX`’s layer byte, where SharkDeck
-  writes a literal).
+- **Slot-indexed on the wire:** the key matrix (`GET_KEYMATRIX` and
+  `SET_KEYMATRIX` byte 2 is the profile; the two profiles of an R98 HE hold
+  different base layers). The Fn layer is not: `SET_FN` byte 3 is KBOPTION's
+  Fn profile, and Driver v4 reads one Fn layer per OS whatever the profile.
+- **Changed by `SET_PROFILE` with no slot byte:** the magnetism pages
+  (actuation, rapid trigger, modes); Driver v4 re-reads them after a switch.
 - **Not slot-indexed:** lighting. `SET_LEDPARAM` (7), `SET_SLEDPARAM` (8)
   and `SET_USERPIC` (12) carry no slot byte at all. Whether the firmware
   scopes lighting to a profile internally is unknown and unobservable from
@@ -541,15 +552,26 @@ onward (byte 1 is the command), matching the vendor's `r[1..]`:
 
 | command | byte 2 | byte 3 | byte 4 | byte 5 |
 |---|---|---|---|---|
-| `GET_KEYMATRIX` 138 | profile | `0xff` | **chunk** | fnProfile |
+| `GET_KEYMATRIX` 138 | profile | `0xff` | **chunk** | 0 (see below) |
 | `GET_FN` 144 | fnOS | fnProfile | `0xff` | **chunk** |
 
 `fnOS`: win 0, mac 1, android 2, ios 3 (vendor `___utils_FnOSToNum`). Both are
 read from the board's own `KBOPTION` register.
 
-For `GET_KEYMATRIX`, byte 5 is the **Fn profile**, not the layer. Asking for
-fnProfile 3 (which the driver did) returns 128 zeroed slots on a board that only
-uses profile 0, so the base layer read back empty.
+For `GET_KEYMATRIX`, byte 2 is the **profile**, counted from 0, and each
+profile keeps a base layer of its own. Driver v4 reads an R98 HE's two
+(`8a 00 ff <chunk> …` and `8a 01 ff <chunk> …`), and the answers differ in
+exactly two slots, the Insert and Delete keys its owner had swapped on one
+profile (the 2026-11-22 recording). Shark Deck reads and writes the profile
+the board is on (`CompxKeyboard.keyProfile`, from `GET_PROFILE`), and a backup
+holds every profile's base layer.
+
+Byte 5 is not the Fn profile. Driver v4 asks for 0 to 3 on each profile, and
+only 0 holds anything on a board with no mod-tap or DKS key: 1 to 3 read as
+zeros. That fits the key zones of a `SET_KEYMATRIX` (a DKS key's actions 2 to 4
+in zones 1 to 3), which would make zones past 0 readable after all; not yet
+checked with such a key set. Shark Deck asks for 0: asking for 3 (which an
+early driver did) read every slot back as zero.
 
 > **This corrects an earlier note here that said `GET_FN` takes only three args
 > and that a fourth hangs the MCU.** It takes four, in the order above. What

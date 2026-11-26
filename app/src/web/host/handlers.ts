@@ -133,6 +133,8 @@ export const browserHandlers = {
   // A page cannot start a program: the renderer opens the "Missing a device?"
   // page instead (hostFeatures.reportTool).
   openReportTool: async () => ({ ok: false, error: 'Not in the browser edition.' }),
+  listUsbHidDevices: async () => [],
+  openReportToolFor: async () => ({ ok: false, error: 'Not in the browser edition.' }),
   // A link the user clicked — "Get the desktop app" — in a new tab. Never a
   // request from this page (connect-src 'none'), and http(s) only, as on the
   // desktop (main/platform/shared.ts).

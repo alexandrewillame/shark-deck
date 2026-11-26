@@ -129,15 +129,13 @@ export function decodeBekenDpi(raw: number, doubled: boolean): number {
  * green, blue, yellow, cyan, magenta (orange and white unused). The vendor
  * software always sends them so, and the mouse keeps them so (its cable read).
  *
- * The mouse starts its light over at the first entry whenever a DPI block
- * lands, on whatever stage the block makes current. Shark Deck 0.3.1 always
- * sent stage 1, and every change came back red, then green, blue, yellow,
- * teal, purple as the button went round (the X8 PRO's owner, 2026-11-19).
- * Sending the stage the mouse is on instead (0.3.3) put red on that stage:
- * stage 2 red, stage 1 magenta (the same owner, 2026-11-23). So a block that
- * makes stage s current carries the colours turned to start at stage s's own
- * (`stageColours`), and each stage keeps its colour. `inferred` from those two
- * reports; the X11 uses the same block and software, and is treated alike.
+ * The mouse lights stage n with entry n of the last table it was sent. Shark
+ * Deck 0.3.6–0.3.8 turned the table to start at the stage a block made
+ * current (from a reading of the owner's 11-23 report that his app's stage
+ * numbering, not the mouse, explains): after a block on stage 4 the button
+ * lit stage 5 green and, after one on stage 5, stage 6 yellow — entries 5 and
+ * 6 of the turned tables those blocks carried (his 11-25 log). So every block
+ * goes out with this table as it is, which also puts back one turned before.
  */
 const COLOURS: [number, number, number][] = [
   [0xff, 0x00, 0x00],
@@ -150,19 +148,6 @@ const COLOURS: [number, number, number][] = [
   [0xff, 0xff, 0xff],
 ];
 
-/**
- * The colour table for a block that makes stage `active` (1-based) current
- * with `count` stages on: the first `count` entries turned so the one the
- * light starts on is that stage's own colour; the rest as they are.
- */
-export function bekenStageColours(active: number, count: number): [number, number, number][] {
-  const n = Math.max(1, Math.min(count, STAGES));
-  const start = (((active - 1) % n) + n) % n;
-  return COLOURS.map(
-    (c, j) => [...(j < n ? COLOURS[(start + j) % n]! : c)] as [number, number, number],
-  );
-}
-
 /** Stages on: the mask's bits (contiguous from stage 1). */
 const stagesOn = (mask: number): number => {
   let n = 0;
@@ -170,12 +155,10 @@ const stagesOn = (mask: number): number => {
   return n;
 };
 
-/** The block with its colour table turned for the stage it makes current. */
-function withStageColours(d: readonly number[]): number[] {
+/** The block with the vendor's colour table, whatever one it was kept with. */
+export function withVendorColours(d: readonly number[]): number[] {
   const out = [...d];
-  bekenStageColours(out[D.ACTIVE] ?? 1, stagesOn(out[D.MASK] ?? 0x3f)).forEach((c, i) =>
-    out.splice(D.RGB + 3 * i, 3, ...c),
-  );
+  COLOURS.forEach((c, i) => out.splice(D.RGB + 3 * i, 3, ...c));
   return out;
 }
 
@@ -589,8 +572,8 @@ export class Beken8kMouse extends Driver {
 
   /** Send a block whole; it is kept only once the mouse has said it took it. */
   protected async send(key: BlockKey, data: number[]): Promise<WriteResult> {
-    // Each stage keeps its colour, whichever stage the block makes current.
-    if (key === 'dpi') data = withStageColours(data);
+    // The vendor's colours, so each stage lights its own (see COLOURS).
+    if (key === 'dpi') data = withVendorColours(data);
     const result = await this.transmit(key, data);
     if (result.ok) await this.remember(key, data);
     return result;

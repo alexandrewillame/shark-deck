@@ -3,7 +3,7 @@ import { basename } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import { IPC } from '@shared/ipc';
-import type { DeviceAccessResult } from '@shared/types/diagnostics';
+import type { DeviceAccessResult, ReportTarget } from '@shared/types/diagnostics';
 import type { AppProfile } from '@shared/types/profiles';
 import { getT } from '@shared/i18n';
 import { deviceManager } from './devices/manager';
@@ -13,7 +13,7 @@ import { scanGames } from './profiles/gameScan';
 import { listRunningProcesses } from './profiles/processScan';
 import { getSettingsSync, setSettings } from './settings';
 import { allowQuit, setPendingChanges } from './quitGuard';
-import { openReportTool } from './reportTool';
+import { listUsbHidDevices, openReportTool, openReportToolFor } from './reportTool';
 import { platform } from './platform';
 import { bundleExecutableName } from './platform/mac';
 import {
@@ -183,6 +183,18 @@ const desktopHandlers = {
   // device, so the app quits once the tool's window is up.
   openReportTool: async (deviceId: string) => {
     const r = await openReportTool(deviceId);
+    if (r.quitting) {
+      setTimeout(() => {
+        allowQuit();
+        app.quit();
+      }, 1500);
+    }
+    return r;
+  },
+  listUsbHidDevices: () => listUsbHidDevices(),
+  // The same, for a device Shark Deck does not list (Settings).
+  openReportToolFor: async (target: ReportTarget) => {
+    const r = await openReportToolFor(target);
     if (r.quitting) {
       setTimeout(() => {
         allowQuit();

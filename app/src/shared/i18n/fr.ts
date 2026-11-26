@@ -857,9 +857,6 @@ export const fr: Partial<Messages> = {
   'set.background': 'Arrière-plan',
   'set.background.none': 'Aucun',
   'set.background.smoke': 'Fumée',
-  'set.background.fire': 'Feu',
-  'set.background.electricity': 'Électricité',
-  'set.background.lava': 'Lave',
   'set.background.aurora': 'Aurore boréale',
   'set.background.nebula': 'Nébuleuse',
   'set.background.landscape': 'Paysage',
@@ -895,15 +892,9 @@ export const fr: Partial<Messages> = {
   'set.palette.synthwave': 'Synthwave',
   'set.palette.lime': 'Citron vert',
   'set.palette.frost': 'Givre',
-  'set.background.rain': 'Pluie',
-  'act.allKeys': 'Toutes les touches',
-  'act.allKeys.tip':
-    'Réglages qui s’appliquent à tout le clavier à la fois — la réponse au déclenchement de chaque touche, et le recalibrage des capteurs à effet Hall. Rien ici ne se règle touche par touche.',
-  'act.allKeys.aria': 'Réglages qui s’appliquent à toutes les touches',
   'act.cal.recalibrate': 'Recalibrer',
   'act.cal.recalibrate.tip':
     'Apprend au clavier où chaque switch se trouve au repos et où il arrive en fin de course. Une seule passe guidée : lancez-la, enfoncez chaque touche à fond, puis terminez — ne débranchez pas le câble pendant l’opération. À faire après avoir changé de switches, ou si l’actionnement semble décalé.',
-  'act.cal.start': 'Démarrer',
   'act.rt.sensitivity': 'Sensibilité RT',
   'act.rt.link.tip':
     'Une seule sensibilité régit à la fois le nouvel appui et le relâchement. Réglez-les séparément pour ajuster chaque sens indépendamment.',
@@ -973,7 +964,7 @@ export const fr: Partial<Messages> = {
   'act.reset.all': 'Tout réinitialiser',
   'act.reset.all.tip':
     'Remet chaque touche du clavier à ses valeurs d’usine d’actionnement, de relâchement, de rapid trigger, de zones mortes et de mode. Le calibrage n’est pas affecté, et ce n’est pas une réinitialisation d’usine de tout le périphérique — celle-ci se trouve dans l’onglet Périphérique.',
-  'act.reset.selected': 'Réinitialiser',
+  'act.reset.selected': 'Réinitialiser la touche',
   'act.reset.selected.tip':
     'Remet les touches sélectionnées à leurs valeurs d’usine d’actionnement, de relâchement, de rapid trigger, de zones mortes et de mode. Le calibrage n’est pas affecté.',
   'act.key.title': 'Touche',
@@ -981,7 +972,7 @@ export const fr: Partial<Messages> = {
   'act.key.previewHint':
     'Affichage de la touche enfoncée. Sélectionnez une touche sur le clavier ci-dessus pour modifier ses réglages.',
   'act.key.emptyHint':
-    'Sélectionnez une touche sur le clavier ci-dessus pour régler son actionnement, son rapid trigger et son mode.',
+    'Sélectionnez une touche sur le clavier ci-dessus pour régler son actionnement, son rapid trigger et son mode. Maj ou Ctrl + clic, ou un glisser sur le clavier, pour en sélectionner plusieurs.',
   'act.release.point': 'Point de relâchement',
   'act.release.point.tip':
     'Quand ils sont liés, la touche se relâche à la profondeur où elle s’actionne — le comportement par défaut du clavier. Réglez-les séparément pour créer un écart d’hystérésis, qui empêche un doigt posé de faire rebondir la touche ; le point de relâchement doit alors rester au-dessus du point d’actionnement.',
@@ -1119,10 +1110,10 @@ export const fr: Partial<Messages> = {
   'act.switch.aria': 'Course du switch',
   'act.trigger.title': 'Réponse au déclenchement',
   'act.trigger.tip':
-    'Options globales enregistrées dans le firmware du clavier, et non par touche.',
+    'Réglages de tout le clavier, enregistrés dans le clavier : les mêmes sur tous les profils embarqués et pour toutes les touches.',
   'act.trigger.antiMistouch': 'Anti-déclenchement accidentel',
   'act.trigger.antiMistouch.tip':
-    'Compense les ~0,1 mm de tolérance de course qu’un switch ou un bureau qui tremble peut introduire en fin de course — l’option 防误触 du fabricant.',
+    'Compense les ~0,1 mm de tolérance de course qu’un switch ou un bureau qui tremble peut introduire en fin de course.',
   'act.trigger.rtStab': 'Stabilisation RT',
   'act.trigger.rtStab.tip':
     'Atténue les tremblements autour du point d’inversion quand le rapid trigger est actif. Une valeur élevée est plus stable mais ajoute de la latence ; 0 la désactive.',
@@ -1550,4 +1541,27 @@ export const fr: Partial<Messages> = {
   'dev.log.hint':
     'Un journal de ce que Shark Deck a envoyé à ce périphérique et de ce qu’il a répondu, avec tout ce qui a échoué : ses réglages, et toute macro que vous lui avez envoyée. Joignez-le à votre signalement sur GitHub.',
   'dev.log.save': 'Enregistrer le journal',
+  'remap.fn.shared':
+    'La couche Fn est la même sur tous les profils embarqués : changer de profil change la couche de base, pas celle-ci.',
+  'act.reset.selectedMany': 'Réinitialiser les touches',
+  'set.missing.title': 'Un périphérique manque ?',
+  'set.missing.row': 'Un clavier ou une souris que Shark Deck n’affiche pas',
+  'set.missing.hint':
+    'Shark Deck apprend un nouveau périphérique à partir d’un enregistrement du logiciel officiel qui lui parle. L’outil d’enregistrement vous guide.',
+  'set.missing.button': 'Aider à l’ajouter…',
+  'unlisted.title': 'Aider à ajouter un périphérique',
+  'unlisted.body':
+    'Choisissez le clavier ou la souris que Shark Deck n’affiche pas. L’outil d’enregistrement vous guide ensuite dans le logiciel officiel, un réglage après l’autre, et enregistre ce que lui et le périphérique se disent dans un .zip sur votre Bureau, à joindre à une issue « New device » sur GitHub.',
+  'unlisted.body.mac':
+    'Choisissez le clavier ou la souris que Shark Deck n’affiche pas. Sur un Mac, l’outil fait seulement le rapport — ses identifiants USB et la façon dont il se décrit —, à joindre à une issue « New device » sur GitHub. Un enregistrement demande Windows ou Linux.',
+  'unlisted.loading': 'Recherche des périphériques USB…',
+  'unlisted.none': 'Aucun clavier ni souris USB trouvé. Branchez-le, puis actualisez.',
+  'unlisted.listed': 'Déjà dans Shark Deck : son onglet Périphérique demande ce qui lui manque.',
+  'unlisted.unnamed': 'Périphérique sans nom',
+  'unlisted.kind': 'C’est un(e)',
+  'unlisted.kind.keyboard': 'Clavier',
+  'unlisted.kind.mouse': 'Souris',
+  'unlisted.closes':
+    'Shark Deck se ferme dès que l’outil est lancé, pour que seul le logiciel officiel parle au périphérique.',
+  'unlisted.start': 'Lancer l’enregistrement',
 };

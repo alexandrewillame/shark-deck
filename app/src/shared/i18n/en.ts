@@ -874,9 +874,6 @@ export const en = {
   'set.background': 'Background',
   'set.background.none': 'None',
   'set.background.smoke': 'Smoke',
-  'set.background.fire': 'Fire',
-  'set.background.electricity': 'Electricity',
-  'set.background.lava': 'Lava',
   'set.background.aurora': 'Aurora',
   'set.background.nebula': 'Nebula',
   'set.background.landscape': 'Landscape',
@@ -911,15 +908,9 @@ export const en = {
   'set.palette.synthwave': 'Synthwave',
   'set.palette.lime': 'Lime',
   'set.palette.frost': 'Frost',
-  'set.background.rain': 'Rain',
-  'act.allKeys': 'All keys',
-  'act.allKeys.tip':
-    "Settings that act on the whole board at once — how every key's trigger responds, and recalibrating the Hall sensors. Nothing here is per key.",
-  'act.allKeys.aria': 'Settings that apply to every key',
   'act.cal.recalibrate': 'Recalibrate',
   'act.cal.recalibrate.tip':
     'Teaches the board where each switch rests and where it bottoms out. One guided pass: start it, press every key to the bottom, then finish — do not unplug the cable while it runs. Run it after changing switches, or if actuation feels off.',
-  'act.cal.start': 'Start',
   'act.rt.sensitivity': 'RT sensitivity',
   'act.rt.link.tip':
     'One sensitivity governs both re-pressing and releasing. Set them separately to tune each direction on its own.',
@@ -987,7 +978,7 @@ export const en = {
   'act.reset.all': 'Reset all',
   'act.reset.all.tip':
     'Put every key on the board back to its factory actuation, release, rapid trigger, dead zones and mode. Calibration is not affected, and this is not a factory reset of the whole device — that lives in the Device tab.',
-  'act.reset.selected': 'Reset',
+  'act.reset.selected': 'Reset key',
   'act.reset.selected.tip':
     'Put the selected keys back to their factory actuation, release, rapid trigger, dead zones and mode. Calibration is not affected.',
   'act.key.title': 'Key',
@@ -995,7 +986,7 @@ export const en = {
   'act.key.previewHint':
     'Showing the key being pressed. Select a key on the board above to change its settings.',
   'act.key.emptyHint':
-    'Select a key on the board above to set its actuation, rapid trigger and mode.',
+    'Select a key on the board above to set its actuation, rapid trigger and mode. Shift or Ctrl + click, or drag across the board, to select several.',
   'act.release.point': 'Release point',
   'act.release.point.tip':
     "Linked, the key releases at the same depth it actuates — the board's own default. Set them separately for a hysteresis gap, which stops a resting finger chattering; the release point then has to stay above the actuation point.",
@@ -1125,10 +1116,11 @@ export const en = {
   'act.marker.bottom': 'bottom',
   'act.switch.aria': 'Switch travel',
   'act.trigger.title': 'Trigger response',
-  'act.trigger.tip': "Board-wide switches stored in the keyboard's firmware, not per key.",
+  'act.trigger.tip':
+    'Switches for the whole keyboard, kept in it: the same on every onboard profile and for every key.',
   'act.trigger.antiMistouch': 'Anti-accidental trigger',
   'act.trigger.antiMistouch.tip':
-    "Compensates for the ~0.1 mm of travel tolerance a switch or a shaking desk can introduce at the bottom of the stroke — the vendor's 防误触 switch.",
+    'Compensates for the ~0.1 mm of travel tolerance a switch or a shaking desk can introduce at the bottom of the stroke.',
   'act.trigger.rtStab': 'RT stabilisation',
   'act.trigger.rtStab.tip':
     'Damps jitter around the reversal point when rapid trigger is armed. Higher is steadier but adds latency; 0 turns it off.',
@@ -1550,6 +1542,29 @@ export const en = {
   'dev.log.hint':
     'A log of what Shark Deck sent to this device and what it answered, with anything that went wrong: its settings, and any macro you sent it. Attach it to your report on GitHub.',
   'dev.log.save': 'Save log',
+  'remap.fn.shared':
+    'The Fn layer is the same on every onboard profile: switching profile changes the base layer, not this one.',
+  'act.reset.selectedMany': 'Reset keys',
+  'set.missing.title': 'Missing a device?',
+  'set.missing.row': 'A keyboard or mouse Shark Deck does not show',
+  'set.missing.hint':
+    'Shark Deck learns a new device from one recording of the official software talking to it. The recording tool walks you through it.',
+  'set.missing.button': 'Help add it…',
+  'unlisted.title': 'Help add a device',
+  'unlisted.body':
+    'Pick the keyboard or mouse Shark Deck does not show. The recording tool then walks you through the official software, one setting at a time, and saves what it and the device say to each other in a .zip on your Desktop, to attach to a "New device" issue on GitHub.',
+  'unlisted.body.mac':
+    'Pick the keyboard or mouse Shark Deck does not show. On a Mac the tool makes the report alone: its USB ids and how it describes itself, to attach to a "New device" issue on GitHub. A recording needs Windows or Linux.',
+  'unlisted.loading': 'Looking for USB devices…',
+  'unlisted.none': 'No USB keyboard or mouse found. Plug it in, then refresh.',
+  'unlisted.listed': 'Already in Shark Deck: its Device tab asks for what it lacks.',
+  'unlisted.unnamed': 'Unnamed device',
+  'unlisted.kind': 'It is a',
+  'unlisted.kind.keyboard': 'Keyboard',
+  'unlisted.kind.mouse': 'Mouse',
+  'unlisted.closes':
+    'Shark Deck closes once the tool is up, so only the official software talks to the device.',
+  'unlisted.start': 'Start the recording',
 } as const;
 
 export type MessageKey = keyof typeof en;

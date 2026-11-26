@@ -144,13 +144,13 @@ describe('BackgroundLayer', () => {
 
   it('keeps moving when the palette colours are switched off', async () => {
     // Reported: "when I disable color palette, it stopped animating".
-    useStore.setState({ settings: settings({ background: 'rain' }) });
+    useStore.setState({ settings: settings({ background: 'water' }) });
     const c = counter();
     render(<BackgroundLayer makeSink={c.make} />);
     await wait(120);
     act(() =>
       useStore.setState({
-        settings: settings({ background: 'rain', backgroundPalette: false }),
+        settings: settings({ background: 'water', backgroundPalette: false }),
       }),
     );
     await wait(50);
@@ -179,10 +179,10 @@ describe('BackgroundLayer', () => {
     const { container } = render(<BackgroundLayer makeSink={c.make} />);
     await wait(50);
     act(() =>
-      useStore.setState({ settings: settings({ background: 'fire', backgroundAnimate: false }) }),
+      useStore.setState({ settings: settings({ background: 'aurora', backgroundAnimate: false }) }),
     );
     await wait(50);
-    expect(c.frames.at(-1)!.def.id).toBe('fire');
+    expect(c.frames.at(-1)!.def.id).toBe('aurora');
     expect(c.make).toHaveBeenCalledTimes(1);
     act(() => useStore.setState({ settings: settings({ background: 'none' }) }));
     expect(c.disposed()).toBe(1);

@@ -107,6 +107,22 @@ const MM_PAGE = {
   SWITCH_TYPE: 252, // 0xfc
 } as const;
 
+/**
+ * From this many keys on one page, a batch writes the whole page instead of
+ * key by key, as Driver v4 does for a change to the whole board:
+ * `65 <page> 01 <chunk> <commit> 00 00 ck` and 56 bytes, every page of the
+ * batch in turn, the commit on the batch's last frame. `verified-capture`:
+ * an R98 HE's recording (2026-11-22, its steps setting every key's
+ * actuation and dead zones). Five frames for a two-byte page and three for a
+ * one-byte one, where resetting eighty keys sent up to eight frames a key.
+ */
+const PAGE_WRITE_MIN_KEYS = 12;
+/** Data bytes in one chunk of a page write (frame bytes 9..64). */
+const PAGE_CHUNK_BYTES = 56;
+/** The pages Driver v4 writes whole. Not page 8 (DKS flags, written per key)
+ *  nor the switch types, which have their own write. */
+const PAGE_WRITABLE: ReadonlySet<number> = new Set([0, 1, 2, 3, 4, 5, 6, 7, 9, 251]);
+
 /** how many 64-byte read chunks the vendor requests per page (default 4) */
 const pageChunks = (page: number): number => KB_MAGNETISM_PAGE_CHUNKS[page] ?? 4;
 
@@ -205,6 +221,9 @@ const isSnapNum = (n: number): boolean => n >= 7 && n <= 10;
 /** Where the zone bindings this board has been given are kept — see
  *  `readKeyZoneBindings`. */
 const ZONE_BINDINGS_STATE_KEY = 'zoneBindings';
+/** Where one profile's record is kept: profile 1 under the name it always had. */
+const zoneStateKey = (profile: number): string =>
+  profile === 0 ? ZONE_BINDINGS_STATE_KEY : `${ZONE_BINDINGS_STATE_KEY}.${profile + 1}`;
 /** The same record, as a backup block. */
 const ZONE_BINDINGS_BLOCK = 'zone_bindings';
 
@@ -733,7 +752,8 @@ export class CompxHeKeyboard extends CompxKeyboard {
         error: "a binding in zone 0 is a mod-tap hold, and needs the key's own binding in zone 1",
       };
     }
-    const record = await this.zoneRecord();
+    const profile = await this.keyProfile();
+    const record = await this.zoneRecord(profile);
     const sends: Array<{ zone: number; quad: KeyQuad }> = [];
     const cur = record[slot];
     if (zones[0] === null && isModTapEntry(cur)) {
@@ -749,22 +769,23 @@ export class CompxHeKeyboard extends CompxKeyboard {
       sends.push({ zone, quad: q });
     }
     if (!sends.length) return { ok: false, verified: 'unverified', error: 'no zone to write' };
-    const r = await this.sendZoneFrames(slot, sends);
+    const r = await this.sendZoneFrames(slot, sends, profile);
     if (!r.ok) return r;
-    await this.saveZoneRecord({ ...record, [slot]: [...zones] });
+    await this.saveZoneRecord({ ...record, [slot]: [...zones] }, profile);
     return r;
   }
 
-  /** One slot's zone frames, commit on the last, paced like every write here. */
+  /** One slot's zone frames on one profile, commit on the last, paced like every write here. */
   private async sendZoneFrames(
     slot: number,
     sends: Array<{ zone: number; quad: KeyQuad }>,
+    profile: number,
   ): Promise<WriteResult> {
     const frames: string[] = [];
     for (const [i, { zone, quad }] of sends.entries()) {
       const tx = this.frame(
         KB_CMD.SET_KEYMATRIX,
-        keymatrixArgs(slot, quad, { commit: i === sends.length - 1, zone }),
+        keymatrixArgs(slot, quad, { commit: i === sends.length - 1, zone, profile }),
       );
       try {
         await this.ch.write(tx);
@@ -784,7 +805,7 @@ export class CompxHeKeyboard extends CompxKeyboard {
    * has shown. Empty when nothing has been written from this computer.
    */
   override async readKeyZoneBindings(): Promise<KeyZoneBindings | null> {
-    return this.zoneRecord();
+    return this.zoneRecord(await this.keyProfile());
   }
 
   /**
@@ -792,20 +813,21 @@ export class CompxHeKeyboard extends CompxKeyboard {
    * this driver with a bare `state: {}`, and a key binding read must not fail
    * because there is nowhere to keep a record.
    */
-  private async zoneRecord(): Promise<KeyZoneBindings> {
+  /** What was written on one profile (from 0): each keeps its own key matrix. */
+  private async zoneRecord(profile: number): Promise<KeyZoneBindings> {
     try {
       if (typeof this.state?.get !== 'function') return {};
-      const kept = await this.state.get(ZONE_BINDINGS_STATE_KEY);
+      const kept = await this.state.get(zoneStateKey(profile));
       return kept && typeof kept === 'object' ? { ...(kept as KeyZoneBindings) } : {};
     } catch {
       return {};
     }
   }
 
-  private async saveZoneRecord(record: KeyZoneBindings): Promise<void> {
+  private async saveZoneRecord(record: KeyZoneBindings, profile: number): Promise<void> {
     try {
       if (typeof this.state?.set === 'function') {
-        await this.state.set(ZONE_BINDINGS_STATE_KEY, record);
+        await this.state.set(zoneStateKey(profile), record);
       }
     } catch {
       /* a record that cannot be kept is one this computer does not have */
@@ -821,30 +843,31 @@ export class CompxHeKeyboard extends CompxKeyboard {
    * writes the same verified frame with the zone byte set, and keeps the
    * record in step.
    */
-  override async setKeyRemap(
+  protected override async setKeyRemapOn(
     layer: 'base' | 'fn',
     index: number,
     action: string,
+    profile: number,
   ): Promise<WriteResult> {
     if (layer === 'base') {
       const slot = index & 0xff;
-      const record = await this.zoneRecord();
+      const record = await this.zoneRecord(profile);
       const entry = record[slot];
       const quad = quadFor(action);
       if (quad && isModTapEntry(entry)) {
         const r = await this.writeVerified(
           KB_CMD.SET_KEYMATRIX,
-          keymatrixArgs(slot, quad, { commit: true, zone: MT_TAP_ZONE }),
+          keymatrixArgs(slot, quad, { commit: true, zone: MT_TAP_ZONE, profile }),
         );
         if (r.ok) {
           const next = [...entry!];
           next[MT_TAP_ZONE] = action;
-          await this.saveZoneRecord({ ...record, [slot]: next });
+          await this.saveZoneRecord({ ...record, [slot]: next }, profile);
         }
         return r;
       }
     }
-    return super.setKeyRemap(layer, index, action);
+    return super.setKeyRemapOn(layer, index, action, profile);
   }
 
   /**
@@ -853,10 +876,13 @@ export class CompxHeKeyboard extends CompxKeyboard {
    * board's zone 0 still holds the hold the record says — a record the board
    * has moved on from (a vendor-app edit, a factory reset) is not believed.
    */
-  override async readKeyBindings(layer: 'base' | 'fn'): Promise<Record<number, KeyBinding> | null> {
-    const out = await super.readKeyBindings(layer);
+  protected override async readKeyBindingsOn(
+    layer: 'base' | 'fn',
+    profile: number,
+  ): Promise<Record<number, KeyBinding> | null> {
+    const out = await super.readKeyBindingsOn(layer, profile);
     if (!out || layer !== 'base') return out;
-    const record = await this.zoneRecord();
+    const record = await this.zoneRecord(profile);
     for (const [slotStr, entry] of Object.entries(record)) {
       if (!isModTapEntry(entry)) continue;
       const slot = Number(slotStr);
@@ -872,7 +898,7 @@ export class CompxHeKeyboard extends CompxKeyboard {
   /** A factory reset puts every binding back, so the record is history. */
   override async restoreDefaults(): Promise<WriteResult> {
     const r = await super.restoreDefaults();
-    if (r.ok) await this.saveZoneRecord({});
+    if (r.ok) for (let p = 0; p < this.profileCount; p++) await this.saveZoneRecord({}, p);
     // A factory reset rewrites the keymap the key list came from.
     this._magKeys = null;
     return r;
@@ -1222,10 +1248,45 @@ export class CompxHeKeyboard extends CompxKeyboard {
   private async sendMagWrites(
     writes: Array<{ page: number; slot: number; value: number | number[] }>,
   ): Promise<WriteResult> {
+    // Page by page, in the order the pages first come: a page with many keys
+    // goes whole (see PAGE_WRITE_MIN_KEYS), the rest key by key.
+    const order: number[] = [];
+    const byPage = new Map<number, Array<{ slot: number; value: number | number[] }>>();
+    for (const w of writes) {
+      if (!byPage.has(w.page)) {
+        byPage.set(w.page, []);
+        order.push(w.page);
+      }
+      byPage.get(w.page)!.push({ slot: w.slot, value: w.value });
+    }
+    type Step =
+      | { page: number; chunk: number; bytes: number[] }
+      | { page: number; slot: number; value: number | number[] };
+    const steps: Step[] = [];
+    for (const page of order) {
+      const ws = byPage.get(page)!;
+      const many = new Set(ws.map((w) => w.slot)).size >= PAGE_WRITE_MIN_KEYS;
+      const whole = many && PAGE_WRITABLE.has(page) ? await this.pageWith(page, ws) : null;
+      if (whole) {
+        for (let c = 0; c * PAGE_CHUNK_BYTES < whole.length; c++) {
+          steps.push({
+            page,
+            chunk: c,
+            bytes: whole.slice(c * PAGE_CHUNK_BYTES, (c + 1) * PAGE_CHUNK_BYTES),
+          });
+        }
+      } else {
+        for (const w of ws) steps.push({ page, ...w });
+      }
+    }
     const frames: string[] = [];
     try {
-      for (const [i, w] of writes.entries()) {
-        const r = await this.writeMagKey(w.page, w.slot, w.value, i === writes.length - 1);
+      for (const [i, st] of steps.entries()) {
+        const last = i === steps.length - 1;
+        const r =
+          'chunk' in st
+            ? await this.writeMagChunk(st.page, st.chunk, st.bytes, last)
+            : await this.writeMagKey(st.page, st.slot, st.value, last);
         frames.push(...(r.frames ?? []));
         if (!r.ok) throw new Error(r.error || 'write failed');
         // Pace: this firmware wedges its endpoint under back-to-back frames.
@@ -1235,6 +1296,60 @@ export class CompxHeKeyboard extends CompxKeyboard {
       return { ok: false, verified: 'unverified', error: String(e), frames };
     }
     return { ok: true, verified: 'unverified', frames };
+  }
+
+  /**
+   * A whole page as the board holds it, read now, with `writes` put in: every
+   * slot's value, little-endian, `magWidth(page)` bytes each. Null when the
+   * read fails: the keys then go one by one, rather than a page built on a
+   * guess rewriting every key of the board.
+   */
+  private async pageWith(
+    page: number,
+    writes: Array<{ slot: number; value: number | number[] }>,
+  ): Promise<number[] | null> {
+    const width = magWidth(page);
+    const cur = await this.readMagnetismPage(page).catch(() => null);
+    if (!cur || cur.length < MATRIX_SLOTS) return null;
+    const bytes: number[] = [];
+    for (const v of cur) for (let b = 0; b < width; b++) bytes.push((v >>> (8 * b)) & 0xff);
+    for (const w of writes) {
+      const vb = Array.isArray(w.value)
+        ? w.value.slice(0, width)
+        : Array.from({ length: width }, (_, i) => ((w.value as number) >>> (8 * i)) & 0xff);
+      vb.forEach((x, i) => (bytes[w.slot * width + i] = x & 0xff));
+    }
+    return bytes;
+  }
+
+  /**
+   * One chunk of a whole-page write: `[page, 1, chunk, commit, 0, 0]` and up
+   * to 56 bytes (the last chunk padded with zeros), as Driver v4 sends it (see
+   * PAGE_WRITE_MIN_KEYS). The seam a test records at, like `writeMagKey`.
+   */
+  protected async writeMagChunk(
+    page: number,
+    chunk: number,
+    bytes: number[],
+    commit: boolean,
+  ): Promise<WriteResult> {
+    const data = [...bytes, ...new Array(Math.max(0, PAGE_CHUNK_BYTES - bytes.length)).fill(0)];
+    const tx = this.frame(KB_CMD.SET_MULTI_MAGNETISM, [
+      page & 0xff,
+      0x01,
+      chunk & 0xff,
+      commit ? 1 : 0,
+      0,
+      0,
+      ...data.slice(0, PAGE_CHUNK_BYTES).map((b) => b & 0xff),
+    ]);
+    try {
+      await this.ch.write(tx);
+      if (commit) this.savingFor(MAGNETISM_SAVE_MS);
+      return { ok: true, verified: 'unverified', frames: [toHex(tx)] };
+    } catch (e) {
+      return { ok: false, verified: 'unverified', error: String(e), frames: [toHex(tx)] };
+    }
   }
 
   /**
@@ -1299,7 +1414,8 @@ export class CompxHeKeyboard extends CompxKeyboard {
     if (!layout) return ok;
     const leaving = keys.filter((k) => k.mode !== 'mt');
     if (!leaving.length) return ok;
-    const record = await this.zoneRecord();
+    const profile = await this.keyProfile();
+    const record = await this.zoneRecord(profile);
     const frames: string[] = [];
     let changed = false;
     for (const k of leaving) {
@@ -1309,13 +1425,13 @@ export class CompxHeKeyboard extends CompxKeyboard {
       if (!isModTapEntry(entry)) continue;
       const quad = quadFor(entry![MT_TAP_ZONE]!);
       if (!quad) continue;
-      const r = await this.sendZoneFrames(slot, [{ zone: 0, quad }]);
+      const r = await this.sendZoneFrames(slot, [{ zone: 0, quad }], profile);
       frames.push(...(r.frames ?? []));
       if (!r.ok) return { ...r, frames };
       delete record[slot];
       changed = true;
     }
-    if (changed) await this.saveZoneRecord(record);
+    if (changed) await this.saveZoneRecord(record, profile);
     return { ...ok, frames };
   }
 
@@ -1574,7 +1690,10 @@ export class CompxHeKeyboard extends CompxKeyboard {
     // back in zone 0 first — the base restore below writes zone 0 too, but
     // only for plain keys, and the modes loop further down only writes what
     // the backup holds. Its mode byte is forced below for the same reason.
-    const local = await this.zoneRecord();
+    // The pages and this record are the profile the board is on, as the
+    // backup's were the one it was on then.
+    const profile = await this.keyProfile();
+    const local = await this.zoneRecord(profile);
     const leaving: number[] = [];
     for (const [slotStr, entry] of Object.entries(local)) {
       const slot = Number(slotStr);
@@ -1582,7 +1701,7 @@ export class CompxHeKeyboard extends CompxKeyboard {
       if (zonedSlots.includes(slot) && isModTapEntry(entryFor(slot))) continue;
       const own = quadFor(entry[MT_TAP_ZONE]!);
       if (!own) continue;
-      results.push(await this.sendZoneFrames(slot, [{ zone: 0, quad: own }]));
+      results.push(await this.sendZoneFrames(slot, [{ zone: 0, quad: own }], profile));
       leaving.push(slot);
     }
     // The record becomes the backup's — BEFORE the base restore, whose remaps
@@ -1592,7 +1711,7 @@ export class CompxHeKeyboard extends CompxKeyboard {
       const e = entryFor(slot);
       if (e) next[slot] = e;
     }
-    await this.saveZoneRecord(next);
+    await this.saveZoneRecord(next, profile);
 
     const baseResult = await super.restoreFromBackup(blocks).catch(() => null);
     // `notSupported` comes back as `ok:false` — only fold in a real outcome.

@@ -193,11 +193,14 @@ export function SwitchTravelStage({
   onRtReleaseChange,
   ranges = KB_TRAVEL_RANGE,
   showTopDeadZone = true,
+  showRtTracks = true,
 }: {
   /** this board's own limits (`travelRangesFor(device.ui.magnetic)`) */
   ranges?: typeof KB_TRAVEL_RANGE;
   /** the top dead zone (page 251) exists on this board */
   showTopDeadZone?: boolean;
+  /** Draw the rapid-trigger tracks; off where the panel has them as rows. */
+  showRtTracks?: boolean;
   actuationMm: number;
   releaseMm?: number;
   rapidTrigger?: boolean;
@@ -365,7 +368,7 @@ export function SwitchTravelStage({
           />
         </Col>
 
-        {rapidTrigger && !rtSplit && (
+        {showRtTracks && rapidTrigger && !rtSplit && (
           <Col>
             {rtTrack(
               t('act.rt.sensitivity'),
@@ -382,7 +385,7 @@ export function SwitchTravelStage({
             )}
           </Col>
         )}
-        {rapidTrigger && rtSplit && (
+        {showRtTracks && rapidTrigger && rtSplit && (
           <>
             <Col>
               {rtTrack(

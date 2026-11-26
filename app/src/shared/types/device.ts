@@ -355,6 +355,9 @@ export interface ButtonMapEntry {
   /** true if this button cannot be reassigned (e.g. left click). Falls back
    *  to "index === 0" when absent, for a model with no explicit buttonMap. */
   locked?: boolean;
+  /** The "Button" action's value this button gives from the factory (Left
+   *  click `0x0100`, Forward `0x1000`…): what that action starts on here. */
+  click?: number;
   /** This button isn't visible in the top-down product photo (e.g. a DPI
    *  switch on the underside) — its badge is drawn at a best-guess spot on
    *  the shell, styled dashed/dimmed rather than solid. */

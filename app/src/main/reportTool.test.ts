@@ -9,7 +9,7 @@ vi.mock('node-hid', () => ({
 }));
 vi.mock('./devices/manager', () => ({ deviceManager: { getDescriptor: () => null } }));
 
-const { previewArgs, reportToolArgs, unixToolCommand, LINUX_TERMINALS } =
+const { previewArgs, reportToolArgs, unixToolCommand, LINUX_TERMINALS, usbHidSummaries } =
   await import('./reportTool');
 const { supportPlan } = await import('./devices/support');
 const { bekenDescriptorFor, bekenMouseRoster } = await import('./devices/catalog/beken-mice');
@@ -179,5 +179,40 @@ describe('the steps the catalogue asks for', () => {
     for (const label of missing) expect(media, label).toContain(label);
     // Its owner recorded them all since (11-23, 11-24): it asks for nothing now.
     expect(supportPlan(X8_PRO)).toBeUndefined();
+  });
+});
+
+// A device Shark Deck does not list (Settings, "Missing a device?"): what is
+// plugged in, one entry per USB id, the keyboards and mice first.
+describe('usbHidSummaries', () => {
+  const c = (vid: number, pid: number, usagePage: number, usage: number, product?: string) => ({
+    path: `${vid}:${pid}:${usagePage}:${usage}`,
+    vendorId: vid,
+    productId: pid,
+    usagePage,
+    usage,
+    interface: 0,
+    product,
+  });
+  it('gives one entry per USB id, a keyboard collection deciding, the listed ones last', () => {
+    const out = usbHidSummaries(
+      [
+        // The X66's owner: a board Shark Deck has no id for (made-up ids).
+        c(0x1234, 0x0066, 1, 2, 'X66'),
+        c(0x1234, 0x0066, 1, 6, 'X66'),
+        c(0x1234, 0x0066, 0xff00, 1),
+        // A board Shark Deck shows.
+        c(0x3151, 0x5029, 1, 6, 'R98HE'),
+        // A headset: neither.
+        c(0x1038, 0x12ad, 12, 1, 'Arctis 7'),
+        c(0, 0, 1, 6),
+      ],
+      (vid) => vid === 0x3151,
+    );
+    expect(out.map((d) => [d.product, d.kind, d.listed])).toEqual([
+      ['X66', 'keyboard', false],
+      ['Arctis 7', 'other', false],
+      ['R98HE', 'keyboard', true],
+    ]);
   });
 });

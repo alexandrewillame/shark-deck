@@ -49,6 +49,7 @@
     "dump:kb": "node scripts/dump-keyboard-state.mjs",
     "dump:mouse": "node scripts/dump-mouse-state.mjs",
     "extract:qmk": "node scripts/extract-qmktop-protocol.mjs",
+    "extract:registry": "vite-node --config vitest.config.ts scripts/extract-keyboard-registry.ts",
     "import:kb": "vite-node --config vitest.config.ts scripts/import-keyboard-registry.ts",
     "lineup": "vite-node --config vitest.config.ts scripts/gen-lineup.ts",
     "device-report": "vite-node --config vitest.config.ts scripts/read-device-report.ts",

@@ -446,3 +446,48 @@
 .modal-wide .cmp-error {
   color: var(--red);
 }
+
+/* "Missing a device?" (components/UnlistedDeviceDialog.tsx): the USB devices
+   plugged in, one per row, a radio each; the list scrolls inside the box. */
+.modal.modal-unlisted {
+  width: min(560px, 92vw);
+}
+.unlisted-list {
+  display: grid;
+  gap: 4px;
+  max-height: min(320px, 46vh);
+  overflow: auto;
+  margin: 4px 0 10px;
+}
+.unlisted-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.unlisted-item.is-picked {
+  border-color: rgba(var(--accent-rgb), 0.8);
+  background: rgba(var(--accent-rgb), 0.08);
+}
+.unlisted-item input {
+  margin-top: 3px;
+}
+.unlisted-name {
+  display: grid;
+  gap: 1px;
+}
+.unlisted-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.unlisted-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

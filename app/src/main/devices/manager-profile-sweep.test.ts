@@ -193,17 +193,18 @@ describe('sweeping every onboard profile', () => {
     expect(emitted).toEqual([]);
   });
 
-  it('compares and copies only actuation on a keyboard', async () => {
+  it('compares and copies only the base layer and actuation on a keyboard', async () => {
     // Everything else a keyboard reads is one register whatever the slot (see
     // profileFieldsFor), so comparing it would show the same value against
-    // itself and copying it would rewrite it with its own contents.
+    // itself and copying it would rewrite it with its own contents. The key
+    // matrix names its profile, so the base layer is the slot's.
     const kb = mgr
       .list()
       .find((x) => x.kind === 'keyboard' && x.capabilities.includes('magneticSwitches'));
     if (!kb) throw new Error('no simulated Hall-effect keyboard');
     const driver = mgr.getDriver(kb.id)!;
 
-    expect((await mgr.snapshotProfiles(kb.id)).fields).toEqual(['magnetic']);
+    expect((await mgr.snapshotProfiles(kb.id)).fields).toEqual(['keyRemapBase', 'magnetic']);
 
     const poll = vi.spyOn(driver, 'setPollRate');
     const light = vi.spyOn(driver, 'setLighting');

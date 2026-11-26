@@ -236,22 +236,23 @@ export const PROFILE_FIELDS: readonly ProfileField[] = [
 /**
  * The fields that actually follow the onboard slot on a device of this kind.
  *
- * On a keyboard that is the actuation settings only. Every other keyboard
- * read is slot-blind on the wire: the lighting frames (`SET_LEDPARAM`,
- * `SET_SLEDPARAM`, `SET_USERPIC`) carry no slot byte at all, the key matrix
- * is read and written at a fixed layer, the Fn layer follows `KBOPTION`
- * rather than the slot, there is one onboard macro slot, and poll rate and
- * debounce are single registers. Only the magnetism pages change when
- * `SET_PROFILE` does — see docs/protocol/keyboard-compx.md, "Profiles and
- * what is slot-scoped". So comparing or copying anything else between slots
- * would show differences that are not there and write settings that do not
- * move.
+ * On a keyboard that is the base layer and the actuation settings. The key
+ * matrix names its profile (the first byte of `GET_KEYMATRIX` and
+ * `SET_KEYMATRIX`: Driver v4 reads an R98 HE's two, and they differ where its
+ * owner remapped one), and the magnetism pages change when `SET_PROFILE`
+ * does. Every other keyboard read is slot-blind on the wire: the lighting
+ * frames (`SET_LEDPARAM`, `SET_SLEDPARAM`, `SET_USERPIC`) carry no slot byte
+ * at all, the Fn layer follows `KBOPTION` rather than the slot, the macros
+ * are the board's, and poll rate and debounce are single registers — see
+ * docs/protocol/keyboard-compx.md, "Profiles and what is slot-scoped". So
+ * comparing or copying anything else between slots would show differences
+ * that are not there and write settings that do not move.
  *
  * Mice keep every field: a mouse's onboard slot does carry its DPI stages,
  * buttons, lighting and the rest.
  */
 export function profileFieldsFor(kind: DeviceKind): readonly ProfileField[] {
-  return kind === 'keyboard' ? ['magnetic'] : PROFILE_FIELDS;
+  return kind === 'keyboard' ? ['keyRemapBase', 'magnetic'] : PROFILE_FIELDS;
 }
 
 /** What one slot holds. `null` where the device has no read for that field. */

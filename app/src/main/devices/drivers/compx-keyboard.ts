@@ -488,22 +488,35 @@ export function quadFor(action: string): KeyQuad | null {
 }
 
 /**
- * `SET_KEYMATRIX` args for one zone of one slot: `[layer, slot, pad, pad,
+ * `SET_KEYMATRIX` args for one zone of one slot: `[profile, slot, pad, pad,
  * commit, zone]` (frame bytes 2..7, checksum at 8), then the quad at frame
  * bytes 9..12, stored verbatim.
  *
- * Layer 0 — the layer the read uses; verified on an R85HE, where a write to
- * slot 9 at layer 0 changed that slot and no other. `zone` is 0 for a key's
+ * `profile` counts from 0, as `GET_KEYMATRIX`'s first byte does: each profile
+ * keeps its own base layer (`CompxKeyboard.keyProfile`). A write to slot 9 on
+ * profile 0 changed that slot and no other (an R85HE). `zone` is 0 for a key's
  * ordinary binding; a mod-tap or DKS key carries one binding per zone, each a
  * frame of its own with `commit` on the last (the vendor's `setDKSKeySimple`).
  */
 export function keymatrixArgs(
   slot: number,
   quad: KeyQuad,
-  opts: { commit: boolean; zone: number },
+  opts: { commit: boolean; zone: number; profile?: number },
 ): number[] {
-  return [0x00, slot & 0xff, 0, 0, opts.commit ? 1 : 0, opts.zone & 0xff, ...quad];
+  return [
+    (opts.profile ?? 0) & 0xff,
+    slot & 0xff,
+    0,
+    0,
+    opts.commit ? 1 : 0,
+    opts.zone & 0xff,
+    ...quad,
+  ];
 }
+
+/** A backup block holding one profile's base layer: profile 1 keeps the old name. */
+export const baseLayerBlock = (profile: number): string =>
+  profile === 0 ? 'keymatrix_base' : `keymatrix_base_${profile + 1}`;
 
 export class CompxKeyboard extends Driver {
   // Annotated `number`, not left to infer the literal 30, so a subclass (or a
@@ -512,6 +525,31 @@ export class CompxKeyboard extends Driver {
 
   /** When the board will have saved the last committed write (see KEYMATRIX_SAVE_MS). */
   private savedAt = 0;
+  /** The board's profile as last read or switched to, from 0 (see `keyProfile`). */
+  private profileIdx: number | null = null;
+
+  /**
+   * The profile the key matrix is read and written on, counted from 0: the
+   * first byte of `GET_KEYMATRIX` and `SET_KEYMATRIX`. Each profile keeps its
+   * own base layer. Driver v4 reads both of an R98 HE's (`8a 00 ff …` and
+   * `8a 01 ff …`), and they differ exactly where its owner swapped Insert and
+   * Delete on one of them (the 2026-11-22 recording); Shark Deck read and
+   * wrote profile 0 whatever the board was on, so a board switched to its
+   * second profile showed the first one's remaps. Written on an R85 HE
+   * (2026-11-26): F12 sent to profile 2 changed profile 2's F12 alone, of
+   * its four, whichever profile the board was on. The Fn layer is not the
+   * profile's (`GET_FN` names the OS and KBOPTION's Fn profile instead).
+   * The last answer to the liveness ping or a switch, else asked once.
+   */
+  protected async keyProfile(): Promise<number> {
+    if (this.profileIdx === null) await this.getActiveProfile().catch(() => null);
+    return this.profileIdx ?? 0;
+  }
+
+  /** How many onboard profiles keep a base layer of their own. */
+  protected get profileCount(): number {
+    return Math.max(1, Math.min(8, this.d.spec?.profileCount ?? 1));
+  }
   /** A committed write was just sent: the board is saving for `ms`. */
   protected savingFor(ms: number): void {
     this.savedAt = Math.max(this.savedAt, Date.now() + ms);
@@ -710,7 +748,9 @@ export class CompxKeyboard extends Driver {
     // ported-from-vendor` — confirm the exact offset in CAPTURE-KEYBOARD.md.
     const r = await this.ch.request(this.frame(KB_CMD.GET_PROFILE), KB_CMD.GET_PROFILE, 3, 6);
     if (!r) return null;
-    return (r[feaPayloadStart(r, KB_CMD.GET_PROFILE)] ?? 0) + 1;
+    const p = (r[feaPayloadStart(r, KB_CMD.GET_PROFILE)] ?? 0) + 1;
+    this.profileIdx = p - 1;
+    return p;
   }
 
   /**
@@ -985,10 +1025,12 @@ export class CompxKeyboard extends Driver {
 
   // -- writes (ported frame layout, inferred checksum) --------------
   override async setActiveProfile(slot: number): Promise<WriteResult> {
-    return this.writeVerified(KB_CMD.SET_PROFILE, [slot - 1], {
+    const r = await this.writeVerified(KB_CMD.SET_PROFILE, [slot - 1], {
       getCommand: KB_CMD.GET_PROFILE,
       compare: (p) => (p[0] ?? -1) === slot - 1,
     });
+    if (r.ok) this.profileIdx = slot - 1;
+    return r;
   }
 
   override async setPollRate(hz: number): Promise<WriteResult> {
@@ -1304,6 +1346,16 @@ export class CompxKeyboard extends Driver {
     index: number,
     action: string,
   ): Promise<WriteResult> {
+    return this.setKeyRemapOn(layer, index, action, layer === 'base' ? await this.keyProfile() : 0);
+  }
+
+  /** `setKeyRemap` on one profile's base layer (counted from 0; the Fn layer has none). */
+  protected async setKeyRemapOn(
+    layer: 'base' | 'fn',
+    index: number,
+    action: string,
+    profile: number,
+  ): Promise<WriteResult> {
     // A malformed action used to resolve to usage 0, which is not "no change"
     // — it is "this key now does nothing". A typo and a deliberate disable
     // were indistinguishable, and the only outcome a remap must never produce
@@ -1327,9 +1379,9 @@ export class CompxKeyboard extends Driver {
     // layout entries. Writing `[0, 5, 0, 0]` stored exactly that and the app
     // then read the code back as 0 — `decodeQuad` takes raw[2].
     //
-    // Layer is 0, matching the layer the read uses; a no-op write at layer 0
-    // round-tripped, and a real remap at layer 0 changed slot 9 and nothing
-    // else.
+    // The profile byte is the one the read uses (`keyProfile`); a no-op write
+    // on profile 0 round-tripped, and a real remap there changed slot 9 and
+    // nothing else (an R85HE).
     //
     // NO `getCommand` HERE, deliberately.
     //
@@ -1353,7 +1405,7 @@ export class CompxKeyboard extends Driver {
     // wire exactly as given, and a plain usage still produces `[0, hi, lo, 0]`.
     const r = await this.writeVerified(
       KB_CMD.SET_KEYMATRIX,
-      keymatrixArgs(slot, quad, { commit: true, zone: 0 }),
+      keymatrixArgs(slot, quad, { commit: true, zone: 0, profile }),
     );
     // That re-read waits for the board to save it (KEYMATRIX_SAVE_MS).
     this.savingFor(KEYMATRIX_SAVE_MS);
@@ -1378,12 +1430,25 @@ export class CompxKeyboard extends Driver {
    * actually answer.
    */
   override async readKeyBindings(layer: 'base' | 'fn'): Promise<Record<number, KeyBinding> | null> {
+    return this.readKeyBindingsOn(layer, layer === 'base' ? await this.keyProfile() : 0);
+  }
+
+  /** `readKeyBindings` of one profile's base layer (counted from 0; the Fn layer has none). */
+  protected async readKeyBindingsOn(
+    layer: 'base' | 'fn',
+    profile: number,
+  ): Promise<Record<number, KeyBinding> | null> {
     // GET_KEYMATRIX and GET_FN take DIFFERENT argument layouts — see
     // readMatrixChunks. Getting that wrong is not a soft failure: the wrong
     // shape hangs the MCU on the very first frame.
     const bytes =
       layer === 'base'
-        ? await this.readMatrixChunks(KB_CMD.GET_KEYMATRIX, (chunk) => [0x00, 0xff, chunk, 0x00])
+        ? await this.readMatrixChunks(KB_CMD.GET_KEYMATRIX, (chunk) => [
+            profile & 0xff,
+            0xff,
+            chunk,
+            0x00,
+          ])
         : await this.readMatrixChunks(KB_CMD.GET_FN, await this.fnArgs());
     if (!bytes) return null;
     const out: Record<number, KeyBinding> = {};
@@ -1688,10 +1753,14 @@ export class CompxKeyboard extends Driver {
 
   override async backup(): Promise<Record<string, string>> {
     const out = await super.backup();
-    for (const layer of ['base', 'fn'] as const) {
-      const bindings = await this.readKeyBindings(layer);
-      if (bindings) out[`keymatrix_${layer}`] = JSON.stringify(bindings);
+    // Every profile's base layer, each its own (see `keyProfile`); the Fn
+    // layer is shared.
+    for (let p = 0; p < this.profileCount; p++) {
+      const bindings = await this.readKeyBindingsOn('base', p);
+      if (bindings) out[baseLayerBlock(p)] = JSON.stringify(bindings);
     }
+    const fn = await this.readKeyBindings('fn');
+    if (fn) out.keymatrix_fn = JSON.stringify(fn);
     // Paced like the magnetism sweep in CompxHeKeyboard.backup(), for the same
     // endpoint-lockup reason.
     await delay(this.backupPaceMs);
@@ -1714,8 +1783,12 @@ export class CompxKeyboard extends Driver {
    */
   override async restoreFromBackup(blocks: Record<string, string>): Promise<WriteResult> {
     const results: WriteResult[] = [];
-    for (const layer of ['base', 'fn'] as const) {
-      const raw = blocks[`keymatrix_${layer}`];
+    // Each profile's base layer back on its own profile, then the Fn layer.
+    const layers: Array<['base' | 'fn', number, string]> = [];
+    for (let p = 0; p < this.profileCount; p++) layers.push(['base', p, baseLayerBlock(p)]);
+    layers.push(['fn', 0, 'keymatrix_fn']);
+    for (const [layer, profile, block] of layers) {
+      const raw = blocks[block];
       if (!raw) continue;
       let table: Record<string, { kind?: string; code?: string | null; locked?: boolean }>;
       try {
@@ -1728,7 +1801,7 @@ export class CompxKeyboard extends Driver {
         // A firmware-locked Fn slot, an unused slot, or anything that isn't a
         // plain key binding has no safe SET here.
         if (!Number.isInteger(slot) || b.locked || b.kind !== 'key' || !b.code) continue;
-        results.push(await this.setKeyRemap(layer, slot, b.code));
+        results.push(await this.setKeyRemapOn(layer, slot, b.code, profile));
       }
     }
     if (results.length === 0) return this.notSupported('Backup restore');

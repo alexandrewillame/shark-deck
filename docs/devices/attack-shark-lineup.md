@@ -1,6 +1,7 @@
 # Supported devices
 
-[Mice](#mice) · [Keyboards](#keyboards) · [Not supported](#not-supported) ·
+[Mice](#mice) · [Keyboards](#keyboards) · [Waiting for a recording](#waiting-for-a-recording) ·
+[Not supported](#not-supported) ·
 [Missing a device?](#missing-a-device) · [How devices are recognised](#how-devices-are-recognised)
 
 Every Attack Shark mouse and keyboard we know of, and how well Shark Deck
@@ -63,75 +64,75 @@ One row per firmware model id: a name can cover several versions (wired or wirel
 | 🟡 Should work | Beat75 | 2633 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | K75 RGB | 1343 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | K75 RGB | 1679 | mechanical | — |  |
-| 🟡 Should work | K85 | 2552 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | K85 | 3334 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | K85 PRO HE | 2978 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | K85 | 2552 | Hall effect | — |  |
+| 🟡 Should work | K85 | 3334 | Hall effect | — |  |
+| 🟡 Should work | K85 PRO HE | 2978 | Hall effect | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | K86 | 1168 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | K86 | 2730 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | K86 | 4094 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | M86 | 4012 | mechanical | 2.4 GHz, Bluetooth |  |
-| 🟡 Should work | R68 HE | 3650 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | R82 HE | 2844 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | R82 PRO HE | 2798 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R68 HE | 3650 | Hall effect | — |  |
+| 🟡 Should work | R82 HE | 2844 | Hall effect | — |  |
+| 🟡 Should work | R82 PRO HE | 2798 | Hall effect | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | R85 Ultra | 2968 | Hall effect | 2.4 GHz, Bluetooth |  |
-| 🟡 Should work | R86 HE | 3909 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | R86 HE | 3973 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R86 HE | 3909 | Hall effect | — |  |
+| 🟡 Should work | R86 HE | 3973 | Hall effect | — |  |
 | 🟡 Should work | R86 PRO | 3910 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | R86 PRO HE | 2793 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | R86 PRO HE | 2982 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | R86 Ultra | 3477 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | R96 PRO | 3788 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | R96 Ultra | 3774 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | R98 GT | 3748 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R86 PRO HE | 2793 | Hall effect | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | R86 PRO HE | 2982 | Hall effect | — |  |
+| 🟡 Should work | R86 Ultra | 3477 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | R96 PRO | 3788 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | R96 Ultra | 3774 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | R98 GT | 3748 | Hall effect | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | R98 HE | 3903 | Hall effect | — |  |
-| 🟡 Should work | R98 PRO | 3754 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R98 PRO | 3754 | Hall effect | — |  |
 | 🟡 Should work | R98 PRO HE | 4068 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | R98 Ultra | 3737 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | R98 Ultra | 3737 | Hall effect | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X60 HE | 2929 | Hall effect | — |  |
 | 🟡 Should work | X65 | 2942 | Hall effect | — |  |
 | 🟡 Should work | X65 (UK) | 3379 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X65 HE | 2268 | Hall effect | — |  |
-| 🟡 Should work | X65 PRO HE | 2308 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X65 PRO HE | 2938 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X65 PRO HE | 2308 | Hall effect | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X65 PRO HE | 2938 | Hall effect | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X65 Ultra | 4328 | Hall effect | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X68 HE | 2270 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X68 HE | 2472 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X68 HE | 2902 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X68 HE BR | 3957 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X68 HE | 2472 | Hall effect | — |  |
+| 🟡 Should work | X68 HE | 2902 | Hall effect | — |  |
+| 🟡 Should work | X68 HE BR | 3957 | Hall effect | — |  |
 | 🟡 Should work | X68 HE V2 | 4298 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X68 MAX | 2755 | Hall effect | — |  |
 | 🟡 Should work | X68 MAX | 3796 | Hall effect | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X68 PRO HE | 2370 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X68 PRO HE | 2901 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X68 PRO HE | 2370 | Hall effect | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X68 PRO HE | 2901 | Hall effect | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X68 Ultra | 2650 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X68 Ultra | 2833 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X82 HE | 3086 | Hall effect | — |  |
 | 🟡 Should work | X82 HE | 4327 | Hall effect | — |  |
 | 🟡 Should work | X82 PRO HE | 2356 | Hall effect | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X82 PRO HE | 2935 | Hall effect | 2.4 GHz, Bluetooth |  |
-| 🟡 Should work | X820 PRO | 3221 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X820 SE | 3865 | mechanical | — | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X820 Ultra | 2804 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X820 Ultra | 3461 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X820 Ultra | 3922 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X83 PRO | 3870 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X820 PRO | 3221 | Hall effect | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X820 SE | 3865 | mechanical | — |  |
+| 🟡 Should work | X820 Ultra | 2804 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X820 Ultra | 3461 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X820 Ultra | 3922 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X83 PRO | 3870 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X83 PRO | 3886 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X83 PRO | 3991 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X83 Ultra | 3920 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X85 | 4039 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X85 MAX | 2864 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X85 MAX | 2864 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X85 PRO | 1724 | mechanical | 2.4 GHz, Bluetooth |  |
-| 🟡 Should work | X85 PRO | 2952 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X85 PRO | 3451 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X85 PRO | 3504 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X85 PRO | 2952 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X85 PRO | 3451 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X85 PRO | 3504 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X85 PRO | 4084 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X85 Ultra | 2769 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
 | 🟡 Should work | X86 | 1967 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X86 | 2408 | mechanical | 2.4 GHz, Bluetooth |  |
-| 🟡 Should work | X87 Ultra | 2660 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X87 Ultra | 2852 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X87 Ultra | 3438 | mechanical | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
-| 🟡 Should work | X96 HE | 2792 | Hall effect | 2.4 GHz, Bluetooth | Its key positions are read from the keyboard when it connects. |
+| 🟡 Should work | X87 Ultra | 2660 | Hall effect | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X87 Ultra | 2852 | Hall effect | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X87 Ultra | 3438 | mechanical | 2.4 GHz, Bluetooth |  |
+| 🟡 Should work | X96 HE | 2792 | Hall effect | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X98 HE | 2964 | Hall effect | — |  |
 | 🟡 Should work | X98 PRO | 1996 | mechanical | 2.4 GHz, Bluetooth |  |
 | 🟡 Should work | X98 PRO | 2934 | mechanical | 2.4 GHz, Bluetooth |  |
@@ -143,6 +144,30 @@ One row per firmware model id: a name can cover several versions (wired or wirel
 
 <!-- /generated:lineup -->
 
+## Waiting for a recording
+
+These have official software, but Shark Deck knows neither their USB ids nor
+how the software talks to them, so it does not show them when they are
+plugged in. One owner's recording is how each gets added: in Shark Deck,
+**Settings → Missing a device? → Help add it**, then pick the device (see
+[Missing a device?](#missing-a-device)).
+
+| Kind | Models | The official page's web driver |
+|---|---|---|
+| Keyboard | X66, X87, X98, M71 | None: their own software only. |
+| Keyboard | M36 HE | Its own (attackshark.driveall.cn), not the one the boards above share. |
+| Keyboard | AK820, AK820 PRO, AK832 | None: AJAZZ's software. |
+| Mouse | F1, X11 PRO V2 | inputdrv.com, which no mouse Shark Deck drives uses. |
+| Mouse | X11 SE, X3 MAX, X8 SE, G3 | szslxd-tech.com, the X8 PRO's and the X11's. |
+| Mouse | G3 PRO | controlhub.top, the V8's. |
+| Mouse | V3, V3 PRO, V6 | None: their own software only. |
+| Mouse | X3 PRO (first revision) | — |
+| Mouse | ATTACK SHARK × AJ159P | None: AJAZZ's software. |
+
+A Beken mouse on the generic receiver `1D57:FA60`, which several brands use,
+is claimed only once it says it is an X11; any other is shown as not an
+Attack Shark device.
+
 ## Not supported
 
 | Status | Device | Why |
@@ -150,23 +175,18 @@ One row per firmware model id: a name can cover several versions (wired or wirel
 | 🔴 | X2, X2 PRO, X5 mice | No configuration software exists (PAW3212, fixed DPI steps). |
 | 🔴 | G6, A2 mice | "No driver" per the store; buttons not programmable. |
 | 🔴 | X75, AKS068, AKS068 PRO | QMK / VIA boards: use [usevia.app](https://usevia.app). |
-| 🔴 | AK820, AK820 PRO, AK832 | AJAZZ boards with another command set. |
-| 🔴 | X87, X66, X98, M71, M36 HE | In no registry we could find; protocol unknown. |
 | 🔴 | K87, K68, K6, M87 | Discontinued; no software. |
-| 🔴 | ATTACK SHARK × AJ159P | AJAZZ collaboration mouse; firmware unknown. |
 | 🔴 | MEGA B2's magnetic switches and haptics; screens and knobs; the X11 PRO V2's dock | Protocols not known. The rest of those devices is supported where its family is. |
-
-Beken mice with no USB id of their own that we know — X11 SE, X11 PRO V2,
-X3 MAX, X3 PRO (first revision), X8 SE, G3, G3 PRO, V3, V3 PRO, V6 — and any
-Beken mouse on the generic receiver `1D57:FA60`, which several brands use, are
-not claimed at all.
 
 ## Missing a device?
 
 Shark Deck asks by itself: a device it does not support, or not fully, has a
 **Help add it** (or **Help complete its support**) panel in its Device tab,
 whose button starts the tool below for that device, set to what is missing.
-Windows and Linux record; macOS makes the report alone. Or by hand:
+A device it does not show at all is in **Settings → Missing a device? → Help
+add it**: pick it among the USB devices plugged in, say whether it is a
+keyboard or a mouse, and the same tool starts for it. Windows and Linux
+record; macOS makes the report alone. Or by hand:
 
 1. Download [`tools/SharkDeck-device-report.bat`](../../tools/SharkDeck-device-report.bat)
    (Windows; also attached to each release) and run it. Windows may warn about
@@ -241,7 +261,8 @@ written to. Details: [`docs/protocol/README.md`](../protocol/README.md).
 Menus follow the model, never its name: one marketing name can cover several
 firmware ids with different hardware (three X87 ULTRA ids, one of them
 mechanical). Researched November 2026 from the official store, the
-manufacturer's site, the vendor's own device registry (through sharkfin), the
+manufacturer's site, the vendor's own device registry (read from Attack Shark
+Driver v4, its key grids and factory key maps included), the
 community projects listed in [`THIRD-PARTY-NOTICES.md`](../../THIRD-PARTY-NOTICES.md),
 and linux-hardware.org.
 

@@ -4,8 +4,10 @@ import { tmpdir } from 'node:os';
 import { basename, delimiter, join } from 'node:path';
 import { app } from 'electron';
 import type { DeviceDescriptor, RecordingPlan } from '@shared/types/device';
+import type { ReportTarget, UsbHidDevice } from '@shared/types/diagnostics';
 import { deviceManager } from './devices/manager';
 import { supportPlan } from './devices/support';
+import { enumerate, type HidCandidate } from './hid/transport';
 
 /**
  * Starting the device report tool for one device, from its "Help add it" /
@@ -141,6 +143,91 @@ export async function openReportTool(deviceId: string): Promise<ReportToolResult
   } else {
     args = reportToolArgs(d, plan.record, os);
   }
+  return launchTool(os, args, preview);
+}
+
+/**
+ * The tool for a device Shark Deck does not list, by its USB ids (Settings,
+ * "Missing a device?"): all of it recorded where the tool records, the
+ * report alone on macOS. Named by its ids, the tool finds it without the
+ * unplugging a device of an unknown brand otherwise needs, and on Linux and
+ * macOS at all (their tool lists only the families Shark Deck knows).
+ */
+export async function openReportToolFor(target: ReportTarget): Promise<ReportToolResult> {
+  const os = process.platform;
+  if (os !== 'win32' && os !== 'darwin' && os !== 'linux') {
+    return { ok: false, error: `No device report tool for ${os}.` };
+  }
+  const ok = (n: unknown) => Number.isInteger(n) && (n as number) > 0 && (n as number) <= 0xffff;
+  if (!ok(target?.vid) || !ok(target?.pid)) return { ok: false, error: 'Not a USB id.' };
+  const kind = target.kind === 'keyboard' ? 'keyboard' : 'mouse';
+  return launchTool(
+    os,
+    reportToolArgs({ vid: target.vid, pid: target.pid, kind }, 'all', os),
+    false,
+  );
+}
+
+/**
+ * The USB devices plugged in, one per USB id, from what the system lists
+ * (nothing is opened or sent): its names, whether it has a keyboard
+ * (0001:0006) or a mouse (0001:0002) collection, and whether Shark Deck
+ * shows it already. Keyboards and mice first, the listed ones last.
+ */
+export function usbHidSummaries(
+  all: HidCandidate[],
+  listed: (vid: number, pid: number) => boolean,
+): UsbHidDevice[] {
+  const by = new Map<string, UsbHidDevice>();
+  for (const c of all) {
+    if (!c.vendorId || !c.productId) continue;
+    const key = `${c.vendorId}:${c.productId}`;
+    const was = by.get(key);
+    const kind: UsbHidDevice['kind'] =
+      c.usagePage === 1 && c.usage === 6
+        ? 'keyboard'
+        : c.usagePage === 1 && c.usage === 2
+          ? 'mouse'
+          : 'other';
+    const d: UsbHidDevice = was ?? {
+      vid: c.vendorId,
+      pid: c.productId,
+      kind,
+      listed: listed(c.vendorId, c.productId),
+    };
+    // A board shows a mouse collection too (its knob, its mouse keys): a
+    // keyboard collection decides.
+    if (kind === 'keyboard' || (kind === 'mouse' && d.kind === 'other')) d.kind = kind;
+    d.product ||= c.product?.trim() || undefined;
+    d.manufacturer ||= c.manufacturer?.trim() || undefined;
+    by.set(key, d);
+  }
+  const rank = (d: UsbHidDevice) => (d.listed ? 2 : 0) + (d.kind === 'other' ? 1 : 0);
+  return [...by.values()].sort(
+    (a, b) =>
+      rank(a) - rank(b) ||
+      (a.product ?? '').localeCompare(b.product ?? '') ||
+      a.vid - b.vid ||
+      a.pid - b.pid,
+  );
+}
+
+export async function listUsbHidDevices(): Promise<UsbHidDevice[]> {
+  const shown = new Set(
+    deviceManager
+      .list()
+      .filter((d) => !d.simulated)
+      .map((d) => `${d.vid}:${d.pid}`),
+  );
+  return usbHidSummaries(await enumerate(), (vid, pid) => shown.has(`${vid}:${pid}`));
+}
+
+/** Starts the tool with these arguments; Shark Deck closes once it is up where the tool needs the device to itself. */
+async function launchTool(
+  os: ReportToolOs,
+  args: string[],
+  preview: boolean,
+): Promise<ReportToolResult> {
   // The tool wants the device to itself: Shark Deck closes once it is up — on
   // Windows always (its report asks some families their model), on Linux for
   // a recording (its report only reads /sys).

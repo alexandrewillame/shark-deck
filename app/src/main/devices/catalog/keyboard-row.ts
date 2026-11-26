@@ -4,10 +4,10 @@
  * `DeviceDescriptor`.
  *
  * The rows live in `generated/keyboard-rows.ts`, written by `npm run import:kb`
- * from sharkfin's registry (https://github.com/dniminenn/sharkfin,
- * GPL-3.0-or-later), which is itself extracted from the vendor app's device
- * table and firmware. Never hand-edit the generated file; change the importer
- * (`scripts/import-keyboard-registry.ts`) or its override tables instead.
+ * from our own reading of the vendor's Driver v4 (its device table, key grids
+ * and factory key matrices: `scripts/extract-keyboard-registry.ts`). Never
+ * hand-edit the generated file; change the importer
+ * (`scripts/import-keyboard-registry.ts`) or its data instead.
  */
 
 /**
@@ -16,7 +16,7 @@
  * opcode 0x09). They share framing but NOT opcodes — several numbers mean
  * destructive, different things in the other family — so this is decided from
  * the row, never probed. `unknown` = the registry does not say which set the
- * board speaks (sharkfin keeps such boards read-only, and so do we).
+ * board speaks, and such a board stays read-only.
  */
 export type KeyboardFamily = 'gen2' | 'yc500' | 'unknown';
 

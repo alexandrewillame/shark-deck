@@ -79,19 +79,17 @@ const VIRTUAL_PAIR_MS = 4_000;
 export function virtualDescriptors(): DeviceDescriptor[] {
   const seen = new Set(CATALOG.map((d) => d.model));
   const shapes = new Set<string>();
-  const layoutIds = new Map<unknown, number>();
   const shapeOf = (d: DeviceDescriptor) => {
     const km = d.spec.keyMatrix;
-    // A layout Shark Deck addresses key by key is drawn and written per key,
-    // so each is its own shape; a geometry-only drawing changes no menu.
-    const addressed = km?.layout && km.layoutStatus !== 'none' ? km.layout : null;
-    if (addressed && !layoutIds.has(addressed)) layoutIds.set(addressed, layoutIds.size);
+    // Whether keys are addressed one by one, not which drawing: since every
+    // board's factory matrix places its keys (Driver v4), most of the line is
+    // addressable, and one card per drawing or size filled demo mode with
+    // boards whose menus are the same.
     const mag = d.spec.magnetic;
     return JSON.stringify([
       d.driver,
       [...d.capabilities].sort(),
       km?.layoutStatus,
-      addressed ? layoutIds.get(addressed) : null,
       !!d.spec.wireless,
       d.spec.lighting?.zones,
       // which travel controls exist, not their exact bounds

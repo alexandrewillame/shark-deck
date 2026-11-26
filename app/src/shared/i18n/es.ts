@@ -877,9 +877,6 @@ export const es: Partial<Messages> = {
   'set.background': 'Fondo',
   'set.background.none': 'Ninguno',
   'set.background.smoke': 'Humo',
-  'set.background.fire': 'Fuego',
-  'set.background.electricity': 'Electricidad',
-  'set.background.lava': 'Lava',
   'set.background.aurora': 'Aurora',
   'set.background.nebula': 'Nebulosa',
   'set.background.landscape': 'Paisaje',
@@ -914,15 +911,9 @@ export const es: Partial<Messages> = {
   'set.palette.synthwave': 'Synthwave',
   'set.palette.lime': 'Lima',
   'set.palette.frost': 'Escarcha',
-  'set.background.rain': 'Lluvia',
-  'act.allKeys': 'Todas las teclas',
-  'act.allKeys.tip':
-    'Ajustes que afectan a todo el teclado a la vez: la respuesta de activación de cada tecla y la recalibración de los sensores de efecto Hall. Aquí nada se ajusta tecla por tecla.',
-  'act.allKeys.aria': 'Ajustes que se aplican a todas las teclas',
   'act.cal.recalibrate': 'Recalibrar',
   'act.cal.recalibrate.tip':
     'Enseña al teclado dónde reposa cada interruptor y dónde llega al fondo. Una sola pasada guiada: iníciala, pulsa cada tecla hasta el fondo y luego finaliza; no desconectes el cable mientras dura. Hazlo después de cambiar interruptores o si la actuación no parece correcta.',
-  'act.cal.start': 'Iniciar',
   'act.rt.sensitivity': 'Sensibilidad RT',
   'act.rt.link.tip':
     'Una sola sensibilidad rige tanto la nueva pulsación como la liberación. Ajústalas por separado para afinar cada dirección por su cuenta.',
@@ -993,7 +984,7 @@ export const es: Partial<Messages> = {
   'act.reset.all': 'Restablecer todo',
   'act.reset.all.tip':
     'Devuelve todas las teclas del teclado a su actuación, liberación, rapid trigger, zonas muertas y modo de fábrica. La calibración no se ve afectada, y esto no es un restablecimiento de fábrica de todo el dispositivo: eso está en la pestaña Dispositivo.',
-  'act.reset.selected': 'Restablecer',
+  'act.reset.selected': 'Restablecer tecla',
   'act.reset.selected.tip':
     'Devuelve las teclas seleccionadas a su actuación, liberación, rapid trigger, zonas muertas y modo de fábrica. La calibración no se ve afectada.',
   'act.key.title': 'Tecla',
@@ -1001,7 +992,7 @@ export const es: Partial<Messages> = {
   'act.key.previewHint':
     'Se muestra la tecla que estás pulsando. Selecciona una tecla en el teclado de arriba para cambiar sus ajustes.',
   'act.key.emptyHint':
-    'Selecciona una tecla en el teclado de arriba para ajustar su actuación, su rapid trigger y su modo.',
+    'Selecciona una tecla en el teclado de arriba para ajustar su actuación, su rapid trigger y su modo. Mayús o Ctrl + clic, o arrastra sobre el teclado, para seleccionar varias.',
   'act.release.point': 'Punto de liberación',
   'act.release.point.tip':
     'Si están vinculados, la tecla se libera a la misma profundidad a la que se activa (el comportamiento predeterminado del teclado). Ajústalos por separado para crear un margen de histéresis, que evita que un dedo apoyado haga rebotar la tecla; el punto de liberación debe quedar entonces por encima del punto de actuación.',
@@ -1136,10 +1127,11 @@ export const es: Partial<Messages> = {
   'act.marker.bottom': 'abajo',
   'act.switch.aria': 'Recorrido del interruptor',
   'act.trigger.title': 'Respuesta de activación',
-  'act.trigger.tip': 'Opciones globales guardadas en el firmware del teclado, no por tecla.',
+  'act.trigger.tip':
+    'Opciones para todo el teclado, guardadas en él: las mismas en todos los perfiles internos y para todas las teclas.',
   'act.trigger.antiMistouch': 'Evitar activaciones accidentales',
   'act.trigger.antiMistouch.tip':
-    'Compensa los ~0,1 mm de tolerancia de recorrido que un interruptor o un escritorio que tiembla pueden introducir al fondo de la pulsación: la opción 防误触 del fabricante.',
+    'Compensa los ~0,1 mm de tolerancia de recorrido que un interruptor o un escritorio que tiembla pueden introducir al fondo de la pulsación.',
   'act.trigger.rtStab': 'Estabilización RT',
   'act.trigger.rtStab.tip':
     'Amortigua las vibraciones alrededor del punto de inversión cuando el rapid trigger está activo. Un valor alto es más estable pero añade latencia; 0 la desactiva.',
@@ -1567,4 +1559,27 @@ export const es: Partial<Messages> = {
   'dev.log.hint':
     'Un registro de lo que Shark Deck envió a este dispositivo y de lo que respondió, con todo lo que falló: sus ajustes y cualquier macro que le hayas enviado. Adjúntalo a tu informe en GitHub.',
   'dev.log.save': 'Guardar el registro',
+  'remap.fn.shared':
+    'La capa Fn es la misma en todos los perfiles internos: cambiar de perfil cambia la capa base, no esta.',
+  'act.reset.selectedMany': 'Restablecer teclas',
+  'set.missing.title': '¿Falta un dispositivo?',
+  'set.missing.row': 'Un teclado o ratón que Shark Deck no muestra',
+  'set.missing.hint':
+    'Shark Deck aprende un dispositivo nuevo a partir de una grabación del software oficial hablando con él. La herramienta de grabación te guía.',
+  'set.missing.button': 'Ayudar a añadirlo…',
+  'unlisted.title': 'Ayudar a añadir un dispositivo',
+  'unlisted.body':
+    'Elige el teclado o ratón que Shark Deck no muestra. La herramienta de grabación te guía por el software oficial, un ajuste tras otro, y guarda lo que este y el dispositivo se dicen en un .zip en tu escritorio, para adjuntarlo a un issue «New device» en GitHub.',
+  'unlisted.body.mac':
+    'Elige el teclado o ratón que Shark Deck no muestra. En un Mac la herramienta solo hace el informe (sus ID USB y cómo se describe), para adjuntarlo a un issue «New device» en GitHub. Una grabación necesita Windows o Linux.',
+  'unlisted.loading': 'Buscando dispositivos USB…',
+  'unlisted.none': 'No se encontró ningún teclado o ratón USB. Conéctalo y luego actualiza.',
+  'unlisted.listed': 'Ya está en Shark Deck: su pestaña Dispositivo pide lo que le falta.',
+  'unlisted.unnamed': 'Dispositivo sin nombre',
+  'unlisted.kind': 'Es un',
+  'unlisted.kind.keyboard': 'Teclado',
+  'unlisted.kind.mouse': 'Ratón',
+  'unlisted.closes':
+    'Shark Deck se cierra en cuanto la herramienta arranca, para que solo el software oficial hable con el dispositivo.',
+  'unlisted.start': 'Empezar la grabación',
 };

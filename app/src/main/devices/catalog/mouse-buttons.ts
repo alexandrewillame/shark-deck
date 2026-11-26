@@ -11,13 +11,24 @@ import type { ButtonMapEntry } from '@shared/types/device';
  *
  * The index is the one readButtons()/setButtonMapping() use: Left, Right,
  * Wheel, Forward, Backward, DPI. A model lists as many as it lets you remap.
+ * `click` is the "Button" action's value each gives from the factory, so
+ * choosing that action starts on the button's own click, not Left click (the
+ * X8 PRO's owner asked, 2026-11-25).
  */
 export const MOUSE_BUTTON_MAP: readonly ButtonMapEntry[] = [
-  { index: 0, label: 'Left click', labelKey: 'buttons.name.left', x: 27, y: 22, locked: true },
-  { index: 1, label: 'Right click', labelKey: 'buttons.name.right', x: 71, y: 22 },
-  { index: 2, label: 'Wheel click', labelKey: 'buttons.name.wheel', x: 49, y: 18 },
-  { index: 3, label: 'Forward', labelKey: 'buttons.name.fwd', x: -2, y: 37 },
-  { index: 4, label: 'Backward', labelKey: 'buttons.name.back', x: -2, y: 56 },
+  {
+    index: 0,
+    label: 'Left click',
+    labelKey: 'buttons.name.left',
+    x: 27,
+    y: 22,
+    locked: true,
+    click: 0x0100,
+  },
+  { index: 1, label: 'Right click', labelKey: 'buttons.name.right', x: 71, y: 22, click: 0x0200 },
+  { index: 2, label: 'Wheel click', labelKey: 'buttons.name.wheel', x: 49, y: 18, click: 0x0400 },
+  { index: 3, label: 'Forward', labelKey: 'buttons.name.fwd', x: -2, y: 37, click: 0x1000 },
+  { index: 4, label: 'Backward', labelKey: 'buttons.name.back', x: -2, y: 56, click: 0x0800 },
   {
     index: 5,
     label: 'DPI switch',

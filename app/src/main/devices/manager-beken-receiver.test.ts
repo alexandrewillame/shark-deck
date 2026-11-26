@@ -61,15 +61,18 @@ vi.mock('../store', () => ({
   writeBackup: async () => 'f.json',
 }));
 
+import { frameLog } from '../diagnostics';
 import { DeviceManager } from './manager';
 
-/** The receiver's interface 2, two of its collections (as Windows lists them). */
+/**
+ * The receiver's interface 2, two of its collections, as node-hid lists them
+ * on Windows: with no `usage` at all, since theirs is 0 (seen 2026-11-25).
+ */
 const collection = (col: string, usagePage: number) => ({
   path: `\\\\?\\HID#VID_1D57&PID_FA60&MI_02&${col}#rx`,
   vendorId: 0x1d57,
   productId: 0xfa60,
   usagePage,
-  usage: 0x0000,
   serialNumber: 'RX-1',
   interface: 2,
   release: 0x1113,
@@ -133,6 +136,53 @@ describe('the receiver several brands share', () => {
     expect([d.displayName, d.connection]).toEqual(['Attack Shark X11', 'usb']);
     expect(d.backupWaiver?.unreadable).toContain('mouseLighting');
     expect(written).toEqual([]);
+  });
+
+  // The X8 PRO's cable, and the X11 on either link, announce their battery on
+  // 000A:0000 beside the settings: matching node-hid's missing usage as 0 used
+  // to fail, and the cable showed "?%" through 0.3.8 (its owner's log, 11-25).
+  it('hears the battery beside the settings: the X11 through the receiver, the X8 PRO on its cable', async () => {
+    modelByte = 0x55;
+    const rx = new DeviceManager();
+    await scanOnce(rx); // named by listening, then driven on 000B:0000
+    await scanOnce(rx); // its first pass as an X11: the battery it announced
+    expect(rx.list()[0]!.battery).toBe(100);
+
+    const x8 = (col: string, usagePage: number) => ({
+      ...collection(col, usagePage),
+      path: `\\?\HID#VID_1D57&PID_2126&MI_02&${col}#cable`,
+      productId: 0x2126,
+      serialNumber: '',
+      product: 'X8PRO Mouse',
+    });
+    bus.length = 0;
+    bus.push(x8('Col03', 0x000a), x8('Col04', 0x000b));
+    modelByte = 0x08;
+    const cable = new DeviceManager();
+    await scanOnce(cable);
+    const d = cable.list()[0]!;
+    expect([d.displayName, d.connection, d.battery]).toEqual(['Attack Shark X8 PRO', 'usb', 100]);
+    expect(written).toEqual([]);
+  });
+
+  it('says in the device log when the announcement collection is not there', async () => {
+    bus.length = 0;
+    bus.push({
+      ...collection('Col04', 0x000b),
+      path: `\\?\HID#VID_1D57&PID_2126&MI_02&Col04#cable`,
+      productId: 0x2126,
+      serialNumber: '',
+    });
+    frameLog.clear();
+    const mgr = new DeviceManager();
+    await scanOnce(mgr);
+    const id = mgr.list()[0]!.id;
+    expect(
+      frameLog
+        .all()
+        .filter((e) => e.deviceId === id)
+        .map((e) => e.note),
+    ).toContain('announcements: no 000a:0000 collection (it has 000b:0000)');
   });
 
   it('leaves another brand’s mouse alone: an unknown card, nothing written', async () => {

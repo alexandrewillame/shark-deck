@@ -10,9 +10,11 @@ import type {
   BackupInfo,
   DeviceAccessResult,
   FrameLogEntry,
+  ReportTarget,
   RunningProcess,
   ScanDiagnostic,
   ScannedGame,
+  UsbHidDevice,
 } from './types/diagnostics';
 import type {
   ActuationLayout,
@@ -380,6 +382,21 @@ export interface Api {
   openReportTool(
     deviceId: string,
   ): Promise<{ ok: boolean; error?: string; quitting?: boolean; preview?: boolean }>;
+  /**
+   * The USB devices plugged in, one per USB id, for a device Shark Deck does
+   * not list (Settings, "Missing a device?"; main/reportTool.ts). Read from
+   * what the system already knows: nothing is sent to any of them. The
+   * desktop only: the browser edition answers [].
+   */
+  listUsbHidDevices(): Promise<UsbHidDevice[]>;
+  /**
+   * Starts the device report tool for a device Shark Deck does not list, by
+   * its USB ids: a whole recording on Windows and Linux, the report alone on
+   * macOS. Quits like `openReportTool`. The desktop only.
+   */
+  openReportToolFor(
+    target: ReportTarget,
+  ): Promise<{ ok: boolean; error?: string; quitting?: boolean }>;
 
   // ---- diagnostics -------------------------------------------------
   getFrameLog(): Promise<FrameLogEntry[]>;

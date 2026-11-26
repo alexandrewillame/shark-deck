@@ -1,17 +1,7 @@
 import { BACKGROUND_EFFECTS, type BackgroundEffect } from '@shared/backgrounds';
 import type { MessageKey } from '@shared/i18n';
 import type { Rgb } from './palette';
-import {
-  AURORA,
-  ELECTRICITY,
-  FIRE,
-  LANDSCAPE,
-  LAVA,
-  NEBULA,
-  RAIN,
-  SMOKE,
-  WATER,
-} from './shaders/effects';
+import { AURORA, LANDSCAPE, NEBULA, SMOKE, WATER } from './shaders/effects';
 
 /** A background that is drawn — every one but `none`. */
 export type DrawnEffect = Exclude<BackgroundEffect, 'none'>;
@@ -50,33 +40,6 @@ export const BACKGROUNDS: Record<DrawnEffect, BackgroundDef> = {
     natural: [hex('#a9b8c8'), hex('#64707e')],
     frag: SMOKE,
   },
-  fire: {
-    id: 'fire',
-    labelKey: 'set.background.fire',
-    fps: 30,
-    scale: 1,
-    still: 21,
-    natural: [hex('#ff8a2a'), hex('#c0250c')],
-    frag: FIRE,
-  },
-  electricity: {
-    id: 'electricity',
-    labelKey: 'set.background.electricity',
-    fps: 30,
-    scale: 1,
-    still: 1.55,
-    natural: [hex('#8fb8ff'), hex('#7a5cff')],
-    frag: ELECTRICITY,
-  },
-  lava: {
-    id: 'lava',
-    labelKey: 'set.background.lava',
-    fps: 24,
-    scale: 0.9,
-    still: 80,
-    natural: [hex('#ff6a10'), hex('#b8160a')],
-    frag: LAVA,
-  },
   aurora: {
     id: 'aurora',
     labelKey: 'set.background.aurora',
@@ -114,18 +77,6 @@ export const BACKGROUNDS: Record<DrawnEffect, BackgroundDef> = {
     // blue for the water itself.
     natural: [hex('#8fe6ff'), hex('#0b5bbf')],
     frag: WATER,
-  },
-  rain: {
-    id: 'rain',
-    labelKey: 'set.background.rain',
-    fps: 30,
-    scale: 1,
-    still: 20,
-    // A city at night through wet glass: sodium-amber street lights and a cool
-    // white-blue. The shader adds the odd red tail light and warm white of its
-    // own, palette off (`uPal`).
-    natural: [hex('#ffb35c'), hex('#7fb2ff')],
-    frag: RAIN,
   },
 };
 

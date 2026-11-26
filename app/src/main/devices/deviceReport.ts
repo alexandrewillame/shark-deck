@@ -215,7 +215,7 @@ export function triageDevice(dev: ReportDevice, recorded = false): string[] {
       return [
         `${id} (${answer}): a model id no table knows.`,
         ask?.modelId !== undefined
-          ? 'Refresh the vendor registry (`npm run import:kb`); a board still missing is new — add it through catalog/keyboard-resolutions.ts, or catalog/gearhub-mice.ts for a mouse.'
+          ? 'Refresh the vendor registry (`npm run extract:registry`, then `npm run import:kb`); a board still missing is newer than the Driver v4 read — add it to scripts/data/keyboard-rows-outside-v4.json, or catalog/gearhub-mice.ts for a mouse.'
           : 'Check the cid: 124 is Attack Shark.',
       ];
   }

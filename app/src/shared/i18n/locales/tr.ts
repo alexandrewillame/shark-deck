@@ -872,9 +872,6 @@ export const tr: Partial<Messages> = {
   'set.background': 'Arka plan',
   'set.background.none': 'Yok',
   'set.background.smoke': 'Duman',
-  'set.background.fire': 'Ateş',
-  'set.background.electricity': 'Elektrik',
-  'set.background.lava': 'Lav',
   'set.background.aurora': 'Kutup ışıkları',
   'set.background.nebula': 'Bulutsu',
   'set.background.landscape': 'Manzara',
@@ -909,15 +906,9 @@ export const tr: Partial<Messages> = {
   'set.palette.synthwave': 'Synthwave',
   'set.palette.lime': 'Misket limonu',
   'set.palette.frost': 'Kırağı',
-  'set.background.rain': 'Yağmur',
-  'act.allKeys': 'Tüm tuşlar',
-  'act.allKeys.tip':
-    'Tüm klavyeye tek seferde uygulanan ayarlar — her tuşun tetikleme tepkisi ve Hall sensörlerinin yeniden kalibrasyonu. Buradaki hiçbir şey tuş bazlı değildir.',
-  'act.allKeys.aria': 'Tüm tuşlara uygulanan ayarlar',
   'act.cal.recalibrate': 'Yeniden kalibre et',
   'act.cal.recalibrate.tip':
     'Klavyeye her anahtarın serbestken nerede durduğunu ve en alt noktasının nerede olduğunu öğretir. Tek bir rehberli geçiş: başlatın, her tuşa sonuna kadar basın, ardından bitirin — işlem sürerken kabloyu çıkarmayın. Anahtar değiştirdikten sonra ya da aktivasyon doğru hissettirmiyorsa çalıştırın.',
-  'act.cal.start': 'Başlat',
   'act.rt.sensitivity': 'RT hassasiyeti',
   'act.rt.link.tip':
     'Tek bir hassasiyet hem yeniden basmayı hem de bırakmayı belirler. Her yönü kendi başına ayarlamak için ikisini ayrı ayrı belirleyin.',
@@ -986,7 +977,7 @@ export const tr: Partial<Messages> = {
   'act.reset.all': 'Tümünü sıfırla',
   'act.reset.all.tip':
     'Klavyedeki her tuşun aktivasyon, bırakma, rapid trigger, ölü bölge ve mod ayarlarını fabrika değerlerine döndürür. Kalibrasyon etkilenmez; bu, tüm aygıtın fabrika ayarlarına sıfırlanması da değildir — o, Aygıt sekmesindedir.',
-  'act.reset.selected': 'Sıfırla',
+  'act.reset.selected': 'Tuşu sıfırla',
   'act.reset.selected.tip':
     'Seçili tuşların aktivasyon, bırakma, rapid trigger, ölü bölge ve mod ayarlarını fabrika değerlerine döndürür. Kalibrasyon etkilenmez.',
   'act.key.title': 'Tuş',
@@ -994,7 +985,7 @@ export const tr: Partial<Messages> = {
   'act.key.previewHint':
     'Basılmakta olan tuş gösteriliyor. Ayarlarını değiştirmek için yukarıdaki klavyeden bir tuş seçin.',
   'act.key.emptyHint':
-    'Aktivasyon, rapid trigger ve mod ayarları için yukarıdaki klavyeden bir tuş seçin.',
+    'Aktivasyon, rapid trigger ve mod ayarları için yukarıdaki klavyeden bir tuş seçin. Birden fazla seçmek için Shift veya Ctrl ile tıklayın ya da klavyenin üzerinde sürükleyin.',
   'act.release.point': 'Bırakma noktası',
   'act.release.point.tip':
     'Bağlıyken tuş, aktive olduğu derinlikte bırakılmış sayılır — klavyenin kendi varsayılanı. Bir histerezis aralığı için ikisini ayrı ayarlayın; bu, üzerinde duran bir parmağın tuşu titretmesini önler. Bu durumda bırakma noktası aktivasyon noktasının üstünde kalmalıdır.',
@@ -1127,10 +1118,10 @@ export const tr: Partial<Messages> = {
   'act.switch.aria': 'Anahtar hareketi',
   'act.trigger.title': 'Tetikleme tepkisi',
   'act.trigger.tip':
-    'Klavyenin ürün yazılımında saklanan, tuş bazlı değil tüm klavye için geçerli ayarlar.',
+    'Tüm klavyeye ait, klavyede saklanan ayarlar: tüm dahili profillerde ve tüm tuşlarda aynıdır.',
   'act.trigger.antiMistouch': 'Yanlış tetikleme koruması',
   'act.trigger.antiMistouch.tip':
-    'Bir anahtarın veya sallanan bir masanın hareketin en altında yol açabileceği ~0,1 mm’lik hareket toleransını telafi eder — üreticinin 防误触 ayarı.',
+    'Bir anahtarın veya sallanan bir masanın hareketin en altında yol açabileceği ~0,1 mm’lik hareket toleransını telafi eder.',
   'act.trigger.rtStab': 'RT dengeleme',
   'act.trigger.rtStab.tip':
     'Rapid trigger etkinken dönüş noktası çevresindeki titremeyi sönümler. Yüksek değer daha kararlıdır ama gecikme ekler; 0 kapatır.',
@@ -1555,4 +1546,27 @@ export const tr: Partial<Messages> = {
   'dev.log.hint':
     'Shark Deck’in bu cihaza gönderdiklerinin ve cihazın yanıtlarının, ters giden her şeyle birlikte kaydı: ayarları ve gönderdiğiniz makrolar. GitHub’daki bildiriminize ekleyin.',
   'dev.log.save': 'Kaydı kaydet',
+  'remap.fn.shared':
+    'Fn katmanı tüm dahili profillerde aynıdır: profil değiştirmek bu katmanı değil, temel katmanı değiştirir.',
+  'act.reset.selectedMany': 'Tuşları sıfırla',
+  'set.missing.title': 'Bir cihaz eksik mi?',
+  'set.missing.row': 'Shark Deck’in göstermediği bir klavye veya fare',
+  'set.missing.hint':
+    'Shark Deck yeni bir cihazı, resmî yazılımın onunla konuşmasının tek bir kaydından öğrenir. Kayıt aracı size adım adım yol gösterir.',
+  'set.missing.button': 'Eklenmesine yardım et…',
+  'unlisted.title': 'Bir cihazın eklenmesine yardım et',
+  'unlisted.body':
+    'Shark Deck’in göstermediği klavyeyi veya fareyi seçin. Kayıt aracı sizi resmî yazılımda ayar ayar gezdirir ve yazılımla cihazın birbirine söylediklerini masaüstünüzde bir .zip dosyasına kaydeder; GitHub’da bir "New device" issue’suna ekleyin.',
+  'unlisted.body.mac':
+    'Shark Deck’in göstermediği klavyeyi veya fareyi seçin. Mac’te araç yalnızca raporu hazırlar: USB kimlikleri ve cihazın kendini nasıl tanımladığı; GitHub’da bir "New device" issue’suna ekleyin. Kayıt için Windows veya Linux gerekir.',
+  'unlisted.loading': 'USB cihazları aranıyor…',
+  'unlisted.none': 'USB klavye veya fare bulunamadı. Takın, sonra yenileyin.',
+  'unlisted.listed': 'Zaten Shark Deck’te: eksiklerini kendi Aygıt sekmesi ister.',
+  'unlisted.unnamed': 'Adsız cihaz',
+  'unlisted.kind': 'Türü',
+  'unlisted.kind.keyboard': 'Klavye',
+  'unlisted.kind.mouse': 'Fare',
+  'unlisted.closes':
+    'Araç açılır açılmaz Shark Deck kapanır; böylece cihazla yalnızca resmî yazılım konuşur.',
+  'unlisted.start': 'Kaydı başlat',
 };

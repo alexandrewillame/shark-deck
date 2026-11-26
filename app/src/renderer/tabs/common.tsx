@@ -529,7 +529,7 @@ export function useLiveSync<T>(
   opts: { holdMs?: number; held?: () => boolean } = {},
 ) {
   const holdMs = opts.holdMs ?? 2500;
-  const pin = useRef<{ to: T | null; until: number }>({ to: null, until: 0 });
+  const pin = useRef<{ to: T | null; from: T[]; until: number }>({ to: null, from: [], until: 0 });
   // Refs, not deps: the effect must run when the DEVICE reports something new,
   // not every time the section re-renders with a new inline `held` closure.
   const currentRef = useRef(current);
@@ -539,9 +539,17 @@ export function useLiveSync<T>(
   const applyRef = useRef(apply);
   applyRef.current = apply;
 
+  // What each write replaced, kept while one pin follows another (two quick
+  // clicks): a read from before the first may land after the second.
   const note = useCallback(
     (v: T) => {
-      pin.current = { to: v, until: Date.now() + holdMs };
+      const now = Date.now();
+      const was = currentRef.current;
+      const from = [
+        ...(now < pin.current.until ? pin.current.from : []),
+        ...(was !== null ? [was] : []),
+      ];
+      pin.current = { to: v, from, until: now + holdMs };
     },
     [holdMs],
   );
@@ -551,11 +559,12 @@ export function useLiveSync<T>(
       remote,
       local: currentRef.current,
       pinnedTo: pin.current.to,
+      pinnedFrom: pin.current.from,
       pinnedUntil: pin.current.until,
       now: Date.now(),
       held: heldRef.current?.() ?? false,
     });
-    if (clearPin) pin.current = { to: null, until: 0 };
+    if (clearPin) pin.current = { to: null, from: [], until: 0 };
     if (value !== null && value !== currentRef.current) applyRef.current(value);
   }, [remote]);
 

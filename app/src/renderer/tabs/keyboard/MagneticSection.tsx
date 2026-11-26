@@ -4,12 +4,11 @@ import { createPortal } from 'react-dom';
 import type { KeyGroup, MagneticKeySettings } from '@shared/types/keyboard-settings';
 import type { KeyLayoutEntry } from '@shared/types/keys';
 import type { WriteResult } from '@shared/types/live';
-import { ConfirmDialog, Panel, Row, Segmented, Tooltip } from '../../components/common';
-import { RapidTriggerMedia, GlobalActuationMedia } from '../../components/tooltipMedia';
+import { ConfirmDialog, Panel, Row, Segmented, Slider, Tooltip } from '../../components/common';
+import { RapidTriggerMedia } from '../../components/tooltipMedia';
 import { KeyboardMap, type KeyGauge, type KeyRef } from '../../components/KeyboardMap';
 import { ArtAnchor } from '../../components/ArtAnchor';
 import { Icon } from '../../components/icons';
-import { useAnchoredPosition } from '../../components/usePortalPosition';
 import {
   type TabProps,
   sd,
@@ -158,117 +157,24 @@ const measureRailText = (() => {
 const GROUP_SETTLE_MS = 200;
 
 /**
- * The board-wide trigger-response switches and Hall calibration, as a popover
- * off the per-key toolbar rather than the full-width panel this used to be
- * above the board. Both are reached maybe once per set-up; the keyboard viewer
- * is what the tab is for, and a card that size pushed it below the fold.
- *
- * Setting every key's actuation and resetting every key are not in here any
- * more: both are things you do TO the keys, so they live with the keys — a
- * selection plus the Key panel, and "Reset all" beside the board's legend.
- *
- * Portaled to `document.body` at `position: fixed` (see usePortalPosition.ts)
- * for the same reason `LanguageMenu` and `ColorPicker` are — an in-flow panel
- * would be clipped by `.tabpane-in`, the pane's actual scrollport.
+ * Hall calibration, on the per-key toolbar. It was the one item left in an
+ * "All keys" menu once the trigger switches moved to a panel of their own: a
+ * menu of one (the user, 2026-11-26).
  */
-function AllKeysMenu({
+function RecalibrateButton({
   disabled,
   onCalibrate,
-  extra,
 }: {
   disabled?: boolean;
   onCalibrate: () => void;
-  /** Board-wide settings that belong in this menu but are owned elsewhere —
-   *  the trigger-response switches. */
-  extra?: ReactNode;
 }) {
   const t = useT();
-  const [open, setOpen] = useState(false);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  // The panel lives outside `btnRef`'s subtree, so outside-click detection has
-  // to check both — checking only the button treats every click inside the
-  // panel as "outside" and closes it before the control registers.
-  const panelRef = useRef<HTMLDivElement>(null);
-  const pos = useAnchoredPosition(btnRef, panelRef, open, { align: 'start', placement: 'bottom' });
-
-  useEffect(() => {
-    if (!open) return;
-    const onDocClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (btnRef.current?.contains(target) || panelRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    document.addEventListener('mousedown', onDocClick);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDocClick);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
   return (
-    <div className="allkeys-menu">
-      <Tooltip text={t('act.allKeys.tip')}>
-        <button
-          ref={btnRef}
-          className={`btn ${open ? 'primary' : ''}`}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          disabled={disabled}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {t('act.allKeys')}
-          <Icon name="arrowDown" size={12} />
-        </button>
-      </Tooltip>
-      {open &&
-        createPortal(
-          <div
-            ref={panelRef}
-            className="allkeys-panel"
-            role="dialog"
-            aria-label={t('act.allKeys.aria')}
-            style={
-              pos
-                ? { left: pos.left, top: pos.top, maxHeight: pos.maxHeight }
-                : { left: -9999, top: -9999 }
-            }
-          >
-            {extra && (
-              <>
-                <div className="allkeys-section">{extra}</div>
-                <div className="allkeys-sep" />
-              </>
-            )}
-            <div className="allkeys-section allkeys-inline">
-              <InfoLabel
-                label={t('act.cal.recalibrate')}
-                text={t('act.cal.recalibrate.tip')}
-                media={<GlobalActuationMedia />}
-              />
-              <div className="allkeys-controls">
-                <button
-                  className="btn"
-                  onClick={() => {
-                    // Closes the panel first. It is a body-level portal at
-                    // z-index 200, so left open it would sit on top of the
-                    // calibration overlay this opens — and its own
-                    // outside-click handler could not dismiss it either, since
-                    // a click inside a modal stops propagating before it ever
-                    // reaches `document`.
-                    setOpen(false);
-                    onCalibrate();
-                  }}
-                >
-                  {t('act.cal.start')}
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )}
-    </div>
+    <Tooltip text={t('act.cal.recalibrate.tip')}>
+      <button className="btn" disabled={disabled} onClick={onCalibrate}>
+        {t('act.cal.recalibrate')}
+      </button>
+    </Tooltip>
   );
 }
 
@@ -333,12 +239,11 @@ const CALIB_TODO: [number, number, number] = [255, 255, 255];
 const CALIB_DONE: [number, number, number] = [0, 0, 0];
 
 /**
- * The rapid-trigger link control.
+ * Rapid-trigger sensitivity: a slider in its own row, or two (press, release).
  *
- * The sliders themselves now live in `SwitchTravelStage` as vertical tracks,
- * beside actuation and the dead zones — they are travel settings and were the
- * only ones shaped differently. What is left here is the choice of ONE
- * sensitivity or two.
+ * It was a vertical track in the switch drawing with a button in this row,
+ * and the row named "RT sensitivity" held only the button (the user,
+ * 2026-11-25: "should be a slider, not a button").
  *
  * One is the default: press and release sensitivity are the same kind of
  * quantity and almost always wanted equal, and two sliders that have to be kept
@@ -346,15 +251,61 @@ const CALIB_DONE: [number, number, number] = [0, 0, 0];
  * the board for. Unlinking keeps whatever values are already set; re-linking
  * adopts the press value for both, so the two can never be left disagreeing
  * behind a single slider.
+ *
+ * A drag holds its values (`onSlide`) and the gesture's end sends the last
+ * one (`onDone`), as the drawing's tracks do: one write per gesture.
  */
-function RtLink({ split, onSplit }: { split: boolean; onSplit: (next: boolean) => void }) {
+function RtSensitivity({
+  split,
+  onSplit,
+  press,
+  release,
+  range,
+  onSlide,
+  onDone,
+}: {
+  split: boolean;
+  onSplit: (next: boolean) => void;
+  press: number;
+  release: number;
+  range: { min: number; max: number; step: number };
+  onSlide: (field: 'rtPressMm' | 'rtReleaseMm', v: number) => void;
+  onDone: () => void;
+}) {
   const t = useT();
-  return (
-    <Row label={<InfoLabel label={t('act.rt.sensitivity')} text={t('act.rt.link.tip')} />}>
-      <button className="btn" onClick={() => onSplit(!split)}>
-        {split ? t('act.rt.link') : t('act.rt.split')}
-      </button>
+  const track = (label: string, tip: string, value: number, field: 'rtPressMm' | 'rtReleaseMm') => (
+    <Row label={<InfoLabel label={label} text={tip} />}>
+      <div className="rt-slider" onPointerUp={onDone} onKeyUp={onDone} onBlur={onDone}>
+        <Slider
+          value={value}
+          min={range.min}
+          max={range.max}
+          step={range.step}
+          unit=" mm"
+          ariaLabel={label}
+          onChange={(v) => onSlide(field, v)}
+        />
+      </div>
     </Row>
+  );
+  return (
+    <>
+      {split ? (
+        <>
+          {track(t('act.rt.press'), t('act.rt.press.tip'), press, 'rtPressMm')}
+          {track(t('act.rt.release'), t('act.rt.release.tip'), release, 'rtReleaseMm')}
+        </>
+      ) : (
+        track(t('act.rt.sensitivity'), t('act.rt.sensitivity.tip'), press, 'rtPressMm')
+      )}
+      <Row label="">
+        <Tooltip text={t('act.rt.link.tip')}>
+          <button className="btn" onClick={() => onSplit(!split)}>
+            {split ? t('act.rt.link') : t('act.rt.split')}
+          </button>
+        </Tooltip>
+      </Row>
+    </>
   );
 }
 
@@ -641,7 +592,14 @@ function CalibrationOverlay({
     document.body,
   );
 }
-export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNode }) {
+export function MagneticSection({
+  device,
+  boardWide,
+}: TabProps & {
+  /** Whole-board settings shown as a panel of their own, under the key's:
+   *  the trigger-response switches (see ActuationTab). */
+  boardWide?: ReactNode;
+}) {
   const t = useT();
   const toast = useStore((st) => st.toast);
   const layout = device.ui.keyMatrix?.layout;
@@ -1535,18 +1493,18 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
     return () => window.removeEventListener('pointerdown', onDown);
   }, [onScreen]);
 
-  const onSelect = (k: KeyRef) => {
+  const onSelect = (k: KeyRef, mods?: { shift: boolean; ctrl: boolean }) => {
     // A click is a request to watch: a stream that was lost gets another try.
     setLiveLost(false);
-    // Every click toggles; nothing replaces the selection any more.
-    //
-    // Building up a set of keys is what this board is FOR — the panel below
-    // edits all of them at once — and requiring a held modifier for the normal
-    // case made the common gesture the awkward one. Escape and "Select none"
-    // are the ways back to empty, which is why a plain click no longer needs
-    // to be one.
+    // A plain click selects that key alone; Shift or Ctrl adds it to the
+    // selection or takes it out, and a drag across the board selects a block
+    // (`onMarquee`). Every click used to add, so a change meant for the key
+    // just clicked went to every key clicked before it (the user, 2026-11-25).
     setSel((prev) => {
       const id = keyId(k);
+      if (!mods?.shift && !mods?.ctrl) {
+        return prev.size === 1 && prev.has(id) ? prev : new Set([id]);
+      }
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -1700,7 +1658,7 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
               {t('act.testKeys')}
             </button>
           </Tooltip>
-          <AllKeysMenu disabled={loading} onCalibrate={() => setCalibrating(true)} extra={aside} />
+          <RecalibrateButton disabled={loading} onCalibrate={() => setCalibrating(true)} />
           {/* Sweep the board again, on demand.
               The tab reads once when it opens and then trusts what it sent, so
               there was no way to ask "what does the keyboard actually hold?" —
@@ -1788,14 +1746,13 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
                 if (g) selectGroup(g.slots);
               }}
               marqueeFromKeys
-              // Shift or ctrl + drag rubber-bands a block of keys; a plain
-              // drag has hold of the key it started on (see onKeyToGroup). It
-              // adds, exactly like a click does (see onSelect); Escape is the
-              // one way to empty the selection, so no gesture needs to do it as
-              // a side effect.
-              onMarquee={(keys) => {
+              // A drag from the board around the keys selects that block; with
+              // Shift or Ctrl (from a key too) it adds to the selection, as a
+              // modified click does (see onSelect). A plain drag from a key
+              // has hold of that key (see onKeyDrop).
+              onMarquee={(keys, mods) => {
                 setSel((prev) => {
-                  const next = new Set(prev);
+                  const next = mods?.shift || mods?.ctrl ? new Set(prev) : new Set<string>();
                   for (const k of keys) next.add(keyId(k));
                   return next;
                 });
@@ -2006,7 +1963,8 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
                     onClick={() => void resetSelected()}
                     disabled={sel.size === 0}
                   >
-                    <Icon name="restore" size={12} /> {t('act.reset.selected')}
+                    <Icon name="restore" size={12} />{' '}
+                    {t(sel.size > 1 ? 'act.reset.selectedMany' : 'act.reset.selected')}
                   </button>
                 </Tooltip>
               }
@@ -2070,6 +2028,8 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
                   deadZoneBottomMm={stageKey?.deadZoneBottomMm}
                   ranges={travelRangesFor(device.ui.magnetic)}
                   showTopDeadZone={gate('act.deadZoneTop', device)}
+                  // Its sliders are in the Rapid Trigger rows beside it.
+                  showRtTracks={false}
                   liveMm={
                     live && layout && stageRef
                       ? (liveBySlot[slotOf(layout, stageRef) ?? -1] ?? null)
@@ -2152,7 +2112,7 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
                   {device.capabilities.includes('rapidTrigger') &&
                     key?.rapidTrigger &&
                     !mixed.rapidTrigger && (
-                      <RtLink
+                      <RtSensitivity
                         split={rtSplit}
                         onSplit={(next) => {
                           setRtSplit(next);
@@ -2160,6 +2120,18 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
                           if (!next && key?.rtPressMm !== undefined)
                             patch({ rtReleaseMm: key.rtPressMm });
                         }}
+                        press={key?.rtPressMm ?? T.rt.default}
+                        release={key?.rtReleaseMm ?? T.rt.default}
+                        range={travelRangesFor(device.ui.magnetic).rt}
+                        onSlide={(field, v) =>
+                          patch(
+                            field === 'rtPressMm' && !rtSplit
+                              ? { rtPressMm: v, rtReleaseMm: v }
+                              : { [field]: v },
+                            true,
+                          )
+                        }
+                        onDone={commitHeld}
                       />
                     )}
                   {/* Under rapid trigger, not between it and the Mode row: the
@@ -2170,6 +2142,7 @@ export function MagneticSection({ device, aside }: TabProps & { aside?: ReactNod
               </div>
             </Panel>
           </div>
+          {boardWide}
           <ActuationLayoutsSection
             device={device}
             layout={layout}

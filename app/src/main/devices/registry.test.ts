@@ -72,8 +72,8 @@ describe('resolveIdentity (what the firmware says)', () => {
   });
 
   it('gives another brand a read-only card, never a descriptor that writes', () => {
-    // 2498 is a rongyuan board (qmk.top's GK6940GW)
-    const d = resolveIdentity({ vid: 0x3151, pid: 0x502f }, { family: 'royuan', modelId: 2498 });
+    // 2690 is a rongyuan board (Driver v4's DK82 HE)
+    const d = resolveIdentity({ vid: 0x3151, pid: 0x502f }, { family: 'royuan', modelId: 2690 });
     expect(d.identity).toBe('foreign');
     expect(d.capabilities).toEqual([]);
     expect(d.driver).toBe('no-io');

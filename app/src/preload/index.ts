@@ -146,6 +146,8 @@ const api: Api = {
   setPendingChanges: (pending) => invoke('setPendingChanges', pending),
   quitApp: () => invoke('quitApp'),
   openReportTool: (deviceId) => invoke('openReportTool', deviceId),
+  listUsbHidDevices: () => invoke('listUsbHidDevices'),
+  openReportToolFor: (target) => invoke('openReportToolFor', target),
 
   getFrameLog: () => invoke('getFrameLog'),
   clearFrameLog: () => invoke('clearFrameLog'),

@@ -1,23 +1,25 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ANSI_79_SG9047 } from '@shared/layouts';
 import type { KeyLayoutEntry } from '@shared/types/keys';
-import { convertLayout, isCertain, parseRates, type SharkfinLayout } from './sharkfin-convert';
+import { convertLayout, isCertain, parseRates, type VendorLayout } from './vendor-layout';
 import { VENDOR_LAYOUTS } from './generated/vendor-layouts';
 import { LAYOUT_GEOMETRY } from './generated/layout-geometry';
 
-const FIXTURE = resolve(process.cwd(), 'test/fixtures/sharkfin/Common79_SG9047.json');
-const R85HE_MATRIX = resolve(process.cwd(), 'scripts/_raw/kb-r85he-matrix.json');
+// Driver v4's own key grid and the R85 HE's factory matrix, as
+// scripts/extract-keyboard-registry.ts reads them (kept here so CI has them).
+const FIXTURE = resolve(process.cwd(), 'test/fixtures/driverv4/Common79_SG9047.json');
+const R85HE_MATRIX = resolve(process.cwd(), 'test/fixtures/driverv4/r85he-matrix.json');
 
-const sg9047 = JSON.parse(readFileSync(FIXTURE, 'utf8')) as SharkfinLayout;
+const sg9047 = JSON.parse(readFileSync(FIXTURE, 'utf8')) as VendorLayout;
 
 /** The fields a per-key write and the drawing depend on (labels are cosmetic). */
 const wire = (l: KeyLayoutEntry[]) =>
   l.map(({ slot, code, row, col, x, y, w }) => ({ slot, code, row, col, x, y, w }));
 
-describe('the sharkfin layout converter reproduces the hand-verified R85HE layout', () => {
-  it('sharkfin ships this layout with geometry but no slots', () => {
+describe('the vendor layout converter reproduces the hand-verified R85HE layout', () => {
+  it('Driver v4 ships this layout with geometry but no slots', () => {
     expect(isCertain(sg9047)).toBe(false);
     expect(sg9047.keys.filter((k) => k.type === 'key')).toHaveLength(ANSI_79_SG9047.length);
   });
@@ -34,7 +36,7 @@ describe('the sharkfin layout converter reproduces the hand-verified R85HE layou
     expect(wire(convertLayout(sg9047, { defaultMatrix: matrix }))).toEqual(wire(ANSI_79_SG9047));
   });
 
-  describe.skipIf(!existsSync(R85HE_MATRIX))('against the vendor default matrix', () => {
+  describe("against the R85 HE's factory matrix in Driver v4", () => {
     it('lands on exactly the verified slots, codes and geometry', () => {
       const { defaultMatrix } = JSON.parse(readFileSync(R85HE_MATRIX, 'utf8')) as {
         defaultMatrix: number[];

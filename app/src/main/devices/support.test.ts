@@ -28,16 +28,18 @@ describe('supportPlan', () => {
     expect(supportPlan(byModel('attack-shark-x8-pro'))).toBeUndefined();
   });
 
-  it('asks a model no one recorded for every setting it shows', () => {
+  it('asks a model no one recorded for what only its own recording shows', () => {
     const x65 = KEYBOARDS_BY_ID.get(2268)!; // a vendor slot map, nothing recorded
     const plan = supportPlan(x65)!;
     expect(plan.gaps).toEqual([]);
     expect(plan.record[0]).toBe('start');
-    for (const w of ['key', 'light', 'perkey', 'act', 'rt', 'dks', 'mt', 'snap', 'sw', 'macro'])
-      expect(plan.record, w).toContain(w);
-    expect(plan.unconfirmed).toEqual(
-      expect.arrayContaining(['keys', 'lighting', 'actuation', 'keyModes', 'switches', 'macros']),
-    );
+    // What this model offers: its ranges, effects and switches.
+    for (const w of ['light', 'act', 'rt', 'dz', 'sw', 'poll']) expect(plan.record, w).toContain(w);
+    // How a change goes on the wire, the same on every board of its command
+    // set: confirmed by the R85 HE (hardware) and the R98 HE (its recording).
+    for (const w of ['key', 'perkey', 'dks', 'mt', 'snap', 'macro', 'profile', 'opt'])
+      expect(plan.record, w).not.toContain(w);
+    expect(plan.unconfirmed).toEqual(expect.arrayContaining(['lighting', 'actuation', 'switches']));
     // no knob on this board: nothing asked about one
     expect(plan.record).not.toContain('knob');
   });

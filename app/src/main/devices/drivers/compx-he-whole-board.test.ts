@@ -87,6 +87,25 @@ class Board extends CompxHeKeyboard {
     this.writes.push({ page, slot });
     return { ok: true, verified: 'unverified' };
   }
+  /** A whole page goes in chunks: recorded as the slots whose bytes it changes. */
+  private chunks = new Map<number, number[]>();
+  protected override async writeMagChunk(
+    page: number,
+    chunk: number,
+    bytes: number[],
+  ): Promise<WriteResult> {
+    const all = this.chunks.get(page) ?? [];
+    all.splice(chunk * 56, bytes.length, ...bytes);
+    this.chunks.set(page, all);
+    const width = page === 0 || page === 1 || page === 6 ? 2 : 1;
+    const was = (await this.readMagnetismPage(page))!;
+    for (let i = chunk * 56; i < chunk * 56 + bytes.length; i += width) {
+      const slot = i / width;
+      const v = width === 2 ? (all[i] ?? 0) | ((all[i + 1] ?? 0) << 8) : (all[i] ?? 0);
+      if (Number.isInteger(slot) && v !== (was[slot] ?? 0)) this.writes.push({ page, slot });
+    }
+    return { ok: true, verified: 'unverified' };
+  }
 }
 
 describe('a magnetic board without a slot map', () => {

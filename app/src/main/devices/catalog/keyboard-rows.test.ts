@@ -3,10 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { KEYBOARD_ROWS } from './generated/keyboard-rows';
 import { FOREIGN_IDS } from './generated/foreign-ids';
-import { KEYBOARD_RESOLUTIONS } from './keyboard-resolutions';
 import slugLock from './generated/slugs.lock.json';
-
-const V4 = resolve(process.cwd(), 'scripts/_raw/kb-devices.json');
 
 describe('the generated keyboard registry', () => {
   it('has the Attack Shark lineup, one row per model id', () => {
@@ -30,38 +27,35 @@ describe('the generated keyboard registry', () => {
   });
 });
 
-interface V4Device {
+// Our own Driver v4 extraction, when on this computer (scripts/_raw is
+// git-ignored, so CI never has it): the generated rows must say what it says.
+const V4 = resolve(process.cwd(), 'scripts/_raw/driverv4/registry.json');
+interface V4Row {
   id: number;
   pid: number;
   keyLayout: string | null;
-  layer: number | null;
+  profiles: number | null;
   magnetic: boolean;
-  hasSideLight: boolean;
-  screen: boolean;
+  sideLight: boolean;
   company: string;
+  type: string;
 }
-
-// Read only when present: scripts/_raw is git-ignored, so CI never has it, and
-// `describe.skipIf` still runs its body to collect the tests.
-const v4: V4Device[] = existsSync(V4)
-  ? (JSON.parse(readFileSync(V4, 'utf8')) as V4Device[]).filter((d) => d.company === 'AttackShark')
+const v4: V4Row[] = existsSync(V4)
+  ? (JSON.parse(readFileSync(V4, 'utf8')) as { rows: V4Row[] }).rows.filter(
+      (d) => d.company === 'AttackShark' && d.type === 'keyboard',
+    )
   : [];
 
-describe.skipIf(v4.length === 0)('the registry agrees with our own Driver v4 extraction', () => {
+describe.skipIf(v4.length === 0)('the registry says what Driver v4 says', () => {
   it.each(v4.map((d) => [d.id, d] as const))('id %i', (_id, d) => {
     const r = KEYBOARD_ROWS.find((x) => x.id === d.id);
     expect(r, 'missing from the generated rows').toBeDefined();
-    const fields: [string, unknown, unknown][] = [
-      ['pid', d.pid, r!.pid],
-      ['layout', d.keyLayout, r!.layout],
-      ['profiles', d.layer, r!.profiles],
-      ['magnetic', d.magnetic, r!.magnetic],
-      ['sideLight', d.hasSideLight, r!.sideLight],
-      ['screen', d.screen, r!.screen !== null],
-    ];
-    for (const [field, a, b] of fields) {
-      if (KEYBOARD_RESOLUTIONS[d.id]?.field === field) continue;
-      expect(b, `${field}: Driver v4 says ${a}`).toBe(a);
-    }
+    expect([r!.pid, r!.layout, r!.profiles, r!.magnetic, r!.sideLight]).toEqual([
+      d.pid,
+      d.keyLayout ?? 'Unknown',
+      d.profiles ?? 1,
+      d.magnetic,
+      d.sideLight,
+    ]);
   });
 });

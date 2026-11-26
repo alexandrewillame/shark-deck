@@ -24,6 +24,29 @@ export interface RunningProcess {
 // Developer / diagnostics
 // ---------------------------------------------------------------------------
 
+/**
+ * One USB device plugged in, by its USB ids, for a device Shark Deck does not
+ * list (Settings, "Missing a device?"): its names as it gives them, whether
+ * it has a keyboard or a mouse collection, and whether Shark Deck already
+ * shows it.
+ */
+export interface UsbHidDevice {
+  vid: number;
+  pid: number;
+  product?: string;
+  manufacturer?: string;
+  kind: 'keyboard' | 'mouse' | 'other';
+  /** Shark Deck draws a card for it: its own Device tab asks instead. */
+  listed: boolean;
+}
+
+/** A device to record by its USB ids, and what it is. */
+export interface ReportTarget {
+  vid: number;
+  pid: number;
+  kind: 'keyboard' | 'mouse';
+}
+
 export interface FrameLogEntry {
   ts: number;
   deviceId: string;

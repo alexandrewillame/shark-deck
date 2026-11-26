@@ -95,17 +95,16 @@ export function ActuationTab({ device }: TabProps) {
       {view === 'keys' && (
         <>
           <Gated id="act.perKey" device={device}>
-            {/* Trigger response goes into the board's own "All keys" menu,
-                which is where it belongs: every switch in it writes the whole
-                board, which is that menu's entire subject. As a panel of its
-                own below a full-width board it was a third screen of
-                scrolling for two rows. */}
+            {/* Trigger response is a panel under the key's own: inside the
+                "All keys" menu nobody found it (the user looked for
+                anti-accidental trigger and RT stabilisation, 2026-11-25). Its
+                switches are the keyboard's, the same on every profile. */}
             <MagneticSection
               device={device}
-              aside={
+              boardWide={
                 gate('act.triggerOptions', device) ? (
                   <Gated id="act.triggerOptions" device={device}>
-                    <KeyboardTriggerOptionsSection device={device} bare />
+                    <KeyboardTriggerOptionsSection device={device} />
                   </Gated>
                 ) : undefined
               }

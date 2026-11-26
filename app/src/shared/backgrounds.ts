@@ -7,14 +7,10 @@
 export const BACKGROUND_EFFECTS = [
   'none',
   'smoke',
-  'fire',
-  'electricity',
-  'lava',
   'aurora',
   'nebula',
   'landscape',
   'water',
-  'rain',
 ] as const;
 
 export type BackgroundEffect = (typeof BACKGROUND_EFFECTS)[number];
@@ -24,16 +20,22 @@ export const isBackgroundEffect = (v: unknown): v is BackgroundEffect =>
 
 /**
  * Backgrounds that were retired, and what a settings file naming one gets
- * instead. Artistic's marbling became Paint and Paint became Military; then
- * Military and Petrol gave way to Rain, so all four land there. Primal's cave
- * art left the set, and nothing else is like it, so its users go back to the
- * plain theme.
+ * instead: the nearest left. Artistic's marbling became Paint and Paint
+ * became Military; then Military and Petrol gave way to Rain, and Rain, Fire,
+ * Electricity and Lava left the set (the user, 2026-11-25): rain on glass
+ * goes to Water, fire to Smoke, electricity's light to Aurora, lava's glow to
+ * Nebula. Primal's cave art left too, and nothing else is like it, so its
+ * users go back to the plain theme.
  */
 const RETIRED: Record<string, BackgroundEffect> = {
-  artistic: 'rain',
-  paint: 'rain',
-  military: 'rain',
-  petrol: 'rain',
+  artistic: 'water',
+  paint: 'water',
+  military: 'water',
+  petrol: 'water',
+  rain: 'water',
+  fire: 'smoke',
+  electricity: 'aurora',
+  lava: 'nebula',
   primal: 'none',
 };
 

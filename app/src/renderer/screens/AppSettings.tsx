@@ -5,7 +5,8 @@ import { PaneHeader, Panel, Row, Toggle } from '../components/common';
 import { useStore } from '../state/store';
 import { useT } from '../state/i18n';
 import { hostFeatures } from '../state/host';
-import { DESKTOP_DOWNLOAD_URL, PROJECT_URL } from '@shared/links';
+import { DESKTOP_DOWNLOAD_URL, MISSING_DEVICE_URL, PROJECT_URL } from '@shared/links';
+import { UnlistedDeviceDialog } from '../components/UnlistedDeviceDialog';
 
 import { sd } from '../state/bridge';
 
@@ -18,6 +19,7 @@ export function AppSettingsScreen() {
   const [s, setS] = useState<AppSettings | null>(stored);
   const [log, setLog] = useState<FrameLogEntry[]>([]);
   const [showLog, setShowLog] = useState(false);
+  const [unlisted, setUnlisted] = useState(false);
 
   useEffect(() => setS(stored), [stored]);
   useEffect(() => {
@@ -80,6 +82,24 @@ export function AppSettingsScreen() {
           </Row>
         )}
       </Panel>
+
+      {/* A device Shark Deck cannot see has no Device tab to ask from: here
+          its owner picks it among the USB devices plugged in and starts the
+          recording tool for it (the browser edition cannot start a program:
+          the "Missing a device?" page instead). */}
+      <Panel title={t('set.missing.title')}>
+        <Row label={t('set.missing.row')} hint={t('set.missing.hint')}>
+          <button
+            className="btn"
+            onClick={() =>
+              hostFeatures.reportTool ? setUnlisted(true) : void sd.openExternal(MISSING_DEVICE_URL)
+            }
+          >
+            {t(hostFeatures.reportTool ? 'set.missing.button' : 'support.howto')}
+          </button>
+        </Row>
+      </Panel>
+      {unlisted && <UnlistedDeviceDialog onClose={() => setUnlisted(false)} />}
 
       {/* Default to showing this until platformInfo resolves (undefined on
           first render) — only hide once we positively know it's unsupported. */}

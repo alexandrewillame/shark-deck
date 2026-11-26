@@ -886,9 +886,6 @@ export const de: Partial<Messages> = {
   'set.background': 'Hintergrund',
   'set.background.none': 'Keiner',
   'set.background.smoke': 'Rauch',
-  'set.background.fire': 'Feuer',
-  'set.background.electricity': 'Elektrizität',
-  'set.background.lava': 'Lava',
   'set.background.aurora': 'Polarlicht',
   'set.background.nebula': 'Sternennebel',
   'set.background.landscape': 'Landschaft',
@@ -924,15 +921,9 @@ export const de: Partial<Messages> = {
   'set.palette.synthwave': 'Synthwave',
   'set.palette.lime': 'Limette',
   'set.palette.frost': 'Frost',
-  'set.background.rain': 'Regen',
-  'act.allKeys': 'Alle Tasten',
-  'act.allKeys.tip':
-    'Einstellungen, die auf die ganze Tastatur auf einmal wirken — das Auslöseverhalten aller Tasten und die Neukalibrierung der Hall-Sensoren. Nichts davon gilt pro Taste.',
-  'act.allKeys.aria': 'Einstellungen für alle Tasten',
   'act.cal.recalibrate': 'Neu kalibrieren',
   'act.cal.recalibrate.tip':
     'Zeigt der Tastatur, wo jeder Switch in Ruhestellung steht und wo er den Anschlag erreicht. Ein geführter Durchgang: starten, jede Taste bis zum Anschlag drücken, dann abschließen — ziehen Sie währenddessen nicht das Kabel ab. Führen Sie ihn nach einem Switch-Wechsel aus oder wenn sich die Auslösung falsch anfühlt.',
-  'act.cal.start': 'Starten',
   'act.rt.sensitivity': 'RT-Empfindlichkeit',
   'act.rt.link.tip':
     'Eine Empfindlichkeit gilt für erneutes Drücken und für das Loslassen. Stellen Sie beide getrennt ein, um jede Richtung einzeln abzustimmen.',
@@ -1005,7 +996,7 @@ export const de: Partial<Messages> = {
   'act.reset.all': 'Alle zurücksetzen',
   'act.reset.all.tip':
     'Setzt jede Taste der Tastatur auf ihre werkseitigen Werte für Auslösepunkt, Loslasspunkt, Rapid Trigger, Totzonen und Modus zurück. Die Kalibrierung bleibt unberührt, und das ist kein Zurücksetzen des ganzen Geräts auf Werkseinstellungen — das finden Sie im Tab „Gerät“.',
-  'act.reset.selected': 'Zurücksetzen',
+  'act.reset.selected': 'Taste zurücksetzen',
   'act.reset.selected.tip':
     'Setzt die ausgewählten Tasten auf ihre werkseitigen Werte für Auslösepunkt, Loslasspunkt, Rapid Trigger, Totzonen und Modus zurück. Die Kalibrierung bleibt unberührt.',
   'act.key.title': 'Taste',
@@ -1013,7 +1004,7 @@ export const de: Partial<Messages> = {
   'act.key.previewHint':
     'Zeigt die gerade gedrückte Taste. Wählen Sie oben auf der Tastatur eine Taste aus, um ihre Einstellungen zu ändern.',
   'act.key.emptyHint':
-    'Wählen Sie oben auf der Tastatur eine Taste aus, um Auslösepunkt, Rapid Trigger und Modus einzustellen.',
+    'Wählen Sie oben auf der Tastatur eine Taste aus, um Auslösepunkt, Rapid Trigger und Modus einzustellen. Mit Umschalt- oder Strg-Klick oder durch Ziehen über die Tastatur mehrere auswählen.',
   'act.release.point': 'Loslasspunkt',
   'act.release.point.tip':
     'Gekoppelt gilt die Taste in derselben Tiefe als losgelassen, in der sie auslöst — der Standard der Tastatur. Getrennt eingestellt entsteht ein Hystereseabstand, der das Flattern eines aufliegenden Fingers verhindert; der Loslasspunkt muss dann über dem Auslösepunkt bleiben.',
@@ -1150,10 +1141,10 @@ export const de: Partial<Messages> = {
   'act.switch.aria': 'Weg des Switches',
   'act.trigger.title': 'Auslöseverhalten',
   'act.trigger.tip':
-    'Tastaturweite Einstellungen, gespeichert in der Firmware der Tastatur, nicht pro Taste.',
+    'Schalter für die ganze Tastatur, in ihr gespeichert: auf jedem Onboard-Profil und für jede Taste gleich.',
   'act.trigger.antiMistouch': 'Schutz vor Fehlauslösung',
   'act.trigger.antiMistouch.tip':
-    'Gleicht die ~0,1 mm Wegtoleranz aus, die ein Switch oder ein wackelnder Tisch am unteren Ende des Tastenwegs verursachen kann — der 防误触-Schalter des Herstellers.',
+    'Gleicht die ~0,1 mm Wegtoleranz aus, die ein Switch oder ein wackelnder Tisch am unteren Ende des Tastenwegs verursachen kann.',
   'act.trigger.rtStab': 'RT-Stabilisierung',
   'act.trigger.rtStab.tip':
     'Dämpft Zittern um den Umkehrpunkt, wenn Rapid Trigger aktiv ist. Höher ist stabiler, erhöht aber die Latenz; 0 schaltet es aus.',
@@ -1580,4 +1571,27 @@ export const de: Partial<Messages> = {
   'dev.log.hint':
     'Ein Protokoll dessen, was Shark Deck an dieses Gerät gesendet und was es geantwortet hat, mit allem, was schiefging: seine Einstellungen und jedes Makro, das du ihm gesendet hast. Hänge es an deine Meldung auf GitHub an.',
   'dev.log.save': 'Protokoll speichern',
+  'remap.fn.shared':
+    'Die Fn-Ebene ist auf jedem Onboard-Profil gleich: Ein Profilwechsel ändert die Basisebene, nicht diese.',
+  'act.reset.selectedMany': 'Tasten zurücksetzen',
+  'set.missing.title': 'Fehlt ein Gerät?',
+  'set.missing.row': 'Eine Tastatur oder Maus, die Shark Deck nicht anzeigt',
+  'set.missing.hint':
+    'Shark Deck lernt ein neues Gerät aus einer Aufnahme, wie die offizielle Software mit ihm spricht. Das Aufnahme-Tool führt dich durch.',
+  'set.missing.button': 'Hinzufügen helfen…',
+  'unlisted.title': 'Ein Gerät hinzufügen helfen',
+  'unlisted.body':
+    'Wähle die Tastatur oder Maus, die Shark Deck nicht anzeigt. Das Aufnahme-Tool führt dich dann Einstellung für Einstellung durch die offizielle Software und speichert, was sie und das Gerät einander sagen, in einer .zip auf deinem Desktop – zum Anhängen an ein „New device“-Issue auf GitHub.',
+  'unlisted.body.mac':
+    'Wähle die Tastatur oder Maus, die Shark Deck nicht anzeigt. Auf einem Mac erstellt das Tool nur den Bericht – die USB-IDs und wie sich das Gerät beschreibt –, zum Anhängen an ein „New device“-Issue auf GitHub. Eine Aufnahme braucht Windows oder Linux.',
+  'unlisted.loading': 'USB-Geräte werden gesucht…',
+  'unlisted.none': 'Keine USB-Tastatur oder -Maus gefunden. Schließe sie an und aktualisiere dann.',
+  'unlisted.listed': 'Schon in Shark Deck: Sein Geräte-Tab fragt nach dem, was fehlt.',
+  'unlisted.unnamed': 'Gerät ohne Namen',
+  'unlisted.kind': 'Es ist eine',
+  'unlisted.kind.keyboard': 'Tastatur',
+  'unlisted.kind.mouse': 'Maus',
+  'unlisted.closes':
+    'Shark Deck schließt sich, sobald das Tool läuft, damit nur die offizielle Software mit dem Gerät spricht.',
+  'unlisted.start': 'Aufnahme starten',
 };

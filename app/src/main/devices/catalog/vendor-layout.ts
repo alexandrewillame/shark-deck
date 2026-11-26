@@ -1,22 +1,21 @@
 /**
- * Pure conversion from sharkfin's data files to Shark Deck's shapes. Used by
- * `scripts/import-keyboard-registry.ts` (which writes `generated/*`) and by the
- * converter proof in `generated/layout-convert.test.ts`. Nothing in the app
- * imports this at runtime.
+ * Pure conversion from the vendor's key grids (Attack Shark Driver v4, read by
+ * scripts/extract-keyboard-registry.ts) to Shark Deck's shapes. Used by
+ * `scripts/import-keyboard-registry.ts` (which writes `generated/*`) and by
+ * its proof in `vendor-layout.test.ts`. Nothing in the app imports this at
+ * runtime.
  *
- * sharkfin (https://github.com/dniminenn/sharkfin, GPL-3.0-or-later) extracts
- * its registry and layouts from the vendor's own app and firmware. A layout
- * file is `{canvas, keys[]}`; each key carries pixel geometry on the vendor's
- * 46 px grid (a 1u cap is 40 px on a 46 px pitch with a 1 px origin — the same
- * grid `buildLayout` in scripts/extract-keyboard-protocol.mjs divided by 46 to
- * produce our hand-verified `ANSI_79_SG9047`), its factory 4-byte matrix entry,
- * and — only when the slot was confirmed against a firmware image or a real
- * board — its `matrixIndex` (the firmware slot every per-key write addresses).
+ * A grid is `{canvas, keys[]}`; each key carries pixel geometry on the
+ * vendor's 46 px grid (a 1u cap is 40 px on a 46 px pitch with a 1 px origin —
+ * the same grid `buildLayout` in scripts/extract-keyboard-protocol.mjs divided
+ * by 46 to produce our hand-verified `ANSI_79_SG9047`), the 4 bytes its key
+ * holds in a factory matrix, and a `matrixIndex` (the firmware slot every
+ * per-key write addresses) only once a board's own matrix has placed it.
  */
 import type { KeyLayoutEntry } from '@shared/types/keys';
 import type { TravelRange } from './keyboard-row';
 
-export interface SharkfinKey {
+export interface VendorKey {
   code: string;
   type: 'key' | 'knob';
   x: number;
@@ -30,9 +29,9 @@ export interface SharkfinKey {
   consumerUsage: number | null;
 }
 
-export interface SharkfinLayout {
+export interface VendorLayout {
   canvas: { width: number; height: number };
-  keys: SharkfinKey[];
+  keys: VendorKey[];
 }
 
 /** The vendor grid pitch, in pixels per key unit. */
@@ -48,7 +47,7 @@ export const SLOTS_PER_LAYER = 128;
  * Display labels in the convention `ANSI_79_SG9047` already uses (so a key's
  * legend, and the icon `KeyboardMap` draws for `Up` / `Enter` / `SHIFT`…, look
  * the same on every board). Keyed by the KeyboardEvent.code-style names
- * sharkfin's layouts use.
+ * the vendor's grids use.
  */
 const LABELS: Record<string, string> = {
   Escape: 'ESC',
@@ -107,7 +106,7 @@ const LABELS: Record<string, string> = {
 
 const DIGIT_LABELS = ['0)', '1!', '2@', '3#', '4$', '5%', '6^', '7&', '8*', '9('];
 
-export function labelFor(key: Pick<SharkfinKey, 'code' | 'text'>): string {
+export function labelFor(key: Pick<VendorKey, 'code' | 'text'>): string {
   const c = key.code;
   if (LABELS[c]) return LABELS[c]!;
   const letter = /^Key([A-Z])$/.exec(c);
@@ -122,7 +121,7 @@ export function labelFor(key: Pick<SharkfinKey, 'code' | 'text'>): string {
 }
 
 /** True when every key of a layout carries a distinct firmware slot. */
-export function isCertain(layout: SharkfinLayout): boolean {
+export function isCertain(layout: VendorLayout): boolean {
   const keys = layout.keys.filter((k) => k.type === 'key');
   if (!keys.length) return false;
   const slots = keys.map((k) => k.matrixIndex);
@@ -134,7 +133,7 @@ const sameEntry = (matrix: readonly number[], slot: number, entry: readonly numb
   entry.length === 4 && entry.every((b, i) => matrix[slot * 4 + i] === b);
 
 /**
- * Convert a sharkfin layout to `KeyLayoutEntry[]`, sorted by slot.
+ * Convert a vendor grid to `KeyLayoutEntry[]`, sorted by slot.
  *
  * `slot` comes from the key's `matrixIndex` when it has one; otherwise, when a
  * board's factory matrix is supplied, from the ONE slot whose 4-byte value
@@ -145,7 +144,7 @@ const sameEntry = (matrix: readonly number[], slot: number, entry: readonly numb
  * then a draw-order id, never a wire address.
  */
 export function convertLayout(
-  layout: SharkfinLayout,
+  layout: VendorLayout,
   opts: { defaultMatrix?: readonly number[]; geometryOnly?: boolean } = {},
 ): KeyLayoutEntry[] {
   const keys = layout.keys.filter((k) => k.type === 'key');
@@ -189,7 +188,7 @@ export function convertLayout(
   return out.sort((a, b) => a.slot! - b.slot!);
 }
 
-function entry(k: SharkfinKey, row: number, col: number, slot: number | undefined): KeyLayoutEntry {
+function entry(k: VendorKey, row: number, col: number, slot: number | undefined): KeyLayoutEntry {
   const e: KeyLayoutEntry = {
     label: labelFor(k),
     ...(slot !== undefined ? { slot } : {}),
@@ -224,7 +223,7 @@ export function parseRates(internalName: string): {
   return { cable: tokens[0] ?? null, wireless: tokens[1] ?? null };
 }
 
-/** sharkfin's `travel` block, with the ranges it actually carries. */
+/** Driver v4's `travelSetting` block, with the ranges it actually carries. */
 export function parseTravel(t: unknown): {
   travel?: TravelRange;
   firePress?: TravelRange;

@@ -27,14 +27,63 @@ export const CONFIRMED: Readonly<Record<string, Confirmed>> = {
   'attack-shark-r98-he-3743': 'all',
 };
 
+/**
+ * What a command set's own verified models confirmed for every model on it,
+ * by driver: the steps that only show how a change goes on the wire, which is
+ * the same frame on every board of the set. Left to a model's own recording:
+ * the steps that also show what this model offers (its poll rates, its
+ * actuation and dead-zone ranges, its lighting effects, its switches, its
+ * sleep and debounce choices).
+ *
+ * The keyboards whose official page launches qmk.top speak one command set:
+ * the R85 HE checked on hardware, the R98 HE's recording made again by Shark
+ * Deck's driver frame for frame (111 of 111, 2026-11-22). Its owners were
+ * asked to record every setting all the same, some 25 minutes, most of it
+ * frames already known (the user, 2026-11-25: "simplify recording
+ * procedures").
+ */
+const FAMILY_CONFIRMED: Readonly<Record<string, readonly string[]>> = {
+  'compx-keyboard': [
+    'end',
+    'profile',
+    'opt',
+    'winlock',
+    'rollover',
+    'macro',
+    'key',
+    'knob',
+    'perkey',
+  ],
+  'compx-he-keyboard': [
+    'end',
+    'profile',
+    'opt',
+    'winlock',
+    'rollover',
+    'macro',
+    'key',
+    'knob',
+    'perkey',
+    'dks',
+    'mt',
+    'tgl',
+    'snap',
+    'modereset',
+    'calibrate',
+  ],
+};
+
 /** The step words of what this model shows that no recording confirmed. */
 export function unconfirmedWords(
-  d: Pick<DeviceDescriptor, 'model' | 'capabilities' | 'spec'>,
+  d: Pick<DeviceDescriptor, 'model' | 'capabilities' | 'spec'> & { driver?: string },
 ): string[] {
   const c = CONFIRMED[d.model];
   if (c === 'all') return [];
+  const family = (d.driver && FAMILY_CONFIRMED[d.driver]) || [];
   // The knob's steps, only for a board that has one.
-  const words = stepWordsFor(d.capabilities).filter((w) => w !== 'knob' || d.spec.knob);
+  const words = stepWordsFor(d.capabilities).filter(
+    (w) => (w !== 'knob' || d.spec.knob) && !family.includes(w),
+  );
   if (!c) return words;
   if (Array.isArray(c)) return words.filter((w) => !c.includes(w));
   const { allBut } = c as { allBut: readonly string[] };

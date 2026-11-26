@@ -441,74 +441,6 @@
   color: var(--text-mut);
 }
 
-/* "All keys" popover on the Actuation tab's per-key toolbar — whole-board
- * actuation + Hall calibration, which used to be a full-width panel above the
- * keyboard. Portaled to document.body at position:fixed (see
- * usePortalPosition.ts), so it can't be clipped by the pane's scrollport;
- * shares .lang-menu-list's chrome and its menuIn animation. */
-.allkeys-menu {
-  display: inline-flex;
-}
-.allkeys-panel {
-  position: fixed;
-  z-index: 200;
-  width: 340px;
-  max-width: calc(100vw - 24px);
-  overflow-y: auto;
-  background: var(--bg-2);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 14px;
-  box-shadow: 0 16px 40px -16px rgba(0, 0, 0, 0.5);
-  animation: menuIn var(--dur-fast) var(--ease-out);
-}
-.allkeys-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: var(--fs-md);
-}
-.allkeys-section .hint {
-  font-size: var(--fs-xs);
-  color: var(--text-mut);
-  margin: 0;
-}
-.allkeys-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: nowrap;
-  margin-top: 2px;
-}
-/**
- * The slider takes the room; the button beside it takes what it needs.
- *
- * This used to name `.slider` and a direct-child `input[type='range']`, and
- * `Slider` renders neither: its wrapper is a plain flex div and the range is a
- * grandchild. So nothing matched, the row laid out at its natural width — a
- * 180px track, a 64px readout and a button, ~370px — inside a 300px panel, and
- * the whole menu grew a horizontal scrollbar.
- */
-.allkeys-controls > :first-child {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-.allkeys-controls input[type='range'] {
-  /* Beats the global `input[type='range'] { width: 180px }` on specificity. */
-  width: auto;
-  flex: 1 1 auto;
-  min-width: 40px;
-}
-/* 64px is sized for "100%"; nothing in here is a percentage. */
-.allkeys-controls .slider-value {
-  min-width: 50px;
-}
-.allkeys-sep {
-  height: 1px;
-  background: var(--line);
-  margin: 14px 0;
-}
-
 /* toasts
  *
  * The whole stack is click-through — `pointer-events: none` on the container,
@@ -670,55 +602,6 @@
   cursor: default;
 }
 
-/* The All-keys popover is a menu, not a document.
- *
- * Every section carried two or three sentences of prose under its heading,
- * which pushed the later sections past the bottom of a 340px box — so on a
- * short window there appeared to be nothing below RT stabilisation when in
- * fact there were two more sections. The explanations live in the headings'
- * own tooltips now, and the box is sized so its sections fit. */
-.allkeys-panel {
-  width: 300px;
-  max-height: min(70vh, 520px);
-  /* Nothing in here may scroll sideways: every row is built to fit this width,
-     so a horizontal bar means a layout bug, not content worth reaching. */
-  overflow-x: hidden;
-  /* `scroll`, not `auto`: the track is then always there, so a panel with more
-     below it looks different from one without — a thumb filling the track means
-     you are seeing everything. With `auto` and the app's near-invisible default
-     bar, the sections past the fold simply did not appear to exist. */
-  overflow-y: scroll;
-  scrollbar-gutter: stable;
-}
-.allkeys-panel::-webkit-scrollbar {
-  width: 12px;
-}
-.allkeys-panel::-webkit-scrollbar-track {
-  background: var(--bg-1);
-  border-radius: 6px;
-  margin: 4px 0;
-}
-.allkeys-panel::-webkit-scrollbar-thumb {
-  background: var(--line);
-  border: 3px solid var(--bg-2);
-  border-radius: 6px;
-}
-.allkeys-panel::-webkit-scrollbar-thumb:hover {
-  background: var(--text-mut);
-}
-.allkeys-section {
-  padding-block: 2px;
-}
-.allkeys-section .row {
-  padding-block: 4px;
-}
-/* A control in here gets the width it needs and no more, so a long label does
-   not get squeezed into a three-line column beside it. */
-.allkeys-section .row > .label {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
 /* Each callout gets real hit areas instead of a 1.5px line to aim at — see
  * `.switch-marker-hit` in SwitchCrossSection. A transparent FILL still takes
  * pointer events in SVG (`fill: none` does not), which is what makes this work
@@ -726,31 +609,6 @@
  * so they are already on top. */
 .switch-cross .switch-marker-hit {
   fill: transparent;
-}
-
-/* A one-line section: name on the left, its single control on the right.
- *
- * Calibrate and Restore each had their name on one line and a wide button on
- * the next, so two actions took four lines of a menu that has to fit in a
- * popover. The actuation row keeps its two lines — a slider needs the width —
- * but its name is short enough now not to take a third. */
-.allkeys-section.allkeys-inline {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.allkeys-section.allkeys-inline .allkeys-controls {
-  flex: none;
-}
-.allkeys-section.allkeys-inline .btn {
-  min-height: var(--ctl-h-sm);
-  padding: 0 12px;
-}
-/* The slider takes the room; the button beside it takes what it needs. */
-.allkeys-section .allkeys-controls > .btn {
-  flex: none;
-  white-space: nowrap;
 }
 
 /* "Reading from device…" is an overlay, not a row.

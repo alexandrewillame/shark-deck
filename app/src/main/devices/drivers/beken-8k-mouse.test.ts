@@ -19,7 +19,7 @@ const {
   putDeepSleep,
   SEED_BUTTONS,
   bekenFrame,
-  bekenStageColours,
+  withVendorColours,
   decodeBekenButton,
   decodeBekenDpi,
   decodeX11Dpi,
@@ -357,27 +357,35 @@ describe('Beken8kMouse: what it keeps, and when', () => {
     expect(decodeBekenButton([0x11, 0x0a, 0x16]).combo).toEqual([0xe1, 0xe3, 0x16]);
   });
 
-  // The owner's two reports: stage 1 sent, every change came back red (11-19);
-  // stage 2 sent, stage 2 lit red and stage 1 magenta (11-23).
-  it('turns the colours so the stage a block makes current keeps its own', () => {
-    const name = (c: number[]) =>
-      ({
-        ff0000: 'R',
-        '00ff00': 'G',
-        '0000ff': 'B',
-        ffff00: 'Y',
-        '00ffff': 'C',
-        ff00ff: 'M',
-        ff4000: 'O',
-        ffffff: 'W',
-      })[c.map((x) => x.toString(16).padStart(2, '0')).join('')];
-    const table = (active: number, count: number) =>
-      bekenStageColours(active, count).map(name).join('');
-    expect(table(1, 6)).toBe('RGBYCMOW');
-    expect(table(2, 6)).toBe('GBYCMROW');
-    expect(table(6, 6)).toBe('MRGBYCOW');
-    // Four stages on: the four turn among themselves, the rest stay.
-    expect(table(3, 4)).toBe('BYRGCMOW');
+  // The owner's 11-25 log: after a block on stage 4 carrying a table turned to
+  // start at yellow, the button lit stage 5 green — entry 5 of that table.
+  // The mouse lights stage n with entry n: the vendor's table, always.
+  it('sends the vendor colours whatever table a block was kept with', () => {
+    const turned = dpiData(REC.dpi400);
+    // 0.3.8's table for stage 4: yellow, cyan, magenta, red, green, blue…
+    turned.splice(
+      22,
+      18,
+      0xff,
+      0xff,
+      0,
+      0,
+      0xff,
+      0xff,
+      0xff,
+      0,
+      0xff,
+      0xff,
+      0,
+      0,
+      0,
+      0xff,
+      0,
+      0,
+      0,
+      0xff,
+    );
+    expect(withVendorColours(turned)).toEqual(dpiData(REC.dpi400));
   });
 
   it('turns stages off with the mask, and reads them back off', async () => {
@@ -738,13 +746,9 @@ describe('BekenX11Mouse, against the X11 recording', () => {
     d[21] = 0x02;
     const { drv, writes } = x11Rig(report10(1, d, START.power!, START.buttons!));
     await drv.setDpiStages(await drv.readDpiStages());
-    // dpi.active.2: the software made stage 2 active. The colours go turned to
-    // start at stage 2's own (green), where the vendor software sent them as
-    // they are: the mouse starts its light over at the first entry, and stage
-    // 2 would light red. The same bytes, so the same sum.
+    // dpi.active.2: the software made stage 2 active, as recorded.
     expect(writes()).toEqual([
-      '04 38 01 00 00 3f 20 20 12 25 38 4b 75 81 01 01 00 00 00 00 00 01 00 00 02 ' +
-        '00 ff 00 00 00 ff ff ff 00 00 ff ff ff 00 ff ff 00 00 ff 40 00 ff ff ff 02 0f 69',
+      dpi('00 00 3f 20 20 12 25 38 4b 75 81 01 01 00 00 00 00 00 01 00 00 02', '0f 69'),
     ]);
   });
 
@@ -1150,10 +1154,10 @@ describe('Beken mice: macros, deep sleep, announcements', () => {
     expect(await drv.getBattery()).toMatchObject({ level: null, charging: true });
     expect(await drv.readLiveState()).toMatchObject({ activeDpiStage: 2 });
     // A sensor change sends the stage the mouse is on, not the one Shark Deck last sent,
-    // and the colours turned so stage 3 keeps its own (blue).
+    // with the vendor's colours.
     await drv.setSensor({ motionSync: true });
     expect(sent[0]![6 + 21]).toBe(3);
-    expect([...sent[0]!.subarray(6 + 22, 6 + 25)]).toEqual([0x00, 0x00, 0xff]);
+    expect([...sent[0]!.subarray(6 + 22, 6 + 25)]).toEqual([0xff, 0x00, 0x00]);
   });
 
   it('hears what the mouse announces on every pass, not only at the battery poll', async () => {
@@ -1171,9 +1175,9 @@ describe('Beken mice: macros, deep sleep, announcements', () => {
     const { drv, sent } = rig();
     const r = await drv.setActiveDpiStage(2);
     expect(r.ok).toBe(true);
-    // The DPI block, stage 3 active, the colours turned so stage 3 keeps blue.
+    // The DPI block, stage 3 active, the vendor's colours (red first).
     expect([sent[0]![3], sent[0]![6 + 21]]).toEqual([0x04, 3]);
-    expect([...sent[0]!.subarray(6 + 22, 6 + 25)]).toEqual([0x00, 0x00, 0xff]);
+    expect([...sent[0]!.subarray(6 + 22, 6 + 25)]).toEqual([0xff, 0x00, 0x00]);
     expect(await drv.readActiveDpiStage()).toBe(2);
     expect((await drv.setActiveDpiStage(6)).ok).toBe(false);
   });

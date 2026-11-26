@@ -288,7 +288,7 @@ describe('backup and restore carry Mod-tap and DKS whole', () => {
   class RecordingHe extends StubHe {
     log: string[] = [];
     protected override backupPaceMs = 0;
-    override async readKeyBindings() {
+    protected override async readKeyBindingsOn() {
       return null;
     }
     override async readPerKeyLighting() {

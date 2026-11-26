@@ -49,6 +49,14 @@
      positioned row cannot get it from the board's own padding. */
   left: var(--kb-pad);
   height: var(--kb-h);
+  /* A row is a full-width box drawn after the one above, so it lay over the
+     lower half of a key taller than its row (numpad + and Enter): the pointer
+     coming from below met the row, not the key, and nothing lit until it
+     reached the key's top half. Only the keys take the pointer. */
+  pointer-events: none;
+}
+.kbrow > .kbkey {
+  pointer-events: auto;
 }
 /* A keycap is a physical object: an opaque neutral cap with a lighter top
  * bevel, sitting on the dark board. It must read as unremarkable, so that a

@@ -315,7 +315,7 @@ function extractR85heMatrix() {
  * the device table. A board's slot map is what per-key writes need, so with
  * these an importer can promote a drawing-only layout to an addressable one
  * (match each key's `matrixEntry` to its one slot, as
- * src/main/devices/catalog/sharkfin-convert.ts `convertLayout` does).
+ * src/main/devices/catalog/vendor-layout.ts `convertLayout` does).
  * Boards whose chunk is not found are listed, not guessed.
  */
 function extractAllMatrices(devices) {

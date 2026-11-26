@@ -172,7 +172,7 @@ export function ButtonsSection({
   const chooseAction = (i: number, key: string) => {
     const def = BUTTON_ACTION_BY_KEY[key]!;
     const m: ButtonMapping = { actionKey: key, action: def.wire ?? 0 };
-    if (def.children) m.param = def.children[0]!.value;
+    if (def.children) m.param = ownClick(i, def.children) ?? def.children[0]!.value;
     // A Beken mouse's rapid fire has no count or interval (DeviceUi.fireWhileHeld).
     if (def.fire && !device.ui.fireWhileHeld) m.fire = { times: 3, interval: 50 };
     if (def.combo) return writeCombo(i, { ...m, combo: [] });
@@ -180,6 +180,11 @@ export function ButtonsSection({
   };
 
   const buttonMap = device.ui.buttonMap;
+  /** The button's own factory click, when the action offers it (MOUSE_BUTTON_MAP). */
+  function ownClick(i: number, children: readonly { value: number }[]): number | undefined {
+    const c = buttonMap?.[i]?.click;
+    return c !== undefined && children.some((x) => x.value === c) ? c : undefined;
+  }
 
   const rows = Array.from({ length: count }, (_, i) => {
     const m = cur[i];
@@ -218,7 +223,7 @@ export function ButtonsSection({
         <span className="btn-row-options">
           {!locked && def?.children && !def.multimedia && (
             <Select
-              value={String(m?.param ?? def.children[0]!.value)}
+              value={String(m?.param ?? ownClick(i, def.children) ?? def.children[0]!.value)}
               options={def.children.map((c) => ({ value: c.value, label: c.labelEn }))}
               onChange={(v) => write(i, { ...m!, param: Number(v) })}
             />

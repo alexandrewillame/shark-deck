@@ -848,9 +848,6 @@ export const ko: Partial<Messages> = {
   'set.background': '배경',
   'set.background.none': '없음',
   'set.background.smoke': '연기',
-  'set.background.fire': '불꽃',
-  'set.background.electricity': '전기',
-  'set.background.lava': '용암',
   'set.background.aurora': '오로라',
   'set.background.nebula': '성운',
   'set.background.landscape': '풍경',
@@ -885,15 +882,9 @@ export const ko: Partial<Messages> = {
   'set.palette.synthwave': '신스웨이브',
   'set.palette.lime': '라임',
   'set.palette.frost': '서리',
-  'set.background.rain': '비',
-  'act.allKeys': '모든 키',
-  'act.allKeys.tip':
-    '키보드 전체에 한 번에 적용되는 설정입니다 — 모든 키의 트리거 응답 방식과 홀 센서 재보정. 여기에는 키별 설정이 없습니다.',
-  'act.allKeys.aria': '모든 키에 적용되는 설정',
   'act.cal.recalibrate': '재보정',
   'act.cal.recalibrate.tip':
     '각 스위치가 쉬는 위치와 바닥에 닿는 위치를 키보드에 알려 줍니다. 안내에 따라 한 번만 진행하면 됩니다: 시작하고, 모든 키를 바닥까지 누른 다음 완료하세요 — 진행 중에는 케이블을 뽑지 마세요. 스위치를 교체한 뒤나 액추에이션이 어긋난 느낌이 들 때 실행하세요.',
-  'act.cal.start': '시작',
   'act.rt.sensitivity': 'RT 감도',
   'act.rt.link.tip':
     '하나의 감도가 다시 누르기와 해제를 모두 결정합니다. 따로 설정하면 방향별로 각각 조정할 수 있습니다.',
@@ -962,7 +953,7 @@ export const ko: Partial<Messages> = {
   'act.reset.all': '모두 초기화',
   'act.reset.all.tip':
     '키보드에 있는 모든 키의 액추에이션, 해제, 래피드 트리거, 데드존, 모드를 공장 기본값으로 되돌립니다. 보정에는 영향이 없으며, 장치 전체를 공장 초기화하는 것도 아닙니다 — 그 기능은 “장치” 탭에 있습니다.',
-  'act.reset.selected': '초기화',
+  'act.reset.selected': '키 초기화',
   'act.reset.selected.tip':
     '선택한 키의 액추에이션, 해제, 래피드 트리거, 데드존, 모드를 공장 기본값으로 되돌립니다. 보정에는 영향이 없습니다.',
   'act.key.title': '키',
@@ -970,7 +961,7 @@ export const ko: Partial<Messages> = {
   'act.key.previewHint':
     '누르고 있는 키를 표시하고 있습니다. 설정을 바꾸려면 위 키보드에서 키를 선택하세요.',
   'act.key.emptyHint':
-    '위 키보드에서 키를 선택하면 액추에이션, 래피드 트리거, 모드를 설정할 수 있습니다.',
+    '위 키보드에서 키를 선택하면 액추에이션, 래피드 트리거, 모드를 설정할 수 있습니다. 여러 개를 선택하려면 Shift 또는 Ctrl을 누른 채 클릭하거나 보드 위를 드래그하세요.',
   'act.release.point': '해제 지점',
   'act.release.point.tip':
     '연동하면 키가 작동한 깊이와 같은 깊이에서 해제됩니다 — 키보드 자체의 기본값입니다. 따로 설정하면 히스테리시스 간격이 생겨, 손가락을 올려 두어도 입력이 떨리지 않습니다. 이때 해제 지점은 작동점보다 위에 있어야 합니다.',
@@ -1103,10 +1094,11 @@ export const ko: Partial<Messages> = {
   'act.marker.bottom': '하단',
   'act.switch.aria': '스위치 이동 거리',
   'act.trigger.title': '트리거 응답',
-  'act.trigger.tip': '키별이 아니라 키보드 펌웨어에 저장되는 키보드 전체 설정입니다.',
+  'act.trigger.tip':
+    '키보드 전체에 적용되고 키보드에 저장되는 설정입니다. 모든 온보드 프로필과 모든 키에서 같습니다.',
   'act.trigger.antiMistouch': '오입력 방지',
   'act.trigger.antiMistouch.tip':
-    '스위치나 흔들리는 책상 때문에 스트로크 맨 아래에서 생길 수 있는 약 0.1 mm의 이동 오차를 보정합니다 — 제조사 앱의 “防误触” 스위치입니다.',
+    '스위치나 흔들리는 책상 때문에 스트로크 맨 아래에서 생길 수 있는 약 0.1 mm의 이동 오차를 보정합니다.',
   'act.trigger.rtStab': 'RT 안정화',
   'act.trigger.rtStab.tip':
     '래피드 트리거가 켜져 있을 때 방향 전환 지점 주변의 떨림을 줄입니다. 높을수록 안정적이지만 지연이 늘어나며, 0이면 꺼집니다.',
@@ -1527,4 +1519,26 @@ export const ko: Partial<Messages> = {
   'dev.log.hint':
     'Shark Deck이 이 장치에 보낸 내용과 장치의 응답, 그리고 잘못된 모든 것을 담은 로그입니다. 설정과 보낸 매크로가 포함됩니다. GitHub 보고서에 첨부하세요.',
   'dev.log.save': '로그 저장',
+  'remap.fn.shared':
+    'Fn 레이어는 모든 온보드 프로필에서 같습니다. 프로필을 바꾸면 이 레이어가 아니라 기본 레이어가 바뀝니다.',
+  'act.reset.selectedMany': '키 초기화',
+  'set.missing.title': '장치가 없나요?',
+  'set.missing.row': 'Shark Deck에 표시되지 않는 키보드나 마우스',
+  'set.missing.hint':
+    'Shark Deck은 공식 소프트웨어가 장치와 주고받는 내용을 한 번 기록하면 새 장치를 익힙니다. 기록 도구가 과정을 안내합니다.',
+  'set.missing.button': '추가 돕기…',
+  'unlisted.title': '장치 추가 돕기',
+  'unlisted.body':
+    'Shark Deck에 표시되지 않는 키보드나 마우스를 고르세요. 기록 도구가 공식 소프트웨어의 설정을 하나씩 안내하고, 소프트웨어와 장치가 주고받는 내용을 바탕 화면의 .zip에 저장합니다. GitHub의 "New device" 이슈에 첨부해 주세요.',
+  'unlisted.body.mac':
+    'Shark Deck에 표시되지 않는 키보드나 마우스를 고르세요. Mac에서는 도구가 보고서만 만듭니다(USB ID와 장치가 스스로를 설명하는 방식). GitHub의 "New device" 이슈에 첨부해 주세요. 기록에는 Windows나 Linux가 필요합니다.',
+  'unlisted.loading': 'USB 장치를 찾는 중…',
+  'unlisted.none': 'USB 키보드나 마우스를 찾지 못했습니다. 연결한 뒤 새로 고침하세요.',
+  'unlisted.listed': '이미 Shark Deck에 있습니다. 부족한 부분은 해당 장치 탭에서 요청합니다.',
+  'unlisted.unnamed': '이름 없는 장치',
+  'unlisted.kind': '종류',
+  'unlisted.kind.keyboard': '키보드',
+  'unlisted.kind.mouse': '마우스',
+  'unlisted.closes': '도구가 시작되면 Shark Deck이 닫혀, 공식 소프트웨어만 장치와 통신합니다.',
+  'unlisted.start': '기록 시작',
 };

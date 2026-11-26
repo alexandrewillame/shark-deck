@@ -122,6 +122,85 @@ describe('SET_KEYMATRIX frames', () => {
     expect(await remapFrame(slot, action)).toBe(frame);
   });
 
+  // Each profile keeps its own base layer: Driver v4 reads an R98 HE's two
+  // (`8a 00 ff …`, `8a 01 ff …`), and they differ exactly where its owner
+  // swapped Insert and Delete on one (the 2026-11-22 recording). Shark Deck
+  // read and wrote profile 0's, whatever the board was on.
+  describe('the base layer of the profile the board is on', () => {
+    class Board extends CompxKeyboard {
+      protected override readonly settleMs = 0;
+      protected override backupPaceMs = 0;
+      override async readPerKeyLighting() {
+        return null;
+      }
+      override async readMacros() {
+        return [];
+      }
+    }
+    const rig = (profile: number) => {
+      const board = { profile, sent: [] as string[] };
+      const hex = (b: Uint8Array) => [...b].map((x) => x.toString(16).padStart(2, '0')).join(' ');
+      const answer = (cmd: number) =>
+        cmd === 0x84 ? Uint8Array.from([0, 0x84, board.profile, 0, 0, 0, 0, 0, 0]) : null;
+      const io = {
+        write: async (b: Uint8Array) => {
+          board.sent.push(hex(b.subarray(0, 13)));
+          if (b[1] === 0x04) board.profile = b[2]!;
+        },
+        read: async () => new Uint8Array(65),
+        request: async (_f: Uint8Array, cmd: number) => answer(cmd),
+      };
+      const ch = {
+        ...io,
+        transaction: async (fn: (x: typeof io) => unknown) => fn(io),
+      };
+      const d = new Board({
+        descriptor: ATTACK_SHARK_R85HE,
+        channel: ch as never,
+        onWarning: () => undefined,
+      });
+      return { d, board };
+    };
+
+    it('reads and writes the base layer of profile 2 when the board is on it', async () => {
+      const { d, board } = rig(1);
+      await d.readKeyBindings('base');
+      const reads = board.sent.filter((f) => f.startsWith('00 8a'));
+      expect(reads).toHaveLength(8);
+      expect(reads.every((f) => f.slice(6, 11) === '01 ff')).toBe(true);
+      board.sent.length = 0;
+      await d.setKeyRemap('base', 9, '05');
+      expect(board.sent[0]).toBe('00 0a 01 09 00 00 01 00 ea 00 00 05 00');
+    });
+
+    it('follows a switch: the next remap goes to the profile switched to', async () => {
+      const { d, board } = rig(1);
+      expect((await d.setActiveProfile(1)).ok).toBe(true);
+      board.sent.length = 0;
+      await d.setKeyRemap('base', 9, '05');
+      expect(board.sent[0]).toBe('00 0a 00 09 00 00 01 00 eb 00 00 05 00');
+    });
+
+    it('backs up every profile’s base layer and puts each back on its own', async () => {
+      const { d, board } = rig(0);
+      const blocks = await d.backup();
+      // The R85HE keeps four.
+      expect(Object.keys(blocks).filter((k) => k.startsWith('keymatrix_base'))).toEqual([
+        'keymatrix_base',
+        'keymatrix_base_2',
+        'keymatrix_base_3',
+        'keymatrix_base_4',
+      ]);
+      board.sent.length = 0;
+      const key = (code: string) => JSON.stringify({ 9: { kind: 'key', code } });
+      await d.restoreFromBackup({ keymatrix_base: key('05'), keymatrix_base_2: key('06') });
+      expect(board.sent.filter((f) => f.startsWith('00 0a')).map((f) => f.slice(6, 11))).toEqual([
+        '00 09',
+        '01 09',
+      ]);
+    });
+  });
+
   it('builds the zone frames of a multi-zone binding from the same pieces', () => {
     expect(quadFor('05')).toEqual([0, 0, 5, 0]);
     expect(quadFor('00e30007')).toEqual([0, 0xe3, 0, 7]);

@@ -35,11 +35,11 @@ export interface TabDef {
    * you would expect, since `SET_LEDPARAM` / `SET_SLEDPARAM` / `SET_USERPIC`
    * carry no slot byte at all.
    *
-   * On a keyboard that evidence leaves Actuation alone: lighting frames carry
-   * no slot byte, the key matrix is read and written at a fixed layer, the Fn
-   * layer follows KBOPTION, there is one macro slot, and poll rate and
-   * debounce are single registers. Only the magnetism pages follow
-   * SET_PROFILE. `profileFieldsFor` in shared/types/profiles.ts is the same
+   * On a keyboard that evidence leaves Remap and Actuation: the key matrix
+   * names its profile (its base layer; the Fn layer follows KBOPTION) and the
+   * magnetism pages follow SET_PROFILE, while lighting frames carry no slot
+   * byte, the macros are the board's, and poll rate and debounce are single
+   * registers. `profileFieldsFor` in shared/types/profiles.ts is the same
    * rule for the compare and copy paths — keep the two in step.
    */
   profileScoped?: boolean;
@@ -94,7 +94,8 @@ export function configTabs(device: LiveDevice): TabDef[] {
   if (gate('tab.keys', device)) {
     tabs.push({
       id: 'keys',
-      profileScoped: !kb,
+      // A keyboard's base layer is its profile's (the Fn layer is not).
+      profileScoped: true,
       labelKey: 'cfg.tab.keys',
       descKey: 'cfg.tab.keys.desc',
       icon: 'key',

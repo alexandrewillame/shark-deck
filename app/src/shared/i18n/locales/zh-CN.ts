@@ -813,9 +813,6 @@ export const zhCN: Partial<Messages> = {
   'set.background': '背景',
   'set.background.none': '无',
   'set.background.smoke': '烟雾',
-  'set.background.fire': '火焰',
-  'set.background.electricity': '电流',
-  'set.background.lava': '熔岩',
   'set.background.aurora': '极光',
   'set.background.nebula': '星云',
   'set.background.landscape': '风景',
@@ -850,15 +847,9 @@ export const zhCN: Partial<Messages> = {
   'set.palette.synthwave': '合成波',
   'set.palette.lime': '青柠',
   'set.palette.frost': '霜',
-  'set.background.rain': '雨',
-  'act.allKeys': '全部按键',
-  'act.allKeys.tip':
-    '一次作用于整个键盘的设置——所有按键的触发响应方式，以及重新校准霍尔传感器。此处没有逐键设置。',
-  'act.allKeys.aria': '适用于所有按键的设置',
   'act.cal.recalibrate': '重新校准',
   'act.cal.recalibrate.tip':
     '让键盘记住每个轴体的静止位置和触底位置。只需按引导操作一次：开始后将每个按键按到底，然后点击完成——运行期间请勿拔下数据线。更换轴体后，或感觉触发不准时，请执行此操作。',
-  'act.cal.start': '开始',
   'act.rt.sensitivity': 'RT 灵敏度',
   'act.rt.link.tip': '用同一个灵敏度同时控制再次按下和释放。分开设置可单独调整每个方向。',
   'act.rt.link': '使用统一灵敏度',
@@ -924,13 +915,14 @@ export const zhCN: Partial<Messages> = {
   'act.reset.all': '全部重置',
   'act.reset.all.tip':
     '将键盘上所有按键的触发行程、释放行程、快速触发、死区和模式恢复为出厂值。校准不受影响；这也不是整台设备的恢复出厂设置——该功能位于“设备”标签页。',
-  'act.reset.selected': '重置',
+  'act.reset.selected': '重置按键',
   'act.reset.selected.tip':
     '将所选按键的触发行程、释放行程、快速触发、死区和模式恢复为出厂值。校准不受影响。',
   'act.key.title': '按键',
   'act.key.pressing': '正在按下',
   'act.key.previewHint': '正在显示被按下的按键。在上方键盘中选择一个按键即可更改其设置。',
-  'act.key.emptyHint': '在上方键盘中选择一个按键，即可设置其触发行程、快速触发和模式。',
+  'act.key.emptyHint':
+    '在上方键盘中选择一个按键，即可设置其触发行程、快速触发和模式。按住 Shift 或 Ctrl 点击，或在键盘上拖动，可选择多个按键。',
   'act.release.point': '释放点',
   'act.release.point.tip':
     '联动时，按键在与触发相同的深度释放——这是键盘自身的默认行为。分开设置可留出迟滞间隙，防止手指搭在键上时反复触发；此时释放点必须位于触发点上方。',
@@ -1052,10 +1044,9 @@ export const zhCN: Partial<Messages> = {
   'act.marker.bottom': '底部',
   'act.switch.aria': '轴体行程',
   'act.trigger.title': '触发响应',
-  'act.trigger.tip': '保存在键盘固件中、作用于整个键盘的开关，而非逐键设置。',
+  'act.trigger.tip': '作用于整个键盘、保存在键盘中的开关：在所有板载配置和所有按键上都相同。',
   'act.trigger.antiMistouch': '防误触',
-  'act.trigger.antiMistouch.tip':
-    '补偿轴体或晃动的桌面在行程底部可能带来的约 0.1 mm 行程误差——即厂商软件中的“防误触”开关。',
+  'act.trigger.antiMistouch.tip': '补偿轴体或晃动的桌面在行程底部可能带来的约 0.1 mm 行程误差。',
   'act.trigger.rtStab': 'RT 稳定',
   'act.trigger.rtStab.tip':
     '开启快速触发时，抑制方向反转点附近的抖动。数值越高越稳定，但会增加延迟；设为 0 则关闭。',
@@ -1460,4 +1451,25 @@ export const zhCN: Partial<Messages> = {
   'dev.log.hint':
     'Shark Deck 发送给此设备的内容及其回应的日志，包括所有出错之处：它的设置，以及你发送给它的任何宏。请将其附加到你在 GitHub 上的报告中。',
   'dev.log.save': '保存日志',
+  'remap.fn.shared': 'Fn 层在所有板载配置中都相同：切换配置改变的是基础层，而不是这一层。',
+  'act.reset.selectedMany': '重置按键',
+  'set.missing.title': '缺少设备？',
+  'set.missing.row': 'Shark Deck 未显示的键盘或鼠标',
+  'set.missing.hint':
+    'Shark Deck 通过一次录制官方软件与设备的通信来学会支持新设备。录制工具会一步步引导你。',
+  'set.missing.button': '协助添加…',
+  'unlisted.title': '协助添加设备',
+  'unlisted.body':
+    '选择 Shark Deck 未显示的键盘或鼠标。录制工具会带你逐项操作官方软件，并把软件与设备之间的通信保存为桌面上的 .zip，请附到 GitHub 的“New device”议题中。',
+  'unlisted.body.mac':
+    '选择 Shark Deck 未显示的键盘或鼠标。在 Mac 上，工具只生成报告（USB ID 及设备对自身的描述），请附到 GitHub 的“New device”议题中。录制需要 Windows 或 Linux。',
+  'unlisted.loading': '正在查找 USB 设备…',
+  'unlisted.none': '未找到 USB 键盘或鼠标。请插上后刷新。',
+  'unlisted.listed': '已在 Shark Deck 中：它的“设备”页会请你补充缺少的内容。',
+  'unlisted.unnamed': '未命名设备',
+  'unlisted.kind': '类型',
+  'unlisted.kind.keyboard': '键盘',
+  'unlisted.kind.mouse': '鼠标',
+  'unlisted.closes': '工具启动后 Shark Deck 会关闭，只让官方软件与设备通信。',
+  'unlisted.start': '开始录制',
 };

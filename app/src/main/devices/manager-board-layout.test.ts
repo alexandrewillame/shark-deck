@@ -34,13 +34,26 @@ vi.mock('../store', () => ({
   writeBackup: async () => 'f.json',
 }));
 
+// The R98 PRO and R98 GT as boards with a drawing and no slot map: Driver
+// v4's factory matrices give both one now, and placing a board from its own
+// key map is what this file is about.
+vi.mock('./catalog/generated/keyboard-rows', async (importOriginal) => {
+  const m = await importOriginal<typeof import('./catalog/generated/keyboard-rows')>();
+  return {
+    KEYBOARD_ROWS: m.KEYBOARD_ROWS.map((r) =>
+      r.id === 3754 || r.id === 3748 ? { ...r, slotLayout: null } : r,
+    ),
+  };
+});
+
 import { DeviceManager } from './manager';
 import { KEYBOARDS_BY_ID } from './catalog/keyboards';
 import { decodeQuad } from './drivers/compx-keyboard';
 import { VirtualDriver } from './virtual';
 import { r98hePages } from './r98he-keymap.fixture';
 
-/** The R98 PRO: the R98 HE's drawing, and no recording of its own. */
+/** The R98 PRO: the R98 HE's drawing, and no recording of its own (and,
+ *  here, no slot map: see the catalogue mock above). */
 const BOARD = KEYBOARDS_BY_ID.get(3754)!;
 
 /** The R98 HE's recorded factory base layer (the same drawing), as the driver reads it. */

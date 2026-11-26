@@ -146,6 +146,28 @@ describe('ButtonsSection macros', () => {
     expect(document.querySelector('.btn-row-fire')).toBeNull();
   });
 
+  // Its owner (2026-11-25): choosing "Button" put Left click on any button.
+  it('starts the Button action on the button’s own click', async () => {
+    sdMock.listMacroLibrary!.mockResolvedValue([]);
+    sdMock.readMacros!.mockResolvedValue([]);
+    await open('attack-shark-x8-pro', {});
+    const action = (n: number) =>
+      document
+        .querySelectorAll('.btn-row:not(.btn-row-head)')
+        [n - 1]!.querySelector<HTMLSelectElement>('.btn-row-action select')!;
+    const sent = () => sdMock.setButtonMapping!.mock.calls.at(-1)!.slice(1);
+    fireEvent.change(action(4), { target: { value: 'button' } });
+    await settle();
+    expect(sent()).toEqual([3, expect.objectContaining({ actionKey: 'button', param: 0x1000 })]);
+    fireEvent.change(action(5), { target: { value: 'button' } });
+    await settle();
+    expect(sent()).toEqual([4, expect.objectContaining({ actionKey: 'button', param: 0x0800 })]);
+    // The DPI button gives no click of its own: the list's first.
+    fireEvent.change(action(6), { target: { value: 'button' } });
+    await settle();
+    expect(sent()).toEqual([5, expect.objectContaining({ actionKey: 'button', param: 0x0100 })]);
+  });
+
   it('asks before a mouse holding one macro plays another on every button', async () => {
     sdMock.listMacroLibrary!.mockResolvedValue([macro('lib-a', 'Alpha'), macro('lib-b', 'Beta')]);
     sdMock.readMacros!.mockResolvedValue([{ ...macro('', 'Alpha'), id: 'onboard-0' }]);

@@ -828,7 +828,7 @@ export class DeviceManager extends Emitter {
       const vc = findVendorCollection(all, next.vid, next.pid, next.usagePage, next.usage);
       if (!vc) return;
       await e.channel.close();
-      e.channel = this.newChannel(prev.id, vc, next, DeviceManager.eventsOf(all, next));
+      e.channel = this.newChannel(prev.id, vc, next, this.eventsOf(all, next, prev.id));
     }
     e.descriptor = next;
     e.driver = createDriver({
@@ -1078,17 +1078,27 @@ export class DeviceManager extends Emitter {
     );
   }
 
-  /** A device's announcement collection (`DeviceDescriptor.events`), among those enumerated. */
-  private static eventsOf(all: HidCandidate[], d: DeviceDescriptor): HidCandidate | null {
+  /**
+   * A device's announcement collection (`DeviceDescriptor.events`), among those
+   * enumerated. None there goes in the device's log with the collections that
+   * are, so a report shows it: the X8 PRO's cable listened nowhere, silently,
+   * through three versions (its owner's log, 2026-11-25).
+   */
+  private eventsOf(all: HidCandidate[], d: DeviceDescriptor, id: string): HidCandidate | null {
     if (!d.events) return null;
-    const c = all.find(
-      (x) =>
-        x.vendorId === d.vid &&
-        x.productId === d.pid &&
-        x.usagePage === d.events!.usagePage &&
-        x.usage === d.events!.usage &&
-        !!x.path,
-    );
+    const mine = all.filter((x) => x.vendorId === d.vid && x.productId === d.pid && !!x.path);
+    const { usagePage, usage } = d.events;
+    const c = mine.find((x) => x.usagePage === usagePage && x.usage === usage);
+    if (!c) {
+      const hex4 = (n: number | undefined) => (n ?? 0).toString(16).padStart(4, '0');
+      const has = mine.map((x) => `${hex4(x.usagePage)}:${hex4(x.usage)}`).join(', ');
+      frameLog.push({
+        deviceId: id,
+        dir: 'rx',
+        hex: '',
+        note: `announcements: no ${hex4(usagePage)}:${hex4(usage)} collection (it has ${has || 'none'})`,
+      });
+    }
     return c ?? null;
   }
 
@@ -1242,7 +1252,7 @@ export class DeviceManager extends Emitter {
           id,
           vc,
           descriptor,
-          DeviceManager.eventsOf(allCollections, descriptor),
+          this.eventsOf(allCollections, descriptor, id),
         );
         changed = true;
       } else if (existing && DeviceManager.prefersEndpoint(existing.descriptor, descriptor)) {
@@ -1253,7 +1263,7 @@ export class DeviceManager extends Emitter {
           id,
           vc,
           descriptor,
-          DeviceManager.eventsOf(allCollections, descriptor),
+          this.eventsOf(allCollections, descriptor, id),
         );
         changed = true;
       } else if (!existing) {
@@ -1261,7 +1271,7 @@ export class DeviceManager extends Emitter {
           id,
           vc,
           descriptor,
-          DeviceManager.eventsOf(allCollections, descriptor),
+          this.eventsOf(allCollections, descriptor, id),
         );
         const driver = createDriver({
           descriptor,
@@ -2050,17 +2060,37 @@ export class DeviceManager extends Emitter {
           async () => valueWriter(await d.readSideLighting(), (v) => d.setSideLighting(v)),
         ],
         [
+          'keyRemapBase',
+          async () => {
+            // The slot's own base layer (the key matrix names its profile):
+            // every key the destination binds otherwise, quad for quad.
+            const src = await d.readKeyBindings('base');
+            if (!src) return null;
+            return async () => {
+              const dst = (await d.readKeyBindings('base')) ?? {};
+              const results: WriteResult[] = [];
+              for (const [slotStr, b] of Object.entries(src)) {
+                const slot = Number(slotStr);
+                const raw = b.raw;
+                if (!raw || b.locked) continue;
+                if (dst[slot]?.raw?.every((x, i) => x === raw[i])) continue;
+                const quad = raw.map((x) => (x & 0xff).toString(16).padStart(2, '0')).join('');
+                results.push(await d.setKeyRemap('base', slot, quad));
+              }
+              const failed = results.find((r) => !r.ok);
+              return failed ?? { ok: true, verified: 'unverified' };
+            };
+          },
+        ],
+        [
           'magnetic',
           async () => {
             // Everything of Mod-tap and DKS that lives in the slot travels with
             // the keys: mode, hold time, DKS point and zone flags are magnetism
             // pages. Their key bindings (the hold key, the DKS actions) are
-            // not copied because they are not the slot's: SharkDeck writes
-            // them to key-matrix layer 0 whichever profile is active
-            // (`setKeyZoneBindings`), so the copy already uses them — and for
-            // the same reason a copy INTO another slot leaves them alone
-            // (`keepZoneBindings`), rather than undoing a mod-tap key on the
-            // profile in use.
+            // kept per profile from what Shark Deck wrote (`setKeyZoneBindings`
+            // has no read-back), so a copy INTO another slot leaves them
+            // alone (`keepZoneBindings`): it has no record of that slot's.
             const keys = await d.readMagnetic();
             return keys.length
               ? () => d.setMagneticKeys(keys, undefined, { keepZoneBindings: to !== started })
@@ -2172,8 +2202,9 @@ export class DeviceManager extends Emitter {
             error: sel.error ?? `could not select profile ${slot}`,
           };
       }
-      // The key matrix is not the slot's (see copyProfile), so a write to a
-      // slot the board is not showing leaves every key's bindings alone.
+      // The zone bindings are kept per profile from what was written (see
+      // copyProfile), so a write to a slot the board is not showing leaves
+      // every key's bindings alone.
       return await d.setMagneticKeys(keys, previous, { keepZoneBindings: hop });
     } finally {
       if (hop)

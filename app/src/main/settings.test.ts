@@ -61,10 +61,20 @@ describe('settings coercion', () => {
 
   it('moves a retired background on to its successor, or off', async () => {
     // Artistic became Paint, Paint became Military, then Military and Petrol
-    // gave way to Rain; Primal left the set.
-    for (const old of ['artistic', 'paint', 'military', 'petrol']) {
+    // gave way to Rain; Rain, Fire, Electricity and Lava left the set
+    // (2026-11-25) for the nearest left; Primal left with no successor.
+    for (const [old, now] of [
+      ['artistic', 'water'],
+      ['paint', 'water'],
+      ['military', 'water'],
+      ['petrol', 'water'],
+      ['rain', 'water'],
+      ['fire', 'smoke'],
+      ['electricity', 'aurora'],
+      ['lava', 'nebula'],
+    ]) {
       await writeRaw({ background: old });
-      expect((await getSettings()).background, old).toBe('rain');
+      expect((await getSettings()).background, old).toBe(now);
     }
     await writeRaw({ background: 'primal' });
     expect((await getSettings()).background).toBe('none');

@@ -111,8 +111,13 @@ export async function enumerate(vid?: number, pid?: number): Promise<HidCandidat
         path: d.path ?? '',
         vendorId: d.vendorId,
         productId: d.productId,
-        usagePage: d.usagePage,
-        usage: d.usage,
+        // node-hid leaves a usage page or usage of 0 out (seen on Windows). The
+        // Beken mice announce on 000A:0000 and take settings on 000B:0000, so
+        // matching "usage 0" never found their announcements beside the
+        // settings (the X8 PRO's cable: no battery, no stage, its owner's log
+        // of 2026-11-25). Every candidate carries both, 0 when left out.
+        usagePage: d.usagePage ?? 0,
+        usage: d.usage ?? 0,
         serialNumber: d.serialNumber,
         interface: d.interface ?? -1,
         release: d.release,

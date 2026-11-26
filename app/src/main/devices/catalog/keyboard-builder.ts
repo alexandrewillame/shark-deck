@@ -16,8 +16,8 @@ import { RECORDED_KEYMAPS } from './recorded-keymaps';
 import { deriveLayout, findKnob } from '../layout-check';
 
 /**
- * One Attack Shark keyboard row (the vendor registry, via sharkfin — see
- * keyboard-row.ts) -> the descriptor Shark Deck drives it with.
+ * One Attack Shark keyboard row (the vendor's own registry, read from Driver
+ * v4 — see keyboard-row.ts) -> the descriptor Shark Deck drives it with.
  *
  * Every capability comes from a rule over the row, never from the model's
  * name: the same marketing name covers different hardware (three X87 Ultra
@@ -106,7 +106,7 @@ const POLL_RATES = [125, 250, 500, 1000, 2000, 4000, 8000];
 
 /**
  * The firmware lineage (internal-name prefix) that accepts per-key magnetic
- * writes, as sharkfin gates them: `ry5088_` on gen2, `yc3121_` on yc500. A
+ * writes: `ry5088_` on gen2, `yc3121_` on yc500. A
  * magnetic flag without it (the X65 HE 1025, `attackshark_x65he`) means the
  * vendor app shows no Hall-effect settings either.
  */
@@ -176,7 +176,7 @@ function magneticSpec(row: KeyboardRow): MagneticSpec {
   const ranges: MagneticSpec['ranges'] = {};
   const t = row.travel;
   if (t?.travel) ranges.travel = toSpecRange(t.travel, KB_TRAVEL_RANGE.travel);
-  // sharkfin's firePress/fireLift are the rapid-trigger sensitivities.
+  // Driver v4's firePress/fireLift (its travelSetting) are the rapid-trigger sensitivities.
   if (t?.firePress) ranges.rt = toSpecRange(t.firePress, KB_TRAVEL_RANGE.rt);
   if (t?.deadzone) ranges.deadzone = toSpecRange(t.deadzone, KB_TRAVEL_RANGE.deadzone);
   Object.assign(ranges, TRAVEL_OVERRIDES[row.id] ?? {});

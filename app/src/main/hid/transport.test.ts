@@ -88,6 +88,20 @@ describe('enumerate()', () => {
     expect(out[0]!.path).toBe('ms-cfg');
   });
 
+  // node-hid leaves a usage page or usage of 0 out; the Beken mice announce on
+  // 000A:0000, which an exact match then never found (the X8 PRO's cable).
+  it('gives a usage page or usage node-hid left out as 0', async () => {
+    mockDevicesAsync.mockResolvedValue([
+      { vendorId: 0x1d57, productId: 0x2126, path: 'col03', usagePage: 0x000a },
+      { vendorId: 0x1d57, productId: 0x2126, path: 'col05' },
+    ]);
+    const out = await enumerate(0x1d57);
+    expect(out.map((c) => [c.usagePage, c.usage])).toEqual([
+      [0x000a, 0],
+      [0, 0],
+    ]);
+  });
+
   it('maps missing path / interface to safe defaults', async () => {
     mockDevicesAsync.mockResolvedValue([{ vendorId: 0x3151, productId: 0x5029 }]);
     const [c] = await enumerate(0x3151);

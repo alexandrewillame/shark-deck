@@ -111,12 +111,13 @@ low half only.
   the mouse to another stage.
 - The eight colours, in the vendor software's order: red, green, blue, yellow,
   cyan, magenta, orange, white. The vendor software never changes them, and
-  the mouse keeps them so (the cable's read). The mouse starts its light over
-  at the first entry whenever a DPI block lands, on the stage the block makes
-  current: sent stage 1, every change came back red; sent stage 2, stage 2 lit
-  red and stage 1 magenta (the X8 PRO's owner, 2026-11-19 and 11-23). Shark
-  Deck turns the first entries so the light starts on the current stage's own
-  colour (`bekenStageColours`), and each stage keeps its colour. `inferred`.
+  the mouse keeps them so (the cable's read). The mouse lights stage n with
+  entry n of the last table it was sent. Shark Deck 0.3.6 to 0.3.8 turned the
+  table to start at the stage a block made current; after a block on stage 4
+  the X8 PRO lit stage 5 green and, after one on stage 5, stage 6 yellow:
+  entries 5 and 6 of the turned tables (its owner's device log, 2026-11-25).
+  Shark Deck now sends the vendor's table unchanged, every time, which also
+  puts back a table an earlier version turned. `inferred` from that log.
 - Button slots: 0 Left, 1 Right, 2 Middle, 3 the DPI button (underneath),
   4 Backward (button 5, the side button nearer the rear, factory `05`),
   5 Forward (button 4, nearer the front, factory `06`). The report tool used to

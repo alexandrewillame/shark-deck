@@ -39,6 +39,36 @@ describe('nextLiveValue', () => {
     });
   });
 
+  it('adopts a move of its own inside the pin: neither our write nor what it replaced', () => {
+    // The X8 PRO's owner (2026-11-25): a click on stage 4, then the DPI button
+    // a second and a half later. The first report after the click said stage
+    // 5; ignored, the screen stayed on 4 until the next press showed 6.
+    expect(
+      nextLiveValue({
+        ...base,
+        local: 3,
+        remote: 4,
+        pinnedTo: 3,
+        pinnedFrom: [0],
+        pinnedUntil: 3_000,
+      }),
+    ).toEqual({ value: 4, clearPin: true });
+  });
+
+  it('still ignores a read from before two quick clicks', () => {
+    // 800 -> 1600 -> 3200 inside one window; a read started before the first.
+    expect(
+      nextLiveValue({
+        ...base,
+        local: 3200,
+        remote: 800,
+        pinnedTo: 3200,
+        pinnedFrom: [800, 1600],
+        pinnedUntil: 3_000,
+      }),
+    ).toEqual({ value: 3200, clearPin: false });
+  });
+
   it('lets the device win again once the pin expires — it really did move', () => {
     // The mouse's own DPI button was pressed after our write; past the window
     // the hardware is the authority, which is the point of polling it at all.

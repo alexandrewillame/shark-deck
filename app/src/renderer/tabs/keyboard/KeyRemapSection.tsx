@@ -444,7 +444,13 @@ export function KeyRemapSection({ device, layer }: TabProps & { layer: 'base' | 
 
   return (
     <div>
-      <Panel title={t('remap.board')}>
+      {/* The Fn layer is not the profile's (the key matrix's profile byte is
+          the base layer's; GET_FN follows KBOPTION), though the profile
+          switcher sits above this tab. */}
+      <Panel
+        title={t('remap.board')}
+        tip={layer === 'fn' && device.ui.profileCount > 1 ? t('remap.fn.shared') : undefined}
+      >
         <ArtAnchor mode="keyboard" className="art-keyboard-anchor" measureRef={boardRef}>
           <KeyboardMap
             ref={boardRef}

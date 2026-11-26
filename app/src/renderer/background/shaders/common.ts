@@ -19,13 +19,10 @@
  *               fields rather than recoloured from the night
  *   uIntensity  how strongly to draw, 0..1
  *   uPal        1 when uA/uB are the palette's, 0 for the natural pair — for
- *               what an effect has beyond its two colours: fire's white-hot
- *               core is warmer in its own colours, and the rain's city has
- *               red tail lights that a palette's two colours replace
+ *               what an effect has beyond its two colours, which a palette's
+ *               two colours replace
  *
  * Helpers:
- *   lnoise1(x)   1-D value noise joined by straight lines, not curves: a
- *                zig-zag, for line work that should kink (lightning)
  *   slope(h)     how fast `h` changes across the screen, per screen height —
  *                for lighting a surface (a wet sheen). Zero where the GPU has
  *                no `OES_standard_derivatives`, which leaves the surface
@@ -99,10 +96,6 @@ float noise1(float x) {
   float i = floor(x);
   float f = fract(x);
   return mix(hash11(i), hash11(i + 1.0), f * f * (3.0 - 2.0 * f));
-}
-float lnoise1(float x) {
-  float i = floor(x);
-  return mix(hash11(i), hash11(i + 1.0), fract(x));
 }
 
 vec2 slope(float h) {
