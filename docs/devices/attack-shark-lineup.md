@@ -149,7 +149,7 @@ One row per firmware model id: a name can cover several versions (wired or wirel
 These have official software, but Shark Deck knows neither their USB ids nor
 how the software talks to them, so it does not show them when they are
 plugged in. One owner's recording is how each gets added: in Shark Deck,
-**Settings → Missing a device? → Help add it**, then pick the device (see
+**Settings → Missing a device?**, then pick the device (see
 [Missing a device?](#missing-a-device)).
 
 | Kind | Models | The official page's web driver |
@@ -183,9 +183,9 @@ Attack Shark device.
 Shark Deck asks by itself: a device it does not support, or not fully, has a
 **Help add it** (or **Help complete its support**) panel in its Device tab,
 whose button starts the tool below for that device, set to what is missing.
-A device it does not show at all is in **Settings → Missing a device? → Help
-add it**: pick it among the USB devices plugged in, say whether it is a
-keyboard or a mouse, and the same tool starts for it. Windows and Linux
+A device it does not show at all is in **Settings → Missing a device?**: pick
+it among the USB devices plugged in, say whether it is a keyboard or a mouse,
+and the same tool starts for it. Windows and Linux
 record; macOS makes the report alone. Or by hand:
 
 1. Download [`tools/SharkDeck-device-report.bat`](../../tools/SharkDeck-device-report.bat)

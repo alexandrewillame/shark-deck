@@ -47,6 +47,25 @@ export interface UseAnchoredPositionOptions {
    *  else below. 'left'/'right' sit beside the anchor, and swap sides when
    *  the one asked for has no room. */
   placement?: 'auto' | AnchoredPlacement;
+  /**
+   * What the panel must not cover, measured each time it is placed — the
+   * colour picker's is the pane's Apply button, which is the next thing
+   * clicked after a colour. See `placeAnchored`.
+   */
+  avoid?: () => AvoidRect[];
+  /**
+   * The box to place against, when it is not the anchor's own: a colour
+   * preset's tip is level with its swatch but goes under the whole picker.
+   */
+  anchorBox?: (own: DOMRect) => AvoidRect;
+}
+
+/** A screen rectangle a floating panel keeps clear of. */
+export interface AvoidRect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
 }
 
 export function useAnchoredPosition(
@@ -55,7 +74,7 @@ export function useAnchoredPosition(
   active: boolean,
   opts: UseAnchoredPositionOptions = {},
 ): AnchoredPosition | null {
-  const { gap = 8, margin = 8, align = 'center', placement = 'auto' } = opts;
+  const { gap = 8, margin = 8, align = 'center', placement = 'auto', avoid, anchorBox } = opts;
   const [pos, setPos] = useState<AnchoredPosition | null>(null);
 
   // Placed after the panel mounts (so its real size is known), then
@@ -68,10 +87,17 @@ export function useAnchoredPosition(
     const place = () => {
       const anchor = anchorRef.current;
       if (!anchor) return;
-      const r = anchor.getBoundingClientRect();
+      const own = anchor.getBoundingClientRect();
+      const r = anchorBox ? anchorBox(own) : own;
       setPos(
         placeAnchored({
-          anchor: { top: r.top, bottom: r.bottom, left: r.left, right: r.right, width: r.width },
+          anchor: {
+            top: r.top,
+            bottom: r.bottom,
+            left: r.left,
+            right: r.right,
+            width: r.right - r.left,
+          },
           bubble: {
             width: bubbleRef.current?.offsetWidth ?? 240,
             height: bubbleRef.current?.offsetHeight ?? 40,
@@ -81,6 +107,7 @@ export function useAnchoredPosition(
           margin,
           align,
           placement,
+          avoid: avoid?.(),
         }),
       );
     };
@@ -117,6 +144,11 @@ export interface PlaceAnchoredInput {
   margin: number;
   align: 'center' | 'start' | 'end';
   placement: AnchoredPlacement | 'auto';
+  /** Rectangles to keep clear of. When the placement asked for would cover
+   *  one, the other sides are tried in turn — below, above, then beside — and
+   *  the first that fits whole without covering any wins. None does: the
+   *  placement asked for, as before. */
+  avoid?: AvoidRect[];
 }
 
 /**
@@ -133,7 +165,32 @@ export interface PlaceAnchoredInput {
  * window with no way to reach it or had to be capped so conservatively that it
  * scrolled when it did not need to.
  */
-export function placeAnchored({
+export function placeAnchored(input: PlaceAnchoredInput): AnchoredPosition {
+  const { avoid, bubble } = input;
+  const first = placeOnce(input);
+  if (!avoid?.length) return first;
+  /** Where it lands covers something it must not, or is squeezed shorter than it is. */
+  const bad = (p: AnchoredPosition) => {
+    const h = Math.min(bubble.height, p.maxHeight);
+    const box = { left: p.left, top: p.top, right: p.left + bubble.width, bottom: p.top + h };
+    return (
+      p.maxHeight < bubble.height ||
+      avoid.some(
+        (a) => box.left < a.right && box.right > a.left && box.top < a.bottom && box.bottom > a.top,
+      )
+    );
+  };
+  if (!bad(first)) return first;
+  for (const side of ['bottom', 'top', 'left', 'right'] as const) {
+    if (side === first.placement) continue;
+    const p = placeOnce({ ...input, placement: side });
+    // A side that had no room swaps itself (placeBeside), so check what it became.
+    if (p.placement === side && !bad(p)) return p;
+  }
+  return first;
+}
+
+function placeOnce({
   anchor,
   bubble,
   viewport,

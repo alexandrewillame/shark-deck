@@ -25,6 +25,7 @@ export type IconName =
   | 'pair'
   | 'restore'
   | 'chevronRight'
+  | 'external'
   | 'info'
   | 'palette'
   | 'key'
@@ -188,6 +189,15 @@ const PATHS: Record<IconName, JSX.Element> = {
     </>
   ),
   chevronRight: <path d="M6 3l5 5-5 5" />,
+  /** Opens outside the app — a browser page, a system window: the arrow out
+   *  of the corner every desktop uses for it. */
+  external: (
+    <>
+      <path d="M9.5 2.5h4v4" />
+      <path d="M13.5 2.5L7.5 8.5" />
+      <path d="M11.5 9.5v3a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3" />
+    </>
+  ),
   info: (
     <>
       <circle cx="8" cy="8" r="6.2" />

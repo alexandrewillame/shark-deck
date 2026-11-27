@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
-  COLOR_PRESET_ROWS,
+  LED_PALETTE,
   LED_WHITE,
   SWATCH_HUES,
   emittedRgb,
   hexToRgb,
   hsvToRgb,
+  ledFor,
+  ledPresets,
   litCap,
+  presetOf,
   rgbToHsv,
+  shownRgb,
 } from './colorUtil';
 import { GROUP_HUES } from './tabs/keyboard/useKeyGroups';
 import { deltaEHex } from '../../test/lib/colorDistance';
@@ -199,66 +203,87 @@ describe('rgbToHsv / hsvToRgb', () => {
 });
 
 /**
- * There are two swatch grids in the app — key groups on the Actuation tab and
- * LED presets on Lighting — and they used to share nothing: eight hues at
- * three depths there, seven hand-picked colours here. "Give me that colour"
- * therefore meant a different colour depending on which tab you were on.
+ * The LED presets: ten colour families across, three colours down each — the
+ * colour, its neighbour round the wheel, a light one. They were three
+ * BRIGHTNESSES of each colour (full, 72%, half), which the effect's own
+ * brightness already does: "propose actually different colours, not lower
+ * intensities" (2026-11-26).
  */
 describe('the preset grid', () => {
-  it('offers every shared hue, at every level', () => {
-    for (const row of COLOR_PRESET_ROWS) {
-      // One column per hue, plus the neutral that belongs to none of them.
-      expect(row).toHaveLength(SWATCH_HUES.length + 1);
-    }
-    expect(new Set(COLOR_PRESET_ROWS.flat()).size).toBe(COLOR_PRESET_ROWS.flat().length);
+  const flat = LED_PALETTE.flat();
+
+  it('is ten families, three colours each, every colour and name once', () => {
+    expect(LED_PALETTE).toHaveLength(3);
+    for (const row of LED_PALETTE) expect(row).toHaveLength(SWATCH_HUES.length + 1);
+    expect(new Set(flat.map((p) => p.look)).size).toBe(flat.length);
+    expect(new Set(flat.map((p) => p.name)).size).toBe(flat.length);
   });
 
-  it('is the same hues the key-group picker offers, in the same order', () => {
-    // The two grids are built from one list; this is what says so. (The group
-    // picker adds a slate after them, where this grid has its neutral column.)
-    expect(GROUP_HUES.slice(0, SWATCH_HUES.length)).toEqual(SWATCH_HUES.map((h) => h.name));
+  it('heads each column with its family, the same families the key groups use', () => {
+    expect(LED_PALETTE[0]!.slice(0, SWATCH_HUES.length).map((p) => p.name)).toEqual(
+      SWATCH_HUES.map((h) => h.name),
+    );
+    expect(GROUP_HUES).toEqual(SWATCH_HUES.map((h) => h.name));
   });
 
-  it('gives the hue row pure, saturated colours — these drive a diode', () => {
-    // Where the grids part company. A group swatch is ink in the app and can
-    // be `l: 36`; the same value written to an LED is a dim red rather than
-    // "red", so the top row runs each hue flat out.
-    for (const hex of COLOR_PRESET_ROWS[0]!.slice(0, SWATCH_HUES.length)) {
-      const [, s, v] = rgbToHsv(hexToRgb(hex));
-      expect(s).toBeCloseTo(1, 2);
-      expect(v).toBeCloseTo(1, 2);
+  it('is never a dimmer copy: every colour but "off" runs its strongest die flat out', () => {
+    for (const p of flat) {
+      if (p.name === 'off') continue;
+      expect(Math.max(...hexToRgb(p.look)), p.name).toBe(255);
     }
   });
 
   it('keeps black reachable, which is the only per-key off switch', () => {
-    expect(COLOR_PRESET_ROWS.flat()).toContain('#000000');
-    expect(COLOR_PRESET_ROWS.flat()).toContain('#ffffff');
+    expect(flat.find((p) => p.name === 'off')?.look).toBe('#000000');
+    expect(flat.find((p) => p.name === 'white')?.look).toBe('#ffffff');
   });
 
-  it('keeps orange and the pink far enough from red to stay themselves', () => {
-    // The reported case: an orange at 30° and a pink at 325° beside the red
-    // column. A diode's red channel dominates, so on the keyboard both read as
-    // more red. They are in the grid — a picker without them is a poor one —
-    // just where they hold up: orange at 35°, the pink a magenta at 318°.
-    const off = (h: number) => Math.min(h, 360 - h);
-    for (const c of SWATCH_HUES) {
-      if (c.name === 'red') continue;
-      expect(off(c.h), `${c.name} at ${c.h}`).toBeGreaterThanOrEqual(35);
-    }
-  });
-
-  it('keeps every pair of LED swatches in a row apart', () => {
-    // Measured, not eyeballed: the LED rows mix hues with white or run them
-    // down, which is where neighbouring hues converge.
-    for (const row of COLOR_PRESET_ROWS) {
-      for (let i = 0; i < row.length; i++) {
-        for (let j = i + 1; j < row.length; j++) {
-          const d = deltaEHex(row[i]!, row[j]!);
-          // The closest pair is 22.2 (soft yellow/lime).
-          expect(d, `${row[i]} vs ${row[j]} is only ${d.toFixed(1)}`).toBeGreaterThan(20);
-        }
+  it('keeps every pair of presets apart', () => {
+    // Measured, not eyeballed. The closest pair is 12.1 (cream / pale lime); a
+    // first draft had a chartreuse beside the green and an indigo beside the
+    // blue, the same colour twice on a diode.
+    for (let i = 0; i < flat.length; i++) {
+      for (let j = i + 1; j < flat.length; j++) {
+        const d = deltaEHex(flat[i]!.look, flat[j]!.look);
+        expect(d, `${flat[i]!.name} vs ${flat[j]!.name} is only ${d.toFixed(1)}`).toBeGreaterThan(
+          11.5,
+        );
       }
     }
+  });
+});
+
+/**
+ * Main lighting lights a colour as a screen would; the side strip mixes light
+ * linearly. On an R85 HE: #ff4d00 was red on the main lighting and a proper
+ * orange on the strip; #ff7f32 orange on the main lighting and whitish on the
+ * strip (2026-11-26). So each zone is sent what makes the colour shown.
+ */
+describe('the presets, per zone', () => {
+  it('sends the main lighting the colour itself', () => {
+    for (const p of LED_PALETTE.flat()) expect(ledFor(p.look, 'screen')).toBe(p.look);
+  });
+
+  it('sends the side strip what lights as that colour on a linear diode', () => {
+    for (const p of LED_PALETTE.flat()) {
+      const shown = shownRgb(hexToRgb(ledFor(p.look, 'linear')), 'linear');
+      const meant = shownRgb(hexToRgb(p.look), 'screen');
+      shown.forEach((c, i) => expect(Math.abs(c - meant[i]!), p.name).toBeLessThanOrEqual(1));
+    }
+  });
+
+  it("puts the strip's orange where its owner found it: red full, green 50 to 100", () => {
+    const [r, g, b] = hexToRgb(ledFor('#ff8000', 'linear'));
+    expect([r, b]).toEqual([255, 0]);
+    expect(g).toBeGreaterThanOrEqual(50);
+    expect(g).toBeLessThanOrEqual(100);
+  });
+
+  it('names every preset in either zone, for its tooltip', () => {
+    for (const zone of ['screen', 'linear'] as const)
+      for (const row of ledPresets(zone))
+        for (const p of row) expect(presetOf(p.hex, zone)?.name).toBe(p.name);
+    expect(presetOf('#123456', 'screen')).toBeUndefined();
   });
 });
 
@@ -278,14 +303,14 @@ describe('emittedRgb', () => {
     expect(g).toBeGreaterThan(60); // and it moves enough to read as azure
   });
 
-  it('leaves every saturated colour that is not blue-dominant exactly alone', () => {
+  it('leaves every saturated colour with no blue to speak of exactly alone', () => {
     for (const c of [
       [0, 0, 0],
       [255, 0, 0],
       [0, 255, 0],
       [0, 255, 255],
       [255, 180, 0],
-      [200, 0, 200],
+      [255, 128, 0],
     ] as Array<[number, number, number]>)
       expect(emittedRgb(c)).toEqual(c);
   });
@@ -307,13 +332,37 @@ describe('emittedRgb', () => {
     // ...and the wire never sees any of it (see the last test below).
   });
 
-  it('leaves a violet the user actually picked as a violet', () => {
-    // Red is leading too, so there is no blue-only spectral tail to model and
-    // the correction has nothing to do. Picking purple must give purple.
-    const [r, g, b] = emittedRgb([128, 0, 255]);
-    expect(r).toBe(128);
-    expect(b).toBe(255);
-    expect(g).toBeLessThan(45); // still unmistakably violet, not blue
+  it('draws red beside a full blue as the board shows it: a magenta reads violet', () => {
+    // Side by side with the board: magenta "looks more like your violet", the
+    // violet "a bit more blue" than drawn (2026-11-26). Still a violet, not a
+    // blue: its red stays well up.
+    const [mr, , mb] = emittedRgb([255, 0, 255]);
+    expect(mb).toBe(255);
+    expect(mr).toBeLessThan(200);
+    expect(mr).toBeGreaterThan(120);
+    const [vr, vg, vb] = emittedRgb([128, 0, 255]);
+    expect(vb).toBe(255);
+    expect(vr).toBeLessThan(128);
+    expect(vr).toBeGreaterThan(50);
+    expect(vg).toBeLessThan(vr);
+  });
+
+  it('leaves a pink, whose blue is low, as it was: "spot on"', () => {
+    const [r] = emittedRgb([255, 128, 149]);
+    expect(r).toBeGreaterThan(235);
+  });
+
+  it('draws a near-white as a white with a tint, a warm one yellow rather than orange', () => {
+    // The warm white was "more orange-ish than in reality, where it looks
+    // grey-ish, a bit grey-yellow" (2026-11-26).
+    const warm = emittedRgb([255, 207, 154]);
+    const [h, s] = rgbToHsv(warm);
+    const [h0, s0] = rgbToHsv([255, 207, 154]);
+    expect(s).toBeLessThan(s0);
+    expect(h).toBeGreaterThan(h0 + 10); // towards yellow
+    // ...and a cream still reads cream: a tint, not a white.
+    const [cr, , cb] = emittedRgb([255, 244, 179]);
+    expect(cr - cb).toBeGreaterThan(15);
   });
 
   it('scales with how far blue is leading, with no step in it', () => {

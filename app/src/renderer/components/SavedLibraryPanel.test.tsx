@@ -105,6 +105,27 @@ describe('SavedLibraryPanel', () => {
     expect(onRename).toHaveBeenCalledWith({ id: 'a', name: 'Desk' }, 'Desk two');
   });
 
+  it('renames in the name itself: while editing, the field is the only name shown', async () => {
+    const { container } = setup([{ id: 'a', name: 'Desk' }]);
+    /** The name as text a user can see: not in a hidden placeholder. */
+    const shown = () =>
+      [...container.querySelectorAll<HTMLElement>('*')].filter(
+        (el) =>
+          el.children.length === 0 &&
+          el.textContent === 'Desk' &&
+          !el.closest('[style*="visibility: hidden"]'),
+      );
+    expect(shown()).toHaveLength(1);
+    await userEvent.click(container.querySelector<HTMLButtonElement>('.inline-rename-btn')!);
+    const box = container.querySelector<HTMLInputElement>('.inline-rename-input')!;
+    expect(box.value).toBe('Desk');
+    expect(shown(), 'a copy of the name beside the field').toEqual([]);
+    // The field sits where the name was, over its reserved, hidden place.
+    expect(
+      box.closest('.inline-rename-editing')?.querySelector('.inline-rename-text')?.textContent,
+    ).toBe('Desk');
+  });
+
   it('draws each entry with its thumbnail and actions, or says the list is empty', () => {
     const { unmount } = setup([{ id: 'a', name: 'Desk' }]);
     expect(screen.getByTestId('thumb-a')).toBeTruthy();

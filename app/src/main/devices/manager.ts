@@ -6,9 +6,11 @@ import type { Capability } from '@shared/types/capability';
 import {
   profileFieldsFor,
   type ProfileField,
+  type ProfileKeysCopy,
   type ProfileSnapshot,
   type ProfileSnapshots,
 } from '@shared/types/profiles';
+import { actionOfQuad } from '@shared/key-zones';
 import { getT } from '@shared/i18n';
 import { getSettingsSync } from '../settings';
 import { toHex } from '../hid/frame';
@@ -21,7 +23,6 @@ import {
 } from '../hid/transport';
 import type { HidCandidate } from '../hid/transport';
 import type { DpiStage } from '@shared/types/mouse-settings';
-import type { MagneticKeySettings } from '@shared/types/keyboard-settings';
 import { COMPX_8K_DONGLE_VID, knownVendorIds, resolveDescriptor, spansEndpoints } from './registry';
 import { isReadOnly, resolveIdentity } from './identity';
 import { colorVariantsOf } from '@shared/device-art';
@@ -2168,44 +2169,92 @@ export class DeviceManager extends Emitter {
   }
 
   /**
-   * Write some keys' actuation settings to one slot — the profile comparator's
-   * per-key copy.
+   * Some keys of one slot onto another — the profile comparator's per-key
+   * copy: each key's actuation settings, its base-layer binding, and the
+   * actions of its Mod-tap or DKS zones.
    *
    * No magnetism GET or SET carries a profile byte, so a slot the board is not
    * on can only be written by going there: the same silent hop as
    * `copyProfile` (no `noteActiveProfile`, for the same reason), and the board
-   * always ends on the slot it started on. The source settings come from the
-   * caller's snapshot rather than a fresh source read — that read is a full
-   * multi-page sweep, and the comparator re-reads after every copy anyway.
+   * always ends on the slot it started on. The key matrix does name its
+   * profile, so once there, every binding written is that slot's own.
+   *
+   * The source values come from the caller's sweep rather than a fresh read —
+   * that read is a full multi-page sweep, and the comparator re-reads after
+   * every copy anyway — and the caller sends a Snap Tap pair whole, from both
+   * profiles (`planKeyCopy`). What only this side knows is checked here: a
+   * Mod-tap or DKS key's other actions sit in zones no read returns, so Shark
+   * Deck has them only from having written them (`readKeyZoneBindings`). A key
+   * whose source actions it never wrote is refused, by name, rather than
+   * copied without them — on the destination it would hold or step through
+   * the destination's own leftovers.
+   *
+   * In the vendor's order: the zones, then the pages (a key leaving Mod-tap
+   * gets its own binding back there, on this slot), then the bindings.
    */
-  async setMagneticKeysOnProfile(
+  async copyProfileKeys(
     deviceId: string,
-    slot: number,
-    keys: MagneticKeySettings[],
-    previous?: MagneticKeySettings[],
+    from: number,
+    to: number,
+    copy: ProfileKeysCopy,
   ): Promise<WriteResult> {
     const e = this.entries.get(deviceId);
     if (!e) return { ok: false, verified: 'unverified', error: 'No such device' };
+    if (from === to)
+      return {
+        ok: false,
+        verified: 'unverified',
+        error: 'Source and destination are the same profile',
+      };
     const d = e.driver;
+    const layout = e.descriptor.spec?.keyMatrix?.layout ?? [];
+    const slotOf = (k: { row: number; col: number }) =>
+      layout.find((x) => x.row === k.row && x.col === k.col)?.slot;
+    const zoned = copy.magnetic.filter((k) => k.mode === 'mt' || k.mode === 'dks');
+    const srcZones = zoned.length
+      ? ((await d.readKeyZoneBindings(from).catch(() => null)) ?? {})
+      : {};
+    const unknown = zoned.filter((k) => {
+      const slot = slotOf(k);
+      return slot === undefined || !srcZones[slot];
+    });
+    if (unknown.length) {
+      const names = unknown.map((k) => layout.find((x) => x.row === k.row && x.col === k.col));
+      return {
+        ok: false,
+        verified: 'unverified',
+        error: `${names.map((x, i) => x?.label ?? `${unknown[i]!.row},${unknown[i]!.col}`).join(', ')}: its Mod-tap or DKS actions on profile ${from} were set outside Shark Deck, and the keyboard cannot be asked for them, so it is not copied`,
+      };
+    }
+
     // The device's own answer, for the same reason as the sweep above.
     const started = (await d.getActiveProfile().catch(() => null)) ?? e.live.activeProfile ?? 1;
-    const hop = slot !== started;
-
+    const hop = to !== started;
     this.noteWriteStart(deviceId);
     try {
       if (hop) {
-        const sel = await d.setActiveProfile(slot);
+        const sel = await d.setActiveProfile(to);
         if (!sel.ok)
           return {
             ok: false,
             verified: 'unverified',
-            error: sel.error ?? `could not select profile ${slot}`,
+            error: sel.error ?? `could not select profile ${to}`,
           };
       }
-      // The zone bindings are kept per profile from what was written (see
-      // copyProfile), so a write to a slot the board is not showing leaves
-      // every key's bindings alone.
-      return await d.setMagneticKeys(keys, previous, { keepZoneBindings: hop });
+      const results: WriteResult[] = [];
+      /** Slots whose zones already carry the key's own binding (a Mod-tap tap). */
+      const bound = new Set<number>();
+      for (const k of zoned) {
+        const slot = slotOf(k)!;
+        results.push(await d.setKeyZoneBindings(slot, [...srcZones[slot]!]));
+        if (k.mode === 'mt') bound.add(slot);
+      }
+      if (copy.magnetic.length) results.push(await d.setMagneticKeys(copy.magnetic, copy.previous));
+      for (const b of copy.bindings) {
+        if (bound.has(b.slot)) continue;
+        results.push(await d.setKeyRemap('base', b.slot, actionOfQuad(b.raw)));
+      }
+      return results.find((r) => !r.ok) ?? { ok: true, verified: 'unverified' };
     } finally {
       if (hop)
         await this.entries

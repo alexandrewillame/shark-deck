@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { KeyLayoutEntry } from '@shared/types/keys';
-import { emittedCss } from '../../colorUtil';
+import { emittedCss, shownCss } from '../../colorUtil';
 import { effectColor, type PreviewBounds } from './effectPreview';
 
 /**
@@ -127,7 +127,8 @@ export function EffectThumb({
         const t = i / (steps - 1);
         grad.addColorStop(
           t,
-          emittedCss(
+          // The side strip as it lights: linearly (colorUtil `LedResponse`).
+          shownCss(
             effectColor(
               label,
               { x: t * (steps - 1), y: 0 },
@@ -143,6 +144,7 @@ export function EffectThumb({
                 strip: true,
               },
             ),
+            strip ? 'linear' : 'screen',
           ),
         );
       }

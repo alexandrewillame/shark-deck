@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { HeroPane, type TabProps } from './common';
 import { usePaneView } from '../state/paneView';
-import { Panel, Row, TitleTabs } from '../components/common';
+import { Panel, TitleTabs } from '../components/common';
 import { ColorPicker } from '../components/ColorPicker';
 import { useStore } from '../state/store';
 import { useT } from '../state/i18n';
@@ -86,17 +86,14 @@ export function DeviceTab({ device }: TabProps) {
               look at one device, so it belongs here too — same control, same
               store. */}
           <Gated id="dev.colour" device={device}>
-            <Panel title={t('dev.colour')}>
-              {/* The panel names it; the row says what it does. Its label
-                  used to repeat the heading word for word. */}
-              <Row label={<span className="row-desc">{t('dev.colour.hint')}</span>}>
-                <ColorPicker
-                  deviceId={device.id}
-                  current={device.colorVariant}
-                  variants={device.ui.colorVariants}
-                  onPreview={(v) => setArtColorPreview(device.id, v)}
-                />
-              </Row>
+            {/* One line: the name, what it does on its info dot, the picker. */}
+            <Panel title={t('dev.colour')} tip={t('dev.colour.hint')} inline>
+              <ColorPicker
+                deviceId={device.id}
+                current={device.colorVariant}
+                variants={device.ui.colorVariants}
+                onPreview={(v) => setArtColorPreview(device.id, v)}
+              />
             </Panel>
           </Gated>
           <FirmwareSection device={device} />

@@ -659,27 +659,35 @@ function GlobalEffectPane({
               onPick={(label) => edit(withEffect(cur, label))}
             />
           </div>
+          {/* The same row as the side strip's: the picker, then Custom colour
+              or Rainbow as two named choices. It was a switch labelled
+              Rainbow, whose other side said nothing until it was clicked. */}
           {(showColour || showDazzle) && (
-            <Row label={t('common.colour')}>
+            <Row
+              label={
+                showDazzle ? (
+                  <InfoLabel label={t('common.colour')} text={t('light.colourMode.hint')} />
+                ) : (
+                  t('common.colour')
+                )
+              }
+            >
               {showColour && (
                 <ColorPickerField
                   value={rgbToHex(cur.color)}
                   onChange={(hex) => edit({ ...cur, color: hexToRgb(hex) })}
+                  ariaLabel={t('common.colour')}
                 />
               )}
               {showDazzle && (
-                <label
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--text-dim)',
-                    display: 'flex',
-                    gap: 6,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Toggle on={!!cur.dazzle} onChange={(v) => edit({ ...cur, dazzle: v })} />{' '}
-                  {t('light.dazzle')}
-                </label>
+                <Segmented
+                  value={cur.dazzle ? 'rainbow' : 'custom'}
+                  options={[
+                    { value: 'custom', label: t('light.colourMode.custom') },
+                    { value: 'rainbow', label: t('light.dazzle') },
+                  ]}
+                  onChange={(v) => edit({ ...cur, dazzle: v === 'rainbow' })}
+                />
               )}
             </Row>
           )}
@@ -870,6 +878,8 @@ function UnderglowPane({ device }: TabProps) {
                   value={rgbToHex(cur.color)}
                   onChange={(hex) => edit({ ...cur, color: hexToRgb(hex) })}
                   ariaLabel={t('common.colour')}
+                  // The strip mixes light linearly (colorUtil `LedResponse`).
+                  response="linear"
                 />
               )}
               <Segmented

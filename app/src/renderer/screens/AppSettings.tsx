@@ -83,60 +83,65 @@ export function AppSettingsScreen() {
         )}
       </Panel>
 
+      {/* Default to showing this until platformInfo resolves (undefined on
+          first render) — only hide once we positively know it's unsupported. */}
+      {hostFeatures.mouseSettingsLink && platformInfo?.canOpenMouseSettings !== false && (
+        <Panel title={t('set.shortcuts')}>
+          <Row
+            label={t('set.sysMouseProps')}
+            hint={t('set.sysMouseProps.hint')}
+            opens="external"
+            // Linux has no one mouse panel: false means none of the desktops
+            // it knows how to ask was found, and the click did nothing.
+            onOpen={async () => {
+              if (!(await sd.openMouseSettings())) toast('warn', t('set.mouse.openFailed'));
+            }}
+          />
+        </Panel>
+      )}
+
       {/* A device Shark Deck cannot see has no Device tab to ask from: here
           its owner picks it among the USB devices plugged in and starts the
           recording tool for it (the browser edition cannot start a program:
           the "Missing a device?" page instead). */}
       <Panel title={t('set.missing.title')}>
-        <Row label={t('set.missing.row')} hint={t('set.missing.hint')}>
-          <button
-            className="btn"
-            onClick={() =>
-              hostFeatures.reportTool ? setUnlisted(true) : void sd.openExternal(MISSING_DEVICE_URL)
-            }
-          >
-            {t(hostFeatures.reportTool ? 'set.missing.button' : 'support.howto')}
-          </button>
-        </Row>
+        <Row
+          label={t('set.missing.row')}
+          hint={t('set.missing.hint')}
+          opens={hostFeatures.reportTool ? 'dialog' : 'external'}
+          onOpen={() =>
+            hostFeatures.reportTool ? setUnlisted(true) : void sd.openExternal(MISSING_DEVICE_URL)
+          }
+        />
       </Panel>
       {unlisted && <UnlistedDeviceDialog onClose={() => setUnlisted(false)} />}
 
-      {/* Default to showing this until platformInfo resolves (undefined on
-          first render) — only hide once we positively know it's unsupported. */}
-      {hostFeatures.mouseSettingsLink && platformInfo?.canOpenMouseSettings !== false && (
-        <Panel title={t('set.shortcuts')}>
-          <Row label={t('set.sysMouseProps')} hint={t('set.sysMouseProps.hint')}>
-            <button
-              className="btn"
-              // Linux has no one mouse panel: false means none of the desktops
-              // it knows how to ask was found, and the click did nothing.
-              onClick={async () => {
-                if (!(await sd.openMouseSettings())) toast('warn', t('set.mouse.openFailed'));
-              }}
-            >
-              {t('set.open')}
-            </button>
-          </Row>
-        </Panel>
-      )}
-
       <Panel title={t('set.about')}>
+        {/* The version, and where a newer one would be: one line. */}
+        {hostFeatures.updateCheck ? (
+          <Row
+            label={
+              <>
+                {t('set.about.version')}{' '}
+                <span className="mono">{platformInfo?.appVersion ?? '—'}</span>
+              </>
+            }
+            hint={t('set.about.updates.hint')}
+            opens="external"
+            goLabel={t('set.about.updates')}
+            onOpen={() => void sd.openExternal(DESKTOP_DOWNLOAD_URL)}
+          />
+        ) : (
+          <Row label={t('set.about.version')}>
+            <span className="mono">{platformInfo?.appVersion ?? '—'}</span>
+          </Row>
+        )}
         <Row
-          label={t('set.about.version')}
-          hint={hostFeatures.updateCheck ? t('set.about.updates.hint') : undefined}
-        >
-          <span className="mono">{platformInfo?.appVersion ?? '—'}</span>
-          {hostFeatures.updateCheck && (
-            <button className="btn" onClick={() => void sd.openExternal(DESKTOP_DOWNLOAD_URL)}>
-              {t('set.about.updates')}
-            </button>
-          )}
-        </Row>
-        <Row label={t('set.about.project')} hint={t('set.about.project.hint')}>
-          <button className="btn" onClick={() => void sd.openExternal(PROJECT_URL)}>
-            {t('set.open')}
-          </button>
-        </Row>
+          label={t('set.about.project')}
+          hint={t('set.about.project.hint')}
+          opens="external"
+          onOpen={() => void sd.openExternal(PROJECT_URL)}
+        />
         <p className="hint">{t('set.about.license')}</p>
         {hostFeatures.devicePicker && <p className="hint">{t('set.about.browser')}</p>}
       </Panel>

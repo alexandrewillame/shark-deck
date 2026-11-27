@@ -147,11 +147,13 @@
   aspect-ratio: 1;
 }
 /* The background tiles: each a still of the effect in the current palette
-   (background/renderer.ts `thumbnail`), five to a row. */
+   (background/renderer.ts `thumbnail`), three to a row — None and the five
+   effects make two full rows, and each still is big enough to tell the
+   effects apart. */
 .bg-swatches {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 .bg-swatch {
   aspect-ratio: 3 / 2;

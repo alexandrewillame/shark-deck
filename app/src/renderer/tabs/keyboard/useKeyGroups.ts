@@ -1,63 +1,51 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { KeyGroup, MagneticKeySettings } from '@shared/types/keyboard-settings';
 import { groupingSignature, isFactoryDefault } from './magneticSelection';
-import { SWATCH_HUES, type SwatchHueName } from '../../colorUtil';
+import {
+  LED_PALETTE,
+  hexToRgb,
+  rgbToHex,
+  shownRgb,
+  type PresetName,
+  type SwatchHueName,
+} from '../../colorUtil';
 import { sd } from '../../state/bridge';
 
 /**
- * The key-group picker's colours: the nine shared hues (`SWATCH_HUES`, round
- * the wheel) and a slate, each light, vivid and deep.
+ * The key-group picker's colours: the lighting presets' (colorUtil
+ * `LED_PALETTE`), drawn as the lighting picker draws them — "that colour" is
+ * the same colour on both tabs (2026-11-26: "put the same colours that you
+ * made for the lighting colour picker"). One column per colour family, and
+ * down it the colour, its neighbour round the wheel and a light one.
+ *
+ * All but the white column: a selected key is drawn with a white ring
+ * (SELECTION_RING), so a white group would make a selected key and an
+ * unselected one look the same, and black — the lighting's "off" — is what a
+ * key in no group already looks like.
  *
  * Fixed and palette-independent, for the same reason the keycap and remap
  * colours are (see tokens.css): these say "this key is in that group", and an
  * accent-derived colour would collide with the keycap itself under half the
- * palettes.
- *
- * HAND-PICKED, not generated. Generating every hue at one saturation and
- * lightness is what made the last grid poor: one lightness is a different
- * colour on every hue — dark yellow came out olive, and four greens and blues
- * converged on the same mint. These are standard designer shades (Tailwind's
- * 300-800 range), chosen per column by measuring every pair in CIE Lab:
- * `groupPalette.test.ts` holds the floor, so the grid cannot quietly close up.
- *
- * Light is a pastel, but stops well short of white: a selected key is drawn
- * with a white ring (SELECTION_RING), and a near-white group would make a
- * selected key and an unselected light one look the same.
+ * palettes. `groupPalette.test.ts` holds the spacing, so the grid cannot
+ * quietly close up.
  */
-const GROUP_SWATCHES: Record<SwatchHueName | 'slate', readonly [string, string, string]> = {
-  //            light      vivid      deep
-  red: ['#fda4af', '#e11d48', '#9f1239'],
-  orange: ['#fdba74', '#f97316', '#c2410c'],
-  yellow: ['#fde047', '#eab308', '#a16207'],
-  lime: ['#a3e635', '#65a30d', '#4d7c0f'],
-  green: ['#34d399', '#059669', '#065f46'],
-  cyan: ['#67e8f9', '#06b6d4', '#0891b2'],
-  blue: ['#60a5fa', '#3b82f6', '#1e40af'],
-  violet: ['#a78bfa', '#8b5cf6', '#6d28d9'],
-  magenta: ['#e879f9', '#c026d3', '#a21caf'],
-  slate: ['#94a3b8', '#64748b', '#334155'],
-};
-
-/** The picker's columns, in the order it shows them: the wheel, then slate. */
-export const GROUP_HUES: readonly (SwatchHueName | 'slate')[] = [
-  ...SWATCH_HUES.map((h) => h.name),
-  'slate',
-];
-
-/** The picker's rows, top to bottom. */
-export const GROUP_STRENGTHS = ['light', 'vivid', 'deep'] as const;
-
-/** The picker's grid: one row per strength, one column per hue. */
-export const GROUP_SWATCH_ROWS: string[][] = GROUP_STRENGTHS.map((_, row) =>
-  GROUP_HUES.map((hue) => GROUP_SWATCHES[hue][row]),
+const GROUP_PALETTE = LED_PALETTE.map((row) =>
+  row
+    .slice(0, 9)
+    .map((p) => ({ name: p.name, color: rgbToHex(shownRgb(hexToRgb(p.look), 'screen')) })),
 );
 
-/** A swatch's name, for its accessible label: "vivid blue". */
-export function groupSwatchName(color: string): string | undefined {
-  for (const [row, strength] of GROUP_STRENGTHS.entries()) {
-    const col = GROUP_SWATCH_ROWS[row]!.indexOf(color);
-    if (col >= 0) return `${strength} ${GROUP_HUES[col]}`;
-  }
+/** The picker's columns, in the order it shows them: the families, round the wheel. */
+export const GROUP_HUES: readonly SwatchHueName[] = GROUP_PALETTE[0]!.map(
+  (p) => p.name as SwatchHueName,
+);
+
+/** The picker's grid: the lighting picker's rows, one column per family. */
+export const GROUP_SWATCH_ROWS: string[][] = GROUP_PALETTE.map((row) => row.map((p) => p.color));
+
+/** A swatch's preset name ("violet", "warmWhite"…), for its translated label. */
+export function groupSwatchName(color: string): PresetName | undefined {
+  for (const row of GROUP_PALETTE) for (const p of row) if (p.color === color) return p.name;
   return undefined;
 }
 
@@ -66,11 +54,11 @@ export function groupSwatchName(color: string): string | undefined {
  *
  * Not the picker's wheel order: neighbours on the wheel are the colours that
  * look most alike, and the first groups on a board should differ the most. So
- * the vivid row in an order that keeps each new colour far from the ones
- * before it — red, blue, green, yellow first, the colours people ask for by
- * name — then the deep row, then the light one.
+ * the top row in an order that keeps each new colour far from the ones before
+ * it — red, blue, green, yellow first, the colours people ask for by name —
+ * then the neighbours' row, then the light one.
  */
-const FIRST_HUES: readonly (SwatchHueName | 'slate')[] = [
+const FIRST_HUES: readonly SwatchHueName[] = [
   'red',
   'blue',
   'green',
@@ -80,11 +68,44 @@ const FIRST_HUES: readonly (SwatchHueName | 'slate')[] = [
   'cyan',
   'magenta',
   'lime',
-  'slate',
 ];
-export const GROUP_COLORS: readonly string[] = [1, 2, 0].flatMap((row) =>
-  FIRST_HUES.map((hue) => GROUP_SWATCHES[hue][row]),
+export const GROUP_COLORS: readonly string[] = [0, 1, 2].flatMap((row) =>
+  FIRST_HUES.map((hue) => GROUP_SWATCH_ROWS[row]![GROUP_HUES.indexOf(hue)]!),
 );
+
+/**
+ * The colours the group picker offered before it took the lighting's, each to
+ * its place in the new grid — vivid to the top row, deep to the neighbours,
+ * light to the light row, family by family — so groups saved before keep a
+ * colour of the new grid, and each still a different one. The slates had no
+ * place in it and stay as they were. Applied as groups are reconciled
+ * (`reconcileGroups`), which saves them back.
+ */
+const LEGACY_GROUP_COLORS: ReadonlyMap<string, string> = (() => {
+  const old: Record<SwatchHueName, readonly [string, string, string]> = {
+    //            light      vivid      deep
+    red: ['#fda4af', '#e11d48', '#9f1239'],
+    orange: ['#fdba74', '#f97316', '#c2410c'],
+    yellow: ['#fde047', '#eab308', '#a16207'],
+    lime: ['#a3e635', '#65a30d', '#4d7c0f'],
+    green: ['#34d399', '#059669', '#065f46'],
+    cyan: ['#67e8f9', '#06b6d4', '#0891b2'],
+    blue: ['#60a5fa', '#3b82f6', '#1e40af'],
+    violet: ['#a78bfa', '#8b5cf6', '#6d28d9'],
+    magenta: ['#e879f9', '#c026d3', '#a21caf'],
+  };
+  const m = new Map<string, string>();
+  for (const [col, hue] of GROUP_HUES.entries()) {
+    const [light, vivid, deep] = old[hue];
+    m.set(vivid, GROUP_SWATCH_ROWS[0]![col]!);
+    m.set(deep, GROUP_SWATCH_ROWS[1]![col]!);
+    m.set(light, GROUP_SWATCH_ROWS[2]![col]!);
+  }
+  return m;
+})();
+
+/** A stored group colour, in the current grid where it came from an older one. */
+export const currentGroupColor = (color: string): string => LEGACY_GROUP_COLORS.get(color) ?? color;
 
 /**
  * The nth group colour — hand-picked for the first eight, generated after that.
@@ -360,7 +381,7 @@ export function reconcileGroups(
   const used = new Set<string>();
   for (const { bucket, prev } of matched) {
     if (!prev || bucket.factory || isBaseGroup(prev)) continue;
-    takenColors.add(prev.color);
+    takenColors.add(currentGroupColor(prev.color));
     used.add(prev.name);
   }
   let nextIndex = 0;
@@ -389,7 +410,8 @@ export function reconcileGroups(
         color: BASE_GROUP_COLOR,
         slots: bucket.slots,
       };
-    if (prev && !isBaseGroup(prev)) return { ...prev, slots: bucket.slots };
+    if (prev && !isBaseGroup(prev))
+      return { ...prev, color: currentGroupColor(prev.color), slots: bucket.slots };
     // A brand-new bucket, or the old base whose keys have since been tuned:
     // the first free colour and a number nothing else uses.
     return { id: prev?.id ?? '', name: freshName(), color: freeColor(), slots: bucket.slots };

@@ -64,11 +64,11 @@ export interface TravelSample {
  * How a per-key magnetic write treats the key bindings around it.
  *
  * `keepZoneBindings`: leave every key's SET_KEYMATRIX zones alone, even for a
- * key leaving mod-tap. For a write to an onboard profile the board is not
- * showing — the comparator's per-key copy, a profile copy. The key matrix is
- * written at one fixed layer whichever profile is active, so putting a key's
- * own binding back for ANOTHER profile's sake would undo a mod-tap key on the
- * profile in use.
+ * key leaving mod-tap. For a whole-profile copy into a profile the board is
+ * not showing, which moves the pages and not the zones. The comparator's
+ * per-key copy does not use it: it carries a key's zones itself (manager
+ * `copyProfileKeys`), and a key leaving mod-tap there gets its own binding
+ * back on the destination profile, which the key matrix names.
  */
 export interface MagneticWriteOpts {
   keepZoneBindings?: boolean;
@@ -368,9 +368,10 @@ export abstract class Driver {
     return [];
   }
   /** The per-zone bindings of mod-tap and DKS keys, by slot — see
-   *  `KeyZoneBindings` (a mod-tap key's is `[hold, tap]`). Null on every
-   *  driver that has no such thing. */
-  async readKeyZoneBindings(): Promise<KeyZoneBindings | null> {
+   *  `KeyZoneBindings` (a mod-tap key's is `[hold, tap]`) — of the profile the
+   *  board is on, or of onboard `profile` (from 1). Null on every driver that
+   *  has no such thing. */
+  async readKeyZoneBindings(_profile?: number): Promise<KeyZoneBindings | null> {
     return null;
   }
   /** Which magnetic switch is fitted per key — magnetism page 252. Null on

@@ -146,3 +146,33 @@ describe('placeAnchored beside the anchor', () => {
     expect(p.top + side.bubble.height).toBeLessThanOrEqual(800 - 8);
   });
 });
+
+/**
+ * The colour picker keeps clear of the pane's Apply: picking a colour and
+ * applying it is one gesture, done again and again while trying colours on
+ * the board, and a picker sitting on the button made each try a close and a
+ * click.
+ */
+describe('placeAnchored, keeping clear of something', () => {
+  const apply = { left: 900, top: 100, right: 1100, bottom: 130 };
+  const near = { top: 300, bottom: 324, left: 820, right: 900, width: 80 };
+  const auto = { ...base, bubble: { width: 260, height: 180 }, placement: 'auto' as const };
+
+  it('goes below rather than over the button above', () => {
+    // Above was the first choice, and it fits, but it covers Apply.
+    const free = placeAnchored({ ...auto, anchor: near });
+    expect(free.placement).toBe('top');
+    const p = placeAnchored({ ...auto, anchor: near, avoid: [apply] });
+    expect(p.placement).toBe('bottom');
+    expect(p.top).toBeGreaterThanOrEqual(near.bottom);
+  });
+
+  it('keeps the first choice when nothing is in the way', () => {
+    const p = placeAnchored({
+      ...auto,
+      anchor: near,
+      avoid: [{ left: 0, top: 0, right: 10, bottom: 10 }],
+    });
+    expect(p.placement).toBe('top');
+  });
+});

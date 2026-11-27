@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { KeyLayoutEntry } from '@shared/types/keys';
 import { KB_TRAVEL_RANGE } from '@shared/keyboard-travel';
-import { blocksByKey, diffField, keyNames } from './profileDiff';
+import type { ProfileSnapshots } from '@shared/types/profiles';
+import { blocksByKey, diffField, keyBlocks, keyNames, planKeyCopy } from './profileDiff';
 
 /**
  * The bug this module exists to fix: the compare popup summarised a collection
@@ -256,5 +257,91 @@ describe('key modes in the comparison', () => {
       'Snap-tap partner': ['—', 'D'],
     });
     expect(by(plain, toggle).Mode).toEqual(['Normal', 'Toggle, repeating']);
+  });
+});
+
+/**
+ * Per key, and per setting: a key's remap and its actuation are two sections
+ * of the comparison, and a copy moves one of them — the remap alone, or every
+ * setting of the actuation, with whatever Snap Tap pairs it needs.
+ */
+describe('keyBlocks', () => {
+  it('gathers a field per key, top row first, whatever the firmware order', () => {
+    const d = diffField(
+      'magnetic',
+      [
+        { row: 2, col: 1, actuationMm: 2 },
+        { row: 0, col: 0, actuationMm: 2 },
+      ],
+      [
+        { row: 2, col: 1, actuationMm: 1 },
+        { row: 0, col: 0, actuationMm: 1, rapidTrigger: true },
+      ],
+      keyNames(LAYOUT),
+    );
+    const placed = LAYOUT.map((k, i) => ({ ...k, x: i, y: k.label === 'Esc' ? 0 : 2 }));
+    const blocks = keyBlocks([d], placed, (f) => f);
+    expect(blocks.map((b) => b.name)).toEqual(['Esc', 'A']);
+    expect(blocks[0]!.rows.map((r) => r.setting)).toEqual(['Actuation', 'Rapid Trigger']);
+  });
+});
+
+describe('planKeyCopy', () => {
+  const W = { row: 1, col: 2, actuationMm: 2, rapidTrigger: false };
+  const A = { row: 2, col: 1, actuationMm: 2, rapidTrigger: false };
+  const ESC = { row: 0, col: 0, actuationMm: 2, rapidTrigger: false };
+  const bind = (slot: number, code: number, locked = false) => ({
+    slot,
+    code: code.toString(16),
+    kind: 'key',
+    raw: [0, 0, code, 0],
+    locked,
+    provenance: 'device',
+  });
+  const snap = (one: unknown[], two: unknown[], b1 = {}, b2 = {}): ProfileSnapshots => ({
+    restoredTo: 1,
+    fields: ['keyRemapBase', 'magnetic'],
+    slots: [
+      { slot: 1, values: { magnetic: one, keyRemapBase: b1 } },
+      { slot: 2, values: { magnetic: two, keyRemapBase: b2 } },
+    ],
+  });
+
+  it("copies a key's actuation alone, and its remap alone", () => {
+    const s = snap(
+      [{ ...W, actuationMm: 1 }, A, ESC],
+      [W, A, ESC],
+      { 5: bind(5, 0x1a) },
+      { 5: bind(5, 0x68) },
+    );
+    const mag = planKeyCopy(s, LAYOUT, 1, 1, 2, 'magnetic')!;
+    expect(mag.copy).toEqual({ magnetic: [{ ...W, actuationMm: 1 }], previous: [W], bindings: [] });
+    const remap = planKeyCopy(s, LAYOUT, 1, 1, 2, 'keyRemapBase')!;
+    expect(remap.copy.magnetic).toEqual([]);
+    expect(remap.copy.bindings).toEqual([{ slot: 5, raw: [0, 0, 0x1a, 0] }]);
+  });
+
+  it("takes the key's Snap Tap partners from BOTH profiles", () => {
+    // On the destination W is paired with A: copying W's plain actuation over
+    // it would leave A naming a partner that no longer names it back.
+    const s = snap(
+      [W, A, ESC],
+      [
+        { ...W, mode: 'snap', socdPartner: { row: 2, col: 1 } },
+        { ...A, mode: 'snap', socdPartner: { row: 1, col: 2 } },
+        ESC,
+      ],
+    );
+    const plan = planKeyCopy(s, LAYOUT, 1, 1, 2, 'magnetic')!;
+    expect(plan.keys).toEqual([1, 2]);
+    expect(plan.partners).toEqual([2]);
+    expect(plan.copy.magnetic).toEqual([W, A]);
+  });
+
+  it('never sends a locked binding, nor one the destination already holds', () => {
+    const s = snap([W], [W], { 5: bind(5, 0x1a, true) }, { 5: bind(5, 0x68) });
+    expect(planKeyCopy(s, LAYOUT, 1, 1, 2, 'keyRemapBase')).toBeNull();
+    const same = snap([W], [W], { 5: bind(5, 0x1a) }, { 5: bind(5, 0x1a) });
+    expect(planKeyCopy(same, LAYOUT, 1, 1, 2, 'keyRemapBase')).toBeNull();
   });
 });

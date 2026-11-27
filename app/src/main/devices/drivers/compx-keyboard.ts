@@ -210,6 +210,14 @@ const KEYMATRIX_CHUNKS = 8;
  */
 export const KEYMATRIX_SAVE_MS = 120;
 export const MAGNETISM_SAVE_MS = 450;
+/**
+ * How long a board takes to take a profile switch before a write lands —
+ * measured on an R85 HE (2026-11-27): a page write sent at once after
+ * SET_PROFILE was lost unless it carried the save flag, twice out of twice;
+ * from 50 ms on, every write landed (50 to 800 ms tried). Reads, and
+ * GET_PROFILE, answer for the new profile at once. Three times the need.
+ */
+export const PROFILE_SWITCH_MS = 150;
 const KEYMATRIX_SLOT_STRIDE = 4;
 /**
  * Reply payload offset for GET_KEYMATRIX/GET_FN's bulk chunk data —
@@ -1025,11 +1033,19 @@ export class CompxKeyboard extends Driver {
 
   // -- writes (ported frame layout, inferred checksum) --------------
   override async setActiveProfile(slot: number): Promise<WriteResult> {
+    // Never while the board is still saving a write (`savingFor`), and nothing
+    // sent after it until the board has taken it (PROFILE_SWITCH_MS): either
+    // way a write is lost. Both found by the comparator's per-key copy on an
+    // R85 HE (2026-11-27), which switched, wrote and switched back at once.
+    await this.untilSaved();
     const r = await this.writeVerified(KB_CMD.SET_PROFILE, [slot - 1], {
       getCommand: KB_CMD.GET_PROFILE,
       compare: (p) => (p[0] ?? -1) === slot - 1,
     });
-    if (r.ok) this.profileIdx = slot - 1;
+    if (r.ok) {
+      this.profileIdx = slot - 1;
+      if (this.settleMs) await delay(PROFILE_SWITCH_MS);
+    }
     return r;
   }
 

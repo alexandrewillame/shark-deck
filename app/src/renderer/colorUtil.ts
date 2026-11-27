@@ -137,16 +137,42 @@ const LEGEND_OFF: [number, number, number] = [0xe8, 0xe8, 0xe8];
  * die's spectral tail reaches the green cone response, and both a camera and
  * an eye report the result as a blue with green in it.
  *
- * So the green channel is lifted in proportion to how far blue is leading —
- * pure blue gains the most, and anything that is not blue-dominant gains
- * nothing at all. White, cyan and red are untouched to the byte, and a violet
- * the user actually chose stays violet, because there red is leading too.
+ * So the green channel is lifted as blue leads — by the square of its lead, so
+ * a pure blue gains the most and a violet, whose red is up too, little — and
+ * anything that is not blue-dominant gains nothing at all. White, cyan and red
+ * are untouched to the byte. It was 0.34 of a linear lead: set side by side
+ * with the board, the blue still "is more blue in reality; you depict it more
+ * violet" (2026-11-26).
  *
- * Applied only where light is DEPICTED (`litCap`, the effect thumbnails).
- * Never to a value on its way to the device: the board is told exactly the
- * colour that was picked. The same goes for the white point below.
+ * Applied only where light is DEPICTED (`litCap`, the effect thumbnails, the
+ * colour picker). Never to a value on its way to the device: the board is
+ * told exactly the colour that was picked. The same goes for everything below.
  */
-const BLUE_SPREAD = 0.34;
+const BLUE_SPREAD = 0.44;
+
+/**
+ * How far a diode's blue at full drive outweighs the red lit beside it.
+ *
+ * Red and blue together read bluer on the board than on a screen: set side by
+ * side, magenta "looks more like your violet", and the violet "a bit more
+ * blue" than it was drawn — while a pink, whose blue is low, was drawn "spot
+ * on" (2026-11-26, both zones). So red is held back by the square of the
+ * blue's share, and by the square of what green is missing: magenta and
+ * violet move, a pink or a hot pink hardly, a lavender only so far.
+ */
+const RED_UNDER_BLUE = 0.62;
+
+/**
+ * Near-whites read as WHITES on the board: the eye takes a light that bright
+ * and that pale as white light, a little tinted. Drawn as a flat swatch beside
+ * the page's own white, the same colour read as a pastel — the warm white "more
+ * orange-ish than in reality, where it looks grey-ish, a bit grey-yellow"
+ * (2026-11-26). So below `hi` of chroma (Oklab) a tint fades towards white —
+ * to `floor` of itself by `lo` — and a warm one leans yellow rather than
+ * orange as it does. Pink, peach and every stronger colour are above `hi`
+ * and keep their colour to the byte.
+ */
+const NEAR_WHITE = { lo: 0.09, hi: 0.115, floor: 0.6 } as const;
 
 /**
  * The white an RGB diode makes — every die at full — as a colour on screen.
@@ -167,12 +193,130 @@ const BLUE_SPREAD = 0.34;
  */
 export const LED_WHITE: readonly [number, number, number] = [236, 243, 255];
 
-export function emittedRgb([r, g, b]: [number, number, number]): [number, number, number] {
+/** sRGB's transfer curve: a share of light (0..1) as a screen stores it. */
+const srgbEncode = (x: number): number =>
+  x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055;
+/** …and back: a stored screen value (0..1) as the share of light it is. */
+const srgbDecode = (c: number): number =>
+  c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+
+/**
+ * How a zone's diodes turn the numbers they are sent into light.
+ *
+ * `screen`: as a screen does — the firmware corrects for the eye, so a colour
+ * sent as it was picked lights as it looked. A keyboard's main lighting (the
+ * per-key matrix): on an R85 HE, #ff4d00 lit red, #ff7f32 orange, and a lime
+ * of #79ff00 the same green as green, which is a screen's arithmetic.
+ *
+ * `linear`: half of a channel is half the light. A screen stores light
+ * gamma-encoded — #80 is about a fifth of the light, not half — so a colour
+ * sent as picked lights every channel below full much STRONGER than it
+ * looked: #ff9500, an orange on screen, lights as #ffc900, a yellow; #ff8080,
+ * a salmon, nearly white. A keyboard's side strip: on the same board #ff9500
+ * was "pretty much yellow", #ffee80 white, #ff7f32 whitish and #ff4d00 a
+ * proper orange — all of it what this predicts.
+ *
+ * Anything not known to be linear is `screen`, which is also how every colour
+ * was sent before the two were told apart.
+ */
+export type LedResponse = 'screen' | 'linear';
+
+/**
+ * A colour as a LINEAR diode mixes it, at the brightness it was given: each
+ * channel's share of the brightest one, shown as a screen would show that
+ * much light. The brightest channel — and so how bright the colour is — stays
+ * as it was: brightness is the drive's to depict (`litCap`), and a primary, a
+ * white or a black come through to the byte.
+ */
+function asLit([r, g, b]: [number, number, number]): [number, number, number] {
+  const peak = Math.max(r, g, b);
+  if (peak <= 0) return [0, 0, 0];
+  const lit = (n: number) => peak * srgbEncode(n / peak);
+  return [lit(r), lit(g), lit(b)];
+}
+
+/** A colour as a zone's diodes light it, on screen: `emittedRgb`, after
+ *  `asLit` on a linear zone. */
+export function shownRgb(
+  rgb: [number, number, number],
+  response: LedResponse,
+): [number, number, number] {
+  return emittedRgb(response === 'linear' ? asLit(rgb) : rgb);
+}
+
+/** `shownRgb` for a CSS colour, passing anything unparseable through. */
+export function shownCss(css: string, response: LedResponse): string {
+  const rgb = parseCssColor(css);
+  if (!rgb) return css;
+  const [r, g, b] = shownRgb(rgb, response);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+/** What a zone's diodes must be told for a colour to LOOK like `look`: the
+ *  reverse of `asLit` on a linear zone, the colour itself on the others. */
+export function ledFor(look: string, response: LedResponse): string {
+  if (response !== 'linear') return look.toLowerCase();
+  return rgbToHex(hexToRgb(look).map((n) => 255 * srgbDecode(n / 255)) as [number, number, number]);
+}
+
+export function emittedRgb(rgb: [number, number, number]): [number, number, number] {
+  const [r, g, b] = asSeen(rgb);
   const lead = Math.max(0, b - Math.max(r, g)) / 255;
   /** How much white the colour carries, 0..1. */
   const white = Math.min(r, g, b) / 255;
   const cool = (n: number, i: number) => clampByte(n - white * (255 - LED_WHITE[i]!));
-  return [cool(r, 0), cool(g + b * BLUE_SPREAD * lead, 1), cool(b, 2)];
+  return [cool(r, 0), cool(g + b * BLUE_SPREAD * lead * lead, 1), cool(b, 2)];
+}
+
+/** `RED_UNDER_BLUE` and `NEAR_WHITE`, in linear light and Oklab. */
+function asSeen([r8, g8, b8]: [number, number, number]): [number, number, number] {
+  const g = srgbDecode(g8 / 255);
+  const b = srgbDecode(b8 / 255);
+  const r = srgbDecode(r8 / 255) * (1 - RED_UNDER_BLUE * b * b * (1 - g) ** 2);
+  const [L, A, B] = linearToOklab(r, g, b);
+  const C = Math.hypot(A, B);
+  const { lo, hi, floor } = NEAR_WHITE;
+  const t = Math.min(1, Math.max(0, (C - lo) / (hi - lo)));
+  const keep = floor + (1 - floor) * t * t * (3 - 2 * t);
+  let h = Math.atan2(B, A);
+  if (keep < 1 && C > 1e-6) {
+    // A warm tint (an orange to a yellow, about 30-110 degrees) leans yellow
+    // as it fades, by as much as it fades.
+    const deg = (h * 180) / Math.PI;
+    const warm = Math.max(0, 1 - Math.abs(deg - 70) / 40);
+    const toYellow = ((((95 - deg + 180) % 360) + 360) % 360) - 180;
+    h += ((toYellow * Math.PI) / 180) * warm * ((1 - keep) / (1 - floor));
+  }
+  const [lr, lg, lb] = oklabToLinear(L, C * keep * Math.cos(h), C * keep * Math.sin(h));
+  return [lr, lg, lb].map((x) => 255 * srgbEncode(Math.min(1, Math.max(0, x)))) as [
+    number,
+    number,
+    number,
+  ];
+}
+
+/** Linear sRGB -> Oklab (Björn Ottosson's matrices). */
+function linearToOklab(r: number, g: number, b: number): [number, number, number] {
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+
+/** Oklab -> linear sRGB. */
+function oklabToLinear(L: number, a: number, b: number): [number, number, number] {
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  return [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ];
 }
 
 /** `emittedRgb` for a CSS colour string, passing anything unparseable through
@@ -321,27 +465,107 @@ export const SWATCH_HUES = [
 
 export type SwatchHueName = (typeof SWATCH_HUES)[number]['name'];
 
+/** A preset's name: a hue's, or one of the palette's own. */
+export type PresetName =
+  | SwatchHueName
+  | 'white'
+  | 'off'
+  | 'rose'
+  | 'amber'
+  | 'lemon'
+  | 'lightLime'
+  | 'spring'
+  | 'turquoise'
+  | 'azure'
+  | 'purple'
+  | 'hotPink'
+  | 'warmWhite'
+  | 'pink'
+  | 'peach'
+  | 'cream'
+  | 'paleLime'
+  | 'mint'
+  | 'aqua'
+  | 'periwinkle'
+  | 'lavender'
+  | 'orchid';
+
 /**
- * The preset grid, shared by every colour control that drives an LED.
+ * The LED presets, as they should LOOK: one column per colour family, and
+ * down each column the colour itself, then two other colours of its family —
+ * a neighbour round the wheel, and a light one.
  *
- * Same nine hues as the key-group picker, same rows-by-hue-columns shape —
- * but at LED levels rather than UI levels, which is the one place the two
- * grids part company. A group swatch is ink on a keycap in the app;
- * these values are written to a diode, and the group palette's `l: 36` red
- * would be handed to the keyboard as a dim red rather than as "red". So the
- * rows are what a diode can actually do with a hue: run it flat out, run it
- * softly (half white mixed in), or run it at half power.
+ * Not three brightnesses of each colour, which is what the rows were: full,
+ * then 72%, then half. Brightness is the effect's own setting already, and a
+ * dimmer red is not another colour ("propose actually different colours, not
+ * lower intensities").
  *
- * The last column is the neutral ramp, which has no hue to belong to:
- * white is "every channel at full", grey is the same thing dimmed, and black
- * is "this key off" — the only way to switch a single key off in the per-key
- * editor, which is why it has to be reachable as a colour.
+ * Spaced so that no two are closer than a plainly visible difference (ΔE2000
+ * 8.5, the light lime and the cream): a first draft put a chartreuse beside
+ * the green (2.2) and an indigo beside the blue (3.2), which on a diode are
+ * the same colour twice. Every entry is at full value — a darker "teal" would
+ * only be a dimmer cyan.
  */
-export const COLOR_PRESET_ROWS: readonly (readonly string[])[] = [
-  [...SWATCH_HUES.map((c) => rgbToHex(hsvToRgb(c.h, 1, 1))), '#ffffff'],
-  [...SWATCH_HUES.map((c) => rgbToHex(hsvToRgb(c.h, 0.5, 1))), '#8b93a1'],
-  [...SWATCH_HUES.map((c) => rgbToHex(hsvToRgb(c.h, 1, 0.5))), '#000000'],
+export const LED_PALETTE: ReadonlyArray<ReadonlyArray<{ name: PresetName; look: string }>> = [
+  [
+    { name: 'red', look: '#ff0000' },
+    { name: 'orange', look: '#ff8000' },
+    { name: 'yellow', look: '#ffe000' },
+    { name: 'lime', look: '#b4ff00' },
+    { name: 'green', look: '#00ff00' },
+    { name: 'cyan', look: '#00e5ff' },
+    { name: 'blue', look: '#0000ff' },
+    { name: 'violet', look: '#8800ff' },
+    { name: 'magenta', look: '#ff00ff' },
+    { name: 'white', look: '#ffffff' },
+  ],
+  [
+    { name: 'rose', look: '#ff0055' },
+    { name: 'amber', look: '#ffb000' },
+    { name: 'lemon', look: '#f4ff3d' },
+    { name: 'lightLime', look: '#d4ff8a' },
+    { name: 'spring', look: '#00ff80' },
+    { name: 'turquoise', look: '#00ffd0' },
+    { name: 'azure', look: '#0099ff' },
+    { name: 'purple', look: '#c400ff' },
+    { name: 'hotPink', look: '#ff2a9d' },
+    { name: 'warmWhite', look: '#ffcf9a' },
+  ],
+  [
+    { name: 'pink', look: '#ff8095' },
+    { name: 'peach', look: '#ffb07a' },
+    { name: 'cream', look: '#fff4b3' },
+    { name: 'paleLime', look: '#ecffc4' },
+    { name: 'mint', look: '#a0ffc8' },
+    { name: 'aqua', look: '#b8fbff' },
+    { name: 'periwinkle', look: '#9db1ff' },
+    { name: 'lavender', look: '#cfa3ff' },
+    { name: 'orchid', look: '#ffa3e6' },
+    // Black is "this key off" — the only way to switch a single key off in
+    // the per-key editor, which is why it has to be reachable as a colour.
+    { name: 'off', look: '#000000' },
+  ],
 ];
+
+/** One preset for a zone: what its diodes are told, and what it is called. */
+export interface LedPreset {
+  hex: string;
+  name: PresetName;
+}
+
+/** The presets for a zone (`LedResponse`), row by row. */
+export function ledPresets(response: LedResponse): LedPreset[][] {
+  return LED_PALETTE.map((row) =>
+    row.map((p) => ({ hex: ledFor(p.look, response), name: p.name })),
+  );
+}
+
+/** The preset a colour is in a zone, if it is one — what its swatch is called. */
+export function presetOf(hex: string, response: LedResponse): LedPreset | undefined {
+  const h = hex.toLowerCase();
+  for (const row of ledPresets(response)) for (const p of row) if (p.hex === h) return p;
+  return undefined;
+}
 
 /** `[h 0..360, s 0..1, v 0..1]`. HSV, not HSL: a picker's square is
  *  saturation against value, and going through HSL would round-trip badly at

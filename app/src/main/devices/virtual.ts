@@ -188,13 +188,20 @@ export class VirtualDriver extends Driver {
    * configured behaves.
    *
    * A keyboard is the exception, because its slot carries its actuation
-   * settings and nothing else (see `profileFieldsFor`): it keeps ONE state,
-   * and only `magnetic` is swapped per slot — `slotMagnetic` below, exchanged
-   * in `setActiveProfile`. Otherwise demo mode would show a per-slot
-   * lighting or remap that the real board does not have.
+   * settings and its base layer and nothing else (see `profileFieldsFor`): it
+   * keeps ONE state, and only `magnetic` and the key matrix are swapped per
+   * slot — `slotMagnetic` and `slotMatrix` below, exchanged in
+   * `setActiveProfile`. Otherwise demo mode would show a per-slot lighting
+   * that the real board does not have.
    */
   private readonly slotStates = new Map<number, VirtualState>();
   private readonly slotMagnetic = new Map<number, MagneticKeySettings[]>();
+  /** …and, as on the real board, its key matrix: the base layer and the
+   *  zones around it name their profile. The Fn layer does not. */
+  private readonly slotMatrix = new Map<
+    number,
+    { base: VirtualState['keyBindings']['base']; zones: KeyZoneBindings }
+  >();
   private slot = 1;
 
   constructor(ctx: ConstructorParameters<typeof Driver>[0]) {
@@ -494,8 +501,12 @@ export class VirtualDriver extends Driver {
       ? { raw: new Uint8Array(0), keys: [], complete: true }
       : null;
   }
-  override async readKeyZoneBindings(): Promise<KeyZoneBindings | null> {
-    return this.has('magneticSwitches') ? this.s.zoneBindings : null;
+  override async readKeyZoneBindings(profile?: number): Promise<KeyZoneBindings | null> {
+    if (!this.has('magneticSwitches')) return null;
+    if (!profile || profile === this.slot || !this.actuationOnlySlots) return this.s.zoneBindings;
+    // A slot not selected yet is a copy of slot 1, as `setActiveProfile` makes it.
+    const kept = this.slotMatrix.get(profile) ?? this.slotMatrix.get(1);
+    return kept ? kept.zones : this.s.zoneBindings;
   }
   override async readSwitchTypes(): Promise<Record<number, number> | null> {
     return this.has('replaceableSwitches') ? this.s.switchTypes : null;
@@ -576,6 +587,11 @@ export class VirtualDriver extends Driver {
       this.slotMagnetic.set(this.slot, st.magnetic);
       st.magnetic =
         this.slotMagnetic.get(slot) ?? structuredClone(this.slotMagnetic.get(1) ?? st.magnetic);
+      const out = { base: st.keyBindings.base, zones: st.zoneBindings };
+      this.slotMatrix.set(this.slot, out);
+      const into = this.slotMatrix.get(slot) ?? structuredClone(this.slotMatrix.get(1) ?? out);
+      st.keyBindings = { ...st.keyBindings, base: into.base };
+      st.zoneBindings = into.zones;
     }
     this.slot = slot;
     this.s.activeProfile = slot; // materialises the slot if it is new

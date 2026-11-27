@@ -1,23 +1,62 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 import { createPortal } from 'react-dom';
 import type { LiveDevice } from '@shared/types/live';
-import type { MagneticKeySettings } from '@shared/types/keyboard-settings';
 import type { ProfileField, ProfileSnapshots } from '@shared/types/profiles';
 import type { MessageKey, TFunc } from '@shared/i18n';
 import { ConfirmDialog } from './common';
 import { Icon } from './icons';
 import {
-  blocksByKey,
   diffField,
+  keyBlocks,
   keyNames,
+  planKeyCopy,
+  type DiffRow,
   type FieldDiff,
-  type KeyBlock,
+  type KeyCopyField,
+  type KeyDiffBlock,
   type KeyNames,
 } from './profileDiff';
 import { dropDeviceCache, sd, useDeviceBusy, useWrite } from '../tabs/common';
 import { useT } from '../state/i18n';
 import { useStore } from '../state/store';
 import { slotLabel } from '../state/ui';
+
+/** Up to this many keys differ in their actuation, each opens on its
+ *  settings; past it, the section opens as the list of keys, each a click
+ *  away from its settings. */
+const KEYS_OPEN_UP_TO = 8;
+
+/** The key fields whose keys are each copied on their own (`planKeyCopy`). */
+const isKeyCopy = (f: ProfileField): f is KeyCopyField => f === 'keyRemapBase' || f === 'magnetic';
+
+/** A key's one copy: which key, by layout index and name, and of which field. */
+interface KeyRef {
+  index: number;
+  name: string;
+  field: KeyCopyField;
+}
+
+type Confirm =
+  | { kind: 'all'; from: number; to: number }
+  | { kind: 'field'; from: number; to: number; field: ProfileField }
+  | { kind: 'pair'; from: number; to: number; key: KeyRef; partners: string[] };
+
+/**
+ * A row that opens and closes what is under it, by a click anywhere on it —
+ * its disclosure button is for the keyboard. A click on any other button in
+ * the row (the copy arrows) is that button's.
+ */
+const toggleRow = (toggle: () => void) => (e: ReactMouseEvent<HTMLTableRowElement>) => {
+  if ((e.target as Element).closest('button, select, a, input')) return;
+  toggle();
+};
 
 /**
  * What two profile slots hold, side by side, down to the individual key.
@@ -37,10 +76,13 @@ import { slotLabel } from '../state/ui';
  * — and counting how far apart every other pair is, for the pickers — costs
  * nothing once it has run.
  *
- * A device whose slot holds a single field — a keyboard, where that is the
- * actuation settings (see `profileFieldsFor`) — gets a flat table: one block
- * per key, no field header to open, and a copy column between the two
- * profiles that moves every setting of that one key either way.
+ * One section per setting — a keyboard's Key remap and Actuation are two, and
+ * stay two: a key that differs in both is listed in each. Inside a section,
+ * what is addressed by key is drawn per KEY: a key whose remap differs is one
+ * line; a key whose actuation differs is its name on a line, then each of its
+ * settings that differ. Between the two profiles, arrows copy what the line
+ * holds either way — a section's arrows the whole setting, a key's that key's
+ * share of it.
  */
 export function ProfileCompare({ device, onClose }: { device: LiveDevice; onClose: () => void }) {
   const t = useT();
@@ -65,15 +107,16 @@ export function ProfileCompare({ device, onClose }: { device: LiveDevice; onClos
   const [snap, setSnap] = useState<ProfileSnapshots | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ slot: number; total: number } | null>(null);
-  /** Collapsed fields. Empty = everything open, which is the default: the
+  /** Collapsed sections. Empty = everything open, which is the default: the
    *  detail IS the answer, and a dialog of closed rows makes you click to find
    *  out whether there was anything worth opening. */
   const [collapsed, setCollapsed] = useState<Set<ProfileField>>(new Set());
-  const [confirm, setConfirm] = useState<{
-    from: number;
-    to: number;
-    field?: ProfileField;
-  } | null>(null);
+  /** Keys' actuation, the same way round: open or closed by default
+   *  (`KEYS_OPEN_UP_TO`, or the last Expand / Collapse all), and the keys
+   *  toggled from that. */
+  const [keysOpen, setKeysOpen] = useState<boolean | null>(null);
+  const [keysToggled, setKeysToggled] = useState<Set<number>>(new Set());
+  const [confirm, setConfirm] = useState<Confirm | null>(null);
 
   const count = device.ui.profileCount || 4;
   const [left, setLeft] = useState(device.activeProfile ?? 1);
@@ -130,63 +173,79 @@ export function ProfileCompare({ device, onClose }: { device: LiveDevice; onClos
     await load();
   };
 
+  const layout = device.ui.keyMatrix?.layout;
+
   /**
-   * Every setting of one key, from one profile onto the other.
-   *
-   * The whole key goes, not only the settings that differ: "make Esc on
-   * Gaming what it is on Desktop" is the request, and a partial copy would
-   * leave it neither. The values come from the sweep this table was drawn
-   * from — the dialog is modal and busy-locked, so they cannot have moved —
-   * and the destination's own values ride along as `previous`, so only the
-   * pages that differ are sent.
+   * One key's share of one setting, from one profile onto the other
+   * (`planKeyCopy`): its remap, or all of its actuation. A key of a Snap Tap
+   * pair takes its partner's actuation with it, which is asked first — that
+   * partner changes too. The values come from the sweep this table was drawn
+   * from (the dialog is modal and busy-locked, so they cannot have moved).
    */
-  const copyKey = async (block: KeyBlock, from: number, to: number) => {
+  const copyKey = async (key: KeyRef, from: number, to: number, asked = false) => {
     if (!snap) return;
-    const keysOf = (slot: number) =>
-      (snap.slots.find((s) => s.slot === slot)?.values.magnetic ?? null) as
-        MagneticKeySettings[] | null;
-    const at = (list: MagneticKeySettings[] | null, id: string) =>
-      list?.find((k) => `${k.row},${k.col}` === id);
-    const src = keysOf(from);
-    const dst = keysOf(to);
-    const k = at(src, block.keyId);
-    if (!k) return;
-    const keys = [k];
-    // A Snap-tap key is half of a pair. Copied alone, the destination would
-    // hold a key naming a partner that does not name it back.
-    const partner =
-      k.mode === 'snap' && k.socdPartner
-        ? at(src, `${k.socdPartner.row},${k.socdPartner.col}`)
-        : undefined;
-    if (partner) keys.push(partner);
-    const prev = keys.map((x) => at(dst, `${x.row},${x.col}`));
-    const previous = prev.every(Boolean) ? (prev as MagneticKeySettings[]) : undefined;
+    const plan = planKeyCopy(snap, layout, key.index, from, to, key.field);
+    if (!plan) return;
+    if (plan.partners.length && !asked) {
+      setConfirm({
+        kind: 'pair',
+        from,
+        to,
+        key,
+        partners: plan.partners.map((i) => layout?.[i]?.label ?? `#${i}`),
+      });
+      return;
+    }
+    setConfirm(null);
     await whileBusy(t('profile.compare.writing'), () =>
-      run(`${block.name} → ${slotLabel(device, to, t)}`, () =>
-        sd.setMagneticKeysOnProfile(device.id, to, keys, previous),
+      run(`${key.name} → ${slotLabel(device, to, t)}`, () =>
+        sd.copyProfileKeys(device.id, from, to, plan.copy),
       ),
     );
     if (to === device.activeProfile) touchedActive.current = true;
     await load();
   };
 
-  const names = useMemo(() => keyNames(device.ui.keyMatrix?.layout), [device.ui.keyMatrix]);
+  const names = useMemo(() => keyNames(layout), [layout]);
   const diffs = useMemo(
     () => (snap ? diffPair(snap, left, right, names, t) : []),
     [snap, left, right, names, t],
   );
+  const fieldName = (f: ProfileField) => t(`pf.${f}` as MessageKey);
 
   const changed = diffs.filter((d) => !d.same && !d.unread);
-  /** One field means nothing to group by: list its keys directly. */
-  const flat = !!snap && snap.fields.length === 1;
-  /** …and when that field is actuation, each key can be copied on its own. */
-  const perKeyCopy = flat && snap!.fields[0] === 'magnetic';
-  const blocks = useMemo(
-    () => (flat && changed[0] ? blocksByKey(changed[0].rows) : []),
+  /** Each key section's keys, in board order, top row first. */
+  const blocksOf = useMemo(() => {
+    const m = new Map<ProfileField, KeyDiffBlock[]>();
+    for (const d of changed)
+      if (d.unit === 'key') m.set(d.field, keyBlocks([d], layout, fieldName));
+    return m;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [flat, diffs],
-  );
-  const fieldName = (f: ProfileField) => t(`pf.${f}` as MessageKey);
+  }, [diffs, layout]);
+  const actuationKeys = blocksOf.get('magnetic')?.length ?? 0;
+
+  // Whether keys open on their settings is settled by the first comparison
+  // drawn, and then kept: a copy that brings the count under the line must not
+  // spring every block open under the pointer.
+  useEffect(() => {
+    if (keysOpen === null && snap) setKeysOpen(actuationKeys <= KEYS_OPEN_UP_TO);
+  }, [snap, actuationKeys, keysOpen]);
+  const keyIsOpen = (i: number) => (keysOpen ?? true) !== keysToggled.has(i);
+  const toggleKey = (i: number) =>
+    setKeysToggled((s) => {
+      const next = new Set(s);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  const toggleField = (f: ProfileField) =>
+    setCollapsed((s) => {
+      const next = new Set(s);
+      if (next.has(f)) next.delete(f);
+      else next.add(f);
+      return next;
+    });
+
   const leftName = slotLabel(device, left, t);
   const rightName = slotLabel(device, right, t);
 
@@ -240,8 +299,258 @@ export function ProfileCompare({ device, onClose }: { device: LiveDevice; onClos
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snap, names, count, device, t]);
 
+  /**
+   * The gutter between the two profiles: the arrow on each side copies INTO
+   * that side's profile — left into the left one, right into the right.
+   */
+  const arrows = (what: string, toLeft: () => void, toRight: () => void) => {
+    const intoLeft = t('profile.compare.copyFieldTo', {
+      field: what,
+      from: rightName,
+      to: leftName,
+    });
+    const intoRight = t('profile.compare.copyFieldTo', {
+      field: what,
+      from: leftName,
+      to: rightName,
+    });
+    return (
+      <>
+        <button
+          type="button"
+          className="btn-icon"
+          title={intoLeft}
+          aria-label={intoLeft}
+          onClick={toLeft}
+        >
+          <Icon name="copyLeft" size={14} />
+        </button>
+        <button
+          type="button"
+          className="btn-icon"
+          title={intoRight}
+          aria-label={intoRight}
+          onClick={toRight}
+        >
+          <Icon name="copyRight" size={14} />
+        </button>
+      </>
+    );
+  };
+  /** A key's arrows, for one setting: "Esc · Actuation". */
+  const keyArrows = (key: KeyRef) =>
+    arrows(
+      `${key.name} · ${fieldName(key.field)}`,
+      () => void copyKey(key, right, left),
+      () => void copyKey(key, left, right),
+    );
+
+  const confirmTitle = (c: Confirm): string => {
+    const to = slotLabel(device, c.to, t);
+    const from = slotLabel(device, c.from, t);
+    switch (c.kind) {
+      case 'all':
+        return t('profile.compare.confirm', { to, from });
+      case 'field':
+        return t('profile.compare.confirmOne', { field: fieldName(c.field), to, from });
+      case 'pair':
+        return t('profile.compare.pairTitle', { keys: [c.key.name, ...c.partners].join(', '), to });
+    }
+  };
+
+  /** One detail line: a setting and its two values. */
+  const detail = (r: DiffRow, key: string, indent: string, keyName?: string) => (
+    <tr key={key} className={`cmp-detail ${indent}`}>
+      {/* The key and the setting on it are different kinds of thing, so they
+          are told apart by weight and colour rather than by a separator the
+          eye has to parse. Under a key's own line the key's name is kept for
+          a screen reader only, so the row still reads "W Release". */}
+      <th scope="row">
+        {keyName ? (
+          <span className="cmp-key cmp-key-repeat">{keyName} </span>
+        ) : (
+          <span className="cmp-key">{r.label}</span>
+        )}
+        {r.setting && <span className="cmp-sub">{keyName ? r.setting : ` ${r.setting}`}</span>}
+      </th>
+      <td className="cmp-a">
+        <Val text={r.a} color={r.aColor} isDefault={r.aDefault} t={t} />
+      </td>
+      <td className="cmp-copy" />
+      <td className="cmp-b">
+        <Val text={r.b} color={r.bColor} isDefault={r.bDefault} t={t} />
+      </td>
+    </tr>
+  );
+
+  /** A section's own line: its name, how much differs, its arrows. */
+  const sectionHead = (d: FieldDiff, canOpen: boolean, open: boolean) => (
+    <tr
+      className={canOpen ? 'cmp-row cmp-toggle' : 'cmp-row'}
+      onClick={canOpen ? toggleRow(() => toggleField(d.field)) : undefined}
+    >
+      <th scope="row">
+        {canOpen ? (
+          <button
+            type="button"
+            className="cmp-disclose"
+            aria-expanded={open}
+            aria-label={open ? t('profile.compare.collapse') : t('profile.compare.expand')}
+            onClick={() => toggleField(d.field)}
+          >
+            {/* One glyph, rotated — a disclosure triangle that turns is the
+                convention, and it keeps the two states from drifting into two
+                drawings. */}
+            <span className={`cmp-caret ${open ? 'is-open' : ''}`}>
+              <Icon name="chevronRight" size={11} />
+            </span>
+            {fieldName(d.field)}
+          </button>
+        ) : (
+          <span className="cmp-nodisclose">{fieldName(d.field)}</span>
+        )}
+      </th>
+      {/* A scalar puts its two values under the two profile columns, where
+          they line up with the headers. Anything with lines under it has no
+          single value, so its summary sits in the first. */}
+      <td className="cmp-v cmp-a">
+        {d.unit === 'value' ? d.a : <span className="cmp-headline">{headline(d)}</span>}
+      </td>
+      <td className="cmp-copy">
+        {arrows(
+          fieldName(d.field),
+          () => setConfirm({ kind: 'field', from: right, to: left, field: d.field }),
+          () => setConfirm({ kind: 'field', from: left, to: right, field: d.field }),
+        )}
+      </td>
+      <td className="cmp-v cmp-b">{d.unit === 'value' ? d.b : null}</td>
+    </tr>
+  );
+
+  /** One section, as the run of `<tbody>`s it draws. */
+  const section = (d: FieldDiff) => {
+    const open = !collapsed.has(d.field);
+    const blocks = blocksOf.get(d.field);
+    if (!blocks) {
+      // Per setting: a line per difference under the section's own.
+      return (
+        <tbody key={d.field} className="cmp-section">
+          {sectionHead(d, d.rows.length > 0, open)}
+          {open &&
+            d.rows.map((r, i) => detail(r, `${d.field}-${r.label}-${r.setting ?? ''}-${i}`, ''))}
+        </tbody>
+      );
+    }
+    const field = isKeyCopy(d.field) ? d.field : null;
+    if (d.field !== 'magnetic') {
+      // One line per key: a key holds one binding (or one colour, one switch).
+      return (
+        <tbody key={d.field} className="cmp-section">
+          {sectionHead(d, true, open)}
+          {open &&
+            blocks.map((b) => {
+              const r = b.rows[0]!;
+              return (
+                <tr key={b.index} className="cmp-keyline">
+                  <th scope="row">
+                    <span className="cmp-keycap">{b.name}</span>
+                  </th>
+                  <td className="cmp-a">
+                    <Val text={r.a} color={r.aColor} isDefault={r.aDefault} t={t} />
+                  </td>
+                  <td className="cmp-copy">
+                    {field && keyArrows({ index: b.index, name: b.name, field })}
+                  </td>
+                  <td className="cmp-b">
+                    <Val text={r.b} color={r.bColor} isDefault={r.bDefault} t={t} />
+                  </td>
+                </tr>
+              );
+            })}
+        </tbody>
+      );
+    }
+    // Actuation: a key's name on a line of its own — its arrows copy all of
+    // its actuation — and each setting that differs under it.
+    return (
+      <Fragment key={d.field}>
+        <tbody className="cmp-section">{sectionHead(d, true, open)}</tbody>
+        {open &&
+          blocks.map((b, n) => {
+            const kOpen = keyIsOpen(b.index);
+            return (
+              <tbody
+                key={`${d.field}-${b.index}`}
+                className={n % 2 ? 'cmp-keyblock is-banded' : 'cmp-keyblock'}
+              >
+                <tr
+                  className="cmp-keyhead cmp-toggle"
+                  onClick={toggleRow(() => toggleKey(b.index))}
+                >
+                  <th scope="rowgroup">
+                    <button
+                      type="button"
+                      className="cmp-disclose"
+                      aria-expanded={kOpen}
+                      onClick={() => toggleKey(b.index)}
+                    >
+                      <span className={`cmp-caret ${kOpen ? 'is-open' : ''}`}>
+                        <Icon name="chevronRight" size={11} />
+                      </span>
+                      <span className="cmp-keycap">{b.name}</span>
+                      <span className="cmp-count">
+                        {b.rows.length === 1
+                          ? t('profile.compare.diffOne')
+                          : t('profile.compare.diffSettings', { n: b.rows.length })}
+                      </span>
+                    </button>
+                  </th>
+                  <td className="cmp-a" />
+                  <td className="cmp-copy">
+                    {keyArrows({ index: b.index, name: b.name, field: 'magnetic' })}
+                  </td>
+                  <td className="cmp-b" />
+                </tr>
+                {kOpen &&
+                  b.rows.map((r, i) =>
+                    detail(r, `${r.setting ?? ''}-${i}`, 'cmp-under-key', b.name),
+                  )}
+              </tbody>
+            );
+          })}
+      </Fragment>
+    );
+  };
+
+  /** "5/79 keys differ", whichever keys and settings there are. */
+  const keysDiffering = new Set<number>();
+  for (const blocks of blocksOf.values()) for (const b of blocks) keysDiffering.add(b.index);
+  const keyTotal = Math.max(0, ...changed.filter((d) => d.unit === 'key').map((d) => d.total));
+  const others = changed.filter((d) => d.unit !== 'key');
+  const summary = [
+    keysDiffering.size
+      ? t('profile.compare.diffKeys', { n: keysDiffering.size, total: keyTotal })
+      : '',
+    others.length
+      ? t('profile.compare.summary', {
+          n: others.length,
+          total: diffs.filter((d) => d.unit !== 'key').length,
+        })
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return createPortal(
-    <div className="modal-scrim" onClick={close}>
+    // Only a click on the backdrop ITSELF closes: a confirmation's buttons are
+    // portalled, and React bubbles their clicks through here — its OK used to
+    // close this dialog under the copy it had just confirmed.
+    <div
+      className="modal-scrim"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) close();
+      }}
+    >
       <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
         <h4>{t('profile.compare')}</h4>
 
@@ -252,6 +561,7 @@ export function ProfileCompare({ device, onClose }: { device: LiveDevice; onClos
           <select
             className="cmp-pick"
             value={left}
+            disabled={!snap}
             aria-label={t('profile.compare.between')}
             onChange={(e) => setLeft(Number(e.target.value))}
           >
@@ -265,6 +575,7 @@ export function ProfileCompare({ device, onClose }: { device: LiveDevice; onClos
           <select
             className="cmp-pick"
             value={right}
+            disabled={!snap}
             aria-label={t('profile.compare.with')}
             onChange={(e) => setRight(Number(e.target.value))}
           >
@@ -277,16 +588,31 @@ export function ProfileCompare({ device, onClose }: { device: LiveDevice; onClos
         </div>
 
         {error && <p className="cmp-error">{error}</p>}
+        {/* The sweep takes seconds on a keyboard (every slot, page by page),
+            and an empty dialog read as one that had failed to open: a
+            spinner, which slot, and how far along. */}
         {!snap && !error && (
-          <p className="cmp-reading">
-            {progress
-              ? t('profile.compare.readingSlot', {
-                  name: slotLabel(device, progress.slot, t),
-                  n: progress.slot,
-                  total: progress.total,
-                })
-              : `${t('profile.compare.reading')}…`}
-          </p>
+          <div className="cmp-loading" role="status" aria-live="polite">
+            <span className="spinner" aria-hidden="true" />
+            <div className="cmp-loading-body">
+              <div>
+                {progress
+                  ? t('profile.compare.readingSlot', {
+                      name: slotLabel(device, progress.slot, t),
+                      n: progress.slot,
+                      total: progress.total,
+                    })
+                  : `${t('profile.compare.reading')}…`}
+              </div>
+              <div className="cmp-progress" aria-hidden="true">
+                <span
+                  style={{
+                    width: `${progress ? (100 * (progress.slot - 0.5)) / progress.total : 4}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
         )}
         {snap && !snap.fields.length && <p>{t('profile.compare.empty')}</p>}
 
@@ -296,13 +622,25 @@ export function ProfileCompare({ device, onClose }: { device: LiveDevice; onClos
 
         {snap && !!snap.fields.length && left !== right && (
           <>
-            <p className="cmp-summary">
-              {flat && diffs[0]
-                ? diffs[0].same
-                  ? t('profile.compare.allSame')
-                  : headline(diffs[0])
-                : t('profile.compare.summary', { n: changed.length, total: diffs.length })}
-            </p>
+            <div className="cmp-summary-line">
+              <p className="cmp-summary">
+                {changed.length ? summary : t('profile.compare.allSame')}
+              </p>
+              {actuationKeys > 1 && !collapsed.has('magnetic') && (
+                <button
+                  type="button"
+                  className="btn-link"
+                  onClick={() => {
+                    setKeysOpen(!(keysOpen ?? true));
+                    setKeysToggled(new Set());
+                  }}
+                >
+                  {(keysOpen ?? true)
+                    ? t('profile.compare.collapseAll')
+                    : t('profile.compare.expandAll')}
+                </button>
+              )}
+            </div>
             {/* The SCROLLPORT is this wrapper, not the table. Putting
                 `overflow` on the table itself needs `display: block` on it and
                 `display: table` back on thead/tbody, which stops it being a
@@ -310,184 +648,29 @@ export function ProfileCompare({ device, onClose }: { device: LiveDevice; onClos
                 Not drawn at all when nothing differs: a header with no rows
                 under it read as a table that failed to load. */}
             <div className="cmp-scroll" hidden={!changed.length}>
-              <table
-                className={['cmp-table', flat && 'cmp-flat', perKeyCopy && 'has-copy']
-                  .filter(Boolean)
-                  .join(' ')}
-              >
+              <table className="cmp-table has-copy">
                 <colgroup>
                   <col className="cmp-c-setting" />
                   <col />
-                  {perKeyCopy && <col className="cmp-c-copy" />}
+                  <col className="cmp-c-copy" />
                   <col />
                 </colgroup>
                 <thead>
                   <tr>
-                    <th>{flat ? t('profile.compare.colKey') : t('profile.compare.colSetting')}</th>
+                    <th>{t('profile.compare.colSetting')}</th>
                     <th className="cmp-a">{leftName}</th>
-                    {perKeyCopy && (
-                      <th className="cmp-copy-head" aria-label={t('profile.compare.colCopy')} />
-                    )}
+                    <th className="cmp-copy-head" aria-label={t('profile.compare.colCopy')} />
                     <th className="cmp-b">{rightName}</th>
                   </tr>
                 </thead>
-                {flat &&
-                  blocks.map((b) => (
-                    // One tbody per key: the rows of a key read as one block,
-                    // and the copy cell can span exactly them.
-                    <tbody key={b.keyId} className="cmp-keyblock">
-                      {b.rows.map((r, i) => (
-                        <tr key={`${b.keyId}-${r.setting ?? ''}-${i}`} className="cmp-detail">
-                          <th scope="row">
-                            {/* The key is named once per block; later rows keep
-                                the name for a screen reader only, so each row
-                                still reads as "W Release". */}
-                            <span className={i === 0 ? 'cmp-key' : 'cmp-key cmp-key-repeat'}>
-                              {r.label}
-                            </span>
-                            {r.setting && <span className="cmp-sub"> {r.setting}</span>}
-                          </th>
-                          <td className="cmp-a">
-                            <Val text={r.a} color={r.aColor} isDefault={r.aDefault} t={t} />
-                          </td>
-                          {perKeyCopy && i === 0 && (
-                            <td className="cmp-copy" rowSpan={b.rows.length}>
-                              {/* Each arrow on the side of the profile it copies
-                                  TO: left copies into the left profile, right
-                                  into the right. They were the other way round,
-                                  so the arrow nearest a profile was the one that
-                                  took from it. */}
-                              <button
-                                type="button"
-                                className="btn-icon"
-                                title={t('profile.compare.copyFieldTo', {
-                                  field: b.name,
-                                  from: rightName,
-                                  to: leftName,
-                                })}
-                                aria-label={t('profile.compare.copyFieldTo', {
-                                  field: b.name,
-                                  from: rightName,
-                                  to: leftName,
-                                })}
-                                onClick={() => void copyKey(b, right, left)}
-                              >
-                                <Icon name="copyLeft" size={14} />
-                              </button>
-                              <button
-                                type="button"
-                                className="btn-icon"
-                                title={t('profile.compare.copyFieldTo', {
-                                  field: b.name,
-                                  from: leftName,
-                                  to: rightName,
-                                })}
-                                aria-label={t('profile.compare.copyFieldTo', {
-                                  field: b.name,
-                                  from: leftName,
-                                  to: rightName,
-                                })}
-                                onClick={() => void copyKey(b, left, right)}
-                              >
-                                <Icon name="copyRight" size={14} />
-                              </button>
-                            </td>
-                          )}
-                          <td className="cmp-b">
-                            <Val text={r.b} color={r.bColor} isDefault={r.bDefault} t={t} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  ))}
-                {!flat && (
-                  <tbody>
-                    {changed.map((d) => {
-                      const open = !collapsed.has(d.field);
-                      const canExpand = d.rows.length > 0;
-                      return [
-                        <tr key={d.field} className="cmp-row">
-                          <th scope="row">
-                            {canExpand ? (
-                              <button
-                                type="button"
-                                className="cmp-disclose"
-                                aria-expanded={open}
-                                aria-label={
-                                  open ? t('profile.compare.collapse') : t('profile.compare.expand')
-                                }
-                                onClick={() =>
-                                  setCollapsed((s) => {
-                                    const next = new Set(s);
-                                    if (open) next.add(d.field);
-                                    else next.delete(d.field);
-                                    return next;
-                                  })
-                                }
-                              >
-                                {/* One glyph, rotated — a disclosure triangle that
-                                  turns is the convention, and it keeps the two
-                                  states from drifting into two drawings. */}
-                                <span className={`cmp-caret ${open ? 'is-open' : ''}`}>
-                                  <Icon name="chevronRight" size={11} />
-                                </span>
-                                {fieldName(d.field)}
-                              </button>
-                            ) : (
-                              <span className="cmp-nodisclose">{fieldName(d.field)}</span>
-                            )}
-                          </th>
-                          {/* A scalar puts its two values under the two profile
-                            columns, where they line up with the headers.
-                            Anything with detail rows has no single value, so
-                            its summary spans both and the detail carries the
-                            per-key pairs. */}
-                          {d.unit === 'value' ? (
-                            <>
-                              <td className="cmp-v cmp-a">{d.a}</td>
-                              <td className="cmp-v cmp-b">{d.b}</td>
-                            </>
-                          ) : (
-                            <td className="cmp-headline" colSpan={2}>
-                              {headline(d)}
-                            </td>
-                          )}
-                        </tr>,
-                        ...(open
-                          ? d.rows.map((r, i) => (
-                              <tr
-                                key={`${d.field}-${r.label}-${r.setting ?? ''}-${i}`}
-                                className="cmp-detail"
-                              >
-                                {/* The key and the setting on it are different
-                                  kinds of thing, so they are told apart by
-                                  weight and colour rather than by a separator
-                                  the eye has to parse. The space between them
-                                  is real, so the row still reads as "D
-                                  Actuation" to a screen reader. */}
-                                <th scope="row">
-                                  <span className="cmp-key">{r.label}</span>
-                                  {r.setting && <span className="cmp-sub"> {r.setting}</span>}
-                                </th>
-                                <td className="cmp-a">
-                                  <Val text={r.a} color={r.aColor} isDefault={r.aDefault} t={t} />
-                                </td>
-                                <td className="cmp-b">
-                                  <Val text={r.b} color={r.bColor} isDefault={r.bDefault} t={t} />
-                                </td>
-                              </tr>
-                            ))
-                          : []),
-                      ];
-                    })}
-                  </tbody>
-                )}
-                {/* "Copy all", under the column it copies TO — like the per-key
-                    arrows, each points outward at its own side. In the table's
-                    own footer, so it shares the columns exactly. It used to be
-                    a grid of its own imitating them, which drifted off the
-                    columns by the scrollbar's width and its own gaps. Sticky,
-                    like the header, so it is reachable on a long diff. */}
+                {changed.map(section)}
+                {/* "Copy all", under the column it copies TO — like the
+                    per-key arrows, each points outward at its own side. In
+                    the table's own footer, so it shares the columns exactly.
+                    It used to be a grid of its own imitating them, which
+                    drifted off the columns by the scrollbar's width and its
+                    own gaps. Sticky, like the header, so it is reachable on a
+                    long diff. */}
                 {!!changed.length && (
                   <tfoot>
                     <tr className="cmp-bulk-row">
@@ -495,18 +678,18 @@ export function ProfileCompare({ device, onClose }: { device: LiveDevice; onClos
                       <td className="cmp-a">
                         <button
                           className="btn"
-                          onClick={() => setConfirm({ from: right, to: left })}
+                          onClick={() => setConfirm({ kind: 'all', from: right, to: left })}
                           title={t('profile.compare.copyAllTo', { from: rightName, to: leftName })}
                         >
                           <Icon name="arrowLeft" size={12} />
                           {t('profile.compare.copyAllShort', { to: leftName })}
                         </button>
                       </td>
-                      {perKeyCopy && <td className="cmp-copy-foot" />}
+                      <td className="cmp-copy-foot" />
                       <td className="cmp-b">
                         <button
                           className="btn"
-                          onClick={() => setConfirm({ from: left, to: right })}
+                          onClick={() => setConfirm({ kind: 'all', from: left, to: right })}
                           title={t('profile.compare.copyAllTo', { from: leftName, to: rightName })}
                         >
                           {t('profile.compare.copyAllShort', { to: rightName })}
@@ -518,8 +701,6 @@ export function ProfileCompare({ device, onClose }: { device: LiveDevice; onClos
                 )}
               </table>
             </div>
-
-            {!changed.length && !flat && <p className="cmp-same">{t('profile.compare.allSame')}</p>}
           </>
         )}
 
@@ -532,21 +713,26 @@ export function ProfileCompare({ device, onClose }: { device: LiveDevice; onClos
 
       {confirm && (
         <ConfirmDialog
-          title={
-            confirm.field
-              ? t('profile.compare.confirmOne', {
-                  field: fieldName(confirm.field),
-                  to: slotLabel(device, confirm.to, t),
+          title={confirmTitle(confirm)}
+          body={
+            confirm.kind === 'pair'
+              ? t('profile.compare.pairBody', {
+                  key: confirm.key.name,
+                  partners: confirm.partners.join(', '),
                   from: slotLabel(device, confirm.from, t),
                 })
-              : t('profile.compare.confirm', {
-                  to: slotLabel(device, confirm.to, t),
-                  from: slotLabel(device, confirm.from, t),
-                })
+              : undefined
           }
           onResolve={(ok) => {
-            if (ok) void doCopy(confirm.from, confirm.to, confirm.field);
-            else setConfirm(null);
+            if (!ok) setConfirm(null);
+            else if (confirm.kind === 'pair')
+              void copyKey(confirm.key, confirm.from, confirm.to, true);
+            else
+              void doCopy(
+                confirm.from,
+                confirm.to,
+                confirm.kind === 'field' ? confirm.field : undefined,
+              );
           }}
         />
       )}

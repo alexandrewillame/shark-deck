@@ -88,11 +88,15 @@ export function DpiSection({ device }: TabProps) {
 
   const save = (next: DpiStage[]) => sd.setDpiStages(device.id, next);
 
-  // 1-based rank of each array slot by ascending DPI (ties -> lower slot
-  // first), shown as the stage's ID everywhere — so the lowest DPI always
-  // reads as "1" regardless of the order the device stores its stages in.
-  // The array itself is left in device order (reordering it would desync
-  // `activeDpiStage` and the on-device register order).
+  // A stage's number is its place in the mouse's cycle (`i + 1`): the order
+  // its DPI button steps through and, on a mouse with a colour per stage, the
+  // colour it lights — whatever its value. It used to be the stage's rank by
+  // DPI, so a value moved past a neighbour's renamed the stage, which kept its
+  // colour, and the pick stepped 1, 3, 2, 5, 4, 6 as the button went round
+  // (the X8 PRO's owner, 11-27).
+  //
+  // The rank is still what puts the track's labels above and below: what
+  // crowds a label is its neighbour on the track, not in the cycle.
   const ranks = useMemo(() => {
     if (!stages) return [] as number[];
     const order = stages.map((_, i) => i).sort((a, b) => stages[a]!.dpi - stages[b]!.dpi || a - b);
@@ -312,7 +316,7 @@ export function DpiSection({ device }: TabProps) {
                     // an ordinary `<div>` with its own pointer handling, free
                     // of whatever that quirk is.
                     className="dpi-track-handle"
-                    aria-label={String(ranks[i])}
+                    aria-label={String(i + 1)}
                     min={rng.min}
                     max={rng.max}
                     step={rng.step}
@@ -445,8 +449,8 @@ export function DpiSection({ device }: TabProps) {
                       min={rng.min}
                       max={rng.max}
                       step={rng.step}
-                      ariaLabel={t('dpi.editValue', { n: ranks[i]! })}
-                      render={() => ranks[i]}
+                      ariaLabel={t('dpi.editValue', { n: i + 1 })}
+                      render={() => i + 1}
                       onCommit={(dpi) => patch(i, { dpi })}
                       onDragStart={() => {
                         numberDragging.current = true;
@@ -478,86 +482,82 @@ export function DpiSection({ device }: TabProps) {
             </Tooltip>
           </div>
 
+          {/* In the mouse's cycle order, as it steps through them. */}
           <div className="dpi-stage-list">
-            {stages
-              .map((s, i) => ({ s, i }))
-              .sort((a, b) => ranks[a.i]! - ranks[b.i]!)
-              .map(({ s, i }) => (
-                <Row
-                  key={i}
-                  className={active === i ? 'dpi-row-active' : undefined}
-                  selected={selected === i}
-                  onClick={(e) => {
-                    // Let the toggle, number field, colour swatch and remove
-                    // button keep their own click behaviour — only a click
-                    // on the row's own surface applies this stage.
-                    if ((e.target as HTMLElement).closest('input,button,select,label')) return;
-                    applyStage(i);
-                  }}
-                  label={
-                    <Tooltip text={t('dpi.active')}>
-                      <span className="dpi-stage-pick mono">
-                        <span
-                          className={`dpi-stage-pick-dot ${selected === i ? 'is-selected' : ''}`}
-                          aria-hidden="true"
-                        />
-                        {ranks[i]}
-                      </span>
-                    </Tooltip>
-                  }
-                >
-                  <input
-                    type="number"
-                    className="mono"
-                    style={{ width: 90 }}
-                    min={rng.min}
-                    max={rng.max}
-                    step={rng.step}
-                    value={s.dpi}
-                    onChange={(e) => {
-                      const n = Number(e.target.value);
-                      if (Number.isFinite(n)) patchLocal(i, { dpi: n });
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                    }}
-                    onBlur={() => {
-                      // Snap into [min,max] on the step grid and write once —
-                      // the field never writes a raw keystroke to the device,
-                      // so this is where the edit actually reaches hardware.
-                      patch(i, { dpi: snapDpi(s.dpi, rng) });
-                    }}
-                  />
-                  <span style={{ color: 'var(--text-mut)', fontSize: 12 }}>DPI</span>
-                  {/* Only a model whose DPI indicator shows a colour per
-                      stage gets a colour per stage (shared/menuGates.ts). */}
-                  <Gated id="dpi.stageColors" device={device}>
-                    <Tooltip text={t('common.colour')}>
-                      <ColorPickerField
-                        value={rgbToHex(s.color)}
-                        onChange={(hex) => patch(i, { color: hexToRgb(hex) })}
+            {stages.map((s, i) => (
+              <Row
+                key={i}
+                className={active === i ? 'dpi-row-active' : undefined}
+                selected={selected === i}
+                onClick={(e) => {
+                  // Let the toggle, number field, colour swatch and remove
+                  // button keep their own click behaviour — only a click
+                  // on the row's own surface applies this stage.
+                  if ((e.target as HTMLElement).closest('input,button,select,label')) return;
+                  applyStage(i);
+                }}
+                label={
+                  <Tooltip text={t('dpi.active')}>
+                    <span className="dpi-stage-pick mono">
+                      <span
+                        className={`dpi-stage-pick-dot ${selected === i ? 'is-selected' : ''}`}
+                        aria-hidden="true"
                       />
-                    </Tooltip>
-                  </Gated>
-                  {/* Removing is the only way to change how many stages the
+                      {i + 1}
+                    </span>
+                  </Tooltip>
+                }
+              >
+                <input
+                  type="number"
+                  className="mono"
+                  style={{ width: 90 }}
+                  min={rng.min}
+                  max={rng.max}
+                  step={rng.step}
+                  value={s.dpi}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    if (Number.isFinite(n)) patchLocal(i, { dpi: n });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                  }}
+                  onBlur={() => {
+                    // Snap into [min,max] on the step grid and write once —
+                    // the field never writes a raw keystroke to the device,
+                    // so this is where the edit actually reaches hardware.
+                    patch(i, { dpi: snapDpi(s.dpi, rng) });
+                  }}
+                />
+                <span style={{ color: 'var(--text-mut)', fontSize: 12 }}>DPI</span>
+                {/* Only a model whose DPI indicator shows a colour per
+                      stage gets a colour per stage (shared/menuGates.ts). */}
+                <Gated id="dpi.stageColors" device={device}>
+                  <Tooltip text={t('common.colour')}>
+                    <ColorPickerField
+                      value={rgbToHex(s.color)}
+                      onChange={(hex) => patch(i, { color: hexToRgb(hex) })}
+                    />
+                  </Tooltip>
+                </Gated>
+                {/* Removing is the only way to change how many stages the
                       mouse cycles — the wire has no per-stage disable, so the
                       row's old enable toggle could only ever pretend. Disabled
                       rather than hidden at MIN_STAGES, mirroring how the add
                       button handles the stage limit above. */}
-                  <Tooltip
-                    text={stages.length <= MIN_STAGES ? t('dpi.minStages') : t('dpi.remove')}
+                <Tooltip text={stages.length <= MIN_STAGES ? t('dpi.minStages') : t('dpi.remove')}>
+                  <button
+                    className="btn icon-only"
+                    disabled={stages.length <= MIN_STAGES}
+                    onClick={() => removeStage(i)}
+                    aria-label={t('dpi.remove')}
                   >
-                    <button
-                      className="btn icon-only"
-                      disabled={stages.length <= MIN_STAGES}
-                      onClick={() => removeStage(i)}
-                      aria-label={t('dpi.remove')}
-                    >
-                      <Icon name="close" size={12} />
-                    </button>
-                  </Tooltip>
-                </Row>
-              ))}
+                    <Icon name="close" size={12} />
+                  </button>
+                </Tooltip>
+              </Row>
+            ))}
           </div>
         </>
       )}

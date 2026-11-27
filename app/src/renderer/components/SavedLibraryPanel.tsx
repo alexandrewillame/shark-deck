@@ -134,12 +134,12 @@ export function SavedLibraryPanel<E extends SavedEntry>({
               <Tooltip text={e.name} media={thumb(e, 14)} mediaBare>
                 <span className="preset-thumb">{thumb(e, 5)}</span>
               </Tooltip>
-              {e.name}
+              {/* One name: the pencil turns it into the field, in place. */}
               <InlineRename
                 value={e.name}
                 editLabel={renameLabel}
                 onCommit={(v) => rename(e, v)}
-                hideText
+                pencil
               />
             </span>
           }

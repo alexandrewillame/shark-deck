@@ -1,5 +1,4 @@
-import { Panel, Row } from '../../components/common';
-import { Icon } from '../../components/icons';
+import { Panel } from '../../components/common';
 import { type TabProps, sd } from '../common';
 import { useT } from '../../state/i18n';
 import { useStore } from '../../state/store';
@@ -26,12 +25,16 @@ export function DeviceLogSection({ device }: TabProps) {
     );
   };
   return (
-    <Panel title={t('dev.log.title')}>
-      <Row label={<span className="row-desc">{t('dev.log.hint')}</span>}>
-        <button className="btn" onClick={() => void save()}>
-          <Icon name="folder" size={13} /> {t('dev.log.save')}
-        </button>
-      </Row>
-    </Panel>
+    // One action, so the whole line is its button: "Save log" at its end, as
+    // what the line does, not as a second button beside it.
+    <Panel
+      title={t('dev.log.title')}
+      tip={t('dev.log.hint')}
+      inline
+      onOpen={() => void save()}
+      opens="action"
+      goIcon="download"
+      goLabel={t('dev.log.save')}
+    />
   );
 }

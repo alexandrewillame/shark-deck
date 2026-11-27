@@ -23,7 +23,7 @@ export function BrowserAccessSection({ device }: TabProps) {
   };
 
   return (
-    <Panel title={t('web.access.title')} tip={t('web.access.body')}>
+    <Panel title={t('web.access.title')} tip={t('web.access.body')} inline>
       <button className="btn danger" onClick={() => setConfirm(true)}>
         {t('web.access.forget')}
       </button>

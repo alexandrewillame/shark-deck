@@ -45,7 +45,13 @@ import type {
   PowerSettings,
   SensorSettings,
 } from './types/mouse-settings';
-import type { AppProfile, ProfileField, ProfileSnapshots, SwitcherState } from './types/profiles';
+import type {
+  AppProfile,
+  ProfileField,
+  ProfileKeysCopy,
+  ProfileSnapshots,
+  SwitcherState,
+} from './types/profiles';
 
 export interface Api {
   // ---- devices ----------------------------------------------------------
@@ -124,16 +130,17 @@ export interface Api {
     fields?: ProfileField[],
   ): Promise<WriteResult>;
   /**
-   * Writes some keys' actuation settings to one onboard slot, whether or not
-   * it is the active one — the profile comparator's per-key copy. Hops to the
-   * slot and back silently, like `copyProfile`. `previous` is as for
-   * `setMagneticKeys`: positional, and only the differing pages are sent.
+   * Puts some keys of one onboard slot onto another, whether or not either is
+   * the active one — the profile comparator's per-key copy: actuation, the
+   * base-layer binding, and the Mod-tap / DKS actions Shark Deck wrote. Hops
+   * to the slot and back silently, like `copyProfile`; refuses a key whose
+   * actions it cannot know (see the manager).
    */
-  setMagneticKeysOnProfile(
+  copyProfileKeys(
     deviceId: string,
-    slot: number,
-    keys: MagneticKeySettings[],
-    previous?: MagneticKeySettings[],
+    from: number,
+    to: number,
+    keys: ProfileKeysCopy,
   ): Promise<WriteResult>;
   setDpiStages(deviceId: string, stages: DpiStage[]): Promise<WriteResult>;
   setActiveDpiStage(deviceId: string, index: number): Promise<WriteResult>;

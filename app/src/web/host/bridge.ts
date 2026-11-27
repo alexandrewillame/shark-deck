@@ -28,7 +28,7 @@ import { createDispatcher, type HandlerTable } from '../../main/handlers';
 export const DEVICE_WRITES: ReadonlySet<string> = new Set([
   'setActiveProfile',
   'copyProfile',
-  'setMagneticKeysOnProfile',
+  'copyProfileKeys',
   'setDpiStages',
   'setActiveDpiStage',
   'setPollRate',

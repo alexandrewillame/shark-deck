@@ -229,7 +229,7 @@ describe('sweeping every onboard profile', () => {
     const emitted: unknown[] = [];
     mgr.on('devices:changed', (l) => emitted.push(l));
 
-    const r = await mgr.setMagneticKeysOnProfile(kb.id, 2, [key]);
+    const r = await mgr.copyProfileKeys(kb.id, 1, 2, { magnetic: [key], bindings: [] });
 
     expect(r.ok, r.error).toBe(true);
     expect(emitted).toEqual([]);
@@ -237,6 +237,48 @@ describe('sweeping every onboard profile', () => {
     expect((await driver.readMagnetic())[0]!.actuationMm).toBe(before[0]!.actuationMm);
     await driver.setActiveProfile(2);
     expect((await driver.readMagnetic())[0]!.actuationMm).toBe(3.7);
+  });
+
+  it("copies a key's binding with it, onto that slot only", async () => {
+    // The key matrix names its profile: a remap copied to slot 2 is slot 2's.
+    const kb = mgr
+      .list()
+      .find((x) => x.kind === 'keyboard' && x.capabilities.includes('magneticSwitches'));
+    if (!kb) throw new Error('no simulated Hall-effect keyboard');
+    const driver = mgr.getDriver(kb.id)!;
+    await driver.setActiveProfile(1);
+    const slot = Number(Object.keys((await driver.readKeyBindings('base')) ?? {})[0]);
+    const f13: [number, number, number, number] = [0, 0, 0x68, 0];
+
+    const r = await mgr.copyProfileKeys(kb.id, 1, 2, {
+      magnetic: [],
+      bindings: [{ slot, raw: f13 }],
+    });
+
+    expect(r.ok, r.error).toBe(true);
+    expect((await driver.readKeyBindings('base'))![slot]!.raw).not.toEqual(f13);
+    await driver.setActiveProfile(2);
+    expect((await driver.readKeyBindings('base'))![slot]!.raw).toEqual(f13);
+    await driver.setActiveProfile(1);
+  });
+
+  it('refuses a Mod-tap key whose actions it never wrote', async () => {
+    // Its hold and tap sit in zones no read returns: copied without them, the
+    // key would hold the destination's leftovers.
+    const kb = mgr
+      .list()
+      .find((x) => x.kind === 'keyboard' && x.capabilities.includes('magneticSwitches'));
+    if (!kb) throw new Error('no simulated Hall-effect keyboard');
+    const driver = mgr.getDriver(kb.id)!;
+    await driver.setActiveProfile(1);
+    const key = { ...(await driver.readMagnetic())[0]!, mode: 'mt' as const, mtHoldMs: 200 };
+    const write = vi.spyOn(driver, 'setMagneticKeys');
+
+    const r = await mgr.copyProfileKeys(kb.id, 1, 2, { magnetic: [key], bindings: [] });
+
+    expect(r.ok).toBe(false);
+    expect(r.error).toMatch(/Mod-tap or DKS/);
+    expect(write).not.toHaveBeenCalled();
   });
 
   it('never writes a per-model store for a simulated device', async () => {

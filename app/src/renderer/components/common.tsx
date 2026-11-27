@@ -26,7 +26,7 @@ import { useStore } from '../state/store';
 import { isSubmitEnter } from '../state/shortcuts';
 import { useAnchoredPosition } from './usePortalPosition';
 import { useStuckHead } from './stickyHead';
-import { Icon } from './icons';
+import { Icon, type IconName } from './icons';
 import { useDragOrClick } from './useDragOrClick';
 import { ColorPickerField } from './ColorPickerField';
 import { hexToRgb, rgbToHex } from '../colorUtil';
@@ -68,10 +68,18 @@ export function Tooltip({
   mediaBare,
   placement = 'auto',
   open: forcedOpen,
+  under,
 }: {
   children: ReactNode;
   text: string;
   media?: ReactNode;
+  /**
+   * The bubble goes under this element, level with the child, rather than
+   * against the child: the colour picker's presets, whose tips above a swatch
+   * covered the hex and channel fields — read right after a click — and
+   * below one, the next row of presets. Above it when there is no room below.
+   */
+  under?: RefObject<HTMLElement | null>;
   /** Shown from outside, not by hover or focus — a listbox shows the
    *  explanation of the option the keyboard is on, which neither hovering
    *  nor focusing the option does. Left undefined, hover and focus decide. */
@@ -96,9 +104,20 @@ export function Tooltip({
   const openTimer = useRef<ReturnType<typeof setTimeout>>();
   const id = useId();
   const visible = forcedOpen ?? show;
+  const box = () => under?.current?.getBoundingClientRect();
   const pos = useAnchoredPosition(wrapRef, bubbleRef, visible, {
-    placement,
-    align: placement === 'left' || placement === 'right' ? 'start' : 'center',
+    placement: under ? 'bottom' : placement,
+    align: !under && (placement === 'left' || placement === 'right') ? 'start' : 'center',
+    ...(under && {
+      anchorBox: (own: DOMRect) => {
+        const u = box();
+        return u ? { left: own.left, right: own.right, top: u.top, bottom: u.bottom } : own;
+      },
+      avoid: () => {
+        const u = box();
+        return u ? [u] : [];
+      },
+    }),
   });
 
   const open = () => {
@@ -523,6 +542,11 @@ export function Panel({
   actions,
   className,
   stickyHead,
+  inline,
+  onOpen,
+  opens,
+  goLabel,
+  goIcon,
   children,
 }: {
   /** `ReactNode`, not `string`: the remap panel's heading names the selected
@@ -548,11 +572,48 @@ export function Panel({
    * own Apply out of reach (components/stickyHead.ts).
    */
   stickyHead?: boolean;
-  children: ReactNode;
+  /**
+   * One setting, on one line: the title at the left, the control (the
+   * children) at the right, and the title's explanation on its info dot.
+   *
+   * A panel holding a single choice — the Fn layout, the polling rate, the
+   * device colour — was two lines: the heading, then a row under it saying
+   * what the choice does beside the control. The row is the heading now, and
+   * clicking anywhere on it works the control as any row does (`Row`).
+   */
+  inline?: boolean;
+  /** An inline panel that is ONE action: the whole line is its button (`Row`'s
+   *  `onOpen`, `opens`, `goLabel`, `goIcon`). */
+  onOpen?: () => void;
+  opens?: RowOpens;
+  goLabel?: ReactNode;
+  goIcon?: IconName;
+  children?: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useStuckHead(ref, !!stickyHead);
-  const classes = ['panel', stickyHead && 'has-sticky-head', className].filter(Boolean).join(' ');
+  const classes = ['panel', stickyHead && 'has-sticky-head', inline && 'panel-inline', className]
+    .filter(Boolean)
+    .join(' ');
+  if (inline)
+    return (
+      <div ref={ref} className={classes}>
+        <Row
+          label={
+            <h4 className="panel-inline-title">
+              {title}
+              {tip && <InfoDot text={tip} />}
+            </h4>
+          }
+          onOpen={onOpen}
+          opens={opens}
+          goLabel={goLabel}
+          goIcon={goIcon}
+        >
+          {children}
+        </Row>
+      </div>
+    );
   return (
     <div ref={ref} className={classes}>
       {(title || actions) && (
@@ -578,6 +639,10 @@ export function Panel({
  */
 const RowLabel = createContext<string | undefined>(undefined);
 
+/** Where a row that IS a button goes: out of the app (↗), into a dialog (›),
+ *  or nowhere — it does something here (`action`, with its own icon). */
+export type RowOpens = 'external' | 'dialog' | 'action';
+
 export function Row({
   label,
   hint,
@@ -585,10 +650,14 @@ export function Row({
   className,
   onClick,
   selected,
+  onOpen,
+  opens = 'dialog',
+  goLabel,
+  goIcon,
 }: {
   label: ReactNode;
   hint?: string;
-  children: ReactNode;
+  children?: ReactNode;
   className?: string;
   /** Makes the whole row a click target (e.g. "pick this as the active
    *  stage") in addition to whatever its own children handle. */
@@ -596,28 +665,86 @@ export function Row({
   /** Radio-style "this one is the current value" state, distinct from any
    *  hover/focus highlight the caller applies via `className`. */
   selected?: boolean;
+  /**
+   * The row is a BUTTON: the whole line, and nothing in it is a second one.
+   * Its end says what it does: `external` (↗) leaves the app — a page in the
+   * browser, a system window — `dialog` (›) opens one inside it, and `action`
+   * does something here (its `goIcon`). It was a button at the end of the row,
+   * and then the row as well — two things to press for one action, which read
+   * as two actions.
+   */
+  onOpen?: () => void;
+  opens?: RowOpens;
+  /** Said at the end of a button row, before its glyph: "Check for updates". */
+  goLabel?: ReactNode;
+  /** An `action` row's glyph. */
+  goIcon?: IconName;
 }) {
-  const cls = ['row', className, onClick ? 'row-clickable' : '', selected ? 'row-selected' : '']
+  const ctlRef = useRef<HTMLDivElement>(null);
+  /**
+   * Whether a click anywhere on the row works its control: a row is ONE
+   * setting, and only its switch or its two-way choice used to take a click —
+   * the rest of the line, its name included, did nothing. Found from what the
+   * row draws (`forwardTarget`), so every row in the app does it without being
+   * told; a row with a button, more than one control, a slider or a field
+   * keeps its clicks to itself.
+   */
+  const [forwards, setForwards] = useState(false);
+  useLayoutEffect(() => {
+    const f = !onClick && !onOpen && !!forwardTarget(ctlRef.current);
+    if (f !== forwards) setForwards(f);
+  });
+  const act = onClick ?? (onOpen ? () => onOpen() : undefined);
+  const cls = [
+    'row',
+    className,
+    act ? 'row-clickable' : '',
+    forwards ? 'row-forwards' : '',
+    onOpen ? 'row-opens' : '',
+    selected ? 'row-selected' : '',
+  ]
     .filter(Boolean)
     .join(' ');
   const labelId = useId();
   return (
     <div
       className={cls}
-      onClick={onClick}
-      role={onClick ? 'radio' : undefined}
+      onClick={
+        act ??
+        (forwards
+          ? (e) => {
+              const el = e.target as Element;
+              // A click on a control is the control's; one that ends a text
+              // selection is not a click on the row.
+              if (el.closest(OWN_CLICKS) || window.getSelection?.()?.toString()) return;
+              const target = forwardTarget(ctlRef.current);
+              if (!target) return;
+              if (target instanceof HTMLSelectElement) {
+                target.focus();
+                try {
+                  target.showPicker?.();
+                } catch {
+                  /* not from this gesture: focused, at least */
+                }
+              } else target.click();
+            }
+          : undefined)
+      }
+      role={onClick ? 'radio' : onOpen ? (opens === 'external' ? 'link' : 'button') : undefined}
       aria-checked={onClick ? selected : undefined}
-      aria-labelledby={onClick ? labelId : undefined}
-      // A clickable row is a choice (the DPI stage to apply): reachable and
-      // usable from the keyboard like the radio it says it is. Only the row's
-      // own surface — a key pressed in its number field stays the field's.
-      tabIndex={onClick ? 0 : undefined}
+      aria-labelledby={act ? labelId : undefined}
+      // A clickable row is a choice (the DPI stage to apply) or a button:
+      // reachable and usable from the keyboard like what it says it is. Only
+      // the row's own surface — a key pressed in its number field stays the
+      // field's.
+      tabIndex={act ? 0 : undefined}
       onKeyDown={
-        onClick
+        act
           ? (e) => {
               if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
               e.preventDefault();
-              onClick(e as unknown as ReactMouseEvent<HTMLDivElement>);
+              if (onClick) onClick(e as unknown as ReactMouseEvent<HTMLDivElement>);
+              else onOpen?.();
             }
           : undefined
       }
@@ -629,10 +756,57 @@ export function Row({
         {hint && <div className="hint">{hint}</div>}
       </div>
       <RowLabel.Provider value={labelId}>
-        <div className="row-ctl">{children}</div>
+        <div className="row-ctl" ref={ctlRef}>
+          {children}
+          {onOpen && (
+            <span className="row-go" aria-hidden="true">
+              {opens === 'action' && goIcon && <Icon name={goIcon} size={13} />}
+              {goLabel && <span className="row-go-label">{goLabel}</span>}
+              {opens !== 'action' && (
+                <Icon name={opens === 'external' ? 'external' : 'chevronRight'} size={14} />
+              )}
+            </span>
+          )}
+        </div>
       </RowLabel.Provider>
     </div>
   );
+}
+
+/** What takes its own clicks inside a row: a click there is not the row's. */
+const OWN_CLICKS =
+  'button, a, input, select, textarea, label, [role="switch"], [role="button"], [role="combobox"], [tabindex]';
+
+/**
+ * The control a click on its row works, if the row has exactly one that holds
+ * a STATE a click can change: a switch, a list, or the side of a two-way choice
+ * not chosen yet — the row's click is then the same as the control's, and the
+ * control shows it (panes.css).
+ *
+ * Never a button. A button DOES something, and a row that pressed it from
+ * anywhere was a second thing to press beside the first, for what looked like
+ * a second action. A row that is one action is a button row instead (`Row`'s
+ * `onOpen`). None either for a slider or a field (a click there means "put
+ * the caret here"), for more than one control, or for a disabled one.
+ */
+function forwardTarget(ctl: HTMLElement | null): HTMLElement | null {
+  if (!ctl) return null;
+  const controls = [
+    ...ctl.querySelectorAll<HTMLElement>(
+      'button, select, input, textarea, a[href], [role="switch"], [role="combobox"]',
+    ),
+  ];
+  const seg = ctl.querySelector('.seg');
+  if (seg) {
+    const sides = [...seg.querySelectorAll<HTMLButtonElement>('button')];
+    if (sides.length !== 2 || controls.some((c) => !seg.contains(c))) return null;
+    return sides.find((b) => !b.classList.contains('active')) ?? null;
+  }
+  if (controls.length !== 1) return null;
+  const c = controls[0]!;
+  if (!c.matches('[role="switch"], [role="combobox"], select, input[type="checkbox"]')) return null;
+  if (c.matches(':disabled, [aria-disabled="true"]')) return null;
+  return c;
 }
 
 /**
@@ -906,19 +1080,16 @@ export function Select({
 export function ColorField({
   value,
   onChange,
-  swatches,
   ariaLabel,
 }: {
   value: [number, number, number];
   onChange: (rgb: [number, number, number]) => void;
-  swatches?: readonly (readonly string[])[];
   ariaLabel?: string;
 }) {
   return (
     <ColorPickerField
       value={rgbToHex(value)}
       onChange={(hex) => onChange(hexToRgb(hex))}
-      swatches={swatches}
       ariaLabel={ariaLabel}
     />
   );
@@ -1080,6 +1251,7 @@ export function InlineRename({
   editLabel,
   className,
   hideText,
+  pencil,
   suffix,
   overlayRef,
 }: {
@@ -1090,6 +1262,11 @@ export function InlineRename({
   /** Show only the pencil, not the value text — for when the value is
    *  already visible right next to this (e.g. the profile <select>). */
   hideText?: boolean;
+  /** The value as plain text with the pencil after it, the pencil starting
+   *  the edit — and the edit happens in the text itself: the field takes the
+   *  name's place. A saved layout's row; a copy of its name beside a
+   *  `hideText` pencil showed the name twice while it was being renamed. */
+  pencil?: boolean;
   /** A fixed suffix (e.g. ".exe") shown greyed-out and non-editable at the
    *  end of the field while editing, and always appended to whatever is
    *  committed — for names that are really executables. */
@@ -1234,10 +1411,31 @@ export function InlineRename({
     // read-mode branch below) — just a same-size hidden copy of the text.
     return (
       <span className={`inline-rename inline-rename-editing ${className ?? ''}`}>
-        <span className="inline-rename-text inline-rename-trigger" style={{ visibility: 'hidden' }}>
+        <span
+          className={pencil ? 'inline-rename-text' : 'inline-rename-text inline-rename-trigger'}
+          style={{ visibility: 'hidden' }}
+        >
           {value}
         </span>
+        {pencil && (
+          <span className="inline-rename-btn" style={{ visibility: 'hidden' }} aria-hidden="true">
+            <Icon name="pencil" size={12} />
+          </span>
+        )}
         <span className="inline-rename-editor-float">{editor}</span>
+      </span>
+    );
+  }
+
+  if (pencil) {
+    return (
+      <span className={`inline-rename ${className ?? ''}`}>
+        <span className="inline-rename-text">{value}</span>
+        <Tooltip text={editLabel}>
+          <button type="button" className="inline-rename-btn" onClick={startEdit}>
+            <Icon name="pencil" size={12} />
+          </button>
+        </Tooltip>
       </span>
     );
   }

@@ -5,6 +5,7 @@
  * Split out of the former shared/types.ts.
  */
 import type { DeviceKind } from './device';
+import type { MagneticKeySettings } from './keyboard-settings';
 /**
  * Which of a device's own onboard slots a profile selects.
  *
@@ -271,6 +272,21 @@ export interface ProfileSnapshot {
  * SET_PROFILE plus a full read per slot. `restoredTo` is the slot the device
  * was on beforehand and is on again afterwards.
  */
+/**
+ * Keys to put on another onboard profile — the profile comparator's per-key
+ * copy (`copyProfileKeys`). Every value is the SOURCE profile's, as the
+ * comparator's sweep read it.
+ */
+export interface ProfileKeysCopy {
+  /** Whole keys' actuation settings; a Snap Tap pair travels together. */
+  magnetic: MagneticKeySettings[];
+  /** The destination's own values for the same keys, by position — so only
+   *  the pages that differ are sent. */
+  previous?: MagneticKeySettings[];
+  /** Base-layer bindings, by firmware slot, as the four bytes the source holds. */
+  bindings: Array<{ slot: number; raw: [number, number, number, number] }>;
+}
+
 export interface ProfileSnapshots {
   slots: ProfileSnapshot[];
   restoredTo: number;

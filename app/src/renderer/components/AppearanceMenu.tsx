@@ -237,8 +237,9 @@ export function AppearanceMenu() {
   );
 }
 
-const THUMB_W = 88;
-const THUMB_H = 58;
+/** A tile's size: three to a row in the 268px panel (appearance.css). */
+const THUMB_W = 80;
+const THUMB_H = 53;
 /** Late enough that the app's own start (the background's shader, the first
  *  device reads) is done; early enough to beat most first visits. */
 const WARM_AFTER_MS = 4000;
@@ -263,11 +264,11 @@ const drawTiles = (
  * the current palette, then its three options.
  *
  * The tiles are drawn ahead of time (see `AppearanceMenu`), and again when
- * the palette, the mode or the palette switch changes them. All nine shaders
+ * the palette, the mode or the palette switch changes them. All the shaders
  * compile at once, in the background, and each tile appears as its own is
  * ready — compiled one by one on the main thread they were a few seconds of
- * stalls right as the popover opened, and taken in order, every tile after
- * Electricity waited on it.
+ * stalls right as the popover opened, and taken in order, every tile waited on
+ * the slowest before it.
  *
  * Intensity follows the slider live through `setLiveIntensity` and is saved
  * once the slider settles — a settings write per tick would re-render every

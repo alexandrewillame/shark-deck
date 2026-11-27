@@ -1,4 +1,4 @@
-import { Panel, Row, Segmented } from '../../components/common';
+import { Panel, Segmented } from '../../components/common';
 import { type TabProps, sd, useDeviceData, useAutoWrite, Loading } from '../common';
 import { useT } from '../../state/i18n';
 import { DPI_DYNAMIC_MODES } from '@shared/mouse-wire';
@@ -21,17 +21,15 @@ export function DpiDynamicSection({ device }: TabProps) {
   };
   if (loading) return <Loading />;
   return (
-    <Panel title={t('dpidyn.title')} tip={t('dpidyn.hint')}>
-      <Row label={t('dpidyn.mode')}>
-        <Segmented
-          value={d.mode}
-          options={DPI_DYNAMIC_MODES.map((o) => ({
-            value: o.value,
-            label: t(o.labelKey as never),
-          }))}
-          onChange={(v) => set({ mode: v })}
-        />
-      </Row>
+    <Panel title={t('dpidyn.title')} tip={t('dpidyn.hint')} inline>
+      <Segmented
+        value={d.mode}
+        options={DPI_DYNAMIC_MODES.map((o) => ({
+          value: o.value,
+          label: t(o.labelKey as never),
+        }))}
+        onChange={(v) => set({ mode: v })}
+      />
     </Panel>
   );
 }

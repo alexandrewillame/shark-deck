@@ -804,8 +804,8 @@ export class CompxHeKeyboard extends CompxKeyboard {
    * not a read: `GET_KEYMATRIX` answers for zone 0 only, as far as anything
    * has shown. Empty when nothing has been written from this computer.
    */
-  override async readKeyZoneBindings(): Promise<KeyZoneBindings | null> {
-    return this.zoneRecord(await this.keyProfile());
+  override async readKeyZoneBindings(profile?: number): Promise<KeyZoneBindings | null> {
+    return this.zoneRecord(profile ? profile - 1 : await this.keyProfile());
   }
 
   /**

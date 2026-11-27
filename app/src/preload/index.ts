@@ -43,8 +43,7 @@ const api: Api = {
   setActiveProfile: (id, slot) => invoke('setActiveProfile', id, slot),
   snapshotProfiles: (id) => invoke('snapshotProfiles', id),
   copyProfile: (id, from, to, fields) => invoke('copyProfile', id, from, to, fields),
-  setMagneticKeysOnProfile: (id, slot, keys, previous) =>
-    invoke('setMagneticKeysOnProfile', id, slot, keys, previous),
+  copyProfileKeys: (id, from, to, keys) => invoke('copyProfileKeys', id, from, to, keys),
   setDpiStages: (id, s) => invoke('setDpiStages', id, s),
   setActiveDpiStage: (id, i) => invoke('setActiveDpiStage', id, i),
   setPollRate: (id, hz) => invoke('setPollRate', id, hz),

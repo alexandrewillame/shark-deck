@@ -263,9 +263,11 @@ when the key leaves mod-tap — before the pages, for any key in a write that is
 not mod-tap but whose recorded entry is (`releaseModTap`), and before a DKS
 key's bindings (mod-tap to DKS). A remap of a mod-tap key goes to zone 1 (it
 changes what the key types), and the base layer reads back with the tap in
-place of the hold. A write to an onboard profile the board is not showing
-(`keepZoneBindings`: the comparator's per-key copy, a profile copy) leaves
-the bindings alone.
+place of the hold. A whole-profile copy into a profile the board is not
+showing (`keepZoneBindings`) leaves the bindings alone. The comparator's
+per-key copy (`copyProfileKeys`) carries them: a Mod-tap or DKS key's zones go
+from the source profile's record to the destination, and a key whose source
+zones Shark Deck never wrote is refused, since no read returns them.
 
 **Profiles.** The board keeps a key matrix per profile (see "Key matrix reads
 and writes"), and `SET_KEYMATRIX`'s first byte names it: on an R85 HE
@@ -273,6 +275,14 @@ and writes"), and `SET_KEYMATRIX`'s first byte names it: on an R85 HE
 other profile's, whether the board was on profile 1 or 2. Shark Deck writes
 every zone frame on the profile the board is on, and keeps the record of what
 it wrote per profile.
+
+**Switching profiles mid-write.** Measured on an R85 HE (2026-11-27): after
+`SET_PROFILE`, magnetism pages and `GET_PROFILE` answer for the new profile at
+once, but a page write sent at once is lost unless it carries the commit flag
+(twice out of twice); from 50 ms on, every write landed (50 to 800 ms tried).
+And a switch sent while the board is still saving a committed write loses
+that write. So the driver switches only once the board has saved
+(`untilSaved`), and waits `PROFILE_SWITCH_MS` (150 ms) after the switch.
 
 The capture (`session-r85he.jsonl`) shows the vendor writing every zone,
 zone 0 included:

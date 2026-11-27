@@ -297,6 +297,14 @@ export function PerKeyPane({
               // only; what is written is the colour itself.
               return c ? previewRgbCss(c, brightness) : undefined;
             }}
+            // The colour a key holds, as it is written: "#ff8000" — the key is
+            // the one under the pointer, so its name says nothing. A key with
+            // none is off, which is black.
+            tip={(k) => {
+              const slot = slotOf(layout, k);
+              const c = slot !== null ? colors[slot] : undefined;
+              return rgbToHex(c ?? [0, 0, 0]);
+            }}
           />
         </div>
       </LightStage>

@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { CompxKeyboard, fmtVersion, keymatrixArgs, quadFor } from './compx-keyboard';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  CompxKeyboard,
+  MAGNETISM_SAVE_MS,
+  PROFILE_SWITCH_MS,
+  fmtVersion,
+  keymatrixArgs,
+  quadFor,
+} from './compx-keyboard';
 import { buildFrame } from '../../hid/frame';
 import { ATTACK_SHARK_R85HE } from '../catalog/r85he';
 
@@ -179,6 +186,48 @@ describe('SET_KEYMATRIX frames', () => {
       board.sent.length = 0;
       await d.setKeyRemap('base', 9, '05');
       expect(board.sent[0]).toBe('00 0a 00 09 00 00 01 00 eb 00 00 05 00');
+    });
+
+    // Measured on an R85 HE (2026-11-27), by the comparator's per-key copy:
+    // switched while a write was saving, the write was lost; and a write sent
+    // at once after the switch was lost unless it carried the save flag.
+    it('switches only once the board has saved, and lets it take the switch', async () => {
+      vi.useFakeTimers();
+      try {
+        class Paced extends CompxKeyboard {
+          protected override readonly settleMs = 1;
+          saving(ms: number) {
+            this.savingFor(ms);
+          }
+        }
+        const { board } = rig(0);
+        const io = {
+          write: async (b: Uint8Array) => {
+            board.sent.push([...b.subarray(0, 3)].map((x) => x.toString(16)).join(' '));
+            if (b[1] === 0x04) board.profile = b[2]!;
+          },
+          read: async () => new Uint8Array(65),
+          request: async (_f: Uint8Array, cmd: number) =>
+            cmd === 0x84 ? Uint8Array.from([0, 0x84, board.profile, 0, 0, 0, 0, 0, 0]) : null,
+        };
+        const d = new Paced({
+          descriptor: ATTACK_SHARK_R85HE,
+          channel: { ...io, transaction: async (fn: (x: typeof io) => unknown) => fn(io) } as never,
+          onWarning: () => undefined,
+        });
+        d.saving(MAGNETISM_SAVE_MS);
+        let done = false;
+        void d.setActiveProfile(2).then(() => (done = true));
+        await vi.advanceTimersByTimeAsync(MAGNETISM_SAVE_MS - 50);
+        expect(board.sent).toEqual([]); // still saving: nothing sent
+        await vi.advanceTimersByTimeAsync(100);
+        expect(board.sent).toEqual(['0 4 1']); // the switch, once saved
+        expect(done).toBe(false); // …and not over until the board has taken it
+        await vi.advanceTimersByTimeAsync(PROFILE_SWITCH_MS);
+        expect(done).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('backs up every profile’s base layer and puts each back on its own', async () => {

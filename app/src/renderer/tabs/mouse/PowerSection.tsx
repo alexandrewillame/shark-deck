@@ -1,4 +1,4 @@
-import { Panel } from '../../components/common';
+import { Panel, Row } from '../../components/common';
 import { InfoLabel } from '../../components/InfoLabel';
 import { SleepMedia } from '../../components/tooltipMedia';
 import { type TabProps, sd, useDeviceData, useAutoWrite, ReadFailed } from '../common';
@@ -49,13 +49,10 @@ export function PowerSection({ device }: TabProps) {
     <Panel
       title={<InfoLabel label={t('power.title')} text={t('power.sub')} media={<SleepMedia />} />}
     >
-      {/* Same shape as PollRateSection: the label on its own line, then the
-          preset pills as a full-width, left-aligned flex row below — not
-          indented into a Row's right-hand column. */}
-      <div className="label" style={{ marginBottom: 8 }}>
-        {t('power.sleepAfter')}
-      </div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {/* Each a row: the name, then its presets on the same line — under it
+          only when the two do not fit side by side (`row-wrap`). They were
+          each a label line with the pills on a line of their own. */}
+      <Row label={t('power.sleepAfter')} className="row-wrap">
         {presets.map((p) => (
           <button
             key={p}
@@ -65,24 +62,19 @@ export function PowerSection({ device }: TabProps) {
             {fmtSecs(p, t('power.never'))}
           </button>
         ))}
-      </div>
+      </Row>
       {deepPresets.length > 0 && (
-        <>
-          <div className="label" style={{ margin: '14px 0 8px' }}>
-            {t('power.deepAfter')}
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {deepPresets.map((p) => (
-              <button
-                key={p}
-                className={`btn ${p === d.deepSleepSec ? 'primary' : ''}`}
-                onClick={() => applyDeep(p)}
-              >
-                {fmtSecs(p, t('power.never'))}
-              </button>
-            ))}
-          </div>
-        </>
+        <Row label={t('power.deepAfter')} className="row-wrap">
+          {deepPresets.map((p) => (
+            <button
+              key={p}
+              className={`btn ${p === d.deepSleepSec ? 'primary' : ''}`}
+              onClick={() => applyDeep(p)}
+            >
+              {fmtSecs(p, t('power.never'))}
+            </button>
+          ))}
+        </Row>
       )}
     </Panel>
   );

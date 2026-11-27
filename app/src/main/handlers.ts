@@ -181,8 +181,8 @@ export function createDeviceHandlers(deps: DeviceHandlerDeps) {
     snapshotProfiles: (id: string) => deviceManager.snapshotProfiles(id),
     copyProfile: (id: string, from: number, to: number, fields?: any) =>
       guardedWrite(id, () => deviceManager.copyProfile(id, from, to, fields)),
-    setMagneticKeysOnProfile: (id: string, slot: number, keys: any, previous?: any) =>
-      guardedWrite(id, () => deviceManager.setMagneticKeysOnProfile(id, slot, keys, previous)),
+    copyProfileKeys: (id: string, from: number, to: number, keys: any) =>
+      guardedWrite(id, () => deviceManager.copyProfileKeys(id, from, to, keys)),
     setSensor: (id: string, s: any) => guardedWrite(id, () => driverOrThrow(id).setSensor(s)),
     setPower: (id: string, p: any) => guardedWrite(id, () => driverOrThrow(id).setPower(p)),
     setButton: (id: string, b: number, a: string) =>

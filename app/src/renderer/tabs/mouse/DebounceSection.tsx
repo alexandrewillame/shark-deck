@@ -34,6 +34,7 @@ export function DebounceSection({ device }: TabProps) {
           media={<DebounceMedia />}
         />
       }
+      inline
     >
       {!loading && data === null && <ReadFailed />}
       {(loading || data !== null) && (

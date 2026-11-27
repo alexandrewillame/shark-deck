@@ -23,12 +23,12 @@ export function PollRateSection({ device }: TabProps) {
   // the same thing. `run()` still toasts if the write itself disagreed.
   const { note } = useLiveSync(device.pollRate, current, setData);
   return (
-    // The explanation sits on the heading: a row label under it repeated
-    // "Polling rate" word for word.
+    // The explanation sits on the heading, and the rates beside it: one line.
     <Panel
       title={
         <InfoLabel label={t('poll.title')} text={t('poll.hint')} media={<ReportRateMedia />} />
       }
+      inline
     >
       {!loading && current === null && <ReadFailed />}
       {(loading || current !== null) && (

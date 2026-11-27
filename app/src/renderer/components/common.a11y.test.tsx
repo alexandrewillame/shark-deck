@@ -109,3 +109,62 @@ describe('shared controls, without a mouse', () => {
     expect(document.activeElement).toBe(ok);
   });
 });
+
+/**
+ * A row is one setting. A click anywhere on it works its switch, its list or
+ * its two-way choice — the same thing a click on the control does — but never
+ * a button: a row that pressed its button from anywhere was a second thing to
+ * press, which read as a second action. A row that IS one action is a button
+ * row (`onOpen`), with what it does written at its end.
+ */
+describe('a row and its control', () => {
+  it('works its switch from a click on its name', () => {
+    const onChange = vi.fn();
+    render(
+      <Row label="Anti-accidental trigger">
+        <Toggle on={false} onChange={onChange} />
+      </Row>,
+    );
+    fireEvent.click(screen.getByText('Anti-accidental trigger'));
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+
+  it('picks the other side of a two-way choice', () => {
+    const onChange = vi.fn();
+    render(
+      <Row label="Fn layout">
+        <Segmented
+          value="win"
+          options={[
+            { value: 'win', label: 'Windows' },
+            { value: 'mac', label: 'macOS' },
+          ]}
+          onChange={onChange}
+        />
+      </Row>,
+    );
+    fireEvent.click(screen.getByText('Fn layout'));
+    expect(onChange).toHaveBeenCalledWith('mac');
+  });
+
+  it('never presses a button from the rest of the row', () => {
+    const onClick = vi.fn();
+    render(
+      <Row label="Report a problem">
+        <button onClick={onClick}>Save log</button>
+      </Row>,
+    );
+    fireEvent.click(screen.getByText('Report a problem'));
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('is itself the button when it is one action, from the keyboard too', () => {
+    const onOpen = vi.fn();
+    render(<Row label="Check for updates" opens="external" onOpen={onOpen} goLabel="Open" />);
+    const row = screen.getByRole('link', { name: 'Check for updates' });
+    fireEvent.click(row);
+    fireEvent.keyDown(row, { key: 'Enter' });
+    expect(onOpen).toHaveBeenCalledTimes(2);
+    expect(row.querySelectorAll('button')).toHaveLength(0);
+  });
+});

@@ -1,7 +1,7 @@
-import type { ProfileField } from '@shared/types/profiles';
-import type { KeyLayoutEntry } from '@shared/types/keys';
+import type { ProfileField, ProfileKeysCopy, ProfileSnapshots } from '@shared/types/profiles';
+import type { KeyBinding, KeyLayoutEntry } from '@shared/types/keys';
 import { KB_FACTORY_RELEASE_MM, KB_TRAVEL_RANGE } from '@shared/keyboard-travel';
-import type { MagneticMode } from '@shared/types/keyboard-settings';
+import type { MagneticKeySettings, MagneticMode } from '@shared/types/keyboard-settings';
 import { getT, type TFunc } from '@shared/i18n';
 import { modeLabel } from '../tabs/keyboard/magneticModes';
 
@@ -276,6 +276,7 @@ function keyedRows<T>(
   idOf: (item: T, index: number) => string,
   nameOf: (id: string, item: T) => string,
   rowsFor: (name: string, x: T | undefined, y: T | undefined) => DiffRow[],
+  same: (x: T | undefined, y: T | undefined) => boolean = eq,
 ): { rows: DiffRow[]; changed: number; total: number; names: string[] } {
   const index = (c: typeof a) => {
     const m = new Map<string, T>();
@@ -294,7 +295,7 @@ function keyedRows<T>(
   for (const id of ids) {
     const x = am.get(id);
     const y = bm.get(id);
-    if (eq(x, y)) continue;
+    if (same(x, y)) continue;
     const name = nameOf(id, (x ?? y)!);
     names.push(name);
     rows.push(...rowsFor(name, x, y).map((r) => ({ ...r, keyId: id })));
@@ -395,15 +396,20 @@ export function diffField(
     }
     case 'keyRemapBase':
     case 'keyRemapFn': {
-      const r = keyedRows<{ slot: number; label?: string; code: string | null }>(
+      const r = keyedRows<{ slot: number; label?: string; code: string | null; raw?: number[] }>(
         a as never,
         b as never,
         (k) => String(k.slot),
         (id) => names.bySlot.get(Number(id)) ?? `#${id}`,
         (name, x, y) => [{ label: name, a: bindingLabel(x), b: bindingLabel(y) }],
+        // What the key DOES, its four bytes: two reads of one binding can
+        // name it differently ("DEL", "Delete") or vouch for it differently
+        // (`provenance`), and neither is a difference between the profiles.
+        (x, y) => (x?.raw && y?.raw ? eq(x.raw, y.raw) : eq(x, y)),
       );
       return {
         ...base,
+        same: r.changed === 0,
         unit: 'key',
         changed: r.changed,
         total: r.total,
@@ -456,4 +462,156 @@ export function diffField(
 function bindingLabel(k: { label?: string; code?: string | null } | undefined): string {
   if (!k) return MISSING;
   return k.label ?? (k.code ? `0x${k.code}` : MISSING);
+}
+
+/** One key's differences across every key-addressed field — its remap, its
+ *  actuation settings — as one block of the comparison. */
+export interface KeyDiffBlock {
+  /** The key's index in the layout: the one id the fields' own ids (matrix
+   *  row/col, firmware slot, layout index) all resolve to. */
+  index: number;
+  name: string;
+  rows: Array<DiffRow & { field: ProfileField }>;
+}
+
+/**
+ * Every key-addressed field's rows, gathered per KEY, top row first.
+ *
+ * Grouped by field, a key that differed in its remap and in five actuation
+ * settings was six rows in two places, and the eye had to find the key's name
+ * in each to see it was one key. Here a key is one block: its name once, then
+ * what differs on it. A remap row names its field ("Key remap"); an actuation
+ * row already names its setting.
+ *
+ * `fieldName` names a field whose rows carry no setting of their own.
+ */
+export function keyBlocks(
+  diffs: FieldDiff[],
+  layout: KeyLayoutEntry[] | undefined,
+  fieldName: (f: ProfileField) => string,
+): KeyDiffBlock[] {
+  const keys = layout ?? [];
+  const byRowCol = new Map(keys.map((k, i) => [`${k.row},${k.col}`, i]));
+  const bySlot = new Map(keys.map((k, i) => [k.slot ?? i, i]));
+  const blocks = new Map<number, KeyDiffBlock>();
+  /** Keys a field names that the layout does not have, numbered after it. */
+  let stray = keys.length;
+  const strays = new Map<string, number>();
+  for (const d of diffs) {
+    if (d.unit !== 'key' || d.same || d.unread) continue;
+    for (const r of d.rows) {
+      const id = r.keyId ?? r.label;
+      const at =
+        d.field === 'magnetic'
+          ? byRowCol.get(id)
+          : d.field === 'perKeyLighting'
+            ? Number(id) < keys.length
+              ? Number(id)
+              : undefined
+            : bySlot.get(Number(id));
+      const index =
+        at ?? strays.get(`${d.field}:${id}`) ?? (strays.set(`${d.field}:${id}`, stray), stray++);
+      let b = blocks.get(index);
+      if (!b) blocks.set(index, (b = { index, name: keys[index]?.label ?? r.label, rows: [] }));
+      b.rows.push({ ...r, field: d.field, setting: r.setting ?? fieldName(d.field) });
+    }
+  }
+  // As the keys sit on the board, top row first: the layout's own order is
+  // the firmware's, column by column (Esc, `, Tab, Caps…).
+  const pos = (i: number): [number, number] => [keys[i]?.y ?? Infinity, keys[i]?.x ?? i];
+  return [...blocks.values()].sort((a, b) => {
+    const [ay, ax] = pos(a.index);
+    const [by, bx] = pos(b.index);
+    return Math.round(ay * 4) - Math.round(by * 4) || ax - bx || a.index - b.index;
+  });
+}
+
+/** What one per-key copy sends, and which keys it takes. */
+export interface KeyCopyPlan {
+  copy: ProfileKeysCopy;
+  /** Layout indexes copied: the one asked for first. */
+  keys: number[];
+  /** Of those, the ones that come only because they are its Snap Tap partners. */
+  partners: number[];
+}
+
+/** The fields a key's copy can move, one at a time (`planKeyCopy`). */
+export type KeyCopyField = 'keyRemapBase' | 'magnetic';
+
+/**
+ * Everything one key's copy of one field has to move, from one profile's
+ * sweep to the other: its binding (`keyRemapBase`), or its actuation settings
+ * (`magnetic`) — every one of them, not only what differs: "make Esc's
+ * actuation on Gaming what it is on Desktop" is the request, and half of it
+ * would be neither. The two stay apart, as the comparison shows them.
+ *
+ * A Snap Tap key is half of a pair, so its actuation goes with its partner's,
+ * and from BOTH sides: the key's partner on the source (or the destination
+ * would hold a key naming a partner that does not name it back), and its
+ * partner on the destination (or that one would be left naming a key that
+ * has moved on). And so on, through those keys' own partners, until nothing
+ * more is tied in.
+ *
+ * Locked bindings (the Fn key) are never sent. Null when the layout does not
+ * have the key, or there is nothing of it to send.
+ */
+export function planKeyCopy(
+  snap: ProfileSnapshots,
+  layout: KeyLayoutEntry[] | undefined,
+  index: number,
+  from: number,
+  to: number,
+  field: KeyCopyField,
+): KeyCopyPlan | null {
+  const keys = layout ?? [];
+  if (!keys[index]) return null;
+  const valuesOf = (slot: number) => snap.slots.find((s) => s.slot === slot)?.values ?? {};
+  const src = valuesOf(from);
+  const dst = valuesOf(to);
+  const srcMag = (src.magnetic ?? null) as MagneticKeySettings[] | null;
+  const dstMag = (dst.magnetic ?? null) as MagneticKeySettings[] | null;
+  const srcBind = (src.keyRemapBase ?? null) as Record<number, KeyBinding> | null;
+  const dstBind = (dst.keyRemapBase ?? null) as Record<number, KeyBinding> | null;
+  const at = (list: MagneticKeySettings[] | null, e: { row: number; col: number }) =>
+    list?.find((k) => k.row === e.row && k.col === e.col);
+
+  const want = [index];
+  for (let i = 0; field === 'magnetic' && i < want.length; i++) {
+    const e = keys[want[i]!]!;
+    for (const list of [srcMag, dstMag]) {
+      const k = at(list, e);
+      if (k?.mode !== 'snap' || !k.socdPartner) continue;
+      const p = k.socdPartner;
+      const j = keys.findIndex((x) => x.row === p.row && x.col === p.col);
+      if (j >= 0 && !want.includes(j)) want.push(j);
+    }
+  }
+
+  const magnetic: MagneticKeySettings[] = [];
+  const previous: Array<MagneticKeySettings | undefined> = [];
+  const bindings: ProfileKeysCopy['bindings'] = [];
+  for (const j of want) {
+    const e = keys[j]!;
+    const s = field === 'magnetic' ? at(srcMag, e) : undefined;
+    if (s) {
+      magnetic.push(s);
+      previous.push(at(dstMag, e));
+    }
+    if (field !== 'keyRemapBase') continue;
+    const slot = e.slot ?? j;
+    const sb = srcBind?.[slot];
+    const db = dstBind?.[slot];
+    if (sb?.raw && !sb.locked && !db?.locked && !sb.raw.every((x, i) => x === db?.raw?.[i]))
+      bindings.push({ slot, raw: sb.raw });
+  }
+  if (!magnetic.length && !bindings.length) return null;
+  return {
+    copy: {
+      magnetic,
+      previous: previous.every(Boolean) ? (previous as MagneticKeySettings[]) : undefined,
+      bindings,
+    },
+    keys: want,
+    partners: want.slice(1),
+  };
 }

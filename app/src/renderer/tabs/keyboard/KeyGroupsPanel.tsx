@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { KeyGroup } from '@shared/types/keyboard-settings';
+import type { MessageKey } from '@shared/i18n';
 import { InlineRename, Tooltip } from '../../components/common';
 import { useAnchoredPosition } from '../../components/usePortalPosition';
 import { useT } from '../../state/i18n';
@@ -261,25 +262,25 @@ function ColorPopover({
           onClick={(e) => e.stopPropagation()}
           style={pos ? { left: pos.left, top: pos.top } : { left: -9999, top: -9999 }}
         >
-          {/* One row per strength, one column per hue — the same colour down
-              each column, three depths of it. Rendered row by row so the grid
-              is the DOM's shape too, not just the stylesheet's. */}
+          {/* The lighting picker's grid (useKeyGroups `GROUP_SWATCH_ROWS`):
+              one column per colour family. Rendered row by row so the grid is
+              the DOM's shape too, not just the stylesheet's. */}
           {GROUP_SWATCH_ROWS.map((row, r) => (
             <div className="kg-color-row" key={r}>
               {row.map((c) => {
                 const owner = takenBy.get(c);
                 const mine = c === current;
+                const preset = groupSwatchName(c);
+                const name = preset ? t(`light.swatch.${preset}` as MessageKey) : c;
                 return (
                   <button
                     key={c}
                     className={`kg-color${mine ? ' on' : ''}${owner && !mine ? ' taken' : ''}`}
                     style={{ background: c }}
                     aria-label={
-                      owner && !mine
-                        ? t('act.groups.colorTaken', { color: groupSwatchName(c) ?? c, owner })
-                        : (groupSwatchName(c) ?? c)
+                      owner && !mine ? t('act.groups.colorTaken', { color: name, owner }) : name
                     }
-                    title={owner && !mine ? t('act.groups.colorTaken.tip', { owner }) : undefined}
+                    title={owner && !mine ? t('act.groups.colorTaken.tip', { owner }) : name}
                     disabled={!!owner && !mine}
                     onClick={() => onPick(c)}
                   />

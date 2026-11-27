@@ -91,51 +91,51 @@ const cellCounts = () =>
  * elements now, and a row's accessible name is every cell concatenated, so
  * matching on it would couple these tests to the values as well as the label.
  */
+const isDetail = (r: Element, key: string, setting: string) =>
+  r.querySelector('.cmp-key')?.textContent?.trim() === key &&
+  r.querySelector('.cmp-sub')?.textContent?.trim() === setting;
 const detailRow = (key: string, setting: string) => {
-  const hit = [...screen.getByRole('table').querySelectorAll('tr.cmp-detail')].find(
-    (r) =>
-      r.querySelector('.cmp-key')?.textContent === key &&
-      r.querySelector('.cmp-sub')?.textContent?.trim() === setting,
+  const hit = [...screen.getByRole('table').querySelectorAll('tr.cmp-detail')].find((r) =>
+    isDetail(r, key, setting),
   );
   if (!hit) throw new Error(`no detail row for "${key} ${setting}"`);
   return hit as HTMLTableRowElement;
 };
 const noDetailRow = (key: string, setting: string) =>
-  ![...screen.getByRole('table').querySelectorAll('tr.cmp-detail')].some(
-    (r) =>
-      r.querySelector('.cmp-key')?.textContent === key &&
-      r.querySelector('.cmp-sub')?.textContent?.trim() === setting,
+  ![...screen.getByRole('table').querySelectorAll('tr.cmp-detail')].some((r) =>
+    isDetail(r, key, setting),
   );
+/** A key's own line in a section: its keycap, and the arrows that copy it. */
+const keyLine = (key: string, kind: 'cmp-keyhead' | 'cmp-keyline' = 'cmp-keyhead') => {
+  const hit = [...screen.getByRole('table').querySelectorAll(`tr.${kind}`)].find(
+    (r) => r.querySelector('.cmp-keycap')?.textContent === key,
+  );
+  if (!hit) throw new Error(`no ${kind} for "${key}"`);
+  return hit as HTMLTableRowElement;
+};
 
 describe('the profile comparator', () => {
-  it('has one row of columns: the setting and the two profiles', async () => {
+  it('has one row of columns: the setting, the two profiles, and the copy gutter between', async () => {
     open();
     await ready();
-    // No Copy column. A permanent strip of buttons for an action nobody takes
-    // on most rows; whole-profile copy lives under the columns it acts on.
     const head = within(screen.getByRole('table')).getAllByRole('columnheader');
-    expect(head.map((h) => h.textContent)).toEqual(['Setting', 'Desktop', 'Gaming']);
+    expect(head.map((h) => h.textContent)).toEqual(['Setting', 'Desktop', '', 'Gaming']);
   });
 
-  it('puts the detail on the same three columns as the header', async () => {
+  it('puts every row on the same four columns as the header', async () => {
     open();
     await ready();
     // A nested table computes its own widths and drifts out of alignment, so
     // every row — heading and detail alike — has to be a row of THIS table
     // with the same cell count.
-    // Three columns everywhere. A scalar row fills all three; a summary row
-    // spans the last two, so it has two cells covering three columns.
-    for (const n of cellCounts()) expect(n).toBeLessThanOrEqual(3);
-    const detail = detailRow('W', 'Actuation');
-    expect(detail.children).toHaveLength(3);
-    // …and the header it lines up under has the same three.
-    expect(cellCounts()[0]).toBe(3);
+    for (const n of cellCounts()) expect(n).toBe(4);
+    expect(detailRow('W', 'Actuation').children).toHaveLength(4);
   });
 
   it('leads with the number, then the noun', async () => {
     open();
     await ready();
-    expect(screen.getByText('1/2 keys differ')).toBeTruthy();
+    expect(screen.getByText('1/2 keys differ', { selector: '.cmp-headline' })).toBeTruthy();
   });
 
   it('opens every difference without being asked', async () => {
@@ -162,16 +162,16 @@ describe('the profile comparator', () => {
     // Two elements, not one joined string: a key is an object on the board and
     // a setting is a property of it, and the table styles them differently.
     const head = within(detailRow('W', 'Actuation')).getByRole('rowheader');
-    expect(head.querySelector('.cmp-key')!.textContent).toBe('W');
+    expect(head.querySelector('.cmp-key')!.textContent!.trim()).toBe('W');
     expect(head.querySelector('.cmp-sub')!.textContent!.trim()).toBe('Actuation');
   });
 
   it('marks the side that is still the factory value', async () => {
     open();
     await ready();
-    const cells = within(detailRow('W', 'Actuation')).getAllByRole('cell');
-    expect(cells[0]!.textContent).toContain('(default)');
-    expect(cells[1]!.textContent).not.toContain('(default)');
+    const row = detailRow('W', 'Actuation');
+    expect(row.querySelector('td.cmp-a')!.textContent).toContain('(default)');
+    expect(row.querySelector('td.cmp-b')!.textContent).not.toContain('(default)');
   });
 
   it('shows a scalar as its two actual values', async () => {
@@ -191,10 +191,37 @@ describe('the profile comparator', () => {
     expect(screen.queryByText(/Identical on both/)).toBeNull();
   });
 
-  it('has no per-key copy column when the slot holds more than one field', async () => {
+  it('gives each section, and each key in it, its own arrows', async () => {
     open();
     await ready();
-    expect(screen.queryByTitle(/^Copy W from/)).toBeNull();
+    expect(screen.getByTitle('Copy Polling rate from Desktop to Gaming')).toBeTruthy();
+    expect(screen.getByTitle('Copy Actuation from Desktop to Gaming')).toBeTruthy();
+    expect(screen.getByTitle('Copy W · Actuation from Desktop to Gaming')).toBeTruthy();
+  });
+
+  it('copies one section after asking', async () => {
+    open();
+    await ready();
+    await userEvent.click(screen.getByTitle('Copy Polling rate from Gaming to Desktop'));
+    expect(
+      screen.getByText('Overwrite Polling rate on Desktop with the value from Gaming?'),
+    ).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() =>
+      expect(sdMock.copyProfile).toHaveBeenCalledWith('dev-1', 2, 1, ['pollRate']),
+    );
+  });
+
+  it('stays open under a confirmation it asked for', async () => {
+    // Its OK is portalled, and React bubbles the click through this dialog's
+    // backdrop: it used to close the comparison under the copy it confirmed.
+    const onClose = vi.fn();
+    render(<ProfileCompare device={DEVICE} onClose={onClose} />);
+    await ready();
+    await userEvent.click(screen.getByTitle('Copy every setting from Desktop to Gaming'));
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(sdMock.copyProfile).toHaveBeenCalled());
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('tells you how far each profile is before you pick it', async () => {
@@ -299,50 +326,101 @@ describe('the profile comparator', () => {
 });
 
 /**
- * A keyboard's slot holds its actuation settings and nothing else, so there is
- * nothing to group by: keys are listed directly, and each key can be copied on
- * its own — every setting of it, either way.
+ * A keyboard's slot holds its base layer and its actuation. Each is a section
+ * of its own — a key that differs in both is listed in each — and inside a
+ * section each key can be copied on its own: its binding, or every setting of
+ * its actuation, either way.
  */
 describe('the profile comparator, on a keyboard', () => {
+  const bind = (slot: number, label: string, code: number) => ({
+    slot,
+    code: code.toString(16),
+    kind: 'key',
+    label,
+    raw: [0, 0, code, 0] as [number, number, number, number],
+    provenance: 'device',
+  });
   const KB_SNAP: ProfileSnapshots = {
     restoredTo: 1,
-    fields: ['magnetic'],
+    fields: ['keyRemapBase', 'magnetic'],
     slots: [
-      { slot: 1, values: { magnetic: [magW(), magEsc] } },
-      { slot: 2, values: { magnetic: [magW({ actuationMm: 1.2, rapidTrigger: true }), magEsc] } },
-      { slot: 3, values: { magnetic: [magW(), magEsc] } },
+      {
+        slot: 1,
+        values: {
+          keyRemapBase: { 0: bind(0, 'Esc', 0x29), 5: bind(5, 'W', 0x1a) },
+          magnetic: [magW(), magEsc],
+        },
+      },
+      {
+        slot: 2,
+        values: {
+          keyRemapBase: { 0: bind(0, 'Esc', 0x29), 5: bind(5, 'F13', 0x68) },
+          magnetic: [magW({ actuationMm: 1.2, rapidTrigger: true }), magEsc],
+        },
+      },
+      {
+        slot: 3,
+        values: {
+          keyRemapBase: { 0: bind(0, 'Esc', 0x29), 5: bind(5, 'W', 0x1a) },
+          magnetic: [magW(), magEsc],
+        },
+      },
     ],
   };
 
   beforeEach(() => {
     sdMock.snapshotProfiles.mockResolvedValue(KB_SNAP);
-    sdMock.setMagneticKeysOnProfile.mockResolvedValue({ ok: true, verified: 'unverified' });
+    sdMock.copyProfileKeys.mockResolvedValue({ ok: true, verified: 'unverified' });
   });
-  const kbReady = () => waitFor(() => expect(screen.getByText('1/2 keys differ')).toBeTruthy());
+  const kbReady = () =>
+    waitFor(() =>
+      expect(screen.getByText('1/2 keys differ', { selector: '.cmp-summary' })).toBeTruthy(),
+    );
 
-  it('lists each key and setting directly, with no field to open', async () => {
+  it('keeps remap and actuation apart: a key that differs in both is in each', async () => {
     open();
     await kbReady();
-    expect(screen.queryByRole('button', { name: 'Hide details' })).toBeNull();
-    expect(screen.queryByText('Actuation', { selector: '.cmp-disclose' })).toBeNull();
-    const head = within(screen.getByRole('table')).getAllByRole('columnheader');
-    expect(head.map((h) => h.textContent)).toEqual(['Key', 'Desktop', '', 'Gaming']);
-    // W differs in two settings: one block, two rows, named once.
+    const sections = [...screen.getByRole('table').querySelectorAll('tr.cmp-row')].map(
+      (r) => r.querySelector('th')!.textContent,
+    );
+    expect(sections).toEqual(['Key remap', 'Actuation']);
+    // The remap is one line, its two bindings under the two profiles.
+    const remap = keyLine('W', 'cmp-keyline');
+    expect(remap.querySelector('td.cmp-a')!.textContent).toContain('W');
+    expect(remap.querySelector('td.cmp-b')!.textContent).toContain('F13');
+    // The actuation is the key's own line, then a row per setting that differs.
+    const block = keyLine('W').closest('tbody')!;
+    expect(block.querySelectorAll('tr.cmp-detail')).toHaveLength(2);
     expect(detailRow('W', 'Actuation')).toBeTruthy();
     expect(detailRow('W', 'Rapid Trigger')).toBeTruthy();
-    const block = detailRow('W', 'Actuation').closest('tbody')!;
-    expect(block.querySelectorAll('tr')).toHaveLength(2);
-    expect(block.querySelectorAll('.cmp-key:not(.cmp-key-repeat)')).toHaveLength(1);
+  });
+
+  it('opens and closes a key from anywhere on its line', async () => {
+    open();
+    await kbReady();
+    await userEvent.click(keyLine('W').querySelector('td.cmp-b')!);
+    expect(noDetailRow('W', 'Actuation')).toBe(true);
+    await userEvent.click(keyLine('W').querySelector('td.cmp-a')!);
+    expect(detailRow('W', 'Actuation')).toBeTruthy();
+  });
+
+  it('opens and closes a section from anywhere on its line', async () => {
+    open();
+    await kbReady();
+    const head = [...screen.getByRole('table').querySelectorAll('tr.cmp-row')].find(
+      (r) => r.querySelector('th')!.textContent === 'Key remap',
+    )!;
+    await userEvent.click(head.querySelector('td.cmp-a')!);
+    expect(screen.getByRole('table').querySelectorAll('tr.cmp-keyline')).toHaveLength(0);
   });
 
   it('puts each copy arrow on the side of the profile it copies into', async () => {
     // Reported: the arrow nearest a profile was the one that took FROM it.
     open();
     await kbReady();
-    const gutter = detailRow('W', 'Actuation').querySelector('td.cmp-copy')!;
-    const [left, right] = [...gutter.querySelectorAll('button')];
-    expect(left!.title).toBe('Copy W from Gaming to Desktop');
-    expect(right!.title).toBe('Copy W from Desktop to Gaming');
+    const [left, right] = [...keyLine('W').querySelectorAll('td.cmp-copy button')];
+    expect(left!.getAttribute('title')).toBe('Copy W · Actuation from Gaming to Desktop');
+    expect(right!.getAttribute('title')).toBe('Copy W · Actuation from Desktop to Gaming');
     const foot = screen.getByRole('table').querySelector('tfoot tr')!;
     expect(foot.querySelector('td.cmp-a button')!.getAttribute('title')).toBe(
       'Copy every setting from Gaming to Desktop',
@@ -353,11 +431,8 @@ describe('the profile comparator, on a keyboard', () => {
   });
 
   it('marks the two profile columns on every row, so they can mirror round the gutter', async () => {
-    // Reported: the copy arrows sat against the right-hand profile rather than
-    // between the two. The stylesheet centres each profile column either side
-    // of the gutter by these classes — and they have to be on a block's later
-    // rows too, which have no copy cell of their own to sit beside. (jsdom
-    // loads no CSS, so the hooks are what can be pinned here.)
+    // The stylesheet centres each profile column either side of the gutter by
+    // these classes. (jsdom loads no CSS, so the hooks are what can be pinned.)
     open();
     await kbReady();
     expect(screen.getByRole('table').classList.contains('has-copy')).toBe(true);
@@ -369,57 +444,59 @@ describe('the profile comparator, on a keyboard', () => {
     }
   });
 
-  it('copies every setting of one key from left to right', async () => {
+  it("copies every setting of one key's actuation, and only that, from left to right", async () => {
     open();
     await kbReady();
-    await userEvent.click(screen.getByTitle('Copy W from Desktop to Gaming'));
-    await waitFor(() => expect(sdMock.setMagneticKeysOnProfile).toHaveBeenCalled());
+    await userEvent.click(screen.getByTitle('Copy W · Actuation from Desktop to Gaming'));
+    await waitFor(() => expect(sdMock.copyProfileKeys).toHaveBeenCalled());
     // The WHOLE key from slot 1, with slot 2's own W as `previous` — so only
-    // the pages that differ go on the wire.
-    expect(sdMock.setMagneticKeysOnProfile).toHaveBeenCalledWith(
-      'dev-1',
-      2,
-      [magW()],
-      [magW({ actuationMm: 1.2, rapidTrigger: true })],
-    );
+    // the pages that differ go on the wire — and no binding with it.
+    expect(sdMock.copyProfileKeys).toHaveBeenCalledWith('dev-1', 1, 2, {
+      magnetic: [magW()],
+      previous: [magW({ actuationMm: 1.2, rapidTrigger: true })],
+      bindings: [],
+    });
     // …and the table is read again rather than patched.
     await waitFor(() => expect(sdMock.snapshotProfiles).toHaveBeenCalledTimes(2));
   });
 
-  it('copies one key from right to left', async () => {
+  it("copies one key's remap, and only that, from right to left", async () => {
     open();
     await kbReady();
-    await userEvent.click(screen.getByTitle('Copy W from Gaming to Desktop'));
-    await waitFor(() => expect(sdMock.setMagneticKeysOnProfile).toHaveBeenCalled());
-    expect(sdMock.setMagneticKeysOnProfile).toHaveBeenCalledWith(
-      'dev-1',
-      1,
-      [magW({ actuationMm: 1.2, rapidTrigger: true })],
-      [magW()],
-    );
+    await userEvent.click(screen.getByTitle('Copy W · Key remap from Gaming to Desktop'));
+    await waitFor(() => expect(sdMock.copyProfileKeys).toHaveBeenCalled());
+    expect(sdMock.copyProfileKeys).toHaveBeenCalledWith('dev-1', 2, 1, {
+      magnetic: [],
+      previous: [],
+      bindings: [{ slot: 5, raw: [0, 0, 0x68, 0] }],
+    });
   });
 
-  it('takes a Snap-tap partner along, so the pair is not split', async () => {
+  it('takes a Snap-tap partner along, after asking, so the pair is not split', async () => {
     const a = magW({ mode: 'snap', socdPartner: { row: 0, col: 0 } });
     const d = { ...magEsc, mode: 'snap', socdPartner: { row: 1, col: 2 } };
     sdMock.snapshotProfiles.mockResolvedValue({
       ...KB_SNAP,
       slots: [
-        { slot: 1, values: { magnetic: [a, d] } },
-        { slot: 2, values: { magnetic: [magW(), magEsc] } },
-        { slot: 3, values: { magnetic: [magW(), magEsc] } },
+        { slot: 1, values: { ...KB_SNAP.slots[0]!.values, magnetic: [a, d] } },
+        { slot: 2, values: { ...KB_SNAP.slots[0]!.values, magnetic: [magW(), magEsc] } },
+        { slot: 3, values: { ...KB_SNAP.slots[0]!.values, magnetic: [magW(), magEsc] } },
       ],
     });
     open();
-    await waitFor(() => expect(screen.getByText('2/2 keys differ')).toBeTruthy());
-    await userEvent.click(screen.getByTitle('Copy W from Desktop to Gaming'));
-    await waitFor(() => expect(sdMock.setMagneticKeysOnProfile).toHaveBeenCalled());
-    expect(sdMock.setMagneticKeysOnProfile).toHaveBeenCalledWith(
-      'dev-1',
-      2,
-      [a, d],
-      [magW(), magEsc],
+    await waitFor(() =>
+      expect(screen.getByText('2/2 keys differ', { selector: '.cmp-summary' })).toBeTruthy(),
     );
+    await userEvent.click(screen.getByTitle('Copy W · Actuation from Desktop to Gaming'));
+    expect(screen.getByText('Copy W, Esc to Gaming?')).toBeTruthy();
+    expect(sdMock.copyProfileKeys).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(sdMock.copyProfileKeys).toHaveBeenCalled());
+    expect(sdMock.copyProfileKeys).toHaveBeenCalledWith('dev-1', 1, 2, {
+      magnetic: [a, d],
+      previous: [magW(), magEsc],
+      bindings: [],
+    });
   });
 
   it('keeps the bulk copy on the same columns, past the copy column', async () => {

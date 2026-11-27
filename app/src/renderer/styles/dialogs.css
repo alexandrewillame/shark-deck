@@ -145,7 +145,7 @@
  * same reason. */
 .modal-wide {
   --cmp-c1: 32%;
-  width: min(760px, 94vw);
+  width: min(880px, 94vw);
   max-height: 86vh;
   display: flex;
   flex-direction: column;
@@ -162,9 +162,12 @@
   margin-bottom: 12px;
 }
 /* Wider than a bare slot name: each option also carries how far that profile
-   is from the one selected opposite ("Gaming — 11/79 keys differ"). */
+   is from the one selected opposite ("Gaming — 11/79 keys differ"). As wide
+   as its longest option, so the one shown is never cut: capped at 260px, a
+   named profile's line lost its end ("Profile 2 - gaming - 19/128 keys
+   diff…"). Only the dialog's own width bounds it. */
 .cmp-pick {
-  max-width: 260px;
+  max-width: 100%;
 }
 /* All three of these are `<p>` inside `.modal`, so they inherit
    `.modal p { margin: -4px 0 14px }` — a negative top margin written for
@@ -177,11 +180,58 @@
   color: var(--text-dim);
   margin: 0 0 6px;
 }
-.modal-wide .cmp-reading {
+/* The sweep in progress: it takes seconds on a keyboard, and an empty box
+   read as a dialog that had failed. A spinner, which slot, and how far. */
+.cmp-loading {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 4px 18px;
   font-size: var(--fs-md);
   color: var(--text-dim);
+}
+.cmp-loading-body {
+  flex: 1 1 auto;
+  display: grid;
+  gap: 9px;
+}
+.cmp-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+.cmp-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.4s var(--ease-out);
+}
+/* The summary, with Expand / Collapse all at its end. */
+.cmp-summary-line {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 6px;
+}
+.modal-wide .cmp-summary-line .cmp-summary {
   margin: 0;
-  padding: 18px 0;
+}
+.btn-link {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.btn-link:hover {
+  text-decoration: underline;
 }
 /* The dialog, not the page, scrolls: the pair selector and the actions stay
    put while a long diff moves under them. `flex: 1 1 auto` + `min-height: 0`
@@ -348,20 +398,66 @@
   max-width: 100%;
 }
 
-/* Keyboards: one block of rows per key, named once, with nothing to open. */
-.cmp-flat .cmp-detail > th {
-  padding-left: 8px;
+/* A row a click anywhere on opens or closes: a section, a key's actuation. */
+.cmp-toggle {
+  cursor: pointer;
 }
-.cmp-keyblock > tr:first-child > * {
-  border-top: 1px solid var(--line);
-  padding-top: 6px;
+.cmp-toggle:hover > :is(th, td):not(.cmp-copy) {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
-/* Striped per KEY, not per row — the rows of one key are one thing. */
-.cmp-flat .cmp-detail:nth-of-type(even) {
+/* Inside a section, keys: drawn as keycaps, so a column of them reads as keys
+   rather than as more settings, and indented under the section's name. A key
+   whose remap differs is one line; a key whose actuation differs is its line,
+   then its settings, indented again. Banded per KEY, not per row: the rows of
+   one key are one thing. */
+.cmp-keyline > th,
+.cmp-keyhead > th {
+  padding-left: 24px;
+}
+.cmp-keyline > th,
+.cmp-keyline > td,
+.cmp-keyhead > th,
+.cmp-keyhead > td {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  vertical-align: middle;
+}
+.cmp-keyline:nth-child(odd) {
+  background: var(--cmp-band);
+}
+.cmp-keyblock.is-banded {
+  background: var(--cmp-band);
+}
+.cmp-keyblock .cmp-detail:nth-of-type(even) {
   background: none;
 }
-.cmp-flat .cmp-keyblock:nth-of-type(even) {
-  background: var(--cmp-band);
+.cmp-detail.cmp-under-key > th {
+  padding-left: 64px;
+}
+.cmp-keyblock > tr:last-child > * {
+  padding-bottom: 7px;
+}
+.cmp-keycap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--bg-3);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cmp-count {
+  margin-left: 4px;
+  color: var(--text-mut);
+  font-size: var(--fs-xs);
+  font-weight: 400;
 }
 /* The key's name after its first row: kept for a screen reader, so every row
    still reads "W Release", but not drawn again. */
@@ -375,7 +471,7 @@
 }
 /* The per-key copy: the left-pointing copy (on the left) takes this key into
    the left profile, the right-pointing one (on the right) into the right
-   profile. One cell spanning the key's rows, centred on them.
+   profile. On the key's own line; its detail rows keep the gutter, empty.
 
    A gutter of its own between the two profiles, banded and ruled top to
    bottom (header and footer too), with the buttons centred in it. Unmarked,
